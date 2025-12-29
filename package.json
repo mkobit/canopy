@@ -1,0 +1,37 @@
+{
+  "name": "pkms-graph",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "build": "pnpm -r build",
+    "test": "vitest",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "typecheck": "pnpm -r typecheck",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.27",
+    "@types/react-dom": "^18.3.7",
+    "@typescript-eslint/eslint-plugin": "7.10.0",
+    "@typescript-eslint/parser": "7.10.0",
+    "@vitejs/plugin-react": "^4.7.0",
+    "@vitest/coverage-v8": "1.6.0",
+    "electron": "^28.3.3",
+    "eslint": "8.57.0",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^16.5.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
+    "prettier": "^3.7.4",
+    "typescript": "5.7.2",
+    "typescript-eslint": "7.10.0",
+    "vite": "^5.4.21",
+    "vitest": "1.6.0",
+    "@types/node": "^22.13.9"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  }
+}
