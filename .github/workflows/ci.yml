@@ -2,9 +2,6 @@ name: CI
 
 on:
   push:
-    branches: [main]
-  pull_request:
-    branches: [main]
 
 jobs:
   build:
@@ -53,7 +50,7 @@ jobs:
         run: pnpm build
 
       - name: Test
-        run: pnpm test --coverage
+        run: pnpm test run --coverage
 
       - name: Upload coverage
         uses: codecov/codecov-action@v3

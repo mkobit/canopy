@@ -1,5 +1,5 @@
 {
-  "name": "@pkms/query",
+  "name": "@canopy/query",
   "version": "0.0.0",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -9,10 +9,9 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@pkms/core": "workspace:*",
-    "@pkms/schema": "workspace:*",
+    "@canopy/core": "workspace:*",
+    "@canopy/schema": "workspace:*",
     "cypher-parser": "^0.1.14"
   },
-  "devDependencies": {
-  }
+  "devDependencies": {}
 }

@@ -6,7 +6,7 @@ describe('NodeSchema', () => {
     const validNode = {
       id: '502f6a9c-0c33-40f4-9029-7c15273d2218',
       labels: ['Person'],
-      properties: { name: 'Alice' }
+      properties: { name: 'Alice' },
     };
     expect(NodeSchema.parse(validNode)).toEqual(validNode);
   });
@@ -15,7 +15,7 @@ describe('NodeSchema', () => {
     const invalidNode = {
       id: 'not-uuid',
       labels: ['Person'],
-      properties: {}
+      properties: {},
     };
     expect(() => NodeSchema.parse(invalidNode)).toThrow();
   });

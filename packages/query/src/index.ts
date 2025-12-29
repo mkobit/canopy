@@ -1,6 +1,6 @@
 // @ts-ignore
 import { parse } from 'cypher-parser';
-import { GraphEngine } from '@pkms/core';
+import { GraphEngine } from '@canopy/core';
 
 export class QueryExecutor {
   constructor(private engine: GraphEngine) {}

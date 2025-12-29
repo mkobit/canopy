@@ -72,13 +72,13 @@ importers:
 
   apps/web:
     dependencies:
-      '@pkms/core':
+      '@canopy/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@pkms/schema':
+      '@canopy/schema':
         specifier: workspace:*
         version: link:../../packages/schema
-      '@pkms/ui':
+      '@canopy/ui':
         specifier: workspace:*
         version: link:../../packages/ui
       react:
@@ -103,7 +103,7 @@ importers:
 
   packages/core:
     dependencies:
-      '@pkms/schema':
+      '@canopy/schema':
         specifier: workspace:*
         version: link:../schema
       yjs:
@@ -112,10 +112,10 @@ importers:
 
   packages/query:
     dependencies:
-      '@pkms/core':
+      '@canopy/core':
         specifier: workspace:*
         version: link:../core
-      '@pkms/schema':
+      '@canopy/schema':
         specifier: workspace:*
         version: link:../schema
       cypher-parser:
@@ -130,10 +130,10 @@ importers:
 
   packages/ui:
     dependencies:
-      '@pkms/core':
+      '@canopy/core':
         specifier: workspace:*
         version: link:../core
-      '@pkms/schema':
+      '@canopy/schema':
         specifier: workspace:*
         version: link:../schema
       react:

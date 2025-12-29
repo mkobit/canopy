@@ -1,4 +1,4 @@
-import { Node, Edge } from '@pkms/schema';
+import { Node, Edge } from '@canopy/schema';
 import * as Y from 'yjs';
 
 export class GraphEngine {

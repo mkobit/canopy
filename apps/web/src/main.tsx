@@ -1,13 +1,13 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { NodeView } from '@pkms/ui';
-import { Node } from '@pkms/schema';
+import { NodeView } from '@canopy/ui';
+import { Node } from '@canopy/schema';
 
 const App = () => {
   const node: Node = {
     id: '123',
     labels: ['Person'],
-    properties: { name: 'Alice' }
+    properties: { name: 'Alice' },
   };
 
   return (
@@ -21,5 +21,5 @@ const App = () => {
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <App />
-  </React.StrictMode>
+  </React.StrictMode>,
 );

@@ -1,5 +1,5 @@
 {
-  "name": "@pkms/web",
+  "name": "@canopy/web",
   "version": "0.0.0",
   "private": true,
   "scripts": {
@@ -9,9 +9,9 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@pkms/core": "workspace:*",
-    "@pkms/schema": "workspace:*",
-    "@pkms/ui": "workspace:*",
+    "@canopy/core": "workspace:*",
+    "@canopy/schema": "workspace:*",
+    "@canopy/ui": "workspace:*",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
