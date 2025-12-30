@@ -6,15 +6,7 @@ const globals = require('globals');
 
 module.exports = tseslint.config(
   {
-    ignores: [
-      'dist',
-      'node_modules',
-      'coverage',
-      '**/*.js',
-      '**/*.cjs',
-      '**/*.d.ts',
-      '.github/**/*',
-    ],
+    ignores: ['dist', 'node_modules', 'coverage', '**/*.d.ts', 'packages/*/dist/**/*', 'apps/*/dist/**/*'],
   },
   eslint.configs.recommended,
   ...tseslint.configs.strict,
@@ -22,22 +14,20 @@ module.exports = tseslint.config(
   prettier,
   {
     languageOptions: {
-      globals: {
-        ...globals.browser,
-        ...globals.node,
-      },
+        globals: {
+            ...globals.browser,
+            ...globals.node,
+        }
     },
     rules: {
-      '@typescript-eslint/no-explicit-any': 'warn',
-      '@typescript-eslint/no-unused-vars': [
-        'error',
-        { argsIgnorePattern: '^_' },
-      ],
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       'no-console': ['warn', { allow: ['warn', 'error'] }],
       '@typescript-eslint/no-require-imports': 'off',
       '@typescript-eslint/ban-ts-comment': 'warn',
       '@typescript-eslint/prefer-ts-expect-error': 'off',
       '@typescript-eslint/no-non-null-assertion': 'off',
+      '@typescript-eslint/no-var-requires': 'off',
     },
-  },
+  }
 );
