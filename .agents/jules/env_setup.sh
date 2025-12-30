@@ -1,24 +1,19 @@
 #!/bin/bash
-# Jules environment setup for pkms-graph repository
+# Jules environment setup
 # Docs: https://jules.google/docs/environment/
 
 set -euo pipefail
 
-echo "Setting up pkms-graph environment..."
+echo "Setting up environment..."
 
 # Check and install tools first
-TOOLS="zsh tmux vim jq curl git"
+TOOLS="git"
 MISSING=""
 for tool in $TOOLS; do
     if ! command -v "$tool" &> /dev/null; then
         MISSING="$MISSING $tool"
     fi
 done
-
-# Special check for neovim (command 'nvim', package 'neovim')
-if ! command -v nvim &> /dev/null; then
-    MISSING="$MISSING neovim"
-fi
 
 if [ -n "$MISSING" ]; then
     echo "Installing missing tools:$MISSING..."
