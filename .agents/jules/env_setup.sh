@@ -44,12 +44,4 @@ echo "PNPM version: $(pnpm --version)"
 echo "Installing dependencies..."
 pnpm install
 
-# Build
-echo "Building packages..."
-pnpm -r build
-
-# Test
-echo "Running tests..."
-pnpm test
-
-echo "Environment ready"
+echo "Environment ready (dependencies installed)"
