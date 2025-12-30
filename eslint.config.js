@@ -6,7 +6,14 @@ const globals = require('globals');
 
 module.exports = tseslint.config(
   {
-    ignores: ['dist', 'node_modules', 'coverage', '**/*.d.ts', 'packages/*/dist/**/*', 'apps/*/dist/**/*'],
+    ignores: [
+      'dist',
+      'node_modules',
+      'coverage',
+      '**/*.d.ts',
+      'packages/*/dist/**/*',
+      'apps/*/dist/**/*',
+    ],
   },
   eslint.configs.recommended,
   ...tseslint.configs.strict,
@@ -14,10 +21,10 @@ module.exports = tseslint.config(
   prettier,
   {
     languageOptions: {
-        globals: {
-            ...globals.browser,
-            ...globals.node,
-        }
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+      },
     },
     rules: {
       '@typescript-eslint/no-explicit-any': 'error',
@@ -29,5 +36,5 @@ module.exports = tseslint.config(
       '@typescript-eslint/no-non-null-assertion': 'off',
       '@typescript-eslint/no-var-requires': 'off',
     },
-  }
+  },
 );
