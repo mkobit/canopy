@@ -5,9 +5,11 @@ import { Node } from '@canopy/schema';
 
 const App = () => {
   const node: Node = {
-    id: '123',
-    labels: ['Person'],
+    id: '502f6a9c-0c33-40f4-9029-7c15273d2218',
+    type: 'Person',
     properties: { name: 'Alice' },
+    created: new Date().toISOString(),
+    modified: new Date().toISOString(),
   };
 
   return (

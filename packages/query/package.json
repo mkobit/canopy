@@ -13,5 +13,7 @@
     "@canopy/schema": "workspace:*",
     "cypher-parser": "^0.1.14"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "yjs": "^13.6.28"
+  }
 }
