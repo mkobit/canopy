@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "composite": false,
+    "noEmit": true,
+    "baseUrl": ".",
+    "rootDir": "../..",
+    "paths": {
+      "@canopy/schema": ["../../packages/schema/src/index.ts"]
+    }
+  }
+}
