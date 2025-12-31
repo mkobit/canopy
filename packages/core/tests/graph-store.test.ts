@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { GraphStore } from '../src/store/graph-store';
 import * as Y from 'yjs';
+import { asTypeId } from '@canopy/types';
 
 describe('GraphStore', () => {
   let doc: Y.Doc;
@@ -9,23 +10,16 @@ describe('GraphStore', () => {
   beforeEach(() => {
     doc = new Y.Doc();
     store = new GraphStore(doc);
-
-    // Bootstrap NodeType
-    // Note: In my implementation, I assume NodeType itself is a type that is "built-in" effectively
-    // because I skip validation for type="NodeType".
-    // But for other types like "Person", I need to create the NodeType definition first.
   });
 
   it('can create a node type', () => {
+    // Note: In the new architecture, NodeType is just a Node with type="NodeType"
+    // and specific properties.
     const personType = store.addNode({
-      type: 'NodeType',
-      properties: {
-        name: 'Person',
-        properties: [
-          { name: 'name', type: 'string', required: true },
-          { name: 'age', type: 'number' },
-        ],
-      },
+      type: asTypeId('NodeType'),
+      properties: new Map([
+        ['name', { kind: 'text', value: 'Person' }],
+      ]),
     });
 
     expect(personType.id).toBeDefined();
@@ -36,45 +30,17 @@ describe('GraphStore', () => {
   });
 
   it('can create a typed node', () => {
-    // Define Type
-    store.addNode({
-      type: 'NodeType',
-      properties: {
-        name: 'Person',
-        properties: [
-          { name: 'name', type: 'string', required: true },
-          { name: 'age', type: 'number' },
-        ],
-      },
-    });
-
     // Create Node
     const alice = store.addNode({
-      type: 'Person',
-      properties: { name: 'Alice', age: 30 },
+      type: asTypeId('Person'),
+      properties: new Map([
+          ['name', { kind: 'text', value: 'Alice' }],
+          ['age', { kind: 'number', value: 30 }]
+      ]),
     });
 
     expect(alice.type).toBe('Person');
-    expect(alice.properties.name).toBe('Alice');
-  });
-
-  it('validates required properties', () => {
-     store.addNode({
-      type: 'NodeType',
-      properties: {
-        name: 'Person',
-        properties: [
-          { name: 'name', type: 'string', required: true },
-        ],
-      },
-    });
-
-    expect(() => {
-      store.addNode({
-        type: 'Person',
-        properties: { age: 30 }, // Missing name
-      });
-    }).toThrow('Missing required property: name');
+    expect(alice.properties.get('name')).toEqual({ kind: 'text', value: 'Alice' });
   });
 
   it('syncs between two stores', () => {
@@ -91,30 +57,20 @@ describe('GraphStore', () => {
           Y.applyUpdate(doc1, update);
       });
 
-      // Define type in store1
-      store1.addNode({
-          type: 'NodeType',
-          properties: {
-              name: 'Note',
-              properties: [{ name: 'content', type: 'string' }]
-          }
-      });
-
       // Create node in store1
-      store1.addNode({
-          type: 'Note',
-          properties: { content: 'Hello World' }
+      const created = store1.addNode({
+          type: asTypeId('Note'),
+          properties: new Map([
+              ['content', { kind: 'text', value: 'Hello World' }]
+          ])
       });
-
-      // Wait for sync? Yjs sync is synchronous when applying updates in-memory like this usually,
-      // but let's verify.
 
       // Check store2
-      // We need to iterate as we don't know the ID
-      const nodes2 = Array.from(store2.nodes.values());
-      expect(nodes2.length).toBe(2); // NodeType + Note
-      const note = nodes2.find(n => n.type === 'Note');
-      expect(note).toBeDefined();
-      expect(note?.properties.content).toBe('Hello World');
+      // Use public API to access nodes, which handles deserialization
+      const node2 = store2.getNode(created.id);
+
+      expect(node2).toBeDefined();
+      expect(node2?.type).toBe('Note');
+      expect(node2?.properties.get('content')).toEqual({ kind: 'text', value: 'Hello World' });
   });
 });

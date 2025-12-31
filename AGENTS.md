@@ -1,54 +1,55 @@
-# AGENTS.md
+# Canopy
 
-## 1. Handoff protocol
+Canopy is a graph-based personal knowledge management system. It treats all content as nodes in a graph with strict typing, meta-circular definition capabilities, and CRDT-based synchronization for offline-first operation.
 
-- **Core -> UI**: Core exposes Observables or hooks for state updates.
-  UI components should not modify core state directly but dispatch actions.
-- **Schema -> Core**: Core relies on Zod schemas for runtime validation of nodes and edges.
-- **Query -> Core**: Query engine executes Cypher queries against the graph state managed by Core.
+## Package Dependency Graph
 
-## 2. Type boundaries
+```mermaid
+graph TD
+    api[api] --> types
+    schema[schema] --> types
+    core[core] --> types
+    core --> schema
+    core --> sync
+    sync[sync] --> types
+    query[query] --> types
+    query --> core
+    query --> schema
+    storage[storage] --> types
+    storage --> sync
+    ui[ui] --> types
+    web[apps/web] --> core
+    web --> ui
+    web --> query
+    web --> storage
+    web --> types
+    desktop[apps/desktop] --> web
+```
 
-- **packages/schema**: Defines the canonical types (Nodes, Edges, Properties) using Zod.
-  Exports inferred TypeScript types.
-- **packages/core**: Internal graph logic, indexing, and CRDT synchronization.
-- **packages/ui**: View-specific types.
-  Logic should be minimal.
+## Architectural Invariants
 
-## 3. State ownership
+1.  `@canopy/types` has zero runtime dependencies—pure TypeScript types only.
+2.  `@canopy/core` owns the graph model—other packages do not directly manipulate graph state.
+3.  Yjs integration lives in `@canopy/sync`, not scattered across packages.
+4.  `@canopy/query` is isolated to enable swapping Cypher for ISO GQL later.
+5.  UI components are stateless—`@canopy/ui` receives data via props, does not fetch or mutate.
+6.  Zod schemas in `@canopy/schema` are the source of truth for runtime validation.
+7.  All type properties are `readonly`.
+8.  No mutations—functions return new values, never modify arguments.
+9.  No raw primitives in domain types—use branded types and domain-specific wrappers.
 
-- **Graph State**: Owned by `packages/core`.
-- **Sync State**: Managed by `packages/core` (using Yjs).
-- **UI State**: Local component state or context in `packages/ui` and apps.
+## Development Workflow
 
-## 4. Integration points
+To install dependencies, run `pnpm install` in the root directory.
+To run tests, execute `pnpm test run`.
+To build all packages, use `pnpm build`.
+To lint the codebase, run `pnpm lint`.
+To typecheck the codebase, run `pnpm typecheck`.
 
-- **Query Engine -> Storage**: The query engine operates on the in-memory graph structure provided by Core.
-- **Storage -> Sync**: Storage updates trigger CRDT updates and vice-versa.
-- **UI -> Query**: UI components construct queries and pass them to the Query Executor in Core.
+## Programming Style Requirements
 
-## 5. Testing strategy
-
-- **Unit**: Test pure functions in `schema` and `query`.
-  Test graph logic in `core` mocking dependencies.
-- **Integration**: Test the interaction between Query and Core.
-  Test CRDT sync.
-- **E2E**: Playwright tests for `apps/web`.
-
-## 6. Development workflow
-
-- **Branch Naming**: `feat/`, `fix/`, `chore/` prefix.
-- **Commit Format**: Conventional Commits (e.g., `feat(core): add node indexing`).
-- **PR Requirements**: All CI checks pass, code review approval.
-
-## 7. Verification steps (pre-submission)
-
-Before submitting any changes, you must ensure that your code passes the same checks as the CI environment.
-The build process outlined in GitHub Actions for CI (`.github/workflows/ci.yml`) should be followed for verifying locally.
-The following commands are a summary of the steps, but always refer to the CI configuration as the source of truth:
-
-1.  **Install dependencies**: `pnpm install`
-2.  **Linting**: `pnpm lint`
-3.  **Type checking**: `pnpm typecheck`
-4.  **Build**: `pnpm build`
-5.  **Testing**: `pnpm test run`
+All code must follow a functional programming style, avoiding mutations and side effects.
+Use `readonly` modifiers on all type properties and prefer `ReadonlyArray<T>` or `readonly T[]`.
+Build domain types from the bottom up, avoiding `any` or `Record<string, unknown>`.
+Strict typing is enforced; use branded types for identifiers and `unknown` instead of `any` where appropriate.
+Documentation in `AGENTS.md` files must follow the one-sentence-per-line rule.

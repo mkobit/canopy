@@ -1,19 +1,20 @@
 {
-  "name": "@canopy/schema",
+  "name": "@canopy/sync",
   "version": "0.0.0",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest"
   },
   "dependencies": {
     "@canopy/types": "workspace:*",
-    "zod": "^3.0.0"
+    "yjs": "^13.6.14"
   },
   "devDependencies": {
-     "typescript": "5.7.2",
+    "typescript": "5.7.2",
     "vitest": "1.6.0"
   }
 }

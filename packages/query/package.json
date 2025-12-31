@@ -10,9 +10,12 @@
   },
   "dependencies": {
     "@canopy/core": "workspace:*",
+    "@canopy/types": "workspace:*",
     "@canopy/schema": "workspace:*"
   },
   "devDependencies": {
+     "typescript": "5.7.2",
+    "vitest": "1.6.0",
     "yjs": "^13.6.28"
   }
 }

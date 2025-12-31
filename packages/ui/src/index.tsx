@@ -1,5 +1,5 @@
 import React from 'react';
-import { Node } from '@canopy/schema';
+import { Node } from '@canopy/types';
 
 export const NodeView: React.FC<{ node: Node }> = ({ node }) => {
   return (

@@ -1,0 +1,17 @@
+{
+  "name": "desktop-app",
+  "version": "0.0.0",
+  "private": true,
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@canopy/web": "workspace:*",
+    "electron": "^28.3.3"
+  },
+  "devDependencies": {
+    "typescript": "5.7.2"
+  }
+}
