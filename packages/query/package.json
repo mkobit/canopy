@@ -10,8 +10,7 @@
   },
   "dependencies": {
     "@canopy/core": "workspace:*",
-    "@canopy/schema": "workspace:*",
-    "cypher-parser": "^0.1.14"
+    "@canopy/schema": "workspace:*"
   },
   "devDependencies": {
     "yjs": "^13.6.28"
