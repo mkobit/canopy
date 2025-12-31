@@ -1,32 +1,17 @@
 # Canopy
 
-Canopy is a graph-based personal knowledge management system. It treats all content as nodes in a graph with strict typing, meta-circular definition capabilities, and CRDT-based synchronization for offline-first operation.
+Canopy is a graph-based personal knowledge management system.
+It treats all content as nodes in a graph with strict typing, meta-circular definition capabilities, and CRDT-based synchronization for offline-first operation.
 
-## Package Dependency Graph
+## Package dependency graph
 
-```mermaid
-graph TD
-    api[api] --> types
-    schema[schema] --> types
-    core[core] --> types
-    core --> schema
-    core --> sync
-    sync[sync] --> types
-    query[query] --> types
-    query --> core
-    query --> schema
-    storage[storage] --> types
-    storage --> sync
-    ui[ui] --> types
-    web[apps/web] --> core
-    web --> ui
-    web --> query
-    web --> storage
-    web --> types
-    desktop[apps/desktop] --> web
+Run the following command to verify the current dependency graph:
+
+```bash
+pnpm list -r --depth 1
 ```
 
-## Architectural Invariants
+## Architectural invariants
 
 1.  `@canopy/types` has zero runtime dependencies—pure TypeScript types only.
 2.  `@canopy/core` owns the graph model—other packages do not directly manipulate graph state.
@@ -38,15 +23,17 @@ graph TD
 8.  No mutations—functions return new values, never modify arguments.
 9.  No raw primitives in domain types—use branded types and domain-specific wrappers.
 
-## Development Workflow
+## Development workflow
 
-To install dependencies, run `pnpm install` in the root directory.
-To run tests, execute `pnpm test run`.
-To build all packages, use `pnpm build`.
-To lint the codebase, run `pnpm lint`.
-To typecheck the codebase, run `pnpm typecheck`.
+| Task | Command |
+| :--- | :--- |
+| Install dependencies | `pnpm install` |
+| Run tests | `pnpm test run` |
+| Build all packages | `pnpm build` |
+| Lint codebase | `pnpm lint` |
+| Type check | `pnpm typecheck` |
 
-## Programming Style Requirements
+## Programming style requirements
 
 All code must follow a functional programming style, avoiding mutations and side effects.
 Use `readonly` modifiers on all type properties and prefer `ReadonlyArray<T>` or `readonly T[]`.
