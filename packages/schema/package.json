@@ -5,11 +5,15 @@
   "types": "./dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc -p tsconfig.check.json",
     "test": "vitest run"
   },
   "dependencies": {
+    "@canopy/types": "workspace:*",
     "zod": "^3.0.0"
   },
-  "devDependencies": {}
+  "devDependencies": {
+     "typescript": "5.7.2",
+    "vitest": "1.6.0"
+  }
 }

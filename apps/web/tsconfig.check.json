@@ -7,7 +7,10 @@
     "paths": {
       "@canopy/schema": ["../../packages/schema/src/index.ts"],
       "@canopy/core": ["../../packages/core/src/index.ts"],
-      "@canopy/ui": ["../../packages/ui/src/index.tsx"]
+      "@canopy/ui": ["../../packages/ui/src/index.tsx"],
+      "@canopy/query": ["../../packages/query/src/index.ts"],
+      "@canopy/storage": ["../../packages/storage/src/index.ts"],
+      "@canopy/types": ["../../packages/types/src/index.ts"]
     }
   }
 }

@@ -3,6 +3,7 @@ import { GraphStore } from '@canopy/core';
 import { GraphQuery } from '../src';
 import * as Y from 'yjs';
 import { v4 as uuidv4 } from 'uuid';
+import { asNodeId, asTypeId, asEdgeId } from '@canopy/types';
 
 describe('GraphQuery', () => {
     let doc: Y.Doc;
@@ -10,40 +11,54 @@ describe('GraphQuery', () => {
     let query: GraphQuery;
 
     // Use valid UUIDs
-    const aliceId = uuidv4();
-    const bobId = uuidv4();
-    const proj1Id = uuidv4();
-    const proj2Id = uuidv4();
-    const edge1Id = uuidv4();
-    const edge2Id = uuidv4();
+    const aliceId = asNodeId(uuidv4());
+    const bobId = asNodeId(uuidv4());
+    const proj1Id = asNodeId(uuidv4());
+    const proj2Id = asNodeId(uuidv4());
+    const edge1Id = asEdgeId(uuidv4());
+    const edge2Id = asEdgeId(uuidv4());
 
     beforeEach(() => {
         doc = new Y.Doc();
         store = new GraphStore(doc);
         query = new GraphQuery(store);
 
-        // Setup types
-        store.addNode({
-            type: 'NodeType',
-            properties: { name: 'Person', properties: [{ name: 'name', type: 'string' }] }
-        });
-         store.addNode({
-            type: 'NodeType',
-            properties: { name: 'Project', properties: [{ name: 'status', type: 'string' }] }
-        });
-        store.addNode({
-            type: 'EdgeType',
-            properties: { name: 'ATTENDED', properties: [{ name: 'role', type: 'string' }] }
-        });
-
         // Add some data
-        store.addNode({ id: aliceId, type: 'Person', properties: { name: 'Alice' } });
-        store.addNode({ id: bobId, type: 'Person', properties: { name: 'Bob' } });
-        store.addNode({ id: proj1Id, type: 'Project', properties: { status: 'active' } });
-        store.addNode({ id: proj2Id, type: 'Project', properties: { status: 'archived' } });
+        store.addNode({
+            id: aliceId,
+            type: asTypeId('Person'),
+            properties: new Map([['name', { kind: 'text', value: 'Alice' }]])
+        });
+        store.addNode({
+            id: bobId,
+            type: asTypeId('Person'),
+            properties: new Map([['name', { kind: 'text', value: 'Bob' }]])
+        });
+        store.addNode({
+            id: proj1Id,
+            type: asTypeId('Project'),
+            properties: new Map([['status', { kind: 'text', value: 'active' }]])
+        });
+        store.addNode({
+            id: proj2Id,
+            type: asTypeId('Project'),
+            properties: new Map([['status', { kind: 'text', value: 'archived' }]])
+        });
 
-        store.addEdge({ id: edge1Id, type: 'ATTENDED', source: aliceId, target: proj1Id, properties: { role: 'Lead' } });
-        store.addEdge({ id: edge2Id, type: 'ATTENDED', source: bobId, target: proj1Id, properties: { role: 'Dev' } });
+        store.addEdge({
+            id: edge1Id,
+            type: asTypeId('ATTENDED'),
+            source: aliceId,
+            target: proj1Id,
+            properties: new Map([['role', { kind: 'text', value: 'Lead' }]])
+        });
+        store.addEdge({
+            id: edge2Id,
+            type: asTypeId('ATTENDED'),
+            source: bobId,
+            target: proj1Id,
+            properties: new Map([['role', { kind: 'text', value: 'Dev' }]])
+        });
     });
 
     it('findNodes by type', () => {
@@ -52,7 +67,7 @@ describe('GraphQuery', () => {
     });
 
     it('findNodes by properties', () => {
-        const activeProjects = query.findNodes('Project', { status: 'active' });
+        const activeProjects = query.findNodes('Project', { status: { kind: 'text', value: 'active' } });
         expect(activeProjects.length).toBe(1);
         expect(activeProjects[0].id).toBe(proj1Id);
     });
