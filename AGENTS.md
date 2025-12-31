@@ -36,7 +36,7 @@
 - **Commit Format**: Conventional Commits (e.g., `feat(core): add node indexing`).
 - **PR Requirements**: All CI checks pass, code review approval.
 
-## 7. Verification Steps (Pre-Submission)
+## 7. Verification steps (pre-submission)
 
 Before submitting any changes, you must ensure that your code passes the same checks as the CI environment. Run the following commands from the root directory:
 
