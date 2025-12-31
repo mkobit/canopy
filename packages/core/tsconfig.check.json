@@ -6,7 +6,9 @@
     "baseUrl": ".",
     "rootDir": "../..",
     "paths": {
-      "@canopy/schema": ["../../packages/schema/src/index.ts"]
+      "@canopy/schema": ["../../packages/schema/src/index.ts"],
+      "@canopy/types": ["../../packages/types/src/index.ts"],
+      "@canopy/sync": ["../../packages/sync/src/index.ts"]
     }
   }
 }
