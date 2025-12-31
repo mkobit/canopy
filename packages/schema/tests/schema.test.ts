@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { NodeSchema, EdgeSchema, NodeTypeSchema, PropertyDefinitionSchema } from '../src';
+import { NodeSchema, EdgeSchema, NodeTypeSchema } from '../src';
 import { v4 as uuidv4 } from 'uuid';
 
 // Mock uuid for consistency if needed, but uuidv4 is fine

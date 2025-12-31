@@ -8,7 +8,7 @@ export class GraphQuery {
     this.store = store;
   }
 
-  findNodes(type: string, properties?: Record<string, any>): Node[] {
+  findNodes(type: string, properties?: Record<string, unknown>): Node[] {
     const nodes: Node[] = [];
     for (const node of this.store.nodes.values()) {
       if (node.type === type) {
@@ -29,7 +29,7 @@ export class GraphQuery {
     return nodes;
   }
 
-  findEdges(type: string, source?: string, target?: string, properties?: Record<string, any>): Edge[] {
+  findEdges(type: string, source?: string, target?: string, properties?: Record<string, unknown>): Edge[] {
     const edges: Edge[] = [];
     for (const edge of this.store.edges.values()) {
         if (edge.type === type) {
