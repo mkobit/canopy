@@ -35,3 +35,15 @@
 - **Branch Naming**: `feat/`, `fix/`, `chore/` prefix.
 - **Commit Format**: Conventional Commits (e.g., `feat(core): add node indexing`).
 - **PR Requirements**: All CI checks pass, code review approval.
+
+## 7. Verification Steps (Pre-Submission)
+
+Before submitting any changes, you must ensure that your code passes the same checks as the CI environment. Run the following commands from the root directory:
+
+1.  **Install dependencies**: `pnpm install`
+2.  **Linting**: `pnpm lint`
+3.  **Type checking**: `pnpm typecheck`
+4.  **Build**: `pnpm build`
+5.  **Testing**: `pnpm test run`
+
+Refer to `.github/workflows/ci.yml` for the exact definition of the CI pipeline.
