@@ -2,15 +2,18 @@
 
 ## 1. Handoff protocol
 
-- **Core -> UI**: Core exposes Observables or hooks for state updates. UI components should not modify core state directly but dispatch actions.
+- **Core -> UI**: Core exposes Observables or hooks for state updates.
+  UI components should not modify core state directly but dispatch actions.
 - **Schema -> Core**: Core relies on Zod schemas for runtime validation of nodes and edges.
 - **Query -> Core**: Query engine executes Cypher queries against the graph state managed by Core.
 
 ## 2. Type boundaries
 
-- **packages/schema**: Defines the canonical types (Nodes, Edges, Properties) using Zod. Exports inferred TypeScript types.
+- **packages/schema**: Defines the canonical types (Nodes, Edges, Properties) using Zod.
+  Exports inferred TypeScript types.
 - **packages/core**: Internal graph logic, indexing, and CRDT synchronization.
-- **packages/ui**: View-specific types. Logic should be minimal.
+- **packages/ui**: View-specific types.
+  Logic should be minimal.
 
 ## 3. State ownership
 
@@ -26,8 +29,10 @@
 
 ## 5. Testing strategy
 
-- **Unit**: Test pure functions in `schema` and `query`. Test graph logic in `core` mocking dependencies.
-- **Integration**: Test the interaction between Query and Core. Test CRDT sync.
+- **Unit**: Test pure functions in `schema` and `query`.
+  Test graph logic in `core` mocking dependencies.
+- **Integration**: Test the interaction between Query and Core.
+  Test CRDT sync.
 - **E2E**: Playwright tests for `apps/web`.
 
 ## 6. Development workflow
@@ -35,3 +40,16 @@
 - **Branch Naming**: `feat/`, `fix/`, `chore/` prefix.
 - **Commit Format**: Conventional Commits (e.g., `feat(core): add node indexing`).
 - **PR Requirements**: All CI checks pass, code review approval.
+
+## 7. Verification steps (pre-submission)
+
+Before submitting any changes, you must ensure that your code passes the same checks as the CI environment.
+Run the following commands from the root directory:
+
+1.  **Install dependencies**: `pnpm install`
+2.  **Linting**: `pnpm lint`
+3.  **Type checking**: `pnpm typecheck`
+4.  **Build**: `pnpm build`
+5.  **Testing**: `pnpm test run`
+
+Refer to `.github/workflows/ci.yml` for the exact definition of the CI pipeline.
