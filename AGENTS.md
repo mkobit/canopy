@@ -44,12 +44,11 @@
 ## 7. Verification steps (pre-submission)
 
 Before submitting any changes, you must ensure that your code passes the same checks as the CI environment.
-Run the following commands from the root directory:
+The build process outlined in GitHub Actions for CI (`.github/workflows/ci.yml`) should be followed for verifying locally.
+The following commands are a summary of the steps, but always refer to the CI configuration as the source of truth:
 
 1.  **Install dependencies**: `pnpm install`
 2.  **Linting**: `pnpm lint`
 3.  **Type checking**: `pnpm typecheck`
 4.  **Build**: `pnpm build`
 5.  **Testing**: `pnpm test run`
-
-Refer to `.github/workflows/ci.yml` for the exact definition of the CI pipeline.
