@@ -13,8 +13,8 @@ import {
 
 export class GraphStore {
   doc: Y.Doc;
-  nodes: Y.Map<any>;
-  edges: Y.Map<any>;
+  nodes: Y.Map<Node>;
+  edges: Y.Map<Edge>;
 
   constructor(doc: Y.Doc) {
     this.doc = doc;
@@ -183,7 +183,7 @@ export class GraphStore {
       this.edges.delete(id);
   }
 
-  private validateType(typeName: string, properties: Record<string, any>, kind: 'node' | 'edge') {
+  private validateType(typeName: string, properties: Record<string, unknown>, kind: 'node' | 'edge') {
     // Find the definition node/edge
     // For NodeType, it's a Node with type="NodeType" and properties.name = typeName
     // For EdgeType, it might be a Node with type="EdgeType"? Wait, schema said EdgeTypeSchema extends NodeSchema.
