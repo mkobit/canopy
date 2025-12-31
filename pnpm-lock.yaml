@@ -130,9 +130,6 @@ importers:
       '@canopy/schema':
         specifier: workspace:*
         version: link:../schema
-      cypher-parser:
-        specifier: ^0.1.14
-        version: 0.1.14
     devDependencies:
       yjs:
         specifier: ^13.6.28
@@ -883,13 +880,6 @@ packages:
   csstype@3.2.3:
     resolution: {integrity: sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==}
 
-  cypher-parser@0.1.14:
-    resolution: {integrity: sha512-HZQ/47CpMVJF5uUSvDOsV3nbJjmOsMoYDl/LagVYMSu2K9unsSgQzKPf8RVLXnXCxS36rpTnDVfz/0QGCS5Ong==}
-    cpu: [x64, arm64]
-    os: [darwin, linux]
-    bundledDependencies:
-      - '@mapbox/node-pre-gyp'
-
   debug@4.4.3:
     resolution: {integrity: sha512-RGwwWnwQvkVfavKVt22FGLw+xYSdzARwm0ru6DhTVA3umU5hZc28V3kO4stgYryrTlLpuvgI9GiijltAjNbcqA==}
     engines: {node: '>=6.0'}
@@ -1382,9 +1372,6 @@ packages:
 
   ms@2.1.3:
     resolution: {integrity: sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==}
-
-  nan@2.24.0:
-    resolution: {integrity: sha512-Vpf9qnVW1RaDkoNKFUvfxqAbtI8ncb8OJlqZ9wwpXzWPEsvsB1nvdUi6oYrHIkQ1Y/tMDnr1h4nczS0VB9Xykg==}
 
   nano-spawn@2.0.0:
     resolution: {integrity: sha512-tacvGzUY5o2D8CBh2rrwxyNojUsZNU2zjNTzKQrkgGJQTbGAfArVWXSKMBokBeeg6C7OLRGUEyoFlYbfeWQIqw==}
@@ -2597,10 +2584,6 @@ snapshots:
 
   csstype@3.2.3: {}
 
-  cypher-parser@0.1.14:
-    dependencies:
-      nan: 2.24.0
-
   debug@4.4.3:
     dependencies:
       ms: 2.1.3
@@ -3157,8 +3140,6 @@ snapshots:
       ufo: 1.6.1
 
   ms@2.1.3: {}
-
-  nan@2.24.0: {}
 
   nano-spawn@2.0.0: {}
 
