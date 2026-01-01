@@ -1,16 +1,23 @@
 import * as Y from 'yjs';
-import { v4 as uuidv4 } from 'uuid';
+import { z } from 'zod';
 import {
   Node,
   Edge,
   NodeId,
   EdgeId,
-  Instant,
   PropertyValue,
+  createNodeId,
+  createEdgeId,
+  createInstant,
+  asNodeId,
+  asEdgeId,
+  asTypeId
 } from '@canopy/types';
 import {
   NodeSchema,
   EdgeSchema,
+  PropertyValueSchema,
+  TemporalMetadataSchema,
 } from '@canopy/schema';
 
 // Helper types for storage (Plain Objects)
@@ -23,6 +30,26 @@ interface StorableNode extends Omit<Node, 'properties'> {
 interface StorableEdge extends Omit<Edge, 'properties'> {
   properties: StorableProperties;
 }
+
+// Zod schemas for Storable types
+const StorablePropertiesSchema = z.record(z.string(), PropertyValueSchema);
+
+const StorableNodeSchema: z.ZodType<StorableNode, z.ZodTypeDef, unknown> = z.object({
+    id: z.string().transform(val => asNodeId(val)),
+    type: z.string().transform(val => asTypeId(val)),
+    properties: StorablePropertiesSchema,
+    metadata: TemporalMetadataSchema
+});
+
+const StorableEdgeSchema: z.ZodType<StorableEdge, z.ZodTypeDef, unknown> = z.object({
+    id: z.string().transform(val => asEdgeId(val)),
+    type: z.string().transform(val => asTypeId(val)),
+    source: z.string().transform(val => asNodeId(val)),
+    target: z.string().transform(val => asNodeId(val)),
+    properties: StorablePropertiesSchema,
+    metadata: TemporalMetadataSchema
+});
+
 
 // Converters
 const propertiesToStorable = (props: ReadonlyMap<string, PropertyValue>): StorableProperties => {
@@ -41,8 +68,8 @@ const nodeToStorable = (node: Node): StorableNode => {
 };
 
 const storableToNode = (storable: unknown): Node => {
-    // We trust Yjs stores what we put in, but types are loose
-    const n = storable as StorableNode;
+    // Validate that the stored object matches the expected schema
+    const n = StorableNodeSchema.parse(storable);
     return {
         ...n,
         properties: storableToProperties(n.properties)
@@ -57,13 +84,12 @@ const edgeToStorable = (edge: Edge): StorableEdge => {
 };
 
 const storableToEdge = (storable: unknown): Edge => {
-    const e = storable as StorableEdge;
+    const e = StorableEdgeSchema.parse(storable);
     return {
         ...e,
         properties: storableToProperties(e.properties)
     };
 };
-
 
 export class GraphStore {
   doc: Y.Doc;
@@ -81,9 +107,18 @@ export class GraphStore {
       id?: string;
     }
   ): Node {
-    const now = new Date().toISOString() as Instant;
+    const now = createInstant();
+
+    // Validate or generate ID safely
+    let id: NodeId;
+    if (data.id) {
+        id = asNodeId(data.id);
+    } else {
+        id = createNodeId();
+    }
+
     const node: Node = {
-      id: (data.id || uuidv4()) as NodeId,
+      id,
       type: data.type,
       properties: data.properties,
       metadata: {
@@ -116,7 +151,7 @@ export class GraphStore {
       throw new Error(`Node ${id} not found`);
     }
 
-    const now = new Date().toISOString() as Instant;
+    const now = createInstant();
     const updated: Node = {
       ...existing,
       ...partial,
@@ -152,9 +187,16 @@ export class GraphStore {
       throw new Error(`Target node ${data.target} not found`);
     }
 
-    const now = new Date().toISOString() as Instant;
+    const now = createInstant();
+    let id: EdgeId;
+    if (data.id) {
+        id = asEdgeId(data.id);
+    } else {
+        id = createEdgeId();
+    }
+
     const edge: Edge = {
-      id: (data.id || uuidv4()) as EdgeId,
+      id,
       source: data.source,
       target: data.target,
       type: data.type,
@@ -189,7 +231,7 @@ export class GraphStore {
           throw new Error(`Edge ${id} not found`);
       }
 
-      const now = new Date().toISOString() as Instant;
+      const now = createInstant();
       const updated: Edge = {
           ...existing,
           ...partial,

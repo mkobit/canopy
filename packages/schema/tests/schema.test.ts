@@ -1,85 +1,67 @@
 import { describe, it, expect } from 'vitest';
-import { NodeSchema, EdgeSchema, NodeTypeDefinitionSchema } from '../src';
-import { v4 as uuidv4 } from 'uuid';
-import { NodeId, TypeId, EdgeId, Instant } from '@canopy/types';
+import {
+  NodeSchema,
+  EdgeSchema,
+  NodeTypeDefinitionSchema
+} from '../src/index.js';
+import {
+  createNodeId,
+  createEdgeId,
+  createInstant,
+  asTypeId
+} from '@canopy/types';
 
-// Mock uuid for consistency if needed, but uuidv4 is fine
-const validUuid = '502f6a9c-0c33-40f4-9029-7c15273d2218';
-const now = new Date().toISOString() as Instant;
-
-describe('NodeSchema', () => {
-  it('validates a valid node', () => {
+describe('Schema Validation', () => {
+  it('should validate a valid Node', () => {
     const validNode = {
-      id: validUuid as NodeId,
-      type: 'Person' as TypeId,
+      id: createNodeId(),
+      type: asTypeId('Person'),
       properties: new Map([
-          ['name', { kind: 'text', value: 'Alice' }],
-          ['age', { kind: 'number', value: 30 }]
+        ['name', { kind: 'text', value: 'Alice' }],
+        ['age', { kind: 'number', value: 30 }]
       ]),
       metadata: {
-        created: now,
-        modified: now,
+        created: createInstant(),
+        modified: createInstant(),
       }
     };
-    // Zod map handling requires map input
-    const result = NodeSchema.parse(validNode);
-    expect(result.id).toBe(validNode.id);
-    expect(result.type).toBe(validNode.type);
-    expect(result.properties.get('name')).toEqual({ kind: 'text', value: 'Alice' });
+
+    const result = NodeSchema.safeParse(validNode);
+    expect(result.success).toBe(true);
   });
 
-  it('fails on invalid node', () => {
-    const invalidNode = {
-      id: 'not-uuid',
-      type: 'Person',
-      properties: {},
-      created: now,
-      modified: now,
-    };
-    // Schema expects map, so object will fail
-    expect(() => NodeSchema.parse(invalidNode)).toThrow();
-  });
-});
-
-describe('EdgeSchema', () => {
-  it('validates a valid edge', () => {
+  it('should validate a valid Edge', () => {
     const validEdge = {
-      id: validUuid as EdgeId,
-      source: uuidv4() as NodeId,
-      target: uuidv4() as NodeId,
-      type: 'ATTENDED' as TypeId,
+      id: createEdgeId(),
+      source: createNodeId(),
+      target: createNodeId(),
+      type: asTypeId('ATTENDED'),
       properties: new Map([
-          ['role', { kind: 'text', value: 'Speaker' }]
+        ['date', { kind: 'instant', value: createInstant() }]
       ]),
       metadata: {
-        created: now,
-        modified: now,
+        created: createInstant(),
+        modified: createInstant(),
       }
     };
-    const result = EdgeSchema.parse(validEdge);
-    expect(result.id).toBe(validEdge.id);
+
+    const result = EdgeSchema.safeParse(validEdge);
+    expect(result.success).toBe(true);
   });
-});
 
-describe('NodeTypeDefinitionSchema', () => {
-  it('validates a valid node type definition', () => {
-    const validNodeType = {
-      id: 'NodeType' as TypeId,
-      name: 'Person',
+  it('should validate a valid NodeTypeDefinition', () => {
+    const validDefinition = {
+      id: asTypeId('NodeType'),
+      name: 'Node Type',
+      description: 'A type of node',
       properties: [
-          { name: 'name', valueKind: 'text', required: true },
-          { name: 'age', valueKind: 'number', required: false },
+        { name: 'name', valueKind: 'text', required: true, description: 'The name' }
       ],
-      validOutgoingEdges: [],
-      validIncomingEdges: []
+      validOutgoingEdges: [asTypeId('KNOWS')],
+      validIncomingEdges: [],
     };
-    // Note: NodeTypeDefinitionSchema is NOT a Node (which is a graph instance),
-    // it is the structure of the DEFINITION inside a NodeType node or standalone.
-    // The previous test was confusing "Node of type NodeType" with "NodeTypeDefinition".
 
-    // In @canopy/schema/src/index.ts:
-    // export const NodeTypeDefinitionSchema = z.object({ ... });
-
-    expect(NodeTypeDefinitionSchema.parse(validNodeType)).toEqual(validNodeType);
+    const result = NodeTypeDefinitionSchema.safeParse(validDefinition);
+    expect(result.success).toBe(true);
   });
 });

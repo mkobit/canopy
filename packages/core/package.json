@@ -10,10 +10,11 @@
   },
   "dependencies": {
     "@canopy/schema": "workspace:*",
-    "@canopy/types": "workspace:*",
     "@canopy/sync": "workspace:*",
+    "@canopy/types": "workspace:*",
     "@types/uuid": "^11.0.0",
     "uuid": "^13.0.0",
-    "yjs": "^13.0.0"
+    "yjs": "^13.0.0",
+    "zod": "^3.25.76"
   }
 }
