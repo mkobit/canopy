@@ -1,26 +1,26 @@
 # @canopy/core
 
-This package implements the core graph engine, including node/edge management and CRDT integration.
+This package implements the core graph engine, providing a functional, immutable API for graph operations.
 
 ## Code Navigation
 
-Graph store logic is in `src/store/graph-store.ts`.
+Core graph logic is in `src/graph.ts`.
+Query and traversal functions are in `src/query.ts`.
 Main entry point is `src/index.ts`.
 
 ## Architectural Invariants
 
-The `GraphStore` class is the sole owner of the graph state.
-Mutations are performed via methods that return new immutable objects.
-CRDT integration is handled internally via `@canopy/sync`.
+All functions are pure and stateless.
+They take a `Graph` object and return a new `Graph` object (immutability).
+No internal mutable state is maintained.
+The `Graph` type from `@canopy/types` is the primary data structure.
 
 ## Dependencies
 
 `@canopy/types` for domain types.
-`@canopy/schema` for runtime validation.
-`@canopy/sync` for CRDT capabilities.
-`yjs` and `uuid` for implementation details.
+`@canopy/schema` for runtime validation (optional).
 
 ## Testing Approach
 
-Unit tests cover graph operations (add, update, delete) and validation logic.
+Unit tests verify that operations return new graph instances and do not mutate the original.
 Tests run using `vitest` via `pnpm test`.

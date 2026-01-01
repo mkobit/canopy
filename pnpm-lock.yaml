@@ -137,24 +137,16 @@ importers:
       '@canopy/schema':
         specifier: workspace:*
         version: link:../schema
-      '@canopy/sync':
-        specifier: workspace:*
-        version: link:../sync
       '@canopy/types':
         specifier: workspace:*
         version: link:../types
-      '@types/uuid':
-        specifier: ^11.0.0
-        version: 11.0.0
       uuid:
         specifier: ^13.0.0
         version: 13.0.0
-      yjs:
-        specifier: ^13.0.0
-        version: 13.6.28
-      zod:
-        specifier: ^3.25.76
-        version: 3.25.76
+    devDependencies:
+      '@types/uuid':
+        specifier: ^11.0.0
+        version: 11.0.0
 
   packages/query:
     dependencies:
@@ -212,13 +204,25 @@ importers:
 
   packages/sync:
     dependencies:
+      '@canopy/schema':
+        specifier: workspace:*
+        version: link:../schema
       '@canopy/types':
         specifier: workspace:*
         version: link:../types
+      uuid:
+        specifier: ^11.0.0
+        version: 11.1.0
       yjs:
         specifier: ^13.6.14
         version: 13.6.28
+      zod:
+        specifier: ^3.24.1
+        version: 3.25.76
     devDependencies:
+      '@types/uuid':
+        specifier: ^10.0.0
+        version: 10.0.0
       typescript:
         specifier: 5.7.2
         version: 5.7.2
@@ -737,6 +741,9 @@ packages:
 
   '@types/responselike@1.0.3':
     resolution: {integrity: sha512-H/+L+UkTV33uf49PH5pCAUBVPNj2nDBXTN+qS1dOwyyg24l3CcicicCA7ca+HMvJBZcFgl5r8e+RR6elsb4Lyw==}
+
+  '@types/uuid@10.0.0':
+    resolution: {integrity: sha512-7gqG38EyHgyP1S+7+xomFtL+ZNHcKv6DwNaCZmJmo1vgMugyF3TCnXVg4t1uk89mLNwnLtnY3TpOpCOyp1/xHQ==}
 
   '@types/uuid@11.0.0':
     resolution: {integrity: sha512-HVyk8nj2m+jcFRNazzqyVKiZezyhDKrGUA3jlEcg/nZ6Ms+qHwocba1Y/AaVaznJTAM9xpdFSh+ptbNrhOGvZA==}
@@ -1852,6 +1859,10 @@ packages:
   uri-js@4.4.1:
     resolution: {integrity: sha512-7rKUyy33Q1yc98pQ1DAmLtwX109F7TIfWlW1Ydo8Wl1ii1SeHieeh0HHfPeL2fMXK6z0s8ecKs9frCuLJvndBg==}
 
+  uuid@11.1.0:
+    resolution: {integrity: sha512-0/A9rDy9P7cJ+8w1c9WD9V//9Wj15Ce2MPz8Ri6032usz+NfePxx5AcN3bN+r6ZL6jEo066/yNYB3tn4pQEx+A==}
+    hasBin: true
+
   uuid@13.0.0:
     resolution: {integrity: sha512-XQegIaBTVUjSHliKqcnFqYypAd4S+WCYt5NIeRs6w/UAry7z8Y9j5ZwRRL4kzq9U3sD6v+85er9FvkEaBpji2w==}
     hasBin: true
@@ -2379,6 +2390,8 @@ snapshots:
   '@types/responselike@1.0.3':
     dependencies:
       '@types/node': 22.19.3
+
+  '@types/uuid@10.0.0': {}
 
   '@types/uuid@11.0.0':
     dependencies:
@@ -3583,6 +3596,8 @@ snapshots:
   uri-js@4.4.1:
     dependencies:
       punycode: 2.3.1
+
+  uuid@11.1.0: {}
 
   uuid@13.0.0: {}
 

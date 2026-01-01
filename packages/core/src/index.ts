@@ -1,1 +1,2 @@
-export * from './store/graph-store';
+export * from './graph.js'
+export * from './query.js'

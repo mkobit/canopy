@@ -1,4 +1,5 @@
 import * as Y from 'yjs';
+export * from './store/graph-store.js';
 
 export class SyncEngine {
   readonly doc: Y.Doc;
