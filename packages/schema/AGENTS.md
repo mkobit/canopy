@@ -1,22 +1,12 @@
-# @canopy/schema
+This package provides runtime validation and constructors for domain types using Zod.
+It includes:
+- Branded type constructors (e.g., `createNodeId`).
+- Type guards (e.g., `isNode`).
+- Zod schemas for all domain types.
+- Property map utilities.
 
-This package defines Zod schemas for runtime validation of Canopy types.
-
-## Code Navigation
-
-Schemas are defined in `src/index.ts` and correspond to types in `@canopy/types`.
-
-## Architectural Invariants
-
-Schemas must strictly match the types defined in `@canopy/types`.
-Validation functions must be pure and stateless.
-
-## Dependencies
-
-`@canopy/types` for type definitions.
-`zod` for schema definition and validation.
-
-## Testing Approach
-
-Tests verify that valid data passes validation and invalid data fails.
-Run tests using `pnpm test`.
+Navigation:
+- `src/constructors.ts`: Factories for branded types.
+- `src/guards.ts`: Type guards for discriminated unions.
+- `src/schemas.ts`: Zod schemas bridging runtime data to compile-time types.
+- `src/properties.ts`: Utilities for PropertyMap.
