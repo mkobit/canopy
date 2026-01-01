@@ -19,6 +19,7 @@ pnpm list -r --depth 1
 4.  `@canopy/query` is isolated to enable swapping Cypher for ISO GQL later.
 5.  UI components are stateless—`@canopy/ui` receives data via props, does not fetch or mutate.
 6.  Zod schemas in `@canopy/schema` are the source of truth for runtime validation.
+    `@canopy/schema` also provides strict constructors and type guards for domain types.
 7.  All type properties are `readonly`.
 8.  No mutations—functions return new values, never modify arguments.
 9.  No raw primitives in domain types—use branded types and domain-specific wrappers.
