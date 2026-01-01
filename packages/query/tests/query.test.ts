@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { GraphQuery } from '../src/index.js';
 import { GraphStore } from '@canopy/core';
 import * as Y from 'yjs';
-import { NodeId, EdgeId, TypeId, createNodeId, createEdgeId, asTypeId, asNodeId, asEdgeId } from '@canopy/types';
+import { createNodeId, createEdgeId, asTypeId } from '@canopy/types';
 
 describe('GraphQuery', () => {
   let doc: Y.Doc;

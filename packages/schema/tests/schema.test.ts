@@ -1,21 +1,14 @@
 import { describe, it, expect } from 'vitest';
-import { z } from 'zod';
 import {
   NodeSchema,
   EdgeSchema,
   NodeTypeDefinitionSchema
 } from '../src/index.js';
 import {
-  NodeId,
-  EdgeId,
-  TypeId,
-  Instant,
   createNodeId,
   createEdgeId,
   createInstant,
-  asTypeId,
-  asNodeId,
-  asEdgeId
+  asTypeId
 } from '@canopy/types';
 
 describe('Schema Validation', () => {

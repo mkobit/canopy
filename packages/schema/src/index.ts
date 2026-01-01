@@ -1,11 +1,7 @@
 import { z } from 'zod';
 import type {
-  NodeId,
-  EdgeId,
-  TypeId,
   Instant,
   PlainDate,
-  GraphId,
   PropertyValue,
   TemporalMetadata,
   Node,

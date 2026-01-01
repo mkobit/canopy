@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { GraphStore } from '../src/store/graph-store.js';
 import * as Y from 'yjs';
-import { NodeId, TypeId, EdgeId, PropertyValue, asTypeId } from '@canopy/types';
+import { PropertyValue, asTypeId } from '@canopy/types';
 
 describe('GraphStore', () => {
   let doc: Y.Doc;
