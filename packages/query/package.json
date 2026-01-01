@@ -9,7 +9,6 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@canopy/core": "workspace:*",
     "@canopy/types": "workspace:*",
     "@canopy/schema": "workspace:*"
   },

@@ -150,9 +150,6 @@ importers:
 
   packages/query:
     dependencies:
-      '@canopy/core':
-        specifier: workspace:*
-        version: link:../core
       '@canopy/schema':
         specifier: workspace:*
         version: link:../schema
