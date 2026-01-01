@@ -3,9 +3,9 @@ import { v4 as uuidv4 } from 'uuid';
 import {
   Node,
   Edge,
-  asNodeId,
-  asEdgeId,
-  asTimestamp,
+  NodeId,
+  EdgeId,
+  Instant,
   PropertyValue,
 } from '@canopy/types';
 import {
@@ -81,9 +81,9 @@ export class GraphStore {
       id?: string;
     }
   ): Node {
-    const now = asTimestamp(new Date().toISOString());
+    const now = new Date().toISOString() as Instant;
     const node: Node = {
-      id: asNodeId(data.id || uuidv4()),
+      id: (data.id || uuidv4()) as NodeId,
       type: data.type,
       properties: data.properties,
       metadata: {
@@ -116,7 +116,7 @@ export class GraphStore {
       throw new Error(`Node ${id} not found`);
     }
 
-    const now = asTimestamp(new Date().toISOString());
+    const now = new Date().toISOString() as Instant;
     const updated: Node = {
       ...existing,
       ...partial,
@@ -152,9 +152,9 @@ export class GraphStore {
       throw new Error(`Target node ${data.target} not found`);
     }
 
-    const now = asTimestamp(new Date().toISOString());
+    const now = new Date().toISOString() as Instant;
     const edge: Edge = {
-      id: asEdgeId(data.id || uuidv4()),
+      id: (data.id || uuidv4()) as EdgeId,
       source: data.source,
       target: data.target,
       type: data.type,
@@ -189,7 +189,7 @@ export class GraphStore {
           throw new Error(`Edge ${id} not found`);
       }
 
-      const now = asTimestamp(new Date().toISOString());
+      const now = new Date().toISOString() as Instant;
       const updated: Edge = {
           ...existing,
           ...partial,

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { GraphStore } from '../src/store/graph-store';
 import * as Y from 'yjs';
-import { asTypeId } from '@canopy/types';
+import { TypeId } from '@canopy/types';
 
 describe('GraphStore', () => {
   let doc: Y.Doc;
@@ -16,7 +16,7 @@ describe('GraphStore', () => {
     // Note: In the new architecture, NodeType is just a Node with type="NodeType"
     // and specific properties.
     const personType = store.addNode({
-      type: asTypeId('NodeType'),
+      type: 'NodeType' as TypeId,
       properties: new Map([
         ['name', { kind: 'text', value: 'Person' }],
       ]),
@@ -32,7 +32,7 @@ describe('GraphStore', () => {
   it('can create a typed node', () => {
     // Create Node
     const alice = store.addNode({
-      type: asTypeId('Person'),
+      type: 'Person' as TypeId,
       properties: new Map([
           ['name', { kind: 'text', value: 'Alice' }],
           ['age', { kind: 'number', value: 30 }]
@@ -59,7 +59,7 @@ describe('GraphStore', () => {
 
       // Create node in store1
       const created = store1.addNode({
-          type: asTypeId('Note'),
+          type: 'Note' as TypeId,
           properties: new Map([
               ['content', { kind: 'text', value: 'Hello World' }]
           ])

@@ -24,9 +24,32 @@ export class GraphQuery {
                 break;
             }
              // Simple value check - this needs to be robust for PropertyValue union
-            if (prop.kind !== value.kind || prop.value !== value.value) {
+            if (prop.kind !== value.kind) {
               match = false;
               break;
+            }
+            if (prop.kind === 'reference' && value.kind === 'reference') {
+               if (prop.target !== value.target) {
+                   match = false;
+                   break;
+               }
+            } else if (prop.kind === 'external-reference' && value.kind === 'external-reference') {
+                if (prop.target !== value.target || prop.graph !== value.graph) {
+                    match = false;
+                    break;
+                }
+            } else if (prop.kind === 'list' && value.kind === 'list') {
+                // Shallow comparison for lists not implemented in this simple query engine yet
+                // Skipping for now or implementing strict equality if refs match
+                if (prop !== value) { // Fallback
+                     match = false;
+                     break;
+                }
+            } else if ('value' in prop && 'value' in value) {
+                 if (prop.value !== value.value) {
+                    match = false;
+                    break;
+                 }
             }
           }
           if (match) nodes.push(node);
@@ -54,9 +77,30 @@ export class GraphQuery {
                         match = false;
                         break;
                     }
-                    if (prop.kind !== value.kind || prop.value !== value.value) {
+                    if (prop.kind !== value.kind) {
                         match = false;
                         break;
+                    }
+                    if (prop.kind === 'reference' && value.kind === 'reference') {
+                       if (prop.target !== value.target) {
+                           match = false;
+                           break;
+                       }
+                    } else if (prop.kind === 'external-reference' && value.kind === 'external-reference') {
+                        if (prop.target !== value.target || prop.graph !== value.graph) {
+                            match = false;
+                            break;
+                        }
+                    } else if (prop.kind === 'list' && value.kind === 'list') {
+                        if (prop !== value) {
+                             match = false;
+                             break;
+                        }
+                    } else if ('value' in prop && 'value' in value) {
+                         if (prop.value !== value.value) {
+                            match = false;
+                            break;
+                         }
                     }
                 }
              }
