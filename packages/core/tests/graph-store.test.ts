@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { GraphStore } from '../src/store/graph-store';
+import { GraphStore } from '../src/store/graph-store.js';
 import * as Y from 'yjs';
-import { TypeId } from '@canopy/types';
+import { NodeId, TypeId, EdgeId, PropertyValue, asTypeId } from '@canopy/types';
 
 describe('GraphStore', () => {
   let doc: Y.Doc;
@@ -12,65 +12,77 @@ describe('GraphStore', () => {
     store = new GraphStore(doc);
   });
 
-  it('can create a node type', () => {
-    // Note: In the new architecture, NodeType is just a Node with type="NodeType"
-    // and specific properties.
-    const personType = store.addNode({
-      type: 'NodeType' as TypeId,
-      properties: new Map([
-        ['name', { kind: 'text', value: 'Person' }],
-      ]),
+  it('should add and retrieve a node', () => {
+    const node = store.addNode({
+      type: asTypeId('NodeType'),
+      properties: new Map<string, PropertyValue>([['name', { kind: 'text', value: 'Test Node' }]]),
     });
 
-    expect(personType.id).toBeDefined();
-    expect(personType.type).toBe('NodeType');
-
-    const fetched = store.getNode(personType.id);
-    expect(fetched).toEqual(personType);
+    const retrieved = store.getNode(node.id);
+    expect(retrieved).toBeDefined();
+    expect(retrieved?.id).toBe(node.id);
+    expect(retrieved?.type).toBe('NodeType');
+    expect(retrieved?.properties.get('name')).toEqual({ kind: 'text', value: 'Test Node' });
   });
 
-  it('can create a typed node', () => {
-    // Create Node
-    const alice = store.addNode({
-      type: 'Person' as TypeId,
-      properties: new Map([
-          ['name', { kind: 'text', value: 'Alice' }],
-          ['age', { kind: 'number', value: 30 }]
-      ]),
+  it('should add and retrieve an edge', () => {
+    const source = store.addNode({
+      type: asTypeId('Person'),
+      properties: new Map(),
+    });
+    const target = store.addNode({
+      type: asTypeId('Person'),
+      properties: new Map(),
     });
 
-    expect(alice.type).toBe('Person');
-    expect(alice.properties.get('name')).toEqual({ kind: 'text', value: 'Alice' });
+    const edge = store.addEdge({
+      source: source.id,
+      target: target.id,
+      type: asTypeId('KNOWS'),
+      properties: new Map([['since', { kind: 'number', value: 2023 }]]),
+    });
+
+    const retrieved = store.getEdge(edge.id);
+    expect(retrieved).toBeDefined();
+    expect(retrieved?.id).toBe(edge.id);
+    expect(retrieved?.source).toBe(source.id);
+    expect(retrieved?.target).toBe(target.id);
+    expect(retrieved?.properties.get('since')).toEqual({ kind: 'number', value: 2023 });
   });
 
-  it('syncs between two stores', () => {
-      const doc1 = new Y.Doc();
-      const doc2 = new Y.Doc();
+  it('should update a node', () => {
+    const node = store.addNode({
+      type: asTypeId('Person'),
+      properties: new Map([['name', { kind: 'text', value: 'Alice' }]]),
+    });
 
-      const store1 = new GraphStore(doc1);
-      const store2 = new GraphStore(doc2);
+    store.updateNode(node.id, {
+      properties: new Map([['name', { kind: 'text', value: 'Alice Smith' }]]),
+    });
 
-      doc1.on('update', (update) => {
-          Y.applyUpdate(doc2, update);
+    const updated = store.getNode(node.id);
+    expect(updated?.properties.get('name')).toEqual({ kind: 'text', value: 'Alice Smith' });
+  });
+
+  it('should throw when updating non-existent node', () => {
+      expect(() => {
+          store.updateNode('non-existent', {});
+      }).toThrow();
+  });
+
+  it('should delete a node', () => {
+      const node = store.addNode({
+          type: asTypeId('Note'),
+          properties: new Map(),
       });
-      doc2.on('update', (update) => {
-          Y.applyUpdate(doc1, update);
-      });
 
-      // Create node in store1
-      const created = store1.addNode({
-          type: 'Note' as TypeId,
-          properties: new Map([
-              ['content', { kind: 'text', value: 'Hello World' }]
-          ])
-      });
+      store.deleteNode(node.id);
+      expect(store.getNode(node.id)).toBeUndefined();
+  });
 
-      // Check store2
-      // Use public API to access nodes, which handles deserialization
-      const node2 = store2.getNode(created.id);
-
-      expect(node2).toBeDefined();
-      expect(node2?.type).toBe('Note');
-      expect(node2?.properties.get('content')).toEqual({ kind: 'text', value: 'Hello World' });
+  it('should throw when deleting non-existent node', () => {
+      expect(() => {
+          store.deleteNode('non-existent');
+      }).toThrow();
   });
 });

@@ -9,6 +9,10 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
+    "@types/uuid": "^11.0.0",
     "typescript": "5.7.2"
+  },
+  "dependencies": {
+    "uuid": "^13.0.0"
   }
 }

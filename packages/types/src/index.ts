@@ -54,3 +54,16 @@ export type {
   Graph,
   QueryResult,
 } from './graph.js'
+
+export {
+    createNodeId,
+    createEdgeId,
+    asTypeId,
+    createGraphId,
+    asGraphId,
+    createInstant,
+    asInstant,
+    asPlainDate,
+    asNodeId,
+    asEdgeId
+} from './factories.js';

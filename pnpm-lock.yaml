@@ -76,19 +76,6 @@ importers:
         specifier: 1.6.0
         version: 1.6.0(@types/node@22.19.3)
 
-  apps/desktop:
-    dependencies:
-      '@canopy/web':
-        specifier: workspace:*
-        version: link:../web
-      electron:
-        specifier: ^28.3.3
-        version: 28.3.3
-    devDependencies:
-      typescript:
-        specifier: 5.7.2
-        version: 5.7.2
-
   apps/web:
     dependencies:
       '@canopy/core':
@@ -165,6 +152,9 @@ importers:
       yjs:
         specifier: ^13.0.0
         version: 13.6.28
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
 
   packages/query:
     dependencies:
@@ -237,7 +227,14 @@ importers:
         version: 1.6.0(@types/node@25.0.3)
 
   packages/types:
+    dependencies:
+      uuid:
+        specifier: ^13.0.0
+        version: 13.0.0
     devDependencies:
+      '@types/uuid':
+        specifier: ^11.0.0
+        version: 11.0.0
       typescript:
         specifier: 5.7.2
         version: 5.7.2
