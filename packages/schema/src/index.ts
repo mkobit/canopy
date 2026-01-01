@@ -1,68 +1,94 @@
 import { z } from 'zod';
-import {
-  asNodeId,
-  asEdgeId,
-  asTypeId,
-  asTimestamp
+import type {
+  NodeId,
+  EdgeId,
+  TypeId,
+  Instant,
+  PlainDate,
+  GraphId,
+  PropertyValue,
+  TemporalMetadata,
+  Node,
+  Edge,
+  NodeTypeDefinition,
+  EdgeTypeDefinition,
+  PropertyDefinition
 } from '@canopy/types';
 
 // Zod schemas corresponding to types in @canopy/types
 
-export const TimestampSchema = z.string().datetime().transform(val => asTimestamp(val));
+export const InstantSchema: z.ZodType<Instant, z.ZodTypeDef, any> = z.string().datetime().transform(val => val as Instant);
+export const PlainDateSchema: z.ZodType<PlainDate, z.ZodTypeDef, any> = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).transform(val => val as PlainDate);
 
-export const PropertyValueSchema = z.discriminatedUnion('kind', [
+// Backward compatibility alias if needed, but 'Instant' is preferred
+export const TimestampSchema = InstantSchema;
+
+export const PropertyValueSchema: z.ZodType<PropertyValue, z.ZodTypeDef, any> = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('text'), value: z.string() }),
   z.object({ kind: z.literal('number'), value: z.number() }),
   z.object({ kind: z.literal('boolean'), value: z.boolean() }),
-  z.object({ kind: z.literal('timestamp'), value: TimestampSchema }),
-  z.object({ kind: z.literal('reference'), value: z.string().transform(val => asNodeId(val)) }),
+  z.object({ kind: z.literal('instant'), value: InstantSchema }),
+  z.object({ kind: z.literal('plain-date'), value: PlainDateSchema }),
+  z.object({ kind: z.literal('reference'), target: z.string().transform(val => val as NodeId) }),
+  z.object({ kind: z.literal('external-reference'), graph: z.string().transform(val => val as GraphId), target: z.string().transform(val => val as NodeId) }),
   // Recursive definition for list needs lazy evaluation if deep, but for now strict structure
-  z.object({ kind: z.literal('list'), value: z.array(z.any()) }) // Simplifying for recursion
+  z.object({ kind: z.literal('list'), items: z.array(z.any()) }) // Changed value -> items to match types
 ]);
 
-export const PropertyDefinitionSchema = z.object({
+export const PropertyDefinitionSchema: z.ZodType<PropertyDefinition, z.ZodTypeDef, any> = z.object({
   name: z.string(),
-  valueKind: z.enum(['text', 'number', 'boolean', 'timestamp', 'reference', 'list']),
+  valueKind: z.enum(['text', 'number', 'boolean', 'instant', 'plain-date', 'reference', 'external-reference', 'list']),
   required: z.boolean(),
   description: z.string().optional(),
+}).transform(val => ({
+  ...val,
+  description: val.description
+}));
+
+export const TemporalMetadataSchema: z.ZodType<TemporalMetadata, z.ZodTypeDef, any> = z.object({
+  created: InstantSchema,
+  modified: InstantSchema,
 });
 
-export const TemporalMetadataSchema = z.object({
-  created: TimestampSchema,
-  modified: TimestampSchema,
-});
-
-export const NodeSchema = z.object({
-  id: z.string().transform(val => asNodeId(val)),
-  type: z.string().transform(val => asTypeId(val)),
+export const NodeSchema: z.ZodType<Node, z.ZodTypeDef, any> = z.object({
+  id: z.string().transform(val => val as NodeId),
+  type: z.string().transform(val => val as TypeId),
   properties: z.map(z.string(), PropertyValueSchema),
   metadata: TemporalMetadataSchema
 });
 
-export const EdgeSchema = z.object({
-  id: z.string().transform(val => asEdgeId(val)),
-  type: z.string().transform(val => asTypeId(val)),
-  source: z.string().transform(val => asNodeId(val)),
-  target: z.string().transform(val => asNodeId(val)),
+export const EdgeSchema: z.ZodType<Edge, z.ZodTypeDef, any> = z.object({
+  id: z.string().transform(val => val as EdgeId),
+  type: z.string().transform(val => val as TypeId),
+  source: z.string().transform(val => val as NodeId),
+  target: z.string().transform(val => val as NodeId),
   properties: z.map(z.string(), PropertyValueSchema),
   metadata: TemporalMetadataSchema
 });
 
-export const NodeTypeDefinitionSchema = z.object({
-  id: z.string().transform(val => asTypeId(val)),
+export const NodeTypeDefinitionSchema: z.ZodType<NodeTypeDefinition, z.ZodTypeDef, any> = z.object({
+  id: z.string().transform(val => val as TypeId),
   name: z.string(),
+  description: z.string().optional(),
   properties: z.array(PropertyDefinitionSchema),
-  validOutgoingEdges: z.array(z.string().transform(val => asTypeId(val))),
-  validIncomingEdges: z.array(z.string().transform(val => asTypeId(val))),
-});
+  validOutgoingEdges: z.array(z.string().transform(val => val as TypeId)),
+  validIncomingEdges: z.array(z.string().transform(val => val as TypeId)),
+}).transform(val => ({
+  ...val,
+  description: val.description
+}));
 
-export const EdgeTypeDefinitionSchema = z.object({
-  id: z.string().transform(val => asTypeId(val)),
+export const EdgeTypeDefinitionSchema: z.ZodType<EdgeTypeDefinition, z.ZodTypeDef, any> = z.object({
+  id: z.string().transform(val => val as TypeId),
   name: z.string(),
-  sourceTypes: z.array(z.string().transform(val => asTypeId(val))),
-  targetTypes: z.array(z.string().transform(val => asTypeId(val))),
+  description: z.string().optional(),
+  sourceTypes: z.array(z.string().transform(val => val as TypeId)),
+  targetTypes: z.array(z.string().transform(val => val as TypeId)),
   properties: z.array(PropertyDefinitionSchema),
   transitive: z.boolean(),
-  symmetric: z.boolean(),
-  inverse: z.string().transform(val => asTypeId(val)).optional(),
-});
+  inverse: z.string().transform(val => val as TypeId).optional(),
+}).transform(val => ({
+  ...val,
+  description: val.description,
+  inverse: val.inverse
+}));

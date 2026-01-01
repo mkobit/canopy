@@ -1,7 +1,7 @@
-declare const nodeIdBrand: unique symbol
-declare const edgeIdBrand: unique symbol
-declare const typeIdBrand: unique symbol
-declare const graphIdBrand: unique symbol
+export declare const nodeIdBrand: unique symbol
+export declare const edgeIdBrand: unique symbol
+export declare const typeIdBrand: unique symbol
+export declare const graphIdBrand: unique symbol
 
 /**
  * Unique identifier for a node within a graph.

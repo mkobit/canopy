@@ -1,9 +1,21 @@
+export {
+  nodeIdBrand,
+  edgeIdBrand,
+  typeIdBrand,
+  graphIdBrand,
+} from './identifiers.js'
+
 export type {
   NodeId,
   EdgeId,
   TypeId,
   GraphId,
 } from './identifiers.js'
+
+export {
+  instantBrand,
+  plainDateBrand,
+} from './temporal.js'
 
 export type {
   Instant,

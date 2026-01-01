@@ -1,16 +1,17 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { NodeView } from '@canopy/ui';
-import { Node, asNodeId, asTimestamp, asTypeId } from '@canopy/types';
+import { Node, NodeId, Instant, TypeId } from '@canopy/types';
 
 const App = () => {
+  const now = new Date().toISOString() as Instant;
   const node: Node = {
-    id: asNodeId('502f6a9c-0c33-40f4-9029-7c15273d2218'),
-    type: asTypeId('Person'),
+    id: '502f6a9c-0c33-40f4-9029-7c15273d2218' as NodeId,
+    type: 'Person' as TypeId,
     properties: new Map([['name', { kind: 'text', value: 'Alice' }]]),
     metadata: {
-      created: asTimestamp(new Date().toISOString()),
-      modified: asTimestamp(new Date().toISOString()),
+      created: now,
+      modified: now,
     }
   };
 

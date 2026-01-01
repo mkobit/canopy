@@ -1,5 +1,5 @@
-declare const instantBrand: unique symbol
-declare const plainDateBrand: unique symbol
+export declare const instantBrand: unique symbol
+export declare const plainDateBrand: unique symbol
 
 /**
  * An absolute point in time, stored as ISO 8601 string.

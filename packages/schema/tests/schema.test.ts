@@ -1,24 +1,24 @@
 import { describe, it, expect } from 'vitest';
 import { NodeSchema, EdgeSchema, NodeTypeDefinitionSchema } from '../src';
 import { v4 as uuidv4 } from 'uuid';
-import { asNodeId, asTypeId, asTimestamp, asEdgeId } from '@canopy/types';
+import { NodeId, TypeId, EdgeId, Instant } from '@canopy/types';
 
 // Mock uuid for consistency if needed, but uuidv4 is fine
 const validUuid = '502f6a9c-0c33-40f4-9029-7c15273d2218';
-const now = new Date().toISOString();
+const now = new Date().toISOString() as Instant;
 
 describe('NodeSchema', () => {
   it('validates a valid node', () => {
     const validNode = {
-      id: asNodeId(validUuid),
-      type: asTypeId('Person'),
+      id: validUuid as NodeId,
+      type: 'Person' as TypeId,
       properties: new Map([
           ['name', { kind: 'text', value: 'Alice' }],
           ['age', { kind: 'number', value: 30 }]
       ]),
       metadata: {
-        created: asTimestamp(now),
-        modified: asTimestamp(now),
+        created: now,
+        modified: now,
       }
     };
     // Zod map handling requires map input
@@ -44,16 +44,16 @@ describe('NodeSchema', () => {
 describe('EdgeSchema', () => {
   it('validates a valid edge', () => {
     const validEdge = {
-      id: asEdgeId(validUuid),
-      source: asNodeId(uuidv4()),
-      target: asNodeId(uuidv4()),
-      type: asTypeId('ATTENDED'),
+      id: validUuid as EdgeId,
+      source: uuidv4() as NodeId,
+      target: uuidv4() as NodeId,
+      type: 'ATTENDED' as TypeId,
       properties: new Map([
           ['role', { kind: 'text', value: 'Speaker' }]
       ]),
       metadata: {
-        created: asTimestamp(now),
-        modified: asTimestamp(now),
+        created: now,
+        modified: now,
       }
     };
     const result = EdgeSchema.parse(validEdge);
@@ -64,7 +64,7 @@ describe('EdgeSchema', () => {
 describe('NodeTypeDefinitionSchema', () => {
   it('validates a valid node type definition', () => {
     const validNodeType = {
-      id: asTypeId('NodeType'),
+      id: 'NodeType' as TypeId,
       name: 'Person',
       properties: [
           { name: 'name', valueKind: 'text', required: true },
