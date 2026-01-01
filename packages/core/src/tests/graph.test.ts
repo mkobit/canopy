@@ -123,4 +123,48 @@ describe('Core Graph Engine', () => {
         expect(getEdgesTo(g, nodeId2)).toHaveLength(1)
         expect(getEdgesTo(g, nodeId1)).toHaveLength(0)
     })
+
+    it('should update edges immutably', () => {
+        let g = addNode(emptyGraph, node1)
+        g = addNode(g, node2)
+
+        const edgeId = createEdgeId()
+        const edge: Edge = {
+            id: edgeId,
+            source: nodeId1,
+            target: nodeId2,
+            type: asTypeId('knows'),
+            properties: new Map(),
+            metadata: { created: createInstant(), modified: createInstant() }
+        }
+        g = addEdge(g, edge)
+
+        const gUpdated = updateEdge(g, edgeId, (e) => ({
+            ...e,
+            properties: new Map([['since', { kind: 'number', value: 2023 }]])
+        }))
+
+        expect(gUpdated.edges.get(edgeId)?.properties.get('since')).toEqual({ kind: 'number', value: 2023 })
+        expect(g.edges.get(edgeId)?.properties.size).toBe(0) // Original unmodified
+    })
+
+    it('should remove edges', () => {
+        let g = addNode(emptyGraph, node1)
+        g = addNode(g, node2)
+
+        const edgeId = createEdgeId()
+        const edge: Edge = {
+            id: edgeId,
+            source: nodeId1,
+            target: nodeId2,
+            type: asTypeId('knows'),
+            properties: new Map(),
+            metadata: { created: createInstant(), modified: createInstant() }
+        }
+        g = addEdge(g, edge)
+
+        const gRemoved = removeEdge(g, edgeId)
+        expect(gRemoved.edges.size).toBe(0)
+        expect(g.edges.size).toBe(1) // Original unmodified
+    })
 })
