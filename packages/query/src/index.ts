@@ -1,16 +1,15 @@
-import { GraphStore } from '@canopy/core';
-import { Node, Edge, PropertyValue } from '@canopy/types';
+import { Graph, Node, Edge, PropertyValue } from '@canopy/types';
 
 export class GraphQuery {
-  private store: GraphStore;
+  private graph: Graph;
 
-  constructor(store: GraphStore) {
-    this.store = store;
+  constructor(graph: Graph) {
+    this.graph = graph;
   }
 
   findNodes(type: string, properties?: Record<string, PropertyValue>): Node[] {
     const nodes: Node[] = [];
-    for (const node of this.store.getAllNodes()) {
+    for (const node of this.graph.nodes.values()) {
       if (node.type === type) {
         if (properties) {
           let match = true;
@@ -63,7 +62,7 @@ export class GraphQuery {
 
   findEdges(type: string, source?: string, target?: string, properties?: Record<string, PropertyValue>): Edge[] {
     const edges: Edge[] = [];
-    for (const edge of this.store.getAllEdges()) {
+    for (const edge of this.graph.edges.values()) {
         if (edge.type === type) {
              let match = true;
 
@@ -113,7 +112,7 @@ export class GraphQuery {
 
   getOutgoingEdges(nodeId: string): Edge[] {
     const edges: Edge[] = [];
-    for (const edge of this.store.getAllEdges()) {
+    for (const edge of this.graph.edges.values()) {
         if (edge.source === nodeId) {
             edges.push(edge);
         }
@@ -123,7 +122,7 @@ export class GraphQuery {
 
   getIncomingEdges(nodeId: string): Edge[] {
     const edges: Edge[] = [];
-    for (const edge of this.store.getAllEdges()) {
+    for (const edge of this.graph.edges.values()) {
         if (edge.target === nodeId) {
             edges.push(edge);
         }
