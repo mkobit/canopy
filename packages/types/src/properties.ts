@@ -13,7 +13,7 @@ export type PropertyValue = ScalarValue | ListValue
  */
 export interface ListValue {
   readonly kind: 'list'
-  readonly items: ReadonlyArray<ScalarValue>
+  readonly items: readonly ScalarValue[]
 }
 
 /**

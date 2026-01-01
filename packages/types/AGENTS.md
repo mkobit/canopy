@@ -20,7 +20,7 @@ All public types are re-exported from `index.ts`.
 ## Architectural invariants
 1. No runtime code—only type definitions using `export type`.
 2. All properties are `readonly`.
-3. All arrays are `ReadonlyArray<T>`.
+3. All arrays are `readonly T[]`.
 4. All maps are `ReadonlyMap<K, V>`.
 5. Branded types use `unique symbol` to prevent mixing identifiers.
 6. Optional properties use explicit `| undefined`, not `?` syntax.

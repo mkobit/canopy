@@ -19,6 +19,6 @@ export interface Graph {
  * Result of a graph query or traversal.
  */
 export interface QueryResult {
-  readonly nodes: ReadonlyArray<Node>
-  readonly edges: ReadonlyArray<Edge>
+  readonly nodes: readonly Node[]
+  readonly edges: readonly Edge[]
 }

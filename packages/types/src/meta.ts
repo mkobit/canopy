@@ -9,9 +9,9 @@ export interface NodeTypeDefinition {
   readonly id: TypeId
   readonly name: string
   readonly description: string | undefined
-  readonly properties: ReadonlyArray<PropertyDefinition>
-  readonly validOutgoingEdges: ReadonlyArray<TypeId>
-  readonly validIncomingEdges: ReadonlyArray<TypeId>
+  readonly properties: readonly PropertyDefinition[]
+  readonly validOutgoingEdges: readonly TypeId[]
+  readonly validIncomingEdges: readonly TypeId[]
 }
 
 /**
@@ -22,9 +22,9 @@ export interface EdgeTypeDefinition {
   readonly id: TypeId
   readonly name: string
   readonly description: string | undefined
-  readonly sourceTypes: ReadonlyArray<TypeId>
-  readonly targetTypes: ReadonlyArray<TypeId>
-  readonly properties: ReadonlyArray<PropertyDefinition>
+  readonly sourceTypes: readonly TypeId[]
+  readonly targetTypes: readonly TypeId[]
+  readonly properties: readonly PropertyDefinition[]
   readonly transitive: boolean
   readonly inverse: TypeId | undefined
 }
