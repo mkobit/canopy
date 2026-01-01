@@ -17,13 +17,13 @@ import type {
 
 // Zod schemas corresponding to types in @canopy/types
 
-export const InstantSchema: z.ZodType<Instant, z.ZodTypeDef, any> = z.string().datetime().transform(val => val as Instant);
-export const PlainDateSchema: z.ZodType<PlainDate, z.ZodTypeDef, any> = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).transform(val => val as PlainDate);
+export const InstantSchema: z.ZodType<Instant, z.ZodTypeDef, unknown> = z.string().datetime().transform(val => val as Instant);
+export const PlainDateSchema: z.ZodType<PlainDate, z.ZodTypeDef, unknown> = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).transform(val => val as PlainDate);
 
 // Backward compatibility alias if needed, but 'Instant' is preferred
 export const TimestampSchema = InstantSchema;
 
-export const PropertyValueSchema: z.ZodType<PropertyValue, z.ZodTypeDef, any> = z.discriminatedUnion('kind', [
+export const PropertyValueSchema: z.ZodType<PropertyValue, z.ZodTypeDef, unknown> = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('text'), value: z.string() }),
   z.object({ kind: z.literal('number'), value: z.number() }),
   z.object({ kind: z.literal('boolean'), value: z.boolean() }),
@@ -35,7 +35,7 @@ export const PropertyValueSchema: z.ZodType<PropertyValue, z.ZodTypeDef, any> = 
   z.object({ kind: z.literal('list'), items: z.array(z.any()) }) // Changed value -> items to match types
 ]);
 
-export const PropertyDefinitionSchema: z.ZodType<PropertyDefinition, z.ZodTypeDef, any> = z.object({
+export const PropertyDefinitionSchema: z.ZodType<PropertyDefinition, z.ZodTypeDef, unknown> = z.object({
   name: z.string(),
   valueKind: z.enum(['text', 'number', 'boolean', 'instant', 'plain-date', 'reference', 'external-reference', 'list']),
   required: z.boolean(),
@@ -45,19 +45,19 @@ export const PropertyDefinitionSchema: z.ZodType<PropertyDefinition, z.ZodTypeDe
   description: val.description
 }));
 
-export const TemporalMetadataSchema: z.ZodType<TemporalMetadata, z.ZodTypeDef, any> = z.object({
+export const TemporalMetadataSchema: z.ZodType<TemporalMetadata, z.ZodTypeDef, unknown> = z.object({
   created: InstantSchema,
   modified: InstantSchema,
 });
 
-export const NodeSchema: z.ZodType<Node, z.ZodTypeDef, any> = z.object({
+export const NodeSchema: z.ZodType<Node, z.ZodTypeDef, unknown> = z.object({
   id: z.string().transform(val => val as NodeId),
   type: z.string().transform(val => val as TypeId),
   properties: z.map(z.string(), PropertyValueSchema),
   metadata: TemporalMetadataSchema
 });
 
-export const EdgeSchema: z.ZodType<Edge, z.ZodTypeDef, any> = z.object({
+export const EdgeSchema: z.ZodType<Edge, z.ZodTypeDef, unknown> = z.object({
   id: z.string().transform(val => val as EdgeId),
   type: z.string().transform(val => val as TypeId),
   source: z.string().transform(val => val as NodeId),
@@ -66,7 +66,7 @@ export const EdgeSchema: z.ZodType<Edge, z.ZodTypeDef, any> = z.object({
   metadata: TemporalMetadataSchema
 });
 
-export const NodeTypeDefinitionSchema: z.ZodType<NodeTypeDefinition, z.ZodTypeDef, any> = z.object({
+export const NodeTypeDefinitionSchema: z.ZodType<NodeTypeDefinition, z.ZodTypeDef, unknown> = z.object({
   id: z.string().transform(val => val as TypeId),
   name: z.string(),
   description: z.string().optional(),
@@ -78,7 +78,7 @@ export const NodeTypeDefinitionSchema: z.ZodType<NodeTypeDefinition, z.ZodTypeDe
   description: val.description
 }));
 
-export const EdgeTypeDefinitionSchema: z.ZodType<EdgeTypeDefinition, z.ZodTypeDef, any> = z.object({
+export const EdgeTypeDefinitionSchema: z.ZodType<EdgeTypeDefinition, z.ZodTypeDef, unknown> = z.object({
   id: z.string().transform(val => val as TypeId),
   name: z.string(),
   description: z.string().optional(),
