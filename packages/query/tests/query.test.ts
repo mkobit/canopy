@@ -1,81 +1,149 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { GraphQuery } from '../src/index.js';
-import { Graph, Node, Edge, createNodeId, createEdgeId, asTypeId, createGraphId, createInstant } from '@canopy/types';
+import {
+  Graph, Node, Edge, PropertyValue,
+  createGraphId, asTypeId, asInstant, asNodeId, asEdgeId, TextValue
+} from '@canopy/types';
+import { query } from '../src/builder.js';
+import { executeQuery } from '../src/engine.js';
 
-// Mock graph creation helper (since we removed dependency on Core's implementation here)
-// Ideally we would depend on @canopy/core to create graph but we want to avoid circular deps if query is low level
-// Or just replicate the simple struct for tests
+// Helper to create a simple mock graph
 function createMockGraph(): Graph {
-    return {
-        id: createGraphId(),
-        name: 'test',
-        metadata: { created: createInstant(), modified: createInstant() },
-        nodes: new Map(),
-        edges: new Map()
-    };
+  const nodes = new Map<string, Node>();
+  const edges = new Map<string, Edge>();
+
+  const createNode = (id: string, type: string, props: Record<string, unknown> = {}) => {
+    const properties = new Map<string, PropertyValue>();
+    for (const [k, v] of Object.entries(props)) {
+      if (typeof v === 'string') properties.set(k, { kind: 'text', value: v });
+      if (typeof v === 'number') properties.set(k, { kind: 'number', value: v });
+      if (typeof v === 'boolean') properties.set(k, { kind: 'boolean', value: v });
+    }
+    nodes.set(id, {
+      id: asNodeId(id),
+      type: asTypeId(type),
+      properties,
+    });
+  };
+
+  const createEdge = (id: string, type: string, source: string, target: string, props: Record<string, unknown> = {}) => {
+     const properties = new Map<string, PropertyValue>();
+     for (const [k, v] of Object.entries(props)) {
+      if (typeof v === 'string') properties.set(k, { kind: 'text', value: v });
+      if (typeof v === 'number') properties.set(k, { kind: 'number', value: v });
+    }
+    edges.set(id, {
+      id: asEdgeId(id),
+      type: asTypeId(type),
+      source: asNodeId(source),
+      target: asNodeId(target),
+      properties,
+    });
+  };
+
+  createNode('1', 'Person', { name: 'Alice', age: 30 });
+  createNode('2', 'Person', { name: 'Bob', age: 25 });
+  createNode('3', 'Person', { name: 'Charlie', age: 35 });
+  createNode('4', 'Organization', { name: 'Acme Corp' });
+
+  createEdge('e1', 'knows', '1', '2', { since: 2020 }); // Alice knows Bob
+  createEdge('e2', 'knows', '2', '1', { since: 2021 }); // Bob knows Alice
+  createEdge('e3', 'works_at', '1', '4'); // Alice works at Acme
+  createEdge('e4', 'works_at', '2', '4'); // Bob works at Acme
+
+  return {
+    id: createGraphId('test-graph'),
+    name: 'Test Graph',
+    metadata: {
+        created: asInstant('2023-01-01T00:00:00Z'),
+        modified: asInstant('2023-01-01T00:00:00Z')
+    },
+    nodes: nodes,
+    edges: edges,
+  };
 }
 
-describe('GraphQuery', () => {
+describe('Query Engine', () => {
   let graph: Graph;
-  let query: GraphQuery;
 
   beforeEach(() => {
     graph = createMockGraph();
-    query = new GraphQuery(graph);
   });
 
-  it('should find nodes by type', () => {
-    const aliceId = createNodeId();
-    const bobId = createNodeId();
-    const proj1Id = createNodeId();
-    const proj2Id = createNodeId();
-
-    const now = createInstant();
-    const meta = { created: now, modified: now };
-
-    // Manually populate graph
-    (graph.nodes as Map<string, Node>).set(aliceId, { id: aliceId, type: asTypeId('Person'), properties: new Map(), metadata: meta });
-    (graph.nodes as Map<string, Node>).set(bobId, { id: bobId, type: asTypeId('Person'), properties: new Map(), metadata: meta });
-    (graph.nodes as Map<string, Node>).set(proj1Id, { id: proj1Id, type: asTypeId('Project'), properties: new Map(), metadata: meta });
-    (graph.nodes as Map<string, Node>).set(proj2Id, { id: proj2Id, type: asTypeId('Project'), properties: new Map(), metadata: meta });
-
-    const people = query.findNodes(asTypeId('Person'));
-    expect(people).toHaveLength(2);
-    expect(people.map(n => n.id)).toContain(aliceId);
-    expect(people.map(n => n.id)).toContain(bobId);
+  it('queries all nodes of a given type', () => {
+    const q = query().nodes('Person').build();
+    const result = executeQuery(graph, q);
+    expect(result.nodes).toHaveLength(3);
+    expect(result.edges).toHaveLength(0);
+    const names = result.nodes.map(n => (n.properties.get('name') as TextValue).value).sort();
+    expect(names).toEqual(['Alice', 'Bob', 'Charlie']);
   });
 
-  it('should find edges by type', () => {
-      const aliceId = createNodeId();
-      const proj1Id = createNodeId();
-      const now = createInstant();
-      const meta = { created: now, modified: now };
+  it('queries nodes where a property equals a value', () => {
+    const q = query().nodes('Person').where('name', 'eq', 'Alice').build();
+    const result = executeQuery(graph, q);
+    expect(result.nodes).toHaveLength(1);
+    expect((result.nodes[0].properties.get('name') as TextValue).value).toBe('Alice');
+  });
 
-      (graph.nodes as Map<string, Node>).set(aliceId, { id: aliceId, type: asTypeId('Person'), properties: new Map(), metadata: meta });
-      (graph.nodes as Map<string, Node>).set(proj1Id, { id: proj1Id, type: asTypeId('Project'), properties: new Map(), metadata: meta });
+  it('queries nodes with comparison operators', () => {
+    const q = query().nodes('Person').where('age', 'gt', 28).build();
+    const result = executeQuery(graph, q);
+    expect(result.nodes).toHaveLength(2); // Alice (30) and Charlie (35)
+    const names = result.nodes.map(n => (n.properties.get('name') as TextValue).value).sort();
+    expect(names).toEqual(['Alice', 'Charlie']);
+  });
 
-      const edge1Id = createEdgeId();
-      const edge2Id = createEdgeId();
+  it('queries edges by type', () => {
+    const q = query().edges('knows').build();
+    const result = executeQuery(graph, q);
+    expect(result.edges).toHaveLength(2);
+    expect(result.nodes).toHaveLength(0);
+  });
 
-      (graph.edges as Map<string, Edge>).set(edge1Id, {
-          id: edge1Id,
-          source: aliceId,
-          target: proj1Id,
-          type: asTypeId('ATTENDED'),
-          properties: new Map(),
-          metadata: meta
-      });
+  it('queries edges from a specific node', () => {
+    const q = query().edges().from('1').build(); // Alice
+    const result = executeQuery(graph, q);
+    expect(result.edges).toHaveLength(2); // knows Bob, works_at Acme
+    const types = result.edges.map(e => e.type).sort();
+    expect(types).toEqual(['knows', 'works_at']);
+  });
 
-       (graph.edges as Map<string, Edge>).set(edge2Id, {
-          id: edge2Id,
-          source: proj1Id,
-          target: aliceId,
-          type: asTypeId('ATTENDED'),
-          properties: new Map(),
-          metadata: meta
-      });
+  it('traverses from a node to connected nodes', () => {
+    // Find people Alice knows
+    // nodes(Person, name=Alice).traverse(knows, out)
+    const q = query()
+      .nodes('Person')
+      .where('name', 'eq', 'Alice')
+      .traverse('knows', 'out')
+      .build();
 
-      const attended = query.findEdges(asTypeId('ATTENDED'));
-      expect(attended).toHaveLength(2);
+    const result = executeQuery(graph, q);
+    expect(result.nodes).toHaveLength(1);
+    expect((result.nodes[0].properties.get('name') as TextValue).value).toBe('Bob');
+    expect((result.nodes[0].properties.get('name') as TextValue).value).toBe('Bob');
+  });
+
+  it('combines multiple predicates', () => {
+    const q = query()
+        .nodes('Person')
+        .where('age', 'gt', 20)
+        .where('age', 'lt', 30)
+        .build();
+    const result = executeQuery(graph, q);
+    expect(result.nodes).toHaveLength(1);
+    expect((result.nodes[0].properties.get('name') as TextValue).value).toBe('Bob');
+  });
+
+  it('sorts results', () => {
+    const q = query().nodes('Person').orderBy('age', 'desc').build();
+    const result = executeQuery(graph, q);
+    const names = result.nodes.map(n => (n.properties.get('name') as TextValue).value);
+    expect(names).toEqual(['Charlie', 'Alice', 'Bob']);
+  });
+
+  it('limits results', () => {
+    const q = query().nodes('Person').limit(2).build();
+    const result = executeQuery(graph, q);
+    expect(result.nodes).toHaveLength(2);
   });
 });

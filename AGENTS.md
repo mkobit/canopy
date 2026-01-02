@@ -41,3 +41,13 @@ Use `readonly` modifiers on all type properties and prefer `ReadonlyArray<T>` or
 Build domain types from the bottom up, avoiding `any` or `Record<string, unknown>`.
 Strict typing is enforced; use branded types for identifiers and `unknown` instead of `any` where appropriate.
 Documentation in `AGENTS.md` files must follow the one-sentence-per-line rule.
+
+## Query Engine (@canopy/query)
+
+The `@canopy/query` package provides a structured execution engine for graph queries.
+It uses an intermediate representation (IR) to define queries, decoupling the builder/parser from execution.
+The API follows a fluent builder pattern for constructing queries programmatically.
+Queries are executed against a `Graph` instance and return a `QueryResult`.
+The engine supports filtering, traversal, sorting, and limiting results.
+Future iterations will introduce a Cypher parser that generates the IR directly.
+This design prepares for a potential migration to ISO GQL without rewriting the execution logic.
