@@ -1,0 +1,20 @@
+
+> @canopy/storage@0.0.0 test /app/packages/storage
+> vitest -- run --reporter=verbose --max-threads=1 --min-threads=1 --no-cache src/storage.test.ts --silent=false
+
+
+ DEV  v1.6.0 /app/packages/storage
+
+ ✓ src/storage.test.ts  (9 tests) 131ms
+
+ Test Files  1 passed (1)
+      Tests  9 passed (9)
+   Start at  02:38:13
+   Duration  898ms (transform 119ms, setup 0ms, collect 178ms, tests 131ms, environment 0ms, prepare 164ms)
+
+
+ PASS  Waiting for file changes...
+       press h to show help, press q to quit
+/app/packages/storage:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @canopy/storage@0.0.0 test: `vitest -- run --reporter=verbose --max-threads=1 --min-threads=1 --no-cache src/storage.test.ts --silent=false`
+Command failed with signal "SIGTERM"
