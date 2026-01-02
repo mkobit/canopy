@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
   Graph, Node, Edge, PropertyValue,
-  createNodeId, createEdgeId, createGraphId, asTypeId, asInstant, asNodeId, asEdgeId
+  createGraphId, asTypeId, asInstant, asNodeId, asEdgeId, TextValue
 } from '@canopy/types';
 import { query } from '../src/builder.js';
 import { executeQuery } from '../src/engine.js';
@@ -11,7 +11,7 @@ function createMockGraph(): Graph {
   const nodes = new Map<string, Node>();
   const edges = new Map<string, Edge>();
 
-  const createNode = (id: string, type: string, props: Record<string, any> = {}) => {
+  const createNode = (id: string, type: string, props: Record<string, unknown> = {}) => {
     const properties = new Map<string, PropertyValue>();
     for (const [k, v] of Object.entries(props)) {
       if (typeof v === 'string') properties.set(k, { kind: 'text', value: v });
@@ -25,7 +25,7 @@ function createMockGraph(): Graph {
     });
   };
 
-  const createEdge = (id: string, type: string, source: string, target: string, props: Record<string, any> = {}) => {
+  const createEdge = (id: string, type: string, source: string, target: string, props: Record<string, unknown> = {}) => {
      const properties = new Map<string, PropertyValue>();
      for (const [k, v] of Object.entries(props)) {
       if (typeof v === 'string') properties.set(k, { kind: 'text', value: v });
@@ -57,8 +57,8 @@ function createMockGraph(): Graph {
         created: asInstant('2023-01-01T00:00:00Z'),
         modified: asInstant('2023-01-01T00:00:00Z')
     },
-    nodes: nodes as any, // Cast to satisfy ReadonlyMap types if needed, or Map is fine
-    edges: edges as any,
+    nodes: nodes,
+    edges: edges,
   };
 }
 
@@ -74,7 +74,7 @@ describe('Query Engine', () => {
     const result = executeQuery(graph, q);
     expect(result.nodes).toHaveLength(3);
     expect(result.edges).toHaveLength(0);
-    const names = result.nodes.map(n => n.properties.get('name')?.['value']).sort();
+    const names = result.nodes.map(n => (n.properties.get('name') as TextValue).value).sort();
     expect(names).toEqual(['Alice', 'Bob', 'Charlie']);
   });
 
@@ -82,14 +82,14 @@ describe('Query Engine', () => {
     const q = query().nodes('Person').where('name', 'eq', 'Alice').build();
     const result = executeQuery(graph, q);
     expect(result.nodes).toHaveLength(1);
-    expect((result.nodes[0].properties.get('name') as any).value).toBe('Alice');
+    expect((result.nodes[0].properties.get('name') as TextValue).value).toBe('Alice');
   });
 
   it('queries nodes with comparison operators', () => {
     const q = query().nodes('Person').where('age', 'gt', 28).build();
     const result = executeQuery(graph, q);
     expect(result.nodes).toHaveLength(2); // Alice (30) and Charlie (35)
-    const names = result.nodes.map(n => (n.properties.get('name') as any).value).sort();
+    const names = result.nodes.map(n => (n.properties.get('name') as TextValue).value).sort();
     expect(names).toEqual(['Alice', 'Charlie']);
   });
 
@@ -119,7 +119,8 @@ describe('Query Engine', () => {
 
     const result = executeQuery(graph, q);
     expect(result.nodes).toHaveLength(1);
-    expect((result.nodes[0].properties.get('name') as any).value).toBe('Bob');
+    expect((result.nodes[0].properties.get('name') as TextValue).value).toBe('Bob');
+    expect((result.nodes[0].properties.get('name') as TextValue).value).toBe('Bob');
   });
 
   it('combines multiple predicates', () => {
@@ -130,13 +131,13 @@ describe('Query Engine', () => {
         .build();
     const result = executeQuery(graph, q);
     expect(result.nodes).toHaveLength(1);
-    expect((result.nodes[0].properties.get('name') as any).value).toBe('Bob');
+    expect((result.nodes[0].properties.get('name') as TextValue).value).toBe('Bob');
   });
 
   it('sorts results', () => {
     const q = query().nodes('Person').orderBy('age', 'desc').build();
     const result = executeQuery(graph, q);
-    const names = result.nodes.map(n => (n.properties.get('name') as any).value);
+    const names = result.nodes.map(n => (n.properties.get('name') as TextValue).value);
     expect(names).toEqual(['Charlie', 'Alice', 'Bob']);
   });
 

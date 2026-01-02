@@ -1,11 +1,9 @@
-import { PropertyValue } from '@canopy/types';
-
 export type Operator = 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte' | 'contains' | 'exists';
 
 export interface Filter {
   property: string;
   operator: Operator;
-  value?: any; // Value to compare against
+  value?: unknown; // Value to compare against
 }
 
 export interface Sort {

@@ -40,7 +40,7 @@ export class GraphQuery {
     return nodes;
   }
 
-  findEdges(type: string, source?: string, target?: string, properties?: Record<string, PropertyValue>): Edge[] {
+  findEdges(_type: string, _source?: string, _target?: string, _properties?: Record<string, PropertyValue>): Edge[] {
       // simplified legacy implementation
       return [];
   }

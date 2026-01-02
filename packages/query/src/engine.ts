@@ -1,5 +1,5 @@
 import { Graph, Node, Edge, QueryResult, PropertyValue } from '@canopy/types';
-import { Query, QueryStep, Filter, Sort } from './model.js';
+import { Query, Filter, Sort } from './model.js';
 
 type GraphItem = Node | Edge;
 
@@ -68,7 +68,7 @@ export class QueryEngine {
 
   private applyFilter(items: GraphItem[], predicate: Filter): GraphItem[] {
     return items.filter(item => {
-      let propValue: any;
+      let propValue: unknown;
 
       // Special handling for edge source/target which are top-level properties on Edge
       if ('source' in item && predicate.property === 'source') {
@@ -89,18 +89,21 @@ export class QueryEngine {
 
       const value = predicate.value;
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const p = propValue as any;
+
       switch (predicate.operator) {
         case 'eq': return propValue === value;
         case 'neq': return propValue !== value;
-        case 'gt': return propValue > value;
-        case 'gte': return propValue >= value;
-        case 'lt': return propValue < value;
-        case 'lte': return propValue <= value;
+        case 'gt': return p > value;
+        case 'gte': return p >= value;
+        case 'lt': return p < value;
+        case 'lte': return p <= value;
         case 'contains':
           if (Array.isArray(propValue)) {
             return propValue.includes(value);
           } else if (typeof propValue === 'string') {
-            return propValue.includes(value);
+            return propValue.includes(value as string);
           }
           return false;
         case 'exists': return propValue !== undefined && propValue !== null;
@@ -145,8 +148,10 @@ export class QueryEngine {
 
   private applySort(items: GraphItem[], sort: Sort): GraphItem[] {
     return [...items].sort((a, b) => {
-      const valA = this.unwrapValue(a.properties.get(sort.property));
-      const valB = this.unwrapValue(b.properties.get(sort.property));
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const valA = this.unwrapValue(a.properties.get(sort.property)) as any;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const valB = this.unwrapValue(b.properties.get(sort.property)) as any;
 
       if (valA === valB) return 0;
       if (valA === undefined) return 1; // undefined last
@@ -157,7 +162,7 @@ export class QueryEngine {
     });
   }
 
-  private unwrapValue(prop: PropertyValue | undefined): any {
+  private unwrapValue(prop: PropertyValue | undefined): unknown {
     if (!prop) return undefined;
     if (prop.kind === 'list') {
       return prop.items.map(item => item.value); // Simplified unwrapping

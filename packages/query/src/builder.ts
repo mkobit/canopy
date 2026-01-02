@@ -1,4 +1,4 @@
-import { Query, QueryStep, Filter, Sort, Operator } from './model.js';
+import { Query, QueryStep, Operator } from './model.js';
 
 export class QueryBuilder {
   protected steps: QueryStep[] = [];
@@ -23,7 +23,7 @@ export class NodeQueryBuilder extends QueryBuilder {
     this.addStep({ kind: 'node-scan', type });
   }
 
-  where(property: string, operator: Operator, value?: any): this {
+  where(property: string, operator: Operator, value?: unknown): this {
     this.addStep({ kind: 'filter', predicate: { property, operator, value } });
     return this;
   }
@@ -55,7 +55,7 @@ export class EdgeQueryBuilder extends QueryBuilder {
     this.addStep({ kind: 'edge-scan', type });
   }
 
-  where(property: string, operator: Operator, value?: any): this {
+  where(property: string, operator: Operator, value?: unknown): this {
     this.addStep({ kind: 'filter', predicate: { property, operator, value } });
     return this;
   }
