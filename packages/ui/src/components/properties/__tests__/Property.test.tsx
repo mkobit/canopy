@@ -3,7 +3,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { PropertyDisplay } from '../PropertyDisplay.js';
 import { PropertyInput } from '../PropertyInput.js';
-import { PropertyValue, TextValue, NumberValue } from '@canopy/types';
+import { TextValue, NumberValue } from '@canopy/types';
 
 describe('PropertyDisplay', () => {
   it('renders text value', () => {

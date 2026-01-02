@@ -15,8 +15,6 @@ export interface EdgeViewProps {
 }
 
 export const EdgeView: React.FC<EdgeViewProps> = ({ edge, source, target, selected, onClick }) => {
-  const startX = source.position.x + 128; // Center of 256px wide node (w-64 is 16rem = 256px) - wait, w-64 is 16rem = 256px? No, w-64 is 16rem = 256px.
-  // Actually, w-64 is 16rem = 256px.
   // Let's assume the node is roughly centered at its position or top-left.
   // Usually layouts give top-left.
   // Let's assume top-left and width/height is roughly known or fixed.

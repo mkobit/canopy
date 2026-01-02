@@ -3,8 +3,8 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { NodeView } from '../NodeView.js';
 import { GraphCanvas } from '../GraphCanvas.js';
-import { Node, Edge, TextValue, NodeId, TypeId, EdgeId, GraphId } from '@canopy/types';
-import { asNodeId, asTypeId, asEdgeId, createInstant } from '@canopy/types';
+import { Node, TextValue } from '@canopy/types';
+import { asNodeId, asTypeId, createInstant } from '@canopy/types';
 
 // Mocks
 const mockNodeId = asNodeId('node-1');
@@ -21,15 +21,6 @@ const mockNode: Node = {
 const mockGraphNode = {
     ...mockNode,
     position: { x: 100, y: 100 }
-};
-
-const mockEdge: Edge = {
-    id: asEdgeId('edge-1'),
-    type: asTypeId('knows'),
-    source: mockNodeId,
-    target: asNodeId('node-2'),
-    properties: new Map(),
-    metadata: { created: createInstant(), modified: createInstant() }
 };
 
 describe('NodeView', () => {
