@@ -39,17 +39,6 @@ export const NodePage = () => {
       if (!syncEngine || !currentNode) return;
 
       try {
-          // Convert Map to object for update
-          const propsObj = Object.fromEntries(editedProps);
-
-          // Helper to convert plain object to ReadonlyMap<string, PropertyValue> is needed by updateNode type,
-          // but updateNode actually takes PropertyValue (the value), OR the map?
-          // Let's check GraphStore.updateNode signature: partial: Partial<Omit<Node, 'id' | 'metadata'>>
-          // So properties expects ReadonlyMap<string, PropertyValue>.
-
-          // But I can't pass a Map to a partial update if I want to merge?
-          // GraphStore replaces the properties map if provided.
-
           syncEngine.store.updateNode(currentNode.id, {
               properties: new Map(editedProps)
           });
@@ -147,8 +136,8 @@ export const NodePage = () => {
                                 {val.kind === 'text' && (
                                     <textarea
                                         className="w-full p-2 border rounded-md"
-                                        value={(val as any).value || ''}
-                                        onChange={(e) => handlePropertyChange(key, { ...val, value: e.target.value } as any)}
+                                        value={val.value}
+                                        onChange={(e) => handlePropertyChange(key, { ...val, value: e.target.value })}
                                     />
                                 )}
                                 {val.kind !== 'text' && (
@@ -182,7 +171,12 @@ export const NodePage = () => {
                                        >
                                            <div className="flex flex-col">
                                                 <span className="text-sm text-gray-500">{edge.type}</span>
-                                                <span className="font-medium">{(otherNode?.properties.get('name') as any)?.value || otherId}</span>
+                                                <span className="font-medium">
+                                                    {(() => {
+                                                        const nameProp = otherNode?.properties.get('name');
+                                                        return (nameProp && nameProp.kind === 'text' ? nameProp.value : otherId);
+                                                    })()}
+                                                </span>
                                            </div>
                                             <span className="text-xs text-gray-400 font-mono">
                                                 {edge.source === currentNode.id ? '->' : '<-'}

@@ -1,9 +1,10 @@
 import React from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { Home, Search, PlusCircle, Settings } from 'lucide-react';
 import { clsx } from 'clsx';
+import { useGraph } from '../context/GraphContext';
 
-const Sidebar = () => {
+const Sidebar = ({ onQuickCapture }: { onQuickCapture: () => void }) => {
   return (
     <div className="w-64 h-screen bg-gray-50 border-r border-gray-200 flex flex-col">
       <div className="p-4 border-b border-gray-200">
@@ -32,7 +33,10 @@ const Sidebar = () => {
         </NavLink>
 
         {/* Quick Capture Placeholder - could be a modal trigger instead of a route */}
-        <button className="w-full flex items-center gap-2 p-2 rounded-md hover:bg-gray-100 text-gray-700 text-left">
+        <button
+          onClick={onQuickCapture}
+          className="w-full flex items-center gap-2 p-2 rounded-md hover:bg-gray-100 text-gray-700 text-left"
+        >
           <PlusCircle size={20} />
           <span>Quick Capture</span>
         </button>
@@ -49,9 +53,32 @@ const Sidebar = () => {
 };
 
 export const Layout = () => {
+  const { createNode, graph } = useGraph();
+  const navigate = useNavigate();
+
+  const handleQuickCapture = async () => {
+      if (!graph) {
+          alert("Open a graph first.");
+          return;
+      }
+
+      const text = prompt("Quick Note:");
+      if (!text) return;
+
+      try {
+          const nodeId = await createNode('Note', { name: text });
+          if (nodeId) {
+              navigate(`/graph/${graph.id}/node/${nodeId}`);
+          }
+      } catch (e) {
+          console.error("Failed to create node", e);
+          alert("Failed to create node.");
+      }
+  };
+
   return (
     <div className="flex h-screen w-full bg-white">
-      <Sidebar />
+      <Sidebar onQuickCapture={handleQuickCapture} />
       <main className="flex-1 h-full overflow-hidden">
         <Outlet />
       </main>

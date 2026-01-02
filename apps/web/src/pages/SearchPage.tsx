@@ -22,7 +22,7 @@ export const SearchPage = () => {
             // Search in properties
             let found = false;
             for (const val of node.properties.values()) {
-                if (val.kind === 'text' && (val as any).value.toLowerCase().includes(lowerQ)) {
+                if (val.kind === 'text' && val.value.toLowerCase().includes(lowerQ)) {
                     found = true;
                     break;
                 }
@@ -64,7 +64,10 @@ export const SearchPage = () => {
                         </div>
                         <h3 className="font-semibold text-lg text-gray-900">
                             {/* Try to find a name property, else ID */}
-                            {String((node.properties.get('name') as any)?.value || 'Untitled Node')}
+                            {(() => {
+                                const nameProp = node.properties.get('name');
+                                return nameProp && nameProp.kind === 'text' ? nameProp.value : 'Untitled Node';
+                            })()}
                         </h3>
                         <p className="text-xs text-gray-400 font-mono mt-2">{node.id}</p>
                     </div>
