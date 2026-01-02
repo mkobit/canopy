@@ -1,16 +1,14 @@
-import React from 'react';
-import { Node } from '@canopy/types';
+// Properties
+export { PropertyDisplay } from './components/properties/PropertyDisplay.js';
+export { PropertyInput } from './components/properties/PropertyInput.js';
 
-export const NodeView: React.FC<{ node: Node }> = ({ node }) => {
-  return (
-    <div className="node">
-      <h3>{node.id}</h3>
-      <p>Type: {node.type}</p>
-      <ul>
-        {Object.entries(node.properties).map(([key, value]) => (
-          <li key={key}>{key}: {String(value)}</li>
-        ))}
-      </ul>
-    </div>
-  );
-};
+// Graph
+export { NodeView, type NodeViewProps } from './components/graph/NodeView.js';
+export { EdgeView, type EdgeViewProps, type GraphNode } from './components/graph/EdgeView.js';
+export { GraphCanvas } from './components/graph/GraphCanvas.js';
+
+// Editor
+export { BlockEditor } from './components/editor/BlockEditor.js';
+
+// Utils
+export { cn } from './utils/cn.js';
