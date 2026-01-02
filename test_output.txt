@@ -1,0 +1,18 @@
+
+> @canopy/sync@0.0.0 test /app/packages/sync
+> vitest -- run --testNamePattern=InMemoryProvider
+
+
+ DEV  v1.6.0 /app/packages/sync
+
+ ✓ src/sync-engine.test.ts  (7 tests) 26ms
+ ✓ src/providers/in-memory-provider.test.ts  (2 tests) 19ms
+
+ Test Files  2 passed (2)
+      Tests  9 passed (9)
+   Start at  23:48:48
+   Duration  613ms (transform 175ms, setup 0ms, collect 469ms, tests 45ms, environment 1ms, prepare 219ms)
+
+
+ PASS  Waiting for file changes...
+       press h to show help, press q to quit
