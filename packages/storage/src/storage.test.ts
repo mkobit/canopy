@@ -41,8 +41,8 @@ describe('SQLiteAdapter', () => {
     await adapter.save(mockGraphId, mockSnapshot, mockMetadata);
     const list = await adapter.list();
     expect(list).toHaveLength(1);
-    expect(list[0].id).toEqual(mockGraphId);
-    expect(list[0].name).toEqual(mockMetadata.name);
+    expect(list[0]!.id).toEqual(mockGraphId);
+    expect(list[0]!.name).toEqual(mockMetadata.name);
   });
 
   it('should delete a graph', async () => {
@@ -104,7 +104,7 @@ describe('IndexedDBAdapter', () => {
     await adapter.save(mockGraphId, mockSnapshot, mockMetadata);
     const list = await adapter.list();
     expect(list).toHaveLength(1);
-    expect(list[0].id).toEqual(mockGraphId);
+    expect(list[0]!.id).toEqual(mockGraphId);
   });
 
   it('should delete a graph', async () => {
