@@ -19,10 +19,10 @@ export interface Traversal {
 
 // A step in the query pipeline
 export type QueryStep =
-  | { kind: 'node-scan'; type?: string } // Start with nodes
-  | { kind: 'edge-scan'; type?: string } // Start with edges
+  | { kind: 'node-scan'; type?: string | undefined } // Start with nodes
+  | { kind: 'edge-scan'; type?: string | undefined } // Start with edges
   | { kind: 'filter'; predicate: Filter } // Filter current set
-  | { kind: 'traversal'; edgeType?: string; direction: 'out' | 'in' | 'both' } // Map nodes to connected nodes
+  | { kind: 'traversal'; edgeType?: string | undefined; direction: 'out' | 'in' | 'both' } // Map nodes to connected nodes
   | { kind: 'sort'; sort: Sort }
   | { kind: 'limit'; limit: number };
 

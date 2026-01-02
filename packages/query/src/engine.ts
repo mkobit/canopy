@@ -91,14 +91,16 @@ export class QueryEngine {
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const p = propValue as any;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const v = value as any;
 
       switch (predicate.operator) {
         case 'eq': return propValue === value;
         case 'neq': return propValue !== value;
-        case 'gt': return p > value;
-        case 'gte': return p >= value;
-        case 'lt': return p < value;
-        case 'lte': return p <= value;
+        case 'gt': return p > v;
+        case 'gte': return p >= v;
+        case 'lt': return p < v;
+        case 'lte': return p <= v;
         case 'contains':
           if (Array.isArray(propValue)) {
             return propValue.includes(value);
@@ -165,14 +167,21 @@ export class QueryEngine {
   private unwrapValue(prop: PropertyValue | undefined): unknown {
     if (!prop) return undefined;
     if (prop.kind === 'list') {
-      return prop.items.map(item => item.value); // Simplified unwrapping
+      return prop.items.map(item => this.unwrapScalar(item));
     }
-    if ('value' in prop) {
-        return prop.value;
-    }
-    if (prop.kind === 'reference') return prop.target as string;
-    if (prop.kind === 'external-reference') return `${prop.graph}://${prop.target}`; // Simplified representation
+    return this.unwrapScalar(prop);
+  }
 
+  private unwrapScalar(scalar: import('@canopy/types').ScalarValue): unknown {
+    if ('value' in scalar) {
+      return scalar.value;
+    }
+    if (scalar.kind === 'reference') {
+      return scalar.target;
+    }
+    if (scalar.kind === 'external-reference') {
+      return `${scalar.graph}://${scalar.target}`;
+    }
     return undefined;
   }
 }
