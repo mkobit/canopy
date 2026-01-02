@@ -88,10 +88,9 @@ export class SQLiteAdapter implements StorageAdapter {
     stmt.bind([graphId]);
 
     if (stmt.step()) {
-      const result = stmt.get();
+      const result = stmt.getAsObject();
       stmt.free();
-      // result[0] is the blob
-      return result[0] as Uint8Array;
+      return result.snapshot as Uint8Array;
     }
 
     stmt.free();

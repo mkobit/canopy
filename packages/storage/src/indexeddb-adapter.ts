@@ -16,7 +16,7 @@ export class IndexedDBAdapter implements StorageAdapter {
   private db: IDBPDatabase<CanopyDB> | null = null;
   private dbName: string;
 
-  constructor(dbName: string = 'canopy-storage') {
+  constructor(dbName = 'canopy-storage') {
     this.dbName = dbName;
   }
 
