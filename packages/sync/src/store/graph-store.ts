@@ -32,21 +32,23 @@ interface StorableEdge extends Omit<Edge, 'properties'> {
 }
 
 // Zod schemas for Storable types
+// StorableProperties is just a Record<string, PropertyValue>.
+// PropertyValueSchema is already a ZodType<PropertyValue>.
 const StorablePropertiesSchema = z.record(z.string(), PropertyValueSchema);
 
-const StorableNodeSchema: z.ZodType<StorableNode, z.ZodTypeDef, unknown> = z.object({
+const StorableNodeSchema: z.ZodType<StorableNode> = z.object({
     id: z.string().transform(val => asNodeId(val)),
     type: z.string().transform(val => asTypeId(val)),
-    properties: StorablePropertiesSchema as unknown as z.ZodType<StorableProperties, z.ZodTypeDef, unknown>,
+    properties: StorablePropertiesSchema,
     metadata: TemporalMetadataSchema
 });
 
-const StorableEdgeSchema: z.ZodType<StorableEdge, z.ZodTypeDef, unknown> = z.object({
+const StorableEdgeSchema: z.ZodType<StorableEdge> = z.object({
     id: z.string().transform(val => asEdgeId(val)),
     type: z.string().transform(val => asTypeId(val)),
     source: z.string().transform(val => asNodeId(val)),
     target: z.string().transform(val => asNodeId(val)),
-    properties: StorablePropertiesSchema as unknown as z.ZodType<StorableProperties, z.ZodTypeDef, unknown>,
+    properties: StorablePropertiesSchema,
     metadata: TemporalMetadataSchema
 });
 
