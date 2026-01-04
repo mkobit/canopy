@@ -11,14 +11,14 @@
   "dependencies": {
     "@canopy/types": "workspace:*",
     "clsx": "^2.1.1",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
     "@testing-library/dom": "^10.4.1",
     "@testing-library/react": "^16.3.1",
-    "@types/react": "^18.3.27",
+    "@types/react": "^19.2.7",
     "@types/react-dom": "^18.3.7",
     "jsdom": "^27.4.0",
     "typescript": "5.9.3",
