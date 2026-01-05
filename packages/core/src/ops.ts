@@ -25,6 +25,7 @@ export function addNode(graph: Graph, node: Node, options: GraphOperationOptions
   }
 
   const newNodes = new Map(graph.nodes)
+  // eslint-disable-next-line functional/immutable-data
   newNodes.set(node.id, node)
 
   return {
@@ -48,15 +49,13 @@ export function removeNode(graph: Graph, nodeId: NodeId): Graph {
   }
 
   const newNodes = new Map(graph.nodes)
+  // eslint-disable-next-line functional/immutable-data
   newNodes.delete(nodeId)
 
   // Remove connected edges
-  const newEdges = new Map<EdgeId, Edge>()
-  for (const [edgeId, edge] of graph.edges) {
-    if (edge.source !== nodeId && edge.target !== nodeId) {
-      newEdges.set(edgeId, edge)
-    }
-  }
+  const newEdges = new Map(
+    [...graph.edges].filter(([_id, edge]) => edge.source !== nodeId && edge.target !== nodeId),
+  )
 
   return {
     ...graph,
@@ -100,6 +99,7 @@ export function updateNode(graph: Graph, nodeId: NodeId, updater: (node: Node) =
   }
 
   const newNodes = new Map(graph.nodes)
+  // eslint-disable-next-line functional/immutable-data
   newNodes.set(nodeId, {
       ...updatedNode,
       metadata: {
@@ -143,6 +143,7 @@ export function addEdge(graph: Graph, edge: Edge, options: GraphOperationOptions
   }
 
   const newEdges = new Map(graph.edges)
+  // eslint-disable-next-line functional/immutable-data
   newEdges.set(edge.id, edge)
 
   return {
@@ -165,6 +166,7 @@ export function removeEdge(graph: Graph, edgeId: EdgeId): Graph {
   }
 
   const newEdges = new Map(graph.edges)
+  // eslint-disable-next-line functional/immutable-data
   newEdges.delete(edgeId)
 
   return {
@@ -212,6 +214,7 @@ export function updateEdge(graph: Graph, edgeId: EdgeId, updater: (edge: Edge) =
   }
 
   const newEdges = new Map(graph.edges)
+  // eslint-disable-next-line functional/immutable-data
   newEdges.set(edgeId, {
       ...updatedEdge,
       metadata: {

@@ -3,6 +3,8 @@ const eslint = require('@eslint/js');
 const tseslint = require('typescript-eslint');
 const prettier = require('eslint-config-prettier');
 const globals = require('globals');
+// eslint-plugin-functional v9 exports "default" with configs
+const functional = require('eslint-plugin-functional').default;
 
 module.exports = tseslint.config(
   {
@@ -19,6 +21,57 @@ module.exports = tseslint.config(
   ...tseslint.configs.strict,
   ...tseslint.configs.stylistic,
   prettier,
+  // Functional Plugin Configuration
+  {
+    ...functional.configs.lite,
+    // Disable type-checked rules for files without type info
+    files: ['**/*.ts', '**/*.tsx'],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.base.json', 'packages/*/tsconfig.json', 'apps/*/tsconfig.json'],
+        tsconfigRootDir: __dirname,
+      },
+    },
+  },
+  {
+    plugins: {
+      functional,
+    },
+    // We only apply these rules to TS files that are part of the project
+    files: ['**/*.ts', '**/*.tsx'],
+    rules: {
+      // Overrides for lite config
+
+      // Enforce immutability (part of lite, but tweaking)
+      'functional/immutable-data': ['error', {
+          ignoreClasses: true,
+          ignoreImmediateMutation: true,
+          // Allow mutations of refs in React (common pattern)
+          ignoreAccessorPattern: ['**.current', '**.value'],
+      }],
+      'functional/no-let': ['warn', {
+        allowInFunctions: true
+      }],
+
+      // Disable noisy rules from lite for now to make it manageable
+      'functional/prefer-readonly-type': 'off',
+      'functional/no-mixed-types': 'off',
+      'functional/no-return-void': 'off',
+      'functional/no-class-inheritance': 'off',
+      'functional/no-this-expressions': 'off',
+      'functional/no-throw-statements': 'off',
+      'functional/no-loop-statements': 'off',
+      'functional/prefer-immutable-types': 'off',
+      'functional/functional-parameters': 'off',
+    },
+  },
+  // Specific overrides for test files to allow mutation in setups
+  {
+    files: ['**/*.test.ts', '**/*.test.tsx', '**/tests/**/*.ts'],
+    rules: {
+      'functional/immutable-data': 'off',
+    },
+  },
   {
     languageOptions: {
       globals: {
