@@ -37,6 +37,7 @@ export const PropertyInput: React.FC<PropertyInputProps> = ({ value, onChange, c
                value={item}
                onChange={(newItem) => {
                  const newItems = [...value.items];
+            // eslint-disable-next-line functional/immutable-data
                  newItems[index] = newItem;
                  onChange({ ...value, items: newItems });
                }}

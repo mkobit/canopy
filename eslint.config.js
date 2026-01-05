@@ -49,7 +49,7 @@ module.exports = tseslint.config(
           // Allow mutations of refs in React (common pattern)
           ignoreAccessorPattern: ['**.current', '**.value'],
       }],
-      'functional/no-let': ['warn', {
+      'functional/no-let': ['error', {
         allowInFunctions: true
       }],
 
@@ -63,13 +63,6 @@ module.exports = tseslint.config(
       'functional/no-loop-statements': 'off',
       'functional/prefer-immutable-types': 'off',
       'functional/functional-parameters': 'off',
-    },
-  },
-  // Specific overrides for test files to allow mutation in setups
-  {
-    files: ['**/*.test.ts', '**/*.test.tsx', '**/tests/**/*.ts'],
-    rules: {
-      'functional/immutable-data': 'off',
     },
   },
   {

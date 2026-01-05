@@ -134,6 +134,7 @@ export const GraphSchema: z.ZodType<Graph, z.ZodTypeDef, unknown> = z.object({
         // The Map key is NodeId.
         const map = new Map<NodeId, Node>();
         for (const [key, value] of Object.entries(record)) {
+        // eslint-disable-next-line functional/immutable-data
              map.set(asNodeId(key), value);
         }
         return map;
@@ -144,6 +145,7 @@ export const GraphSchema: z.ZodType<Graph, z.ZodTypeDef, unknown> = z.object({
       z.record(z.string().uuid(), EdgeSchema).transform((record) => {
           const map = new Map<EdgeId, Edge>();
           for (const [key, value] of Object.entries(record)) {
+        // eslint-disable-next-line functional/immutable-data
               map.set(asEdgeId(key), value);
           }
           return map;

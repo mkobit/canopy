@@ -84,10 +84,12 @@ export const GraphProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const updateGraphFromStore = (engine: SyncEngine, graphId: GraphId) => {
       const nodes = new Map();
       for (const node of engine.store.getAllNodes()) {
+          // eslint-disable-next-line functional/immutable-data
           nodes.set(node.id, node);
       }
       const edges = new Map();
       for (const edge of engine.store.getAllEdges()) {
+          // eslint-disable-next-line functional/immutable-data
           edges.set(edge.id, edge);
       }
 
@@ -139,6 +141,7 @@ export const GraphProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       for (const [key, value] of Object.entries(properties)) {
           // Rudimentary generic mapping to PropertyValue
           if (typeof value === 'string') {
+              // eslint-disable-next-line functional/immutable-data
               propsMap.set(key, { kind: 'text', value });
           }
           // Add other types as needed
