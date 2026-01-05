@@ -8,11 +8,10 @@ import type {
   ValidationError,
   PropertyDefinition,
   PropertyValue,
-  TypeId,
-  NodeId
+  TypeId
 } from '@canopy/types'
 import { asTypeId, asNodeId } from '@canopy/types'
-import { getNodeType, getEdgeTypes, getNodeTypes } from './queries.js' // Assuming getEdgeType exists or we can implement it
+import { getNodeType } from './queries.js'
 import { SYSTEM_IDS } from './system.js'
 
 // Helper to create a success result
@@ -21,10 +20,6 @@ const SUCCESS: ValidationResult = { valid: true, errors: [] }
 // Helper to create an error result
 function failure(errors: ValidationError[]): ValidationResult {
   return { valid: false, errors }
-}
-
-function failureOne(path: string[], message: string, expected?: string, actual?: string): ValidationResult {
-  return failure([{ path, message, expected, actual }])
 }
 
 // Extract properties from a definition node
@@ -42,6 +37,7 @@ function extractProperties(node: Node): PropertyDefinition[] {
     }
   } catch (e) {
     // ignore parse error, return empty
+    // The property might be malformed, treating as no properties
   }
   return []
 }
@@ -74,14 +70,14 @@ function extractEdgeTypeDefinition(node: Node): EdgeTypeDefinition | undefined {
         sourceTypes = sourceTypesVal.items.map(i => i.kind === 'text' ? asTypeId(i.value) : asTypeId('unknown'))
     } else if (sourceTypesVal?.kind === 'text') {
         // Fallback for JSON string
-        try { sourceTypes = (JSON.parse(sourceTypesVal.value) as string[]).map(asTypeId) } catch {}
+        try { sourceTypes = (JSON.parse(sourceTypesVal.value) as string[]).map(asTypeId) } catch { /* ignore parse error */ }
     }
 
     let targetTypes: TypeId[] = []
     if (targetTypesVal?.kind === 'list') {
         targetTypes = targetTypesVal.items.map(i => i.kind === 'text' ? asTypeId(i.value) : asTypeId('unknown'))
     } else if (targetTypesVal?.kind === 'text') {
-        try { targetTypes = (JSON.parse(targetTypesVal.value) as string[]).map(asTypeId) } catch {}
+        try { targetTypes = (JSON.parse(targetTypesVal.value) as string[]).map(asTypeId) } catch { /* ignore parse error */ }
     }
 
     return {

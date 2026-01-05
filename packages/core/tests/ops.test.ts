@@ -1,34 +1,19 @@
 import { describe, it, expect } from 'vitest'
 import { createGraph } from '../src/graph.js'
-import { addNode, addEdge, updateNode, updateEdge } from '../src/ops.js'
+import { addNode, updateNode } from '../src/ops.js'
 import { SYSTEM_IDS } from '../src/system.js'
-import { createNodeId, createEdgeId, asNodeId, asTypeId, asEdgeId, createInstant, PropertyDefinition, PropertyValue } from '@canopy/types'
+import { createNodeId, asNodeId, asTypeId, createInstant, PropertyDefinition, PropertyValue } from '@canopy/types'
 
 // Test helpers
-function createNode(props: any) {
+function createNode(props: Record<string, unknown>) {
   return {
     id: createNodeId(),
     type: asTypeId('test'),
     properties: new Map<string, PropertyValue>(),
     metadata: { created: createInstant(), modified: createInstant() },
     ...props,
-    properties: props.properties && !(props.properties instanceof Map)
-      ? new Map(Object.entries(props.properties))
-      : (props.properties || new Map())
-  }
-}
-
-function createEdge(props: any) {
-  return {
-    id: createEdgeId(),
-    type: asTypeId('test'),
-    source: createNodeId(),
-    target: createNodeId(),
-    properties: new Map<string, PropertyValue>(),
-    metadata: { created: createInstant(), modified: createInstant() },
-    ...props,
-    properties: props.properties && !(props.properties instanceof Map)
-      ? new Map(Object.entries(props.properties))
+    properties: (props.properties && !(props.properties instanceof Map))
+      ? new Map(Object.entries(props.properties as Record<string, PropertyValue>))
       : (props.properties || new Map())
   }
 }

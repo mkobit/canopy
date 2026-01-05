@@ -2,23 +2,24 @@ import { describe, it, expect } from 'vitest'
 import { createGraph } from '../src/graph.js'
 import { addNode } from '../src/ops.js'
 import { validateNode, validateEdge } from '../src/validation.js'
-import { createNodeId, createEdgeId, asNodeId, asTypeId, asEdgeId, createInstant, PropertyDefinition, PropertyValue } from '@canopy/types'
+import { SYSTEM_IDS } from '../src/system.js'
+import { asNodeId, asTypeId, createNodeId, createEdgeId, PropertyDefinition, PropertyValue, createInstant } from '@canopy/types'
 
 // Test helpers to replace missing factories
-function createNode(props: any) {
+function createNode(props: Record<string, unknown>) {
   return {
     id: createNodeId(),
     type: asTypeId('test'),
     properties: new Map<string, PropertyValue>(),
     metadata: { created: createInstant(), modified: createInstant() },
     ...props,
-    properties: props.properties && !(props.properties instanceof Map)
-      ? new Map(Object.entries(props.properties))
+    properties: (props.properties && !(props.properties instanceof Map))
+      ? new Map(Object.entries(props.properties as Record<string, PropertyValue>))
       : (props.properties || new Map())
   }
 }
 
-function createEdge(props: any) {
+function createEdge(props: Record<string, unknown>) {
   return {
     id: createEdgeId(),
     type: asTypeId('test'),
@@ -27,12 +28,11 @@ function createEdge(props: any) {
     properties: new Map<string, PropertyValue>(),
     metadata: { created: createInstant(), modified: createInstant() },
     ...props,
-    properties: props.properties && !(props.properties instanceof Map)
-      ? new Map(Object.entries(props.properties))
+    properties: (props.properties && !(props.properties instanceof Map))
+      ? new Map(Object.entries(props.properties as Record<string, PropertyValue>))
       : (props.properties || new Map())
   }
 }
-import { SYSTEM_IDS } from '../src/system.js'
 
 describe('validation', () => {
     // Setup helper to create a graph with a type definition
