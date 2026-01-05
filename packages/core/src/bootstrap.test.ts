@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { createGraph } from './graph'
 import { asGraphId } from '@canopy/types'
-import { SYSTEM_IDS, SYSTEM_EDGE_TYPES } from './system'
+import { SYSTEM_IDS } from './system'
 import { getNodeTypes, getEdgeTypes, getNodeType } from './queries'
 import { bootstrap } from './bootstrap'
 
