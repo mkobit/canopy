@@ -36,11 +36,13 @@ pnpm list -r --depth 1
 
 ## Environment setup
 
-We use `mise` for managing development tools and versions to ensure consistency across environments.
-`mise` reads tool versions from `mise.toml` which must be kept in sync with `package.json`.
-The `node` version is defined in both `mise.toml` (for local/mise) and `package.json` `engines` (for CI/pnpm).
-A verification script (`tools/verify-versions.js`) runs during `pnpm lint` to ensure these files remain synchronized.
-Developers should use `mise` to automatically install and activate the correct Node.js version.
+We use `mise` to align local tool versions (Node.js) with CI.
+Versions are defined in `mise.toml` and must match `package.json` (verified via `pnpm lint`).
+
+### Local commands
+*   Install tools: `mise install`
+*   Activate shell: `eval "$(mise activate bash)"` (or add to `~/.bashrc`)
+*   Trust config: `mise trust`
 
 ## Programming style requirements
 
