@@ -34,6 +34,14 @@ pnpm list -r --depth 1
 | Lint codebase | `pnpm lint` |
 | Type check | `pnpm typecheck` |
 
+## Environment setup
+
+We use `mise` for managing development tools and versions to ensure consistency across environments.
+`mise` reads tool versions from `mise.toml` which must be kept in sync with `package.json`.
+The `node` version is defined in both `mise.toml` (for local/mise) and `package.json` `engines` (for CI/pnpm).
+A verification script (`tools/verify-versions.js`) runs during `pnpm lint` to ensure these files remain synchronized.
+Developers should use `mise` to automatically install and activate the correct Node.js version.
+
 ## Programming style requirements
 
 All code must follow a functional programming style, avoiding mutations and side effects.
