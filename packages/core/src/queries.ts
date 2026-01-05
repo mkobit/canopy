@@ -6,28 +6,14 @@ import { asNodeId } from '@canopy/types'
  * Returns all nodes that define node types.
  */
 export function getNodeTypes(graph: Graph): readonly Node[] {
-  const result: Node[] = []
-  for (const node of graph.nodes.values()) {
-    if (node.type === SYSTEM_IDS.NODE_TYPE) {
-  // eslint-disable-next-line functional/immutable-data
-      result.push(node)
-    }
-  }
-  return result
+  return Array.from(graph.nodes.values()).filter(node => node.type === SYSTEM_IDS.NODE_TYPE)
 }
 
 /**
  * Returns all nodes that define edge types.
  */
 export function getEdgeTypes(graph: Graph): readonly Node[] {
-  const result: Node[] = []
-  for (const node of graph.nodes.values()) {
-    if (node.type === SYSTEM_IDS.EDGE_TYPE) {
-  // eslint-disable-next-line functional/immutable-data
-      result.push(node)
-    }
-  }
-  return result
+  return Array.from(graph.nodes.values()).filter(node => node.type === SYSTEM_IDS.EDGE_TYPE)
 }
 
 /**

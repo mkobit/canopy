@@ -82,16 +82,8 @@ export const GraphProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [storage]); // Removed syncEngine from dependency
 
   const updateGraphFromStore = (engine: SyncEngine, graphId: GraphId) => {
-      const nodes = new Map();
-      for (const node of engine.store.getAllNodes()) {
-          // eslint-disable-next-line functional/immutable-data
-          nodes.set(node.id, node);
-      }
-      const edges = new Map();
-      for (const edge of engine.store.getAllEdges()) {
-          // eslint-disable-next-line functional/immutable-data
-          edges.set(edge.id, edge);
-      }
+      const nodes = new Map(engine.store.getAllNodes().map(node => [node.id, node]));
+      const edges = new Map(engine.store.getAllEdges().map(edge => [edge.id, edge]));
 
       // We need metadata for the graph itself.
       // StorageAdapter returns { data, metadata }.
@@ -137,15 +129,12 @@ export const GraphProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const createNode = useCallback(async (type: string, properties: Record<string, any> = {}) => {
       if (!syncEngineRef.current) return null;
 
-      const propsMap = new Map();
-      for (const [key, value] of Object.entries(properties)) {
-          // Rudimentary generic mapping to PropertyValue
-          if (typeof value === 'string') {
-              // eslint-disable-next-line functional/immutable-data
-              propsMap.set(key, { kind: 'text', value });
-          }
-          // Add other types as needed
-      }
+      // Rudimentary generic mapping to PropertyValue
+      const propsMap = new Map(
+          Object.entries(properties)
+              .filter(([_, value]) => typeof value === 'string')
+              .map(([key, value]) => [key, { kind: 'text', value }])
+      );
 
       const newNode = syncEngineRef.current.store.addNode({
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
