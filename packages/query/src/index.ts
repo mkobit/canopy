@@ -1,6 +1,6 @@
-export * from './model.js';
-export * from './builder.js';
-export * from './engine.js';
+export * from './model';
+export * from './builder';
+export * from './engine';
 
 // Re-export old GraphQuery for now, or just leave it if it's not being replaced yet.
 // But to avoid confusion, I'll keep the new API clean.
@@ -18,4 +18,4 @@ export * from './engine.js';
 // Wait, I am overwriting index.ts.
 // I will just export everything.
 
-export { GraphQuery } from './legacy.js';
+export { GraphQuery } from './legacy';

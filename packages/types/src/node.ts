@@ -1,6 +1,6 @@
-import type { NodeId, TypeId } from './identifiers.js'
-import type { TemporalMetadata } from './temporal.js'
-import type { PropertyMap } from './properties.js'
+import type { NodeId, TypeId } from './identifiers'
+import type { TemporalMetadata } from './temporal'
+import type { PropertyMap } from './properties'
 
 /**
  * A node in the graph.

@@ -1,7 +1,7 @@
 import type { Graph, Node, PropertyMap, TypeId, NodeId, PropertyValue } from '@canopy/types'
 import { createInstant } from '@canopy/types'
-import { addNode } from './ops.js'
-import { SYSTEM_IDS, SYSTEM_EDGE_TYPES } from './system.js'
+import { addNode } from './ops'
+import { SYSTEM_IDS, SYSTEM_EDGE_TYPES } from './system'
 
 // Helper to create a property map
 function createProperties(props: Record<string, PropertyValue>): PropertyMap {

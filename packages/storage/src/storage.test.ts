@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { SQLiteAdapter } from './sqlite-adapter.js';
-import { IndexedDBAdapter } from './indexeddb-adapter.js';
-import { GraphStorageMetadata } from './types.js';
+import { SQLiteAdapter } from './sqlite-adapter';
+import { IndexedDBAdapter } from './indexeddb-adapter';
+import { GraphStorageMetadata } from './types';
 import 'fake-indexeddb/auto';
 
 // Mock data

@@ -1,7 +1,7 @@
 import * as Y from 'yjs';
 import { Awareness } from 'y-protocols/awareness';
-import { GraphStore } from './store/graph-store.js';
-import { SyncProvider, SyncEngineOptions } from './types.js';
+import { GraphStore } from './store/graph-store';
+import { SyncProvider, SyncEngineOptions } from './types';
 
 export class SyncEngine {
   readonly doc: Y.Doc;

@@ -1,4 +1,4 @@
-import { Query, QueryStep, Operator } from './model.js';
+import { Query, QueryStep, Operator } from './model';
 
 export class QueryBuilder {
   protected steps: QueryStep[] = [];

@@ -1,5 +1,5 @@
 import { openDB, DBSchema, IDBPDatabase } from 'idb';
-import { StorageAdapter, GraphStorageMetadata } from './types.js';
+import { StorageAdapter, GraphStorageMetadata } from './types';
 
 interface CanopyDB extends DBSchema {
   graphs: {

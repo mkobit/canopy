@@ -1,5 +1,5 @@
 import { Graph, Node, Edge, QueryResult, PropertyValue } from '@canopy/types';
-import { Query, Filter, Sort } from './model.js';
+import { Query, Filter, Sort } from './model';
 
 type GraphItem = Node | Edge;
 

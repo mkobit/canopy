@@ -1,7 +1,7 @@
 import React from 'react';
 import { Node } from '@canopy/types';
-import { cn } from '../../utils/cn.js';
-import { PropertyDisplay } from '../properties/PropertyDisplay.js';
+import { cn } from '../../utils/cn';
+import { PropertyDisplay } from '../properties/PropertyDisplay';
 
 export interface NodeViewProps {
   node: Node;

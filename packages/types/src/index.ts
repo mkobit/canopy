@@ -1,27 +1,27 @@
-export {
+export type {
   nodeIdBrand,
   edgeIdBrand,
   typeIdBrand,
   graphIdBrand,
-} from './identifiers.js'
+} from './identifiers'
 
 export type {
   NodeId,
   EdgeId,
   TypeId,
   GraphId,
-} from './identifiers.js'
+} from './identifiers'
 
-export {
+export type {
   instantBrand,
   plainDateBrand,
-} from './temporal.js'
+} from './temporal'
 
 export type {
   Instant,
   PlainDate,
   TemporalMetadata,
-} from './temporal.js'
+} from './temporal'
 
 export type {
   ScalarValue,
@@ -32,7 +32,7 @@ export type {
   PlainDateValue,
   ReferenceValue,
   ExternalReferenceValue,
-} from './scalars.js'
+} from './scalars'
 
 export type {
   PropertyValue,
@@ -40,25 +40,25 @@ export type {
   PropertyValueKind,
   PropertyDefinition,
   PropertyMap,
-} from './properties.js'
+} from './properties'
 
-export type { Node } from './node.js'
-export type { Edge } from './edge.js'
+export type { Node } from './node'
+export type { Edge } from './edge'
 
 export type {
   NodeTypeDefinition,
   EdgeTypeDefinition,
-} from './meta.js'
+} from './meta'
 
 export type {
   Graph,
   QueryResult,
-} from './graph.js'
+} from './graph'
 
 export type {
   ValidationResult,
   ValidationError,
-} from './validation.js'
+} from './validation'
 
 export {
     createNodeId,
@@ -71,4 +71,4 @@ export {
     asPlainDate,
     asNodeId,
     asEdgeId
-} from './factories.js';
+} from './factories';

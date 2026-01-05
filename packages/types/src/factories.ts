@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
-import { NodeId, EdgeId, TypeId, GraphId } from './identifiers.js';
-import { Instant, PlainDate } from './temporal.js';
+import { NodeId, EdgeId, TypeId, GraphId } from './identifiers';
+import { Instant, PlainDate } from './temporal';
 
 // Safe Generators for Branded Types
 

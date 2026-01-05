@@ -1,14 +1,14 @@
 // Properties
-export { PropertyDisplay } from './components/properties/PropertyDisplay.js';
-export { PropertyInput } from './components/properties/PropertyInput.js';
+export { PropertyDisplay } from './components/properties/PropertyDisplay';
+export { PropertyInput } from './components/properties/PropertyInput';
 
 // Graph
-export { NodeView, type NodeViewProps } from './components/graph/NodeView.js';
-export { EdgeView, type EdgeViewProps, type GraphNode } from './components/graph/EdgeView.js';
-export { GraphCanvas } from './components/graph/GraphCanvas.js';
+export { NodeView, type NodeViewProps } from './components/graph/NodeView';
+export { EdgeView, type EdgeViewProps, type GraphNode } from './components/graph/EdgeView';
+export { GraphCanvas } from './components/graph/GraphCanvas';
 
 // Editor
-export { BlockEditor } from './components/editor/BlockEditor.js';
+export { BlockEditor } from './components/editor/BlockEditor';
 
 // Utils
-export { cn } from './utils/cn.js';
+export { cn } from './utils/cn';
