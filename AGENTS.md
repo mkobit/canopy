@@ -34,6 +34,16 @@ pnpm list -r --depth 1
 | Lint codebase | `pnpm lint` |
 | Type check | `pnpm typecheck` |
 
+## Environment setup
+
+We use `mise` to align local tool versions (Node.js) with CI.
+Versions are defined in `mise.toml` and must match `package.json` (verified via `pnpm lint`).
+
+### Local commands
+*   Install tools: `mise install`
+*   Activate shell: `eval "$(mise activate bash)"` (or add to `~/.bashrc`)
+*   Trust config: `mise trust`
+
 ## Programming style requirements
 
 All code must follow a functional programming style, avoiding mutations and side effects.

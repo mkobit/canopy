@@ -2,11 +2,15 @@
   "name": "canopy-graph",
   "version": "0.0.0",
   "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": "22"
+  },
   "private": true,
   "scripts": {
     "build": "pnpm -r build",
+    "check:versions": "node tools/verify-versions.js",
     "test": "vitest",
-    "lint": "eslint .",
+    "lint": "pnpm check:versions && eslint .",
     "format": "prettier --write .",
     "typecheck": "pnpm -r typecheck",
     "prepare": "husky"
