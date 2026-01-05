@@ -15,6 +15,8 @@ pnpm list -r --depth 1
 
 1.  `@canopy/types` has zero runtime dependencies—pure TypeScript types only.
 2.  `@canopy/core` owns the graph model—other packages do not directly manipulate graph state.
+    *   New graphs are automatically bootstrapped with system nodes (NodeType, EdgeType, etc.).
+    *   Well-known system IDs are defined in `@canopy/core/system`.
 3.  Yjs integration lives in `@canopy/sync`, not scattered across packages.
 4.  `@canopy/query` is isolated to enable swapping Cypher for ISO GQL later.
 5.  UI components are stateless—`@canopy/ui` receives data via props, does not fetch or mutate.

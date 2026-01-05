@@ -26,10 +26,11 @@ describe('Core Graph Engine', () => {
     const graphId = createGraphId()
     const emptyGraph = createGraph(graphId, 'Test Graph')
 
-    it('should create an empty graph', () => {
+    it('should create a graph with bootstrap nodes', () => {
         expect(emptyGraph.id).toBe(graphId)
         expect(emptyGraph.name).toBe('Test Graph')
-        expect(emptyGraph.nodes.size).toBe(0)
+        // Bootstrap adds 6 nodes (NodeType, EdgeType, ChildOf, Defines, References, Prerequisite)
+        expect(emptyGraph.nodes.size).toBe(6)
         expect(emptyGraph.edges.size).toBe(0)
     })
 
@@ -51,14 +52,14 @@ describe('Core Graph Engine', () => {
 
     it('should add nodes immutably', () => {
         const g1 = addNode(emptyGraph, node1)
-        expect(g1.nodes.size).toBe(1)
+        expect(g1.nodes.size).toBe(7) // 6 bootstrap + 1 new
         expect(g1.nodes.get(nodeId1)).toBe(node1)
-        expect(emptyGraph.nodes.size).toBe(0) // Original unmodified
+        expect(emptyGraph.nodes.size).toBe(6) // Original unmodified (bootstrap nodes)
 
         const g2 = addNode(g1, node2)
-        expect(g2.nodes.size).toBe(2)
+        expect(g2.nodes.size).toBe(8) // 6 bootstrap + 2 new
         expect(g2.nodes.get(nodeId2)).toBe(node2)
-        expect(g1.nodes.size).toBe(1) // Previous version unmodified
+        expect(g1.nodes.size).toBe(7) // Previous version unmodified
     })
 
     it('should update nodes immutably', () => {
@@ -93,11 +94,11 @@ describe('Core Graph Engine', () => {
         expect(g.edges.size).toBe(1)
 
         const gRemoved = removeNode(g, nodeId1)
-        expect(gRemoved.nodes.size).toBe(1)
+        expect(gRemoved.nodes.size).toBe(7) // 6 bootstrap + 1 remaining node
         expect(gRemoved.nodes.has(nodeId1)).toBe(false)
         expect(gRemoved.edges.size).toBe(0) // Edge should be removed
 
-        expect(g.nodes.size).toBe(2) // Original unmodified
+        expect(g.nodes.size).toBe(8) // 6 bootstrap + 2 nodes
         expect(g.edges.size).toBe(1)
     })
 
@@ -118,7 +119,14 @@ describe('Core Graph Engine', () => {
 
         expect(getNode(g, nodeId1)).toBe(node1)
         expect(getEdge(g, edgeId)).toBe(edge)
-        expect(getNodesByType(g, asTypeId('person'))).toHaveLength(2)
+
+        // getNodesByType should find the 2 people we added.
+        // It should NOT find bootstrap nodes unless they have type 'person' (which they don't).
+        const people = getNodesByType(g, asTypeId('person'));
+        expect(people).toHaveLength(2)
+        expect(people.map(p => p.id)).toContain(nodeId1)
+        expect(people.map(p => p.id)).toContain(nodeId2)
+
         expect(getEdgesFrom(g, nodeId1)).toHaveLength(1)
         expect(getEdgesTo(g, nodeId2)).toHaveLength(1)
         expect(getEdgesTo(g, nodeId1)).toHaveLength(0)
