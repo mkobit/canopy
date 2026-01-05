@@ -55,6 +55,11 @@ export type {
   QueryResult,
 } from './graph.js'
 
+export type {
+  ValidationResult,
+  ValidationError,
+} from './validation.js'
+
 export {
     createNodeId,
     createEdgeId,
