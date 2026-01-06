@@ -36,12 +36,32 @@ module.exports = tseslint.config(
   {
     plugins: {
       functional,
+      import: importPlugin,
     },
     // We only apply these rules to TS files that are part of the project
     files: ['**/*.ts', '**/*.tsx'],
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+      },
+    },
     rules: {
-      // Overrides for lite config
+      // TypeScript rules
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      'no-console': ['warn', { allow: ['warn', 'error'] }],
+      '@typescript-eslint/no-require-imports': 'off',
+      '@typescript-eslint/ban-ts-comment': 'warn',
+      '@typescript-eslint/prefer-ts-expect-error': 'off',
+      '@typescript-eslint/no-non-null-assertion': 'off',
+      '@typescript-eslint/no-var-requires': 'off',
 
+      // Import plugin rules
+      'import/extensions': ['error', 'never', { json: 'always' }],
+      'import/no-unresolved': 'off', // TypeScript handles this
+
+      // Functional plugin overrides
       // Enforce immutability (part of lite, but tweaking)
       'functional/immutable-data': ['error', {
           ignoreClasses: true,
@@ -63,29 +83,6 @@ module.exports = tseslint.config(
       'functional/no-loop-statements': 'off',
       'functional/prefer-immutable-types': 'off',
       'functional/functional-parameters': 'off',
-    },
-  },
-  {
-    plugins: {
-      import: importPlugin,
-    },
-    languageOptions: {
-      globals: {
-        ...globals.browser,
-        ...globals.node,
-      },
-    },
-    rules: {
-      '@typescript-eslint/no-explicit-any': 'error',
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-      'no-console': ['warn', { allow: ['warn', 'error'] }],
-      '@typescript-eslint/no-require-imports': 'off',
-      '@typescript-eslint/ban-ts-comment': 'warn',
-      '@typescript-eslint/prefer-ts-expect-error': 'off',
-      '@typescript-eslint/no-non-null-assertion': 'off',
-      '@typescript-eslint/no-var-requires': 'off',
-      'import/extensions': ['error', 'never', { json: 'always' }],
-      'import/no-unresolved': 'off', // TypeScript handles this
     },
   },
 );
