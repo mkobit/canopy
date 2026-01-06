@@ -1,6 +1,6 @@
 import type { Graph, Node, Edge, NodeId, EdgeId } from '@canopy/types'
 import { createInstant } from '@canopy/types'
-import { validateNode, validateEdge } from './validation.js'
+import { validateNode, validateEdge } from './validation'
 
 export interface GraphOperationOptions {
   validate?: boolean

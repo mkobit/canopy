@@ -1,5 +1,5 @@
-import type { NodeId, GraphId } from './identifiers.js'
-import type { Instant, PlainDate } from './temporal.js'
+import type { NodeId, GraphId } from './identifiers'
+import type { Instant, PlainDate } from './temporal'
 
 /**
  * Scalar property values.

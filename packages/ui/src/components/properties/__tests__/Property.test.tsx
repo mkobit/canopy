@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { PropertyDisplay } from '../PropertyDisplay.js';
-import { PropertyInput } from '../PropertyInput.js';
+import { PropertyDisplay } from '../PropertyDisplay';
+import { PropertyInput } from '../PropertyInput';
 import { TextValue, NumberValue } from '@canopy/types';
 
 describe('PropertyDisplay', () => {

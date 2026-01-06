@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { createGraph } from '../src/graph.js'
-import { addNode, updateNode } from '../src/ops.js'
-import { SYSTEM_IDS } from '../src/system.js'
+import { createGraph } from '../src/graph'
+import { addNode, updateNode } from '../src/ops'
+import { SYSTEM_IDS } from '../src/system'
 import { createNodeId, asNodeId, asTypeId, createInstant, PropertyDefinition, PropertyValue } from '@canopy/types'
 
 // Test helpers

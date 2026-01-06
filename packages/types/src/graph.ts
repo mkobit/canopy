@@ -1,7 +1,7 @@
-import type { GraphId, NodeId, EdgeId } from './identifiers.js'
-import type { TemporalMetadata } from './temporal.js'
-import type { Node } from './node.js'
-import type { Edge } from './edge.js'
+import type { GraphId, NodeId, EdgeId } from './identifiers'
+import type { TemporalMetadata } from './temporal'
+import type { Node } from './node'
+import type { Edge } from './edge'
 
 /**
  * A graph is the aggregate root—the bounded context for a collection of nodes and edges.

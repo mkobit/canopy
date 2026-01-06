@@ -1,7 +1,7 @@
 import * as Y from 'yjs';
 import { Awareness } from 'y-protocols/awareness';
 import * as AwarenessProtocol from 'y-protocols/awareness';
-import { SyncProvider } from '../types.js';
+import { SyncProvider } from '../types';
 
 export class InMemoryProvider implements SyncProvider {
   doc: Y.Doc;

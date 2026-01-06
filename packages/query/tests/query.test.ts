@@ -3,8 +3,8 @@ import {
   Graph, Node, Edge, PropertyValue,
   createGraphId, asTypeId, asInstant, asNodeId, asEdgeId, TextValue
 } from '@canopy/types';
-import { query } from '../src/builder.js';
-import { executeQuery } from '../src/engine.js';
+import { query } from '../src/builder';
+import { executeQuery } from '../src/engine';
 
 // Helper to create a simple mock graph
 function createMockGraph(): Graph {

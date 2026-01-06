@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { NodeView } from '../NodeView.js';
-import { GraphCanvas } from '../GraphCanvas.js';
+import { NodeView } from '../NodeView';
+import { GraphCanvas } from '../GraphCanvas';
 import { Node, TextValue } from '@canopy/types';
 import { asNodeId, asTypeId, createInstant } from '@canopy/types';
 

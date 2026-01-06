@@ -1,5 +1,5 @@
 import initSqlJs, { Database, SqlJsStatic } from 'sql.js';
-import { StorageAdapter, GraphStorageMetadata } from './types.js';
+import { StorageAdapter, GraphStorageMetadata } from './types';
 
 export interface SQLitePersistence {
   read(): Promise<Uint8Array | null>;

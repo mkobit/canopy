@@ -1,5 +1,5 @@
-import type { TypeId } from './identifiers.js'
-import type { PropertyDefinition } from './properties.js'
+import type { TypeId } from './identifiers'
+import type { PropertyDefinition } from './properties'
 
 /**
  * Defines a node type in the meta-circular type system.
