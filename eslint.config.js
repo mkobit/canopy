@@ -3,6 +3,7 @@ const eslint = require('@eslint/js');
 const tseslint = require('typescript-eslint');
 const prettier = require('eslint-config-prettier');
 const globals = require('globals');
+const importPlugin = require('eslint-plugin-import');
 
 module.exports = tseslint.config(
   {
@@ -20,6 +21,9 @@ module.exports = tseslint.config(
   ...tseslint.configs.stylistic,
   prettier,
   {
+    plugins: {
+      import: importPlugin,
+    },
     languageOptions: {
       globals: {
         ...globals.browser,
@@ -35,6 +39,8 @@ module.exports = tseslint.config(
       '@typescript-eslint/prefer-ts-expect-error': 'off',
       '@typescript-eslint/no-non-null-assertion': 'off',
       '@typescript-eslint/no-var-requires': 'off',
+      'import/extensions': ['error', 'never', { json: 'always' }],
+      'import/no-unresolved': 'off', // TypeScript handles this
     },
   },
 );
