@@ -1,6 +1,6 @@
 import React from 'react';
 import { PropertyValue, PropertyValueKind, ScalarValue } from '@canopy/types';
-import { cn } from '../../utils/cn.js';
+import { cn } from '../../utils/cn';
 
 interface PropertyInputProps {
   value: PropertyValue;

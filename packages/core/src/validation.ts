@@ -11,8 +11,8 @@ import type {
   TypeId
 } from '@canopy/types'
 import { asTypeId, asNodeId } from '@canopy/types'
-import { getNodeType } from './queries.js'
-import { SYSTEM_IDS } from './system.js'
+import { getNodeType } from './queries'
+import { SYSTEM_IDS } from './system'
 
 // Helper to create a success result
 const SUCCESS: ValidationResult = { valid: true, errors: [] }

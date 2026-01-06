@@ -1,4 +1,4 @@
-import type { ScalarValue } from './scalars.js'
+import type { ScalarValue } from './scalars'
 
 /**
  * A property value is either a scalar or a flat list of scalars.

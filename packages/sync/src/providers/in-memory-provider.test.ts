@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { SyncEngine } from '../sync-engine.js';
-import { InMemoryProvider } from './in-memory-provider.js';
+import { SyncEngine } from '../sync-engine';
+import { InMemoryProvider } from './in-memory-provider';
 import { asTypeId } from '@canopy/types';
 
 describe('InMemoryProvider', () => {

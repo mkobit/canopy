@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { createGraph } from '../src/graph.js'
-import { addNode } from '../src/ops.js'
-import { validateNode, validateEdge } from '../src/validation.js'
-import { SYSTEM_IDS } from '../src/system.js'
+import { createGraph } from '../src/graph'
+import { addNode } from '../src/ops'
+import { validateNode, validateEdge } from '../src/validation'
+import { SYSTEM_IDS } from '../src/system'
 import { asNodeId, asTypeId, createNodeId, createEdgeId, PropertyDefinition, PropertyValue, createInstant } from '@canopy/types'
 
 // Test helpers to replace missing factories

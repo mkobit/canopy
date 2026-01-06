@@ -1,5 +1,5 @@
 import type { Graph, Node } from '@canopy/types'
-import { SYSTEM_IDS } from './system.js'
+import { SYSTEM_IDS } from './system'
 import { asNodeId } from '@canopy/types'
 
 /**

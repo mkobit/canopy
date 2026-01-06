@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { SyncEngine } from './sync-engine.js';
+import { SyncEngine } from './sync-engine';
 import { createNodeId, asTypeId, PropertyValue } from '@canopy/types';
 import * as Y from 'yjs';
 
