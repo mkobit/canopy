@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { SyncEngine } from '@canopy/sync';
-import { Graph, GraphId, NodeId, asInstant } from '@canopy/types';
+import { Graph, GraphId, NodeId, EdgeId, asInstant, PropertyValue, Node, Edge } from '@canopy/types';
 import { useStorage } from './StorageContext';
 
 interface GraphContextType {
@@ -82,8 +82,8 @@ export const GraphProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [storage]); // Removed syncEngine from dependency
 
   const updateGraphFromStore = (engine: SyncEngine, graphId: GraphId) => {
-      const nodes = new Map(engine.store.getAllNodes().map(node => [node.id, node]));
-      const edges = new Map(engine.store.getAllEdges().map(edge => [edge.id, edge]));
+      const nodes = new Map<NodeId, Node>(Array.from(engine.store.getAllNodes()).map(node => [node.id, node]));
+      const edges = new Map<EdgeId, Edge>(Array.from(engine.store.getAllEdges()).map(edge => [edge.id, edge]));
 
       // We need metadata for the graph itself.
       // StorageAdapter returns { data, metadata }.
@@ -130,10 +130,10 @@ export const GraphProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (!syncEngineRef.current) return null;
 
       // Rudimentary generic mapping to PropertyValue
-      const propsMap = new Map(
+      const propsMap = new Map<string, PropertyValue>(
           Object.entries(properties)
               .filter(([_, value]) => typeof value === 'string')
-              .map(([key, value]) => [key, { kind: 'text', value }])
+              .map(([key, value]) => [key, { kind: 'text' as const, value: value as string }])
       );
 
       const newNode = syncEngineRef.current.store.addNode({
