@@ -97,7 +97,6 @@ export function bootstrap(graph: Graph): Graph {
     }
   ]
 
-  // Replace loop with reduce
   g = reduce(
     coreEdgeTypes,
     (currentGraph, def) => {

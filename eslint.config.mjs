@@ -86,7 +86,6 @@ export default tseslint.config(
       'functional/no-class-inheritance': 'off',
       'functional/no-this-expressions': 'off',
       'functional/no-throw-statements': 'off',
-      // 'functional/no-loop-statements': 'off', // ENABLED NOW
       'functional/prefer-immutable-types': 'off',
       'functional/functional-parameters': 'off',
     },
