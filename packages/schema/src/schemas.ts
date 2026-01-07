@@ -128,27 +128,17 @@ export const GraphSchema: z.ZodType<Graph, z.ZodTypeDef, unknown> = z.object({
   nodes: z.union([
     z.map(z.string().uuid().transform(asNodeId), NodeSchema),
     z.record(z.string().uuid(), NodeSchema).transform((record) => {
-        // We can't trust the key to be validated by the record key schema in strict transformation scenarios easily
-        // but here we just convert entries. The keys are strings. We cast them to NodeId/EdgeId effectively.
-        // But since the value schema is NodeSchema, the node inside has the ID too.
-        // The Map key is NodeId.
-        const map = new Map<NodeId, Node>();
-        for (const [key, value] of Object.entries(record)) {
-        // eslint-disable-next-line functional/immutable-data
-             map.set(asNodeId(key), value);
-        }
-        return map;
+        return new Map<NodeId, Node>(
+            Object.entries(record).map(([key, value]) => [asNodeId(key), value])
+        );
     })
   ]),
   edges: z.union([
       z.map(z.string().uuid().transform(asEdgeId), EdgeSchema),
       z.record(z.string().uuid(), EdgeSchema).transform((record) => {
-          const map = new Map<EdgeId, Edge>();
-          for (const [key, value] of Object.entries(record)) {
-        // eslint-disable-next-line functional/immutable-data
-              map.set(asEdgeId(key), value);
-          }
-          return map;
+          return new Map<EdgeId, Edge>(
+            Object.entries(record).map(([key, value]) => [asEdgeId(key), value])
+          );
       })
   ])
 });

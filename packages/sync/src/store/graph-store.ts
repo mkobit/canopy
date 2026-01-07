@@ -19,6 +19,7 @@ import {
   PropertyValueSchema,
   TemporalMetadataSchema,
 } from '@canopy/schema';
+import { map } from 'remeda';
 
 // Helper types for storage (Plain Objects)
 type StorableProperties = Record<string, PropertyValue>;
@@ -141,10 +142,8 @@ export class GraphStore {
     return n ? storableToNode(n) : undefined;
   }
 
-  *getAllNodes(): IterableIterator<Node> {
-      for (const n of this.nodes.values()) {
-          yield storableToNode(n);
-      }
+  getAllNodes(): IterableIterator<Node> {
+      return map(Array.from(this.nodes.values()), storableToNode)[Symbol.iterator]();
   }
 
   updateNode(id: string, partial: Partial<Omit<Node, 'id' | 'metadata'>>): Node {
@@ -221,10 +220,8 @@ export class GraphStore {
     return e ? storableToEdge(e) : undefined;
   }
 
-  *getAllEdges(): IterableIterator<Edge> {
-      for (const e of this.edges.values()) {
-          yield storableToEdge(e);
-      }
+  getAllEdges(): IterableIterator<Edge> {
+      return map(Array.from(this.edges.values()), storableToEdge)[Symbol.iterator]();
   }
 
   updateEdge(id: string, partial: Partial<Omit<Edge, 'id' | 'metadata'>>): Edge {

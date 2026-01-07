@@ -11,8 +11,10 @@ import type {
   TypeId
 } from '@canopy/types'
 import { asTypeId, asNodeId } from '@canopy/types'
+import { PropertyDefinitionSchema } from '@canopy/schema'
 import { getNodeType } from './queries'
 import { SYSTEM_IDS } from './system'
+import { pipe, map, flatMap, filter } from 'remeda'
 
 // Helper to create a success result
 const SUCCESS: ValidationResult = { valid: true, errors: [] }
@@ -31,37 +33,24 @@ function extractProperties(node: Node): PropertyDefinition[] {
   try {
     const raw = JSON.parse(prop.value)
     if (Array.isArray(raw)) {
-       // TODO: Validate raw against PropertyDefinition schema using Zod?
-       // For now, assume it's correct as per meta-circularity
-       return raw as PropertyDefinition[]
+       // Validate against schema using Zod safely
+       const result = PropertyDefinitionSchema.array().safeParse(raw)
+       if (result.success) {
+           return result.data
+       }
     }
   } catch (e) {
     // ignore parse error, return empty
-    // The property might be malformed, treating as no properties
   }
   return []
 }
 
 function extractEdgeTypeDefinition(node: Node): EdgeTypeDefinition | undefined {
-    // properties: JSON string
-    // sourceTypes: List or JSON?
-    // targetTypes: List or JSON?
-    // Let's assume JSON in 'properties', and other fields are also properties.
-    // However, NodeTypeDefinition interface has explicit fields.
-    // We need to map Node properties to EdgeTypeDefinition.
-
-    // Assumption: The system node has properties matching the definition fields.
-    // Arrays might be stored as JSON strings if they are complex, or ListValue if simple.
-    // But PropertyValue ListValue is strictly scalar.
-    // So 'sourceTypes' (TypeId[]) could be ListValue of TextValue.
-
     const name = node.properties.get('name')
     const description = node.properties.get('description')
 
-    // Properties def
     const properties = extractProperties(node)
 
-    // Source/Target types
     const sourceTypesVal = node.properties.get('sourceTypes')
     const targetTypesVal = node.properties.get('targetTypes')
 
@@ -69,7 +58,6 @@ function extractEdgeTypeDefinition(node: Node): EdgeTypeDefinition | undefined {
     if (sourceTypesVal?.kind === 'list') {
         sourceTypes = sourceTypesVal.items.map(i => i.kind === 'text' ? asTypeId(i.value) : asTypeId('unknown'))
     } else if (sourceTypesVal?.kind === 'text') {
-        // Fallback for JSON string
         try { sourceTypes = (JSON.parse(sourceTypesVal.value) as string[]).map(asTypeId) } catch { /* ignore parse error */ }
     }
 
@@ -81,22 +69,14 @@ function extractEdgeTypeDefinition(node: Node): EdgeTypeDefinition | undefined {
     }
 
     return {
-        id: asTypeId(node.id), // The ID of the definition node is the TypeId it defines? Or node.type?
-        // Wait, bootstrap says: id: SYSTEM_IDS.EDGE_CHILD_OF (which is a NodeId).
-        // But the typeId is SYSTEM_EDGE_TYPES.CHILD_OF.
-        // The definition node's ID is the type's ID (or mapped to it).
-        // In bootstrap:
-        // id: SYSTEM_IDS.EDGE_CHILD_OF, typeId: SYSTEM_EDGE_TYPES.CHILD_OF
-        // So the NodeId of the definition IS the TypeId?
-        // asNodeId('edge:type:child-of') vs asTypeId('edge:type:child-of').
-        // Yes, they share the string.
+        id: asTypeId(node.id),
         name: name?.kind === 'text' ? name.value : 'Unknown',
         description: description?.kind === 'text' ? description.value : undefined,
         properties,
         sourceTypes,
         targetTypes,
-        transitive: false, // TODO: store this
-        inverse: undefined // TODO: store this
+        transitive: false, // TODO
+        inverse: undefined // TODO
     }
 }
 
@@ -118,73 +98,58 @@ function extractNodeTypeDefinition(node: Node): NodeTypeDefinition {
 
 
 function validateValue(val: PropertyValue, def: PropertyDefinition): ValidationError[] {
-    const errors: ValidationError[] = []
-
     // Check kind
     if (val.kind !== def.valueKind) {
-        // Allow automatic casting/compat in strict validation? No, prompt says:
-        // "type: string" -> value must be string
-        // But what if we have 'text' vs 'string'? PropertyValueKind matches PropertyDefinition valueKind.
-        // except PropertyDefinition schema says valueKind is 'text', 'number' etc.
-        // PropertyValue.kind is 'text', 'number'.
-        // So they should match.
-        // eslint-disable-next-line functional/immutable-data
-        errors.push({
+        return [{
             path: [def.name],
             message: `Property '${def.name}' expected type '${def.valueKind}' but got '${val.kind}'`,
             expected: def.valueKind,
             actual: val.kind
-        })
+        }]
     }
 
     // Additional checks per kind?
     if (def.valueKind === 'reference' && val.kind === 'reference') {
         // "value must be valid NodeId, optionally check targetType exists"
-        // It is already a NodeId if it is a ReferenceValue.
     }
 
-    return errors
+    return []
+}
+
+function validateProperties(properties: ReadonlyMap<string, PropertyValue>, definitions: readonly PropertyDefinition[]): ValidationError[] {
+    return pipe(
+        definitions,
+        flatMap((propDef): ValidationError[] => {
+            const val = properties.get(propDef.name)
+
+            if (propDef.required && val === undefined) {
+                return [{
+                    path: [propDef.name],
+                    message: `Missing required property '${propDef.name}'`,
+                    expected: 'defined',
+                    actual: 'undefined'
+                }]
+            }
+
+            if (val !== undefined) {
+                return validateValue(val, propDef)
+            }
+            return []
+        })
+    )
 }
 
 export function validateNode(graph: Graph, node: Node): ValidationResult {
-    const errors: ValidationError[] = []
-
     // 1. Lookup NodeType
     const defNode = getNodeType(graph, node.type)
     if (!defNode) {
-        // "Handle missing NodeType gracefully: ... warn or allow"
-        // "System/bootstrap types should always be valid"
-        // If it's a missing definition, we can't validate properties.
-        // Return valid for now (loose mode).
         return SUCCESS
     }
 
     const def = extractNodeTypeDefinition(defNode)
 
     // 2. Validate properties
-    for (const propDef of def.properties) {
-        const val = node.properties.get(propDef.name)
-
-        if (propDef.required && val === undefined) {
-            // eslint-disable-next-line functional/immutable-data
-            errors.push({
-                path: [propDef.name],
-                message: `Missing required property '${propDef.name}'`,
-                expected: 'defined',
-                actual: 'undefined'
-            })
-            continue
-        }
-
-        if (val !== undefined) {
-            // eslint-disable-next-line functional/immutable-data
-            errors.push(...validateValue(val, propDef))
-        }
-    }
-
-    // Check for unknown properties? (Strict schema?)
-    // Prompt doesn't explicitly ask to ban unknown properties, but "Validate property types match".
-    // Usually schemas are open or closed. Let's assume open for now unless specified.
+    const errors = validateProperties(node.properties, def.properties)
 
     if (errors.length > 0) {
         return failure(errors)
@@ -194,17 +159,10 @@ export function validateNode(graph: Graph, node: Node): ValidationResult {
 }
 
 export function validateEdge(graph: Graph, edge: Edge): ValidationResult {
-    const errors: ValidationError[] = []
-
     // 1. Lookup EdgeType
-    // We need a getEdgeType similar to getNodeType
-    // For now, let's implement inline lookup
-    let defNode: Node | undefined
-    const edgeTypeId = asNodeId(edge.type) // Assuming definition ID matches TypeId
-    defNode = graph.nodes.get(edgeTypeId)
+    const edgeTypeId = asNodeId(edge.type)
+    let defNode = graph.nodes.get(edgeTypeId)
 
-    // If not found by ID, maybe by name? But edges usually use TypeId directly.
-    // Also check if it's actually an edge type
     if (defNode && defNode.type !== SYSTEM_IDS.EDGE_TYPE) {
         defNode = undefined
     }
@@ -217,61 +175,44 @@ export function validateEdge(graph: Graph, edge: Edge): ValidationResult {
     if (!def) return SUCCESS
 
     // 2. Validate source/target types
-    if (def.sourceTypes.length > 0) {
-        const sourceNode = graph.nodes.get(edge.source)
-        if (sourceNode) {
-            if (!def.sourceTypes.includes(sourceNode.type)) {
-                // Check inheritance? Prompt says "Validates source node type is in sourceTypes array"
-                // Simple inclusion for now.
-                // eslint-disable-next-line functional/immutable-data
-                errors.push({
+    const sourceErrors = pipe(
+        [edge.source],
+        map(id => graph.nodes.get(id)),
+        filter((node): node is Node => !!node),
+        flatMap(node => {
+            if (def.sourceTypes.length > 0 && !def.sourceTypes.includes(node.type)) {
+                return [{
                     path: ['source'],
-                    message: `Source node type '${sourceNode.type}' is not allowed for edge type '${edge.type}'`,
+                    message: `Source node type '${node.type}' is not allowed for edge type '${edge.type}'`,
                     expected: def.sourceTypes.join(' | '),
-                    actual: sourceNode.type
-                })
+                    actual: node.type
+                }]
             }
-        } else {
-             // Edge source missing? Graph integrity issue, but out of scope for schema validation?
-             // Or maybe validEdge assumes nodes exist.
-        }
-    }
+            return []
+        })
+    )
 
-    if (def.targetTypes.length > 0) {
-        const targetNode = graph.nodes.get(edge.target)
-        if (targetNode) {
-            if (!def.targetTypes.includes(targetNode.type)) {
-                // eslint-disable-next-line functional/immutable-data
-                errors.push({
+    const targetErrors = pipe(
+        [edge.target],
+        map(id => graph.nodes.get(id)),
+        filter((node): node is Node => !!node),
+        flatMap(node => {
+            if (def.targetTypes.length > 0 && !def.targetTypes.includes(node.type)) {
+                return [{
                     path: ['target'],
-                    message: `Target node type '${targetNode.type}' is not allowed for edge type '${edge.type}'`,
+                    message: `Target node type '${node.type}' is not allowed for edge type '${edge.type}'`,
                     expected: def.targetTypes.join(' | '),
-                    actual: targetNode.type
-                })
+                    actual: node.type
+                }]
             }
-        }
-    }
+            return []
+        })
+    )
 
     // 3. Validate properties
-    for (const propDef of def.properties) {
-        const val = edge.properties.get(propDef.name)
+    const propertyErrors = validateProperties(edge.properties, def.properties)
 
-        if (propDef.required && val === undefined) {
-            // eslint-disable-next-line functional/immutable-data
-            errors.push({
-                path: [propDef.name],
-                message: `Missing required property '${propDef.name}'`,
-                expected: 'defined',
-                actual: 'undefined'
-            })
-            continue
-        }
-
-        if (val !== undefined) {
-            // eslint-disable-next-line functional/immutable-data
-            errors.push(...validateValue(val, propDef))
-        }
-    }
+    const errors = [...sourceErrors, ...targetErrors, ...propertyErrors]
 
     if (errors.length > 0) {
         return failure(errors)

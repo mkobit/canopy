@@ -1,4 +1,5 @@
 import { Graph, Node, Edge, PropertyValue } from '@canopy/types';
+import { filter } from 'remeda';
 
 export class GraphQuery {
   private graph: Graph;
@@ -8,36 +9,27 @@ export class GraphQuery {
   }
 
   findNodes(type: string, properties?: Record<string, PropertyValue>): Node[] {
-    const nodes: Node[] = [];
-    for (const node of this.graph.nodes.values()) {
-      if (node.type === type) {
-        if (properties) {
-          let match = true;
-          for (const [key, value] of Object.entries(properties)) {
+    return filter(
+      Array.from(this.graph.nodes.values()),
+      node => {
+        if (node.type !== type) return false;
+
+        if (!properties) return true;
+
+        return Object.entries(properties).every(([key, value]) => {
             const prop = node.properties.get(key);
-            if (!prop) {
-                match = false;
-                break;
-            }
-            if (prop.kind !== value.kind) {
-              match = false;
-              break;
-            }
+            if (!prop) return false;
+
+            if (prop.kind !== value.kind) return false;
+
              // Simplified check
              if ('value' in prop && 'value' in value) {
-                 if (prop.value !== value.value) {
-                    match = false;
-                    break;
-                 }
+                 return prop.value === value.value;
             }
-          }
-          if (match) nodes.push(node);
-        } else {
-          nodes.push(node);
-        }
+            return true;
+        });
       }
-    }
-    return nodes;
+    );
   }
 
   findEdges(_type: string, _source?: string, _target?: string, _properties?: Record<string, PropertyValue>): Edge[] {

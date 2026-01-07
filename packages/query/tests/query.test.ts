@@ -1,45 +1,51 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
   Graph, Node, Edge, PropertyValue,
-  createGraphId, asTypeId, asInstant, asNodeId, asEdgeId, TextValue
+  createGraphId, asTypeId, asInstant, asNodeId, asEdgeId, TextValue,
+  NodeId, EdgeId
 } from '@canopy/types';
 import { query } from '../src/builder';
 import { executeQuery } from '../src/engine';
+import { map, sort } from 'remeda';
 
 // Helper to create a simple mock graph
 function createMockGraph(): Graph {
-  const nodes = new Map<string, Node>();
-  const edges = new Map<string, Edge>();
+  const nodes = new Map<NodeId, Node>();
+  const edges = new Map<EdgeId, Edge>();
 
   const createNode = (id: string, type: string, props: Record<string, unknown> = {}) => {
-    const properties = new Map<string, PropertyValue>();
-    for (const [k, v] of Object.entries(props)) {
+    // Functional property creation
+    const properties = new Map<string, PropertyValue>(
+        Object.entries(props).map(([k, v]) => {
+            if (typeof v === 'string') return [k, { kind: 'text', value: v }];
+            if (typeof v === 'number') return [k, { kind: 'number', value: v }];
+            if (typeof v === 'boolean') return [k, { kind: 'boolean', value: v }];
+            return [k, { kind: 'text', value: String(v) }]; // Fallback
+        })
+    );
+
+    const nodeId = asNodeId(id);
     // eslint-disable-next-line functional/immutable-data
-      if (typeof v === 'string') properties.set(k, { kind: 'text', value: v });
-    // eslint-disable-next-line functional/immutable-data
-      if (typeof v === 'number') properties.set(k, { kind: 'number', value: v });
-    // eslint-disable-next-line functional/immutable-data
-      if (typeof v === 'boolean') properties.set(k, { kind: 'boolean', value: v });
-    }
-    // eslint-disable-next-line functional/immutable-data
-    nodes.set(id, {
-      id: asNodeId(id),
+    nodes.set(nodeId, {
+      id: nodeId,
       type: asTypeId(type),
       properties,
     });
   };
 
   const createEdge = (id: string, type: string, source: string, target: string, props: Record<string, unknown> = {}) => {
-     const properties = new Map<string, PropertyValue>();
-     for (const [k, v] of Object.entries(props)) {
+     const properties = new Map<string, PropertyValue>(
+         Object.entries(props).map(([k, v]) => {
+            if (typeof v === 'string') return [k, { kind: 'text', value: v }];
+            if (typeof v === 'number') return [k, { kind: 'number', value: v }];
+             return [k, { kind: 'text', value: String(v) }];
+         })
+     );
+
+    const edgeId = asEdgeId(id);
     // eslint-disable-next-line functional/immutable-data
-      if (typeof v === 'string') properties.set(k, { kind: 'text', value: v });
-    // eslint-disable-next-line functional/immutable-data
-      if (typeof v === 'number') properties.set(k, { kind: 'number', value: v });
-    }
-    // eslint-disable-next-line functional/immutable-data
-    edges.set(id, {
-      id: asEdgeId(id),
+    edges.set(edgeId, {
+      id: edgeId,
       type: asTypeId(type),
       source: asNodeId(source),
       target: asNodeId(target),
@@ -81,7 +87,7 @@ describe('Query Engine', () => {
     const result = executeQuery(graph, q);
     expect(result.nodes).toHaveLength(3);
     expect(result.edges).toHaveLength(0);
-    const names = result.nodes.map(n => (n.properties.get('name') as TextValue).value).sort();
+    const names = sort(map(result.nodes, n => (n.properties.get('name') as TextValue).value), (a, b) => a.localeCompare(b));
     expect(names).toEqual(['Alice', 'Bob', 'Charlie']);
   });
 
@@ -96,7 +102,7 @@ describe('Query Engine', () => {
     const q = query().nodes('Person').where('age', 'gt', 28).build();
     const result = executeQuery(graph, q);
     expect(result.nodes).toHaveLength(2); // Alice (30) and Charlie (35)
-    const names = result.nodes.map(n => (n.properties.get('name') as TextValue).value).sort();
+    const names = sort(map(result.nodes, n => (n.properties.get('name') as TextValue).value), (a, b) => a.localeCompare(b));
     expect(names).toEqual(['Alice', 'Charlie']);
   });
 
@@ -111,7 +117,7 @@ describe('Query Engine', () => {
     const q = query().edges().from('1').build(); // Alice
     const result = executeQuery(graph, q);
     expect(result.edges).toHaveLength(2); // knows Bob, works_at Acme
-    const types = result.edges.map(e => e.type).sort();
+    const types = sort(map(result.edges, e => e.type), (a, b) => a.localeCompare(b));
     expect(types).toEqual(['knows', 'works_at']);
   });
 
@@ -144,7 +150,7 @@ describe('Query Engine', () => {
   it('sorts results', () => {
     const q = query().nodes('Person').orderBy('age', 'desc').build();
     const result = executeQuery(graph, q);
-    const names = result.nodes.map(n => (n.properties.get('name') as TextValue).value);
+    const names = map(result.nodes, n => (n.properties.get('name') as TextValue).value);
     expect(names).toEqual(['Charlie', 'Alice', 'Bob']);
   });
 

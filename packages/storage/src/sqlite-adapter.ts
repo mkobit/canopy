@@ -110,6 +110,7 @@ export class SQLiteAdapter implements StorageAdapter {
     const result: GraphStorageMetadata[] = [];
     const stmt = this.db.prepare('SELECT id, name, created_at, updated_at FROM graphs');
 
+    // eslint-disable-next-line functional/no-loop-statements
     while (stmt.step()) {
       const row = stmt.getAsObject();
       result.push({
@@ -119,6 +120,7 @@ export class SQLiteAdapter implements StorageAdapter {
         updatedAt: row.updated_at as string,
       });
     }
+
     stmt.free();
     return result;
   }

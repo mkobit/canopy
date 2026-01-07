@@ -76,6 +76,8 @@ export default tseslint.config(
       'functional/no-let': ['error', {
         allowInFunctions: true
       }],
+      // Enforce no loop statements - prefer map/filter/reduce or remeda
+      'functional/no-loop-statements': 'error',
 
       // Disable noisy rules from lite for now to make it manageable
       'functional/prefer-readonly-type': 'off',
@@ -84,7 +86,6 @@ export default tseslint.config(
       'functional/no-class-inheritance': 'off',
       'functional/no-this-expressions': 'off',
       'functional/no-throw-statements': 'off',
-      'functional/no-loop-statements': 'off',
       'functional/prefer-immutable-types': 'off',
       'functional/functional-parameters': 'off',
     },

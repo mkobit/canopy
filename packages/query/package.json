@@ -9,11 +9,12 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@canopy/schema": "workspace:*",
     "@canopy/types": "workspace:*",
-    "@canopy/schema": "workspace:*"
+    "remeda": "^2.33.1"
   },
   "devDependencies": {
-     "typescript": "5.9.3",
+    "typescript": "5.9.3",
     "vitest": "1.6.0",
     "yjs": "^13.6.28"
   }
