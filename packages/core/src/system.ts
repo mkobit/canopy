@@ -4,10 +4,12 @@ export const SYSTEM_IDS = {
   // Types
   NODE_TYPE: asTypeId('node:type:node-type'),
   EDGE_TYPE: asTypeId('node:type:edge-type'),
+  QUERY_DEFINITION: asTypeId('node:type:query-definition'),
 
   // Node Type Definitions (these nodes define the types above)
   NODE_TYPE_DEF: asNodeId('node:type:node-type'),
   EDGE_TYPE_DEF: asNodeId('node:type:edge-type'),
+  QUERY_DEFINITION_DEF: asNodeId('node:type:query-definition'),
 
   // Edge Type Definitions (nodes that define edge types)
   EDGE_CHILD_OF: asNodeId('edge:type:child-of'),

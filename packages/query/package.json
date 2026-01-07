@@ -9,6 +9,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@canopy/core": "workspace:*",
     "@canopy/schema": "workspace:*",
     "@canopy/types": "workspace:*",
     "remeda": "^2.33.1"
