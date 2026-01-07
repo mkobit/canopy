@@ -1,4 +1,4 @@
-import type { Graph, Node, PropertyMap, TypeId, NodeId, PropertyValue } from '@canopy/types'
+import type { Graph, Node, PropertyMap, TypeId, NodeId, PropertyValue, PropertyDefinition } from '@canopy/types'
 import { createInstant } from '@canopy/types'
 import { addNode } from './ops'
 import { SYSTEM_IDS, SYSTEM_EDGE_TYPES } from './system'
@@ -89,7 +89,7 @@ export function bootstrap(graph: Graph): Graph {
             { name: 'nodeTypes', valueKind: 'list', required: false, description: 'Which node types this query targets' },
             { name: 'definition', valueKind: 'text', required: true, description: 'The query in stored format (JSON)' },
             { name: 'parameters', valueKind: 'list', required: false, description: 'Declared parameter names this query accepts' }
-         ]))
+         ] satisfies PropertyDefinition[]))
       }
     ))
   }
