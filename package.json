@@ -8,7 +8,7 @@
   "private": true,
   "scripts": {
     "build": "pnpm -r build",
-    "check:versions": "node tools/verify-versions.js",
+    "check:versions": "tsx tools/verify-versions.ts",
     "test": "vitest",
     "lint": "pnpm check:versions && eslint .",
     "format": "prettier --write .",
@@ -33,6 +33,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
     "prettier": "^3.7.4",
+    "tsx": "^4.21.0",
     "typescript": "5.9.3",
     "typescript-eslint": "7.10.0",
     "uuid": "^13.0.0",

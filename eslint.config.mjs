@@ -1,12 +1,16 @@
-// eslint.config.js
-const eslint = require('@eslint/js');
-const tseslint = require('typescript-eslint');
-const prettier = require('eslint-config-prettier');
-const globals = require('globals');
-const functional = require('eslint-plugin-functional').default;
-const importPlugin = require('eslint-plugin-import');
+// eslint.config.mjs
+import eslint from '@eslint/js';
+import tseslint from 'typescript-eslint';
+import prettier from 'eslint-config-prettier';
+import globals from 'globals';
+import functional from 'eslint-plugin-functional';
+import importPlugin from 'eslint-plugin-import';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
-module.exports = tseslint.config(
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+export default tseslint.config(
   {
     ignores: [
       'dist',
