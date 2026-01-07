@@ -123,6 +123,9 @@ importers:
       react-router-dom:
         specifier: ^7.11.0
         version: 7.11.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      remeda:
+        specifier: ^2.33.1
+        version: 2.33.1
       tailwind-merge:
         specifier: ^3.4.0
         version: 3.4.0

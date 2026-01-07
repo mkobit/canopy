@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useGraph } from '../context/GraphContext';
 import { Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { PropertyValue } from '@canopy/types';
+import { PropertyValue, Node } from '@canopy/types';
 import { filter, map } from 'remeda';
 
 export const SearchPage = () => {
@@ -11,13 +11,10 @@ export const SearchPage = () => {
 
   if (!graph) return <div>Loading...</div>;
 
-  const results = filter(Array.from(graph.nodes.values()), node => {
+  const results = filter(Array.from(graph.nodes.values()), (node: Node) => {
       if (!query) return false;
       const q = query.toLowerCase();
 
-      // Simple search in properties
-      // Using some/every approach with remeda logic or plain array methods
-      // Converting to array to use filter/some properly without loop statement warning
       const properties = Array.from(node.properties.values());
       return properties.some((val: PropertyValue) => {
           if (val.kind === 'text') {
@@ -41,7 +38,7 @@ export const SearchPage = () => {
       </div>
 
       <div className="space-y-4">
-        {map(results, node => {
+        {map(results, (node: Node) => {
            const name = node.properties.get('name');
            const desc = node.properties.get('description');
 

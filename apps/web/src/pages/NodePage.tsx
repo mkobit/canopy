@@ -122,7 +122,7 @@ export const NodePage = () => {
 
                     <div className="space-y-4">
                         <h3 className="font-semibold text-gray-900">Properties</h3>
-                        {map(Array.from(editedProps.entries()), ([key, val]) => (
+                        {map(Array.from(editedProps.entries()), ([key, val]: [string, PropertyValue]) => (
                             <div key={key} className="space-y-1">
                                 <label className="text-sm text-gray-600">{key}</label>
                                 {/* Rudimentary property editor */}
