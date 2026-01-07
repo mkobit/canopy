@@ -1,6 +1,7 @@
 import type { Graph, Node } from '@canopy/types'
 import { SYSTEM_IDS } from './system'
 import { asNodeId } from '@canopy/types'
+import { pipe, filter, first } from 'remeda'
 
 /**
  * Returns all nodes that define node types.
@@ -33,14 +34,13 @@ export function getNodeType(graph: Graph, typeNameOrId: string): Node | undefine
 
     // Fallback: search by name property
     // This assumes names are unique, which isn't guaranteed but useful for loose lookup
-    for (const n of graph.nodes.values()) {
-        if (n.type === SYSTEM_IDS.NODE_TYPE) {
+    return pipe(
+        Array.from(graph.nodes.values()),
+        filter(n => n.type === SYSTEM_IDS.NODE_TYPE),
+        filter(n => {
             const nameProp = n.properties.get('name')
-            if (nameProp && nameProp.kind === 'text' && nameProp.value === typeNameOrId) {
-                return n
-            }
-        }
-    }
-
-    return undefined
+            return nameProp?.kind === 'text' && nameProp.value === typeNameOrId
+        }),
+        first()
+    )
 }

@@ -1,6 +1,7 @@
 import type { Graph, Node, Edge, NodeId, EdgeId, GraphId } from '@canopy/types'
 import { createInstant } from '@canopy/types'
 import { bootstrap } from './bootstrap'
+import { filter } from 'remeda'
 
 // Re-export types for convenience
 export type { Graph, Node, Edge }
@@ -54,12 +55,13 @@ export function removeNode(graph: Graph, nodeId: NodeId): Graph {
     return graph
   }
 
-  const newNodes = new Map([...graph.nodes].filter(([id]) => id !== nodeId))
+  const newNodes = new Map(
+      filter([...graph.nodes], ([id]) => id !== nodeId)
+  )
 
   // Remove connected edges
-  // eslint-disable-next-line functional/immutable-data
   const newEdges = new Map(
-    [...graph.edges].filter(([_id, edge]) => edge.source !== nodeId && edge.target !== nodeId),
+    filter([...graph.edges], ([_id, edge]) => edge.source !== nodeId && edge.target !== nodeId)
   )
 
   return {
@@ -151,7 +153,9 @@ export function removeEdge(graph: Graph, edgeId: EdgeId): Graph {
     return graph
   }
 
-  const newEdges = new Map([...graph.edges].filter(([id]) => id !== edgeId))
+  const newEdges = new Map(
+      filter([...graph.edges], ([id]) => id !== edgeId)
+  )
 
   return {
     ...graph,

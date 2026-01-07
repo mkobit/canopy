@@ -1,5 +1,6 @@
 import { Graph, Node, Edge, QueryResult, PropertyValue } from '@canopy/types';
-import { Query, Filter, Sort } from './model';
+import { Query, Filter, Sort, QueryStep } from './model';
+import { reduce, filter, unique } from 'remeda';
 
 type GraphItem = Node | Edge;
 
@@ -7,67 +8,75 @@ export class QueryEngine {
   constructor(private graph: Graph) {}
 
   execute(query: Query): QueryResult {
-    let currentItems: GraphItem[] = [];
-    let isNodeContext = false;
+    // We need to keep track of isNodeContext which changes based on steps.
+    // reduce is suitable here.
+    const initial: { items: GraphItem[], isNodeContext: boolean } = { items: [], isNodeContext: false };
 
-    for (const step of query.steps) {
-      switch (step.kind) {
-        case 'node-scan':
-          currentItems = this.scanNodes(step.type);
-          isNodeContext = true;
-          break;
-        case 'edge-scan':
-          currentItems = this.scanEdges(step.type);
-          isNodeContext = false;
-          break;
-        case 'filter':
-          currentItems = this.applyFilter(currentItems, step.predicate);
-          break;
-        case 'traversal':
-          if (!isNodeContext) {
-            throw new Error('Traversal can only be performed on nodes.');
-          }
-          currentItems = this.traverse(currentItems as Node[], step.edgeType, step.direction);
-          isNodeContext = true; // Traversal returns nodes
-          break;
-        case 'sort':
-          currentItems = this.applySort(currentItems, step.sort);
-          break;
-        case 'limit':
-          currentItems = currentItems.slice(0, step.limit);
-          break;
-      }
-    }
+    const result = reduce(
+      query.steps,
+      (acc, step: QueryStep) => {
+        switch (step.kind) {
+          case 'node-scan':
+            return {
+              items: this.scanNodes(step.type),
+              isNodeContext: true
+            };
+          case 'edge-scan':
+            return {
+              items: this.scanEdges(step.type),
+              isNodeContext: false
+            };
+          case 'filter':
+            return {
+              ...acc,
+              items: this.applyFilter(acc.items, step.predicate)
+            };
+          case 'traversal':
+            if (!acc.isNodeContext) {
+              throw new Error('Traversal can only be performed on nodes.');
+            }
+            return {
+              items: this.traverse(acc.items as Node[], step.edgeType, step.direction),
+              isNodeContext: true // Traversal returns nodes
+            };
+          case 'sort':
+            return {
+              ...acc,
+              items: this.applySort(acc.items, step.sort)
+            };
+          case 'limit':
+            return {
+              ...acc,
+              items: acc.items.slice(0, step.limit)
+            };
+          default:
+            return acc;
+        }
+      },
+      initial
+    );
 
-    if (isNodeContext) {
-      return { nodes: currentItems as Node[], edges: [] };
+    if (result.isNodeContext) {
+      return { nodes: result.items as Node[], edges: [] };
     } else {
-      return { nodes: [], edges: currentItems as Edge[] };
+      return { nodes: [], edges: result.items as Edge[] };
     }
   }
 
   private scanNodes(type?: string): Node[] {
-    const nodes: Node[] = [];
-    for (const node of this.graph.nodes.values()) {
-      if (!type || node.type === type) {
-        nodes.push(node);
-      }
-    }
-    return nodes;
+    const nodes = Array.from(this.graph.nodes.values());
+    if (!type) return nodes;
+    return filter(nodes, node => node.type === type);
   }
 
   private scanEdges(type?: string): Edge[] {
-    const edges: Edge[] = [];
-    for (const edge of this.graph.edges.values()) {
-      if (!type || edge.type === type) {
-        edges.push(edge);
-      }
-    }
-    return edges;
+    const edges = Array.from(this.graph.edges.values());
+    if (!type) return edges;
+    return filter(edges, edge => edge.type === type);
   }
 
   private applyFilter(items: GraphItem[], predicate: Filter): GraphItem[] {
-    return items.filter(item => {
+    return filter(items, item => {
       let propValue: unknown;
 
       // Special handling for edge source/target which are top-level properties on Edge
@@ -115,37 +124,41 @@ export class QueryEngine {
   }
 
   private traverse(nodes: Node[], edgeType: string | undefined, direction: 'out' | 'in' | 'both'): Node[] {
-    const resultNodes = new Set<Node>();
     const nodeIds = new Set(nodes.map(n => n.id));
 
-    for (const edge of this.graph.edges.values()) {
-      if (edgeType && edge.type !== edgeType) continue;
+    // Get all edges that match the criteria
+    const edges = Array.from(this.graph.edges.values());
 
-      // Note: edge.source and edge.target are NodeIds (branded strings)
-      // nodeIds contains NodeIds.
-      // Comparison should work directly.
+    return unique(
+      reduce(
+        edges,
+        (acc: Node[], edge: Edge) => {
+          if (edgeType && edge.type !== edgeType) return acc;
 
-      const sourceMatches = nodeIds.has(edge.source);
-      const targetMatches = nodeIds.has(edge.target);
+          const sourceMatches = nodeIds.has(edge.source);
+          const targetMatches = nodeIds.has(edge.target);
 
-      if (direction === 'out' && sourceMatches) {
-        const targetNode = this.graph.nodes.get(edge.target);
-        if (targetNode) resultNodes.add(targetNode);
-      } else if (direction === 'in' && targetMatches) {
-        const sourceNode = this.graph.nodes.get(edge.source);
-        if (sourceNode) resultNodes.add(sourceNode);
-      } else if (direction === 'both') {
-        if (sourceMatches) {
-           const targetNode = this.graph.nodes.get(edge.target);
-           if (targetNode) resultNodes.add(targetNode);
-        }
-        if (targetMatches) {
-           const sourceNode = this.graph.nodes.get(edge.source);
-           if (sourceNode) resultNodes.add(sourceNode);
-        }
-      }
-    }
-    return Array.from(resultNodes);
+          if (direction === 'out' && sourceMatches) {
+            const targetNode = this.graph.nodes.get(edge.target);
+            if (targetNode) acc.push(targetNode);
+          } else if (direction === 'in' && targetMatches) {
+            const sourceNode = this.graph.nodes.get(edge.source);
+            if (sourceNode) acc.push(sourceNode);
+          } else if (direction === 'both') {
+            if (sourceMatches) {
+              const targetNode = this.graph.nodes.get(edge.target);
+              if (targetNode) acc.push(targetNode);
+            }
+            if (targetMatches) {
+              const sourceNode = this.graph.nodes.get(edge.source);
+              if (sourceNode) acc.push(sourceNode);
+            }
+          }
+          return acc;
+        },
+        []
+      )
+    );
   }
 
   private applySort(items: GraphItem[], sort: Sort): GraphItem[] {

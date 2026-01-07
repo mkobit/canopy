@@ -2,6 +2,7 @@ import type { Graph, Node, PropertyMap, TypeId, NodeId, PropertyValue } from '@c
 import { createInstant } from '@canopy/types'
 import { addNode } from './ops'
 import { SYSTEM_IDS, SYSTEM_EDGE_TYPES } from './system'
+import { reduce } from 'remeda'
 
 // Helper to create a property map
 function createProperties(props: Record<string, PropertyValue>): PropertyMap {
@@ -96,16 +97,22 @@ export function bootstrap(graph: Graph): Graph {
     }
   ]
 
-  for (const def of coreEdgeTypes) {
-    if (!g.nodes.has(def.id)) {
-      g = addNode(g, createBootstrapNode(
-        def.id,
-        SYSTEM_IDS.EDGE_TYPE, // These are definitions of edge types
-        def.name,
-        def.description
-      ))
-    }
-  }
+  // Replace loop with reduce
+  g = reduce(
+    coreEdgeTypes,
+    (currentGraph, def) => {
+      if (!currentGraph.nodes.has(def.id)) {
+        return addNode(currentGraph, createBootstrapNode(
+          def.id,
+          SYSTEM_IDS.EDGE_TYPE, // These are definitions of edge types
+          def.name,
+          def.description
+        ))
+      }
+      return currentGraph
+    },
+    g
+  )
 
   return g
 }
