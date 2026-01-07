@@ -51,7 +51,7 @@ export function saveViewDefinition(
 ): { graph: Graph; nodeId: NodeId } {
   const nodeId = createNodeId();
 
-  const baseProperties: readonly [string, PropertyValue][] = [
+  const baseProperties: readonly (readonly [string, PropertyValue])[] = [
     ['name', scalar(view.name)],
     ['queryRef', reference(view.queryRef)],
     ['layout', scalar(view.layout)],
