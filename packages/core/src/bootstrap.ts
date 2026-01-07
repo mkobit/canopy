@@ -120,8 +120,7 @@ export function bootstrap(graph: Graph): Graph {
             { name: 'description', valueKind: 'text', required: false, description: 'What this view shows' },
             { name: 'queryRef', valueKind: 'reference', required: true, description: 'Reference to a QueryDefinition node' },
             { name: 'layout', valueKind: 'text', required: true, description: 'list | table | cards | graph | document' },
-            { name: 'sortBy', valueKind: 'text', required: false, description: 'Property name to sort results' },
-            { name: 'sortDirection', valueKind: 'text', required: false, description: 'asc | desc' },
+            { name: 'sort', valueKind: 'text', required: false, description: 'JSON string of sort criteria' },
             { name: 'groupBy', valueKind: 'text', required: false, description: 'Property name to group results' },
             { name: 'displayProperties', valueKind: 'list', required: false, description: 'Properties to show' },
             { name: 'pageSize', valueKind: 'number', required: false, description: 'Number of items per page' }

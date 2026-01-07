@@ -6,10 +6,9 @@ import {
   createInstant,
   PropertyValue,
   ScalarValue,
-  NodeReference
 } from '@canopy/types';
 import { SYSTEM_IDS, addNode } from '@canopy/core';
-import { Query } from './model';
+import { Query, Sort } from './model';
 import { getQueryDefinition } from './stored';
 
 export interface ViewDefinition {
@@ -17,8 +16,7 @@ export interface ViewDefinition {
   description?: string;
   queryRef: NodeId;
   layout: string;
-  sortBy?: string;
-  sortDirection?: 'asc' | 'desc';
+  sort?: Sort[];
   groupBy?: string;
   displayProperties?: string[];
   pageSize?: number;
@@ -62,11 +60,8 @@ export function saveViewDefinition(
   if (view.description) {
     baseProperties.push(['description', scalar(view.description)]);
   }
-  if (view.sortBy) {
-    baseProperties.push(['sortBy', scalar(view.sortBy)]);
-  }
-  if (view.sortDirection) {
-    baseProperties.push(['sortDirection', scalar(view.sortDirection)]);
+  if (view.sort && view.sort.length > 0) {
+    baseProperties.push(['sort', scalar(JSON.stringify(view.sort))]);
   }
   if (view.groupBy) {
     baseProperties.push(['groupBy', scalar(view.groupBy)]);
@@ -122,12 +117,13 @@ export function getViewDefinition(graph: Graph, nodeId: NodeId): ViewDefinition 
   const description = node.properties.get('description');
   if (description && description.kind === 'text') view.description = description.value;
 
-  const sortBy = node.properties.get('sortBy');
-  if (sortBy && sortBy.kind === 'text') view.sortBy = sortBy.value;
-
-  const sortDirection = node.properties.get('sortDirection');
-  if (sortDirection && sortDirection.kind === 'text' && (sortDirection.value === 'asc' || sortDirection.value === 'desc')) {
-    view.sortDirection = sortDirection.value as 'asc' | 'desc';
+  const sortProp = node.properties.get('sort');
+  if (sortProp && sortProp.kind === 'text') {
+    try {
+      view.sort = JSON.parse(sortProp.value) as Sort[];
+    } catch (e) {
+      // Ignore invalid JSON sort
+    }
   }
 
   const groupBy = node.properties.get('groupBy');

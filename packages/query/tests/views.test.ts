@@ -20,8 +20,7 @@ describe('View Definitions', () => {
       description: 'A test view',
       queryRef: queryId,
       layout: 'table',
-      sortBy: 'name',
-      sortDirection: 'asc',
+      sort: [{ property: 'name', direction: 'asc' }],
       pageSize: 20
     });
     graph = g2;
@@ -32,8 +31,7 @@ describe('View Definitions', () => {
     expect(view.description).toBe('A test view');
     expect(view.queryRef).toBe(queryId);
     expect(view.layout).toBe('table');
-    expect(view.sortBy).toBe('name');
-    expect(view.sortDirection).toBe('asc');
+    expect(view.sort).toEqual([{ property: 'name', direction: 'asc' }]);
     expect(view.pageSize).toBe(20);
   });
 

@@ -64,7 +64,7 @@ The engine supports filtering, traversal, sorting, and limiting results.
 Future iterations will introduce a Cypher parser that generates the IR directly.
 This design prepares for a potential migration to ISO GQL without rewriting the execution logic.
 
-## View System (@canopy/query)
+## View system (@canopy/query)
 
 Views are meta-circular definitions stored as nodes in the graph (ViewDefinition).
 A ViewDefinition pairs a stored QueryDefinition with presentation metadata (layout, sorting, grouping).
