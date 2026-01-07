@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createGraph, bootstrap, SYSTEM_IDS, addNode } from '@canopy/core';
+import { createGraph, bootstrap, SYSTEM_IDS } from '@canopy/core';
 import { saveViewDefinition, getViewDefinition, resolveView, listViewDefinitions } from '../src/views';
 import { saveQueryDefinition } from '../src/stored';
 import { Query } from '../src/model';

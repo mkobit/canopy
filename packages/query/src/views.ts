@@ -12,19 +12,19 @@ import { Query, Sort } from './model';
 import { getQueryDefinition } from './stored';
 
 export interface ViewDefinition {
-  name: string;
-  description?: string;
-  queryRef: NodeId;
-  layout: string;
-  sort?: Sort[];
-  groupBy?: string;
-  displayProperties?: string[];
-  pageSize?: number;
+  readonly name: string;
+  readonly description?: string;
+  readonly queryRef: NodeId;
+  readonly layout: string;
+  readonly sort?: readonly Sort[];
+  readonly groupBy?: string;
+  readonly displayProperties?: readonly string[];
+  readonly pageSize?: number;
 }
 
 export interface ResolvedView {
-  definition: ViewDefinition;
-  query: Query;
+  readonly definition: ViewDefinition;
+  readonly query: Query;
 }
 
 // Helper to wrap a scalar value
@@ -41,7 +41,7 @@ function reference(target: NodeId): PropertyValue {
 }
 
 // Helper to create a list property
-function list(items: string[]): PropertyValue {
+function list(items: readonly string[]): PropertyValue {
   return { kind: 'list', items: items.map(i => ({ kind: 'text', value: i })) };
 }
 
@@ -51,27 +51,16 @@ export function saveViewDefinition(
 ): { graph: Graph; nodeId: NodeId } {
   const nodeId = createNodeId();
 
-  const baseProperties: [string, PropertyValue][] = [
+  const baseProperties: readonly [string, PropertyValue][] = [
     ['name', scalar(view.name)],
     ['queryRef', reference(view.queryRef)],
-    ['layout', scalar(view.layout)]
+    ['layout', scalar(view.layout)],
+    ...(view.description ? [['description', scalar(view.description)] as const] : []),
+    ...(view.sort && view.sort.length > 0 ? [['sort', scalar(JSON.stringify(view.sort))] as const] : []),
+    ...(view.groupBy ? [['groupBy', scalar(view.groupBy)] as const] : []),
+    ...(view.displayProperties && view.displayProperties.length > 0 ? [['displayProperties', list(view.displayProperties)] as const] : []),
+    ...(view.pageSize ? [['pageSize', scalar(view.pageSize)] as const] : []),
   ];
-
-  if (view.description) {
-    baseProperties.push(['description', scalar(view.description)]);
-  }
-  if (view.sort && view.sort.length > 0) {
-    baseProperties.push(['sort', scalar(JSON.stringify(view.sort))]);
-  }
-  if (view.groupBy) {
-    baseProperties.push(['groupBy', scalar(view.groupBy)]);
-  }
-  if (view.displayProperties && view.displayProperties.length > 0) {
-    baseProperties.push(['displayProperties', list(view.displayProperties)]);
-  }
-  if (view.pageSize) {
-    baseProperties.push(['pageSize', scalar(view.pageSize)]);
-  }
 
   const properties = new Map(baseProperties);
 
@@ -108,38 +97,38 @@ export function getViewDefinition(graph: Graph, nodeId: NodeId): ViewDefinition 
   const layoutProp = node.properties.get('layout');
   if (!layoutProp || layoutProp.kind !== 'text') throw new Error('Invalid view layout');
 
-  const view: ViewDefinition = {
-    name: nameProp.value,
-    queryRef: queryRefProp.target,
-    layout: layoutProp.value
-  };
-
   const description = node.properties.get('description');
-  if (description && description.kind === 'text') view.description = description.value;
-
   const sortProp = node.properties.get('sort');
+  const groupBy = node.properties.get('groupBy');
+  const displayProperties = node.properties.get('displayProperties');
+  const pageSize = node.properties.get('pageSize');
+
+  let sort: Sort[] | undefined;
   if (sortProp && sortProp.kind === 'text') {
     try {
-      view.sort = JSON.parse(sortProp.value) as Sort[];
+      sort = JSON.parse(sortProp.value) as Sort[];
     } catch (e) {
       // Ignore invalid JSON sort
     }
   }
 
-  const groupBy = node.properties.get('groupBy');
-  if (groupBy && groupBy.kind === 'text') view.groupBy = groupBy.value;
+  const displayPropertiesList = (displayProperties && displayProperties.kind === 'list')
+      ? displayProperties.items
+          .filter(i => i.kind === 'text')
+          .map(i => i.kind === 'text' ? i.value : '') // Explicit check to satisfy types, though filter handles it
+          .filter(s => s !== '')
+      : undefined;
 
-  const displayProperties = node.properties.get('displayProperties');
-  if (displayProperties && displayProperties.kind === 'list') {
-    view.displayProperties = displayProperties.items
-      .filter(i => i.kind === 'text')
-      .map(i => (i as any).value);
-  }
-
-  const pageSize = node.properties.get('pageSize');
-  if (pageSize && pageSize.kind === 'number') view.pageSize = pageSize.value;
-
-  return view;
+  return {
+    name: nameProp.value,
+    queryRef: queryRefProp.target,
+    layout: layoutProp.value,
+    ...(description && description.kind === 'text' ? { description: description.value } : {}),
+    ...(sort ? { sort } : {}),
+    ...(groupBy && groupBy.kind === 'text' ? { groupBy: groupBy.value } : {}),
+    ...(displayPropertiesList ? { displayProperties: displayPropertiesList } : {}),
+    ...(pageSize && pageSize.kind === 'number' ? { pageSize: pageSize.value } : {}),
+  };
 }
 
 export function listViewDefinitions(graph: Graph): Node[] {

@@ -14,19 +14,9 @@ function text(value: string): PropertyValue {
   return { kind: 'text', value }
 }
 
-// Helper to create a number value
-function number(value: number): PropertyValue {
-  return { kind: 'number', value }
-}
-
 // Helper to create a reference value
 function reference(target: NodeId): PropertyValue {
   return { kind: 'reference', target }
-}
-
-// Helper to create a list of text values
-function list(values: string[]): PropertyValue {
-  return { kind: 'list', items: values.map(text) }
 }
 
 function createBootstrapNode(
@@ -260,12 +250,10 @@ export function bootstrap(graph: Graph): Graph {
     systemViews,
     (currentGraph, def) => {
       if (!currentGraph.nodes.has(def.id)) {
-        const extraProps: Record<string, PropertyValue> = {
+        const extraProps = {
           layout: text(def.layout),
-          queryRef: reference(def.queryRef)
-        }
-        if (def.groupBy) {
-          extraProps.groupBy = text(def.groupBy)
+          queryRef: reference(def.queryRef),
+          ...(def.groupBy ? { groupBy: text(def.groupBy) } : {})
         }
         return addNode(currentGraph, createBootstrapNode(
           def.id,
