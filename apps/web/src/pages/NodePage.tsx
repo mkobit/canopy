@@ -4,6 +4,7 @@ import { useGraph } from '../context/GraphContext';
 import { NodeView } from '@canopy/ui';
 import { Node, NodeId, PropertyValue } from '@canopy/types';
 import { ArrowLeft, Save, Trash, Link as LinkIcon } from 'lucide-react';
+import { filter, map } from 'remeda';
 
 export const NodePage = () => {
   const { nodeId } = useParams<{ nodeId: string }>();
@@ -76,14 +77,11 @@ export const NodePage = () => {
   // Find connected edges
   const connectedEdges = useMemo(() => {
       if (!graph || !currentNode) return [];
-      const edges = [];
-      for (const edge of graph.edges.values()) {
-          if (edge.source === currentNode.id || edge.target === currentNode.id) {
-    // eslint-disable-next-line functional/immutable-data
-              edges.push(edge);
-          }
-      }
-      return edges;
+
+      return filter(
+          Array.from(graph.edges.values()),
+          (edge) => edge.source === currentNode.id || edge.target === currentNode.id
+      );
   }, [graph, currentNode]);
 
   return (
@@ -115,13 +113,6 @@ export const NodePage = () => {
        </div>
 
        <div className="p-8 flex-1">
-           {/* We can use NodeView or build a custom editor form */}
-           {/* Since we need editing, we build a form here if NodeView is read-only.
-               Checking memory: "NodeView/EdgeView for individual elements". It doesn't say read-only explicitly but implies view.
-               And "Node editing... modify node properties".
-               I will assume NodeView is display only.
-            */}
-
             {isEditing ? (
                 <div className="space-y-6">
                     <div className="space-y-2">
@@ -131,7 +122,7 @@ export const NodePage = () => {
 
                     <div className="space-y-4">
                         <h3 className="font-semibold text-gray-900">Properties</h3>
-                        {Array.from(editedProps.entries()).map(([key, val]) => (
+                        {map(Array.from(editedProps.entries()), ([key, val]) => (
                             <div key={key} className="space-y-1">
                                 <label className="text-sm text-gray-600">{key}</label>
                                 {/* Rudimentary property editor */}
@@ -162,7 +153,7 @@ export const NodePage = () => {
                                <LinkIcon size={20} /> Connections
                            </h3>
                            <div className="grid gap-3">
-                               {connectedEdges.map(edge => {
+                               {map(connectedEdges, edge => {
                                    const otherId = edge.source === currentNode.id ? edge.target : edge.source;
                                    const otherNode = graph?.nodes.get(otherId);
                                    return (

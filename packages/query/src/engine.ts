@@ -1,6 +1,6 @@
 import { Graph, Node, Edge, QueryResult, PropertyValue } from '@canopy/types';
 import { Query, Filter, Sort, QueryStep } from './model';
-import { reduce, filter, unique } from 'remeda';
+import { reduce, filter, unique, flatMap } from 'remeda';
 
 type GraphItem = Node | Edge;
 
@@ -130,34 +130,32 @@ export class QueryEngine {
     const edges = Array.from(this.graph.edges.values());
 
     return unique(
-      reduce(
-        edges,
-        (acc: Node[], edge: Edge) => {
-          if (edgeType && edge.type !== edgeType) return acc;
+      flatMap(edges, (edge: Edge) => {
+          if (edgeType && edge.type !== edgeType) return [];
 
           const sourceMatches = nodeIds.has(edge.source);
           const targetMatches = nodeIds.has(edge.target);
 
+          const result: Node[] = [];
+
           if (direction === 'out' && sourceMatches) {
             const targetNode = this.graph.nodes.get(edge.target);
-            if (targetNode) acc.push(targetNode);
+            if (targetNode) result.push(targetNode);
           } else if (direction === 'in' && targetMatches) {
             const sourceNode = this.graph.nodes.get(edge.source);
-            if (sourceNode) acc.push(sourceNode);
+            if (sourceNode) result.push(sourceNode);
           } else if (direction === 'both') {
             if (sourceMatches) {
               const targetNode = this.graph.nodes.get(edge.target);
-              if (targetNode) acc.push(targetNode);
+              if (targetNode) result.push(targetNode);
             }
             if (targetMatches) {
               const sourceNode = this.graph.nodes.get(edge.source);
-              if (sourceNode) acc.push(sourceNode);
+              if (sourceNode) result.push(sourceNode);
             }
           }
-          return acc;
-        },
-        []
-      )
+          return result;
+      })
     );
   }
 

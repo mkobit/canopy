@@ -1,79 +1,72 @@
 import React, { useState } from 'react';
 import { useGraph } from '../context/GraphContext';
-import { useNavigate } from 'react-router-dom';
-import { Search as SearchIcon } from 'lucide-react';
-import { Node } from '@canopy/types';
+import { Search } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { PropertyValue } from '@canopy/types';
+import { filter, map } from 'remeda';
 
 export const SearchPage = () => {
-    const { graph } = useGraph();
-    const navigate = useNavigate();
-    const [query, setQuery] = useState('');
+  const { graph } = useGraph();
+  const [query, setQuery] = useState('');
 
-    // Simple client-side search for now as QueryBuilder is complex to setup fully in this snippet
-    // and we need "Search: find nodes by text content or property values."
-    // In a real app we'd use QueryBuilder.
+  if (!graph) return <div>Loading...</div>;
 
-    const results = React.useMemo(() => {
-        if (!graph || !query) return [];
-        const lowerQ = query.toLowerCase();
-        const matches: Node[] = [];
+  const results = filter(Array.from(graph.nodes.values()), node => {
+      if (!query) return false;
+      const q = query.toLowerCase();
 
-        for (const node of graph.nodes.values()) {
-            // Search in properties
-            let found = false;
-            for (const val of node.properties.values()) {
-                if (val.kind === 'text' && val.value.toLowerCase().includes(lowerQ)) {
-                    found = true;
-                    break;
-                }
-            }
-                // eslint-disable-next-line functional/immutable-data
-            if (found) matches.push(node);
-        }
-        return matches;
-    }, [graph, query]);
+      // Simple search in properties
+      // Using some/every approach with remeda logic or plain array methods
+      // Converting to array to use filter/some properly without loop statement warning
+      const properties = Array.from(node.properties.values());
+      return properties.some((val: PropertyValue) => {
+          if (val.kind === 'text') {
+              return val.value.toLowerCase().includes(q);
+          }
+          return false;
+      });
+  });
 
-    return (
-        <div className="p-8 max-w-2xl mx-auto">
-            <h1 className="text-2xl font-bold mb-6">Search</h1>
+  return (
+    <div className="max-w-3xl mx-auto p-8">
+      <div className="relative mb-8">
+        <Search className="absolute left-3 top-3 text-gray-400" size={20} />
+        <input
+          type="text"
+          placeholder="Search nodes..."
+          className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+        />
+      </div>
 
-            <div className="relative mb-8">
-                <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                <input
-                    type="text"
-                    placeholder="Search for nodes..."
-                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg"
-                    value={query}
-                    onChange={e => setQuery(e.target.value)}
-                    autoFocus
-                />
-            </div>
+      <div className="space-y-4">
+        {map(results, node => {
+           const name = node.properties.get('name');
+           const desc = node.properties.get('description');
 
-            <div className="space-y-4">
-                {query && results.length === 0 && (
-                    <p className="text-center text-gray-500">No results found.</p>
-                )}
-
-                {results.map(node => (
-                    <div
-                        key={node.id}
-                        onClick={() => navigate(`/graph/${graph!.id}/node/${node.id}`)}
-                        className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm cursor-pointer transition-all bg-white"
-                    >
-                        <div className="flex items-center gap-2 mb-1">
-                             <span className="px-2 py-0.5 bg-gray-100 text-xs font-mono rounded text-gray-600">{node.type}</span>
-                        </div>
-                        <h3 className="font-semibold text-lg text-gray-900">
-                            {/* Try to find a name property, else ID */}
-                            {(() => {
-                                const nameProp = node.properties.get('name');
-                                return nameProp && nameProp.kind === 'text' ? nameProp.value : 'Untitled Node';
-                            })()}
+           return (
+             <Link key={node.id} to={`/node/${node.id}`} className="block p-4 border rounded-lg hover:border-blue-400 hover:shadow-sm transition-all bg-white">
+                <div className="flex justify-between items-start">
+                    <div>
+                        <h3 className="text-lg font-semibold text-gray-900">
+                            {name?.kind === 'text' ? name.value : 'Untitled Node'}
                         </h3>
-                        <p className="text-xs text-gray-400 font-mono mt-2">{node.id}</p>
+                        <p className="text-sm text-gray-500 font-mono mt-1">{node.type}</p>
                     </div>
-                ))}
+                </div>
+                {desc?.kind === 'text' && (
+                    <p className="mt-2 text-gray-600 line-clamp-2">{desc.value}</p>
+                )}
+             </Link>
+           );
+        })}
+        {query && results.length === 0 && (
+            <div className="text-center text-gray-500 py-12">
+                No results found for "{query}"
             </div>
-        </div>
-    );
+        )}
+      </div>
+    </div>
+  );
 };
