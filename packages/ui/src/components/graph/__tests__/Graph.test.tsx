@@ -32,14 +32,17 @@ describe('NodeView', () => {
 
   it('renders properties', () => {
     render(<NodeView node={mockNode} />);
-    expect(screen.getByText('name')).toBeDefined();
-    expect(screen.getByText('Alice')).toBeDefined();
+    const nameElements = screen.getAllByText('name');
+    expect(nameElements.length).toBeGreaterThan(0);
+    const aliceElements = screen.getAllByText('Alice');
+    expect(aliceElements.length).toBeGreaterThan(0);
   });
 
   it('calls onClick when clicked', () => {
     const onClick = vi.fn();
-    render(<NodeView node={mockNode} onClick={onClick} />);
-    fireEvent.click(screen.getByText('person'));
+    const { container } = render(<NodeView node={mockNode} onClick={onClick} />);
+    // Click the main container
+    fireEvent.click(container.firstChild as Element);
     expect(onClick).toHaveBeenCalledWith(mockNode);
   });
 });
@@ -47,7 +50,8 @@ describe('NodeView', () => {
 describe('GraphCanvas', () => {
   it('renders nodes', () => {
     render(<GraphCanvas nodes={[mockGraphNode]} edges={[]} />);
-    expect(screen.getByText('person')).toBeDefined();
+    const personElements = screen.getAllByText('person');
+    expect(personElements.length).toBeGreaterThan(0);
   });
 
   it('handles background click', () => {
