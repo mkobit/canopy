@@ -5,11 +5,25 @@ export const SYSTEM_IDS = {
   NODE_TYPE: asTypeId('node:type:node-type'),
   EDGE_TYPE: asTypeId('node:type:edge-type'),
   QUERY_DEFINITION: asTypeId('node:type:query-definition'),
+  VIEW_DEFINITION: asTypeId('node:type:view-definition'),
+  TEMPLATE: asTypeId('node:type:template'),
 
   // Node Type Definitions (these nodes define the types above)
   NODE_TYPE_DEF: asNodeId('node:type:node-type'),
   EDGE_TYPE_DEF: asNodeId('node:type:edge-type'),
   QUERY_DEFINITION_DEF: asNodeId('node:type:query-definition'),
+  VIEW_DEFINITION_DEF: asNodeId('node:type:view-definition'),
+  TEMPLATE_DEF: asNodeId('node:type:template'),
+
+  // System Queries
+  QUERY_ALL_NODES: asNodeId('query:system:all-nodes'),
+  QUERY_BY_TYPE: asNodeId('query:system:by-type'),
+  QUERY_RECENT: asNodeId('query:system:recent'),
+
+  // System Views
+  VIEW_ALL_NODES: asNodeId('view:system:all-nodes'),
+  VIEW_BY_TYPE: asNodeId('view:system:by-type'),
+  VIEW_RECENT: asNodeId('view:system:recent'),
 
   // Edge Type Definitions (nodes that define edge types)
   EDGE_CHILD_OF: asNodeId('edge:type:child-of'),

@@ -63,3 +63,13 @@ Queries are executed against a `Graph` instance and return a `QueryResult`.
 The engine supports filtering, traversal, sorting, and limiting results.
 Future iterations will introduce a Cypher parser that generates the IR directly.
 This design prepares for a potential migration to ISO GQL without rewriting the execution logic.
+
+## View System (@canopy/query)
+
+Views are meta-circular definitions stored as nodes in the graph (ViewDefinition).
+A ViewDefinition pairs a stored QueryDefinition with presentation metadata (layout, sorting, grouping).
+The UI layer resolves a ViewDefinition to get both the executable query and the display configuration.
+Views are portable and can be exported along with the graph data.
+System views (All Nodes, By Type, Recent) are bootstrapped by default.
+Views do not contain rendering logic; they only describe *how* data should be presented.
+Templates are placeholder definitions for UI components that can render specific layouts.

@@ -14,6 +14,21 @@ function text(value: string): PropertyValue {
   return { kind: 'text', value }
 }
 
+// Helper to create a number value
+function number(value: number): PropertyValue {
+  return { kind: 'number', value }
+}
+
+// Helper to create a reference value
+function reference(target: NodeId): PropertyValue {
+  return { kind: 'reference', target }
+}
+
+// Helper to create a list of text values
+function list(values: string[]): PropertyValue {
+  return { kind: 'list', items: values.map(text) }
+}
+
 function createBootstrapNode(
   id: NodeId,
   type: TypeId,
@@ -93,6 +108,44 @@ export function bootstrap(graph: Graph): Graph {
     ))
   }
 
+  if (!g.nodes.has(SYSTEM_IDS.VIEW_DEFINITION_DEF)) {
+    g = addNode(g, createBootstrapNode(
+      SYSTEM_IDS.VIEW_DEFINITION_DEF,
+      SYSTEM_IDS.NODE_TYPE,
+      'View Definition',
+      'Defines a view of data in the graph.',
+      {
+         properties: text(JSON.stringify([
+            { name: 'name', valueKind: 'text', required: true, description: 'Human-readable view name' },
+            { name: 'description', valueKind: 'text', required: false, description: 'What this view shows' },
+            { name: 'queryRef', valueKind: 'reference', required: true, description: 'Reference to a QueryDefinition node' },
+            { name: 'layout', valueKind: 'text', required: true, description: 'list | table | cards | graph | document' },
+            { name: 'sortBy', valueKind: 'text', required: false, description: 'Property name to sort results' },
+            { name: 'sortDirection', valueKind: 'text', required: false, description: 'asc | desc' },
+            { name: 'groupBy', valueKind: 'text', required: false, description: 'Property name to group results' },
+            { name: 'displayProperties', valueKind: 'list', required: false, description: 'Properties to show' },
+            { name: 'pageSize', valueKind: 'number', required: false, description: 'Number of items per page' }
+         ] satisfies PropertyDefinition[]))
+      }
+    ))
+  }
+
+  if (!g.nodes.has(SYSTEM_IDS.TEMPLATE_DEF)) {
+    g = addNode(g, createBootstrapNode(
+      SYSTEM_IDS.TEMPLATE_DEF,
+      SYSTEM_IDS.NODE_TYPE,
+      'Template',
+      'Defines a UI template.',
+      {
+         properties: text(JSON.stringify([
+            { name: 'name', valueKind: 'text', required: true, description: 'Template name' },
+            { name: 'layout', valueKind: 'text', required: true, description: 'Layout handled by this template' },
+            { name: 'component', valueKind: 'text', required: false, description: 'Component name' }
+         ] satisfies PropertyDefinition[]))
+      }
+    ))
+  }
+
   // 4. Core Edge Types
   const coreEdgeTypes = [
     {
@@ -130,6 +183,97 @@ export function bootstrap(graph: Graph): Graph {
           SYSTEM_IDS.EDGE_TYPE, // These are definitions of edge types
           def.name,
           def.description
+        ))
+      }
+      return currentGraph
+    },
+    g
+  )
+
+  // 5. System Queries
+  const systemQueries = [
+    {
+      id: SYSTEM_IDS.QUERY_ALL_NODES,
+      name: 'All Nodes',
+      description: 'Finds all nodes in the graph.',
+      definition: { steps: [{ kind: 'node-scan' }] }
+    },
+    {
+      id: SYSTEM_IDS.QUERY_BY_TYPE,
+      name: 'By Type',
+      description: 'Finds all nodes, intended for grouping by type.',
+      definition: { steps: [{ kind: 'node-scan' }, { kind: 'sort', sort: { property: 'type', direction: 'asc' } }] }
+    },
+    {
+      id: SYSTEM_IDS.QUERY_RECENT,
+      name: 'Recent',
+      description: 'Finds all nodes sorted by modification time.',
+      definition: { steps: [{ kind: 'node-scan' }, { kind: 'sort', sort: { property: 'metadata.modified', direction: 'desc' } }] }
+    }
+  ]
+
+  g = reduce(
+    systemQueries,
+    (currentGraph, def) => {
+      if (!currentGraph.nodes.has(def.id)) {
+        return addNode(currentGraph, createBootstrapNode(
+          def.id,
+          SYSTEM_IDS.QUERY_DEFINITION,
+          def.name,
+          def.description,
+          {
+            definition: text(JSON.stringify(def.definition))
+          }
+        ))
+      }
+      return currentGraph
+    },
+    g
+  )
+
+  // 6. System Views
+  const systemViews = [
+    {
+      id: SYSTEM_IDS.VIEW_ALL_NODES,
+      name: 'All Nodes',
+      description: 'List of all nodes.',
+      layout: 'table',
+      queryRef: SYSTEM_IDS.QUERY_ALL_NODES
+    },
+    {
+      id: SYSTEM_IDS.VIEW_BY_TYPE,
+      name: 'By Type',
+      description: 'Nodes grouped by type.',
+      layout: 'list',
+      groupBy: 'type',
+      queryRef: SYSTEM_IDS.QUERY_BY_TYPE
+    },
+    {
+      id: SYSTEM_IDS.VIEW_RECENT,
+      name: 'Recent',
+      description: 'Recently modified nodes.',
+      layout: 'cards',
+      queryRef: SYSTEM_IDS.QUERY_RECENT
+    }
+  ]
+
+  g = reduce(
+    systemViews,
+    (currentGraph, def) => {
+      if (!currentGraph.nodes.has(def.id)) {
+        const extraProps: Record<string, PropertyValue> = {
+          layout: text(def.layout),
+          queryRef: reference(def.queryRef)
+        }
+        if (def.groupBy) {
+          extraProps.groupBy = text(def.groupBy)
+        }
+        return addNode(currentGraph, createBootstrapNode(
+          def.id,
+          SYSTEM_IDS.VIEW_DEFINITION,
+          def.name,
+          def.description,
+          extraProps
         ))
       }
       return currentGraph
