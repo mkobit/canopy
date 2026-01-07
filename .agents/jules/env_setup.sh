@@ -7,7 +7,7 @@ set -euo pipefail
 echo "Setting up environment..."
 
 # Check and install tools first
-TOOLS="git curl"
+TOOLS="git curl gpg"
 MISSING=""
 for tool in $TOOLS; do
     if ! command -v "$tool" &> /dev/null; then
@@ -39,10 +39,18 @@ fi
 eval "$(mise activate bash)"
 echo 'eval "$(mise activate bash)"' >> ~/.bashrc
 
+echo "Importing Node.js release keys..."
+# Fetch and import Node.js release keys to enable GPG verification
+KEYS_URL="https://raw.githubusercontent.com/nodejs/release-keys/main/keys.list"
+curl -s "$KEYS_URL" | while read -r key; do
+    # Skip empty lines or comments
+    [[ -z "$key" || "$key" =~ ^# ]] && continue
+    # Import key if not already present
+    curl -s "https://raw.githubusercontent.com/nodejs/release-keys/main/keys/$key.asc" | gpg --batch --import >/dev/null 2>&1
+done
+
 echo "Installing tools with mise..."
 mise trust
-# Disable GPG verification for node, as keys might be missing in minimal environments
-export MISE_NODE_GPG_VERIFY=0
 mise install
 
 # Enable corepack to use pnpm from packageManager
