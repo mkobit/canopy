@@ -32,8 +32,11 @@ describe('Stored Queries', () => {
         expect(retrievedQuery).toEqual(query);
 
         const nodes = listQueryDefinitions(graph);
-        expect(nodes.length).toBe(1);
-        expect(nodes[0].properties.get('name')?.value).toBe('High Priority Tasks');
+        // 1 new query + 3 system queries = 4
+        expect(nodes.length).toBe(4);
+
+        const myQuery = nodes.find(n => n.properties.get('name')?.kind === 'text' && n.properties.get('name')?.value === 'High Priority Tasks');
+        expect(myQuery).toBeDefined();
     });
 
     it('should execute a stored query with parameter substitution', () => {

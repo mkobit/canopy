@@ -29,8 +29,9 @@ describe('Core Graph Engine', () => {
     it('should create a graph with bootstrap nodes', () => {
         expect(emptyGraph.id).toBe(graphId)
         expect(emptyGraph.name).toBe('Test Graph')
-        // Bootstrap adds 6 nodes (NodeType, EdgeType, ChildOf, Defines, References, Prerequisite)
-        expect(emptyGraph.nodes.size).toBe(7)
+        // Bootstrap adds system nodes (NodeTypes, EdgeTypes, Queries, Views)
+        // 7 original + 8 new (ViewDef, TemplateDef, 3 Queries, 3 Views) = 15
+        expect(emptyGraph.nodes.size).toBe(15)
         expect(emptyGraph.edges.size).toBe(0)
     })
 
@@ -52,14 +53,14 @@ describe('Core Graph Engine', () => {
 
     it('should add nodes immutably', () => {
         const g1 = addNode(emptyGraph, node1)
-        expect(g1.nodes.size).toBe(8) // 7 bootstrap + 1 new
+        expect(g1.nodes.size).toBe(16) // 15 bootstrap + 1 new
         expect(g1.nodes.get(nodeId1)).toBe(node1)
-        expect(emptyGraph.nodes.size).toBe(7) // Original unmodified (bootstrap nodes)
+        expect(emptyGraph.nodes.size).toBe(15) // Original unmodified (bootstrap nodes)
 
         const g2 = addNode(g1, node2)
-        expect(g2.nodes.size).toBe(9) // 7 bootstrap + 2 new
+        expect(g2.nodes.size).toBe(17) // 15 bootstrap + 2 new
         expect(g2.nodes.get(nodeId2)).toBe(node2)
-        expect(g1.nodes.size).toBe(8) // Previous version unmodified
+        expect(g1.nodes.size).toBe(16) // Previous version unmodified
     })
 
     it('should update nodes immutably', () => {
@@ -94,11 +95,11 @@ describe('Core Graph Engine', () => {
         expect(g.edges.size).toBe(1)
 
         const gRemoved = removeNode(g, nodeId1)
-        expect(gRemoved.nodes.size).toBe(8) // 7 bootstrap + 1 remaining node
+        expect(gRemoved.nodes.size).toBe(16) // 15 bootstrap + 1 remaining node
         expect(gRemoved.nodes.has(nodeId1)).toBe(false)
         expect(gRemoved.edges.size).toBe(0) // Edge should be removed
 
-        expect(g.nodes.size).toBe(9) // 7 bootstrap + 2 nodes
+        expect(g.nodes.size).toBe(17) // 15 bootstrap + 2 nodes
         expect(g.edges.size).toBe(1)
     })
 
