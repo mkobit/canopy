@@ -24,8 +24,7 @@ export function addNode(graph: Graph, node: Node, options: GraphOperationOptions
     }
   }
 
-  const newNodes = new Map(graph.nodes)
-  newNodes.set(node.id, node)
+  const newNodes = new Map([...graph.nodes, [node.id, node]])
 
   return {
     ...graph,
@@ -47,16 +46,12 @@ export function removeNode(graph: Graph, nodeId: NodeId): Graph {
     return graph
   }
 
-  const newNodes = new Map(graph.nodes)
-  newNodes.delete(nodeId)
+  const newNodes = new Map([...graph.nodes].filter(([id]) => id !== nodeId))
 
   // Remove connected edges
-  const newEdges = new Map<EdgeId, Edge>()
-  for (const [edgeId, edge] of graph.edges) {
-    if (edge.source !== nodeId && edge.target !== nodeId) {
-      newEdges.set(edgeId, edge)
-    }
-  }
+  const newEdges = new Map(
+    [...graph.edges].filter(([_id, edge]) => edge.source !== nodeId && edge.target !== nodeId),
+  )
 
   return {
     ...graph,
@@ -99,14 +94,18 @@ export function updateNode(graph: Graph, nodeId: NodeId, updater: (node: Node) =
     }
   }
 
-  const newNodes = new Map(graph.nodes)
-  newNodes.set(nodeId, {
-      ...updatedNode,
-      metadata: {
+  const newNodes = new Map(Array.from(graph.nodes).map(([id, node]) => {
+    if (id === nodeId) {
+      return [id, {
+        ...updatedNode,
+        metadata: {
           ...updatedNode.metadata,
           modified: createInstant()
-      }
-  })
+        }
+      }]
+    }
+    return [id, node]
+  }))
 
   return {
     ...graph,
@@ -142,8 +141,7 @@ export function addEdge(graph: Graph, edge: Edge, options: GraphOperationOptions
     }
   }
 
-  const newEdges = new Map(graph.edges)
-  newEdges.set(edge.id, edge)
+  const newEdges = new Map([...graph.edges, [edge.id, edge]])
 
   return {
     ...graph,
@@ -164,8 +162,7 @@ export function removeEdge(graph: Graph, edgeId: EdgeId): Graph {
     return graph
   }
 
-  const newEdges = new Map(graph.edges)
-  newEdges.delete(edgeId)
+  const newEdges = new Map([...graph.edges].filter(([id]) => id !== edgeId))
 
   return {
     ...graph,
@@ -211,14 +208,18 @@ export function updateEdge(graph: Graph, edgeId: EdgeId, updater: (edge: Edge) =
     }
   }
 
-  const newEdges = new Map(graph.edges)
-  newEdges.set(edgeId, {
-      ...updatedEdge,
-      metadata: {
+  const newEdges = new Map(Array.from(graph.edges).map(([id, edge]) => {
+    if (id === edgeId) {
+      return [id, {
+        ...updatedEdge,
+        metadata: {
           ...updatedEdge.metadata,
           modified: createInstant()
-      }
-  })
+        }
+      }]
+    }
+    return [id, edge]
+  }))
 
   return {
     ...graph,

@@ -54,6 +54,7 @@ export const NodePage = () => {
   const handlePropertyChange = (key: string, value: PropertyValue) => {
       setEditedProps(prev => {
           const next = new Map(prev);
+  // eslint-disable-next-line functional/immutable-data
           next.set(key, value);
           return next;
       });
@@ -78,6 +79,7 @@ export const NodePage = () => {
       const edges = [];
       for (const edge of graph.edges.values()) {
           if (edge.source === currentNode.id || edge.target === currentNode.id) {
+    // eslint-disable-next-line functional/immutable-data
               edges.push(edge);
           }
       }

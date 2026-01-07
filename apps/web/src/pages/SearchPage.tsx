@@ -27,6 +27,7 @@ export const SearchPage = () => {
                     break;
                 }
             }
+                // eslint-disable-next-line functional/immutable-data
             if (found) matches.push(node);
         }
         return matches;

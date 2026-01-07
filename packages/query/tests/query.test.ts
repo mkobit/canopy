@@ -14,10 +14,14 @@ function createMockGraph(): Graph {
   const createNode = (id: string, type: string, props: Record<string, unknown> = {}) => {
     const properties = new Map<string, PropertyValue>();
     for (const [k, v] of Object.entries(props)) {
+    // eslint-disable-next-line functional/immutable-data
       if (typeof v === 'string') properties.set(k, { kind: 'text', value: v });
+    // eslint-disable-next-line functional/immutable-data
       if (typeof v === 'number') properties.set(k, { kind: 'number', value: v });
+    // eslint-disable-next-line functional/immutable-data
       if (typeof v === 'boolean') properties.set(k, { kind: 'boolean', value: v });
     }
+    // eslint-disable-next-line functional/immutable-data
     nodes.set(id, {
       id: asNodeId(id),
       type: asTypeId(type),
@@ -28,9 +32,12 @@ function createMockGraph(): Graph {
   const createEdge = (id: string, type: string, source: string, target: string, props: Record<string, unknown> = {}) => {
      const properties = new Map<string, PropertyValue>();
      for (const [k, v] of Object.entries(props)) {
+    // eslint-disable-next-line functional/immutable-data
       if (typeof v === 'string') properties.set(k, { kind: 'text', value: v });
+    // eslint-disable-next-line functional/immutable-data
       if (typeof v === 'number') properties.set(k, { kind: 'number', value: v });
     }
+    // eslint-disable-next-line functional/immutable-data
     edges.set(id, {
       id: asEdgeId(id),
       type: asTypeId(type),

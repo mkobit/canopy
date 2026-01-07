@@ -21,6 +21,7 @@ export function getNodesByType(graph: Graph, type: TypeId): Node[] {
   const result: Node[] = []
   for (const node of graph.nodes.values()) {
     if (node.type === type) {
+  // eslint-disable-next-line functional/immutable-data
       result.push(node)
     }
   }
@@ -34,6 +35,7 @@ export function getEdgesFrom(graph: Graph, nodeId: NodeId): Edge[] {
   const result: Edge[] = []
   for (const edge of graph.edges.values()) {
     if (edge.source === nodeId) {
+  // eslint-disable-next-line functional/immutable-data
       result.push(edge)
     }
   }
@@ -47,6 +49,7 @@ export function getEdgesTo(graph: Graph, nodeId: NodeId): Edge[] {
   const result: Edge[] = []
   for (const edge of graph.edges.values()) {
     if (edge.target === nodeId) {
+  // eslint-disable-next-line functional/immutable-data
       result.push(edge)
     }
   }

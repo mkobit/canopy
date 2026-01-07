@@ -1,10 +1,11 @@
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const packageJsonPath = path.join(__dirname, '../package.json');
 const miseTomlPath = path.join(__dirname, '../mise.toml');
 
-/* eslint-disable no-console */
 console.log('Verifying version consistency...');
 
 // Read package.json
