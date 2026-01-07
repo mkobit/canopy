@@ -69,7 +69,6 @@ export function bootstrap(graph: Graph): Graph {
     ))
   }
 
-  // 3. Ensure QueryDefinition definition exists
   if (!g.nodes.has(SYSTEM_IDS.QUERY_DEFINITION_DEF)) {
     g = addNode(g, createBootstrapNode(
       SYSTEM_IDS.QUERY_DEFINITION_DEF,
