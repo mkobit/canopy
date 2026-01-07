@@ -69,7 +69,32 @@ export function bootstrap(graph: Graph): Graph {
     ))
   }
 
-  // 3. Core Edge Types
+  // 3. Ensure QueryDefinition definition exists
+  if (!g.nodes.has(SYSTEM_IDS.QUERY_DEFINITION_DEF)) {
+    g = addNode(g, createBootstrapNode(
+      SYSTEM_IDS.QUERY_DEFINITION_DEF,
+      SYSTEM_IDS.NODE_TYPE,
+      'Query Definition',
+      'Defines a stored query in the graph.',
+      {
+         // Properties defined on this type:
+         // name: string (inherited from Node, but explicit here for clarity of intent)
+         // description: string (inherited)
+         // nodeTypes: string[]
+         // definition: string (JSON)
+         // parameters: string[]
+         properties: text(JSON.stringify([
+            { name: 'name', valueKind: 'text', required: true, description: 'Human-readable query name' },
+            { name: 'description', valueKind: 'text', required: false, description: 'What this query finds' },
+            { name: 'nodeTypes', valueKind: 'list', required: false, description: 'Which node types this query targets' },
+            { name: 'definition', valueKind: 'text', required: true, description: 'The query in stored format (JSON)' },
+            { name: 'parameters', valueKind: 'list', required: false, description: 'Declared parameter names this query accepts' }
+         ]))
+      }
+    ))
+  }
+
+  // 4. Core Edge Types
   const coreEdgeTypes = [
     {
       id: SYSTEM_IDS.EDGE_CHILD_OF,
