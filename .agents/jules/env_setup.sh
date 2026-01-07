@@ -41,6 +41,8 @@ echo 'eval "$(mise activate bash)"' >> ~/.bashrc
 
 echo "Installing tools with mise..."
 mise trust
+# Disable GPG verification for node, as keys might be missing in minimal environments
+export MISE_NODE_GPG_VERIFY=0
 mise install
 
 # Enable corepack to use pnpm from packageManager
