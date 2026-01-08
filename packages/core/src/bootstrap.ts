@@ -93,7 +93,7 @@ export function bootstrap(graph: Graph): Graph {
             { name: 'nodeTypes', valueKind: 'list', required: false, description: 'Which node types this query targets' },
             { name: 'definition', valueKind: 'text', required: true, description: 'The query in stored format (JSON)' },
             { name: 'parameters', valueKind: 'list', required: false, description: 'Declared parameter names this query accepts' }
-         ] satisfies PropertyDefinition[]))
+         ] satisfies readonly PropertyDefinition[]))
       }
     ))
   }
@@ -114,7 +114,7 @@ export function bootstrap(graph: Graph): Graph {
             { name: 'groupBy', valueKind: 'text', required: false, description: 'Property name to group results' },
             { name: 'displayProperties', valueKind: 'list', required: false, description: 'Properties to show' },
             { name: 'pageSize', valueKind: 'number', required: false, description: 'Number of items per page' }
-         ] satisfies PropertyDefinition[]))
+         ] satisfies readonly PropertyDefinition[]))
       }
     ))
   }
@@ -130,7 +130,7 @@ export function bootstrap(graph: Graph): Graph {
             { name: 'name', valueKind: 'text', required: true, description: 'Template name' },
             { name: 'layout', valueKind: 'text', required: true, description: 'Layout handled by this template' },
             { name: 'component', valueKind: 'text', required: false, description: 'Component name' }
-         ] satisfies PropertyDefinition[]))
+         ] satisfies readonly PropertyDefinition[]))
       }
     ))
   }

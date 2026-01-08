@@ -4,11 +4,11 @@ import { cn } from '../../utils/cn';
 import { PropertyDisplay } from '../properties/PropertyDisplay';
 
 export interface NodeViewProps {
-  node: Node;
-  className?: string;
-  selected?: boolean;
-  onClick?: (node: Node) => void;
-  style?: React.CSSProperties;
+  readonly node: Node;
+  readonly className?: string;
+  readonly selected?: boolean;
+  readonly onClick?: (node: Node) => void;
+  readonly style?: React.CSSProperties;
 }
 
 export const NodeView: React.FC<NodeViewProps> = ({ node, className, selected, onClick, style }) => {

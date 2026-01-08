@@ -2,19 +2,20 @@ import { openDB, DBSchema, IDBPDatabase } from 'idb';
 import { StorageAdapter, GraphStorageMetadata } from './types';
 
 interface CanopyDB extends DBSchema {
-  graphs: {
-    key: string;
-    value: {
-      id: string;
-      snapshot: Uint8Array;
-      metadata: GraphStorageMetadata;
+  readonly graphs: {
+    readonly key: string;
+    readonly value: {
+      readonly id: string;
+      readonly snapshot: Uint8Array;
+      readonly metadata: GraphStorageMetadata;
     };
   };
 }
 
 export class IndexedDBAdapter implements StorageAdapter {
+  // eslint-disable-next-line functional/prefer-readonly-type
   private db: IDBPDatabase<CanopyDB> | null = null;
-  private dbName: string;
+  private readonly dbName: string;
 
   constructor(dbName = 'canopy-storage') {
     this.dbName = dbName;
@@ -58,7 +59,7 @@ export class IndexedDBAdapter implements StorageAdapter {
     await this.db.delete('graphs', graphId);
   }
 
-  async list(): Promise<GraphStorageMetadata[]> {
+  async list(): Promise<readonly GraphStorageMetadata[]> {
     if (!this.db) throw new Error('Database not initialized');
     const all = await this.db.getAll('graphs');
     return all.map((item) => item.metadata);

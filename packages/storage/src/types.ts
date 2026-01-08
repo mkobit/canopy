@@ -1,9 +1,9 @@
 
 export interface GraphStorageMetadata {
-  id: string;
-  name: string;
-  createdAt: string; // ISO string
-  updatedAt: string; // ISO string
+  readonly id: string;
+  readonly name: string;
+  readonly createdAt: string; // ISO string
+  readonly updatedAt: string; // ISO string
 }
 
 export interface StorageAdapter {
@@ -41,5 +41,5 @@ export interface StorageAdapter {
   /**
    * List all stored graphs.
    */
-  list(): Promise<GraphStorageMetadata[]>;
+  list(): Promise<readonly GraphStorageMetadata[]>;
 }

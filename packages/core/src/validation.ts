@@ -20,12 +20,12 @@ import { pipe, map, flatMap, filter } from 'remeda'
 const SUCCESS: ValidationResult = { valid: true, errors: [] }
 
 // Helper to create an error result
-function failure(errors: ValidationError[]): ValidationResult {
+function failure(errors: readonly ValidationError[]): ValidationResult {
   return { valid: false, errors }
 }
 
 // Extract properties from a definition node
-function extractProperties(node: Node): PropertyDefinition[] {
+function extractProperties(node: Node): readonly PropertyDefinition[] {
   const prop = node.properties.get('properties')
   if (!prop || prop.kind !== 'text') {
     return []
@@ -54,18 +54,18 @@ function extractEdgeTypeDefinition(node: Node): EdgeTypeDefinition | undefined {
     const sourceTypesVal = node.properties.get('sourceTypes')
     const targetTypesVal = node.properties.get('targetTypes')
 
-    let sourceTypes: TypeId[] = []
+    let sourceTypes: readonly TypeId[] = []
     if (sourceTypesVal?.kind === 'list') {
         sourceTypes = sourceTypesVal.items.map(i => i.kind === 'text' ? asTypeId(i.value) : asTypeId('unknown'))
     } else if (sourceTypesVal?.kind === 'text') {
-        try { sourceTypes = (JSON.parse(sourceTypesVal.value) as string[]).map(asTypeId) } catch { /* ignore parse error */ }
+        try { sourceTypes = (JSON.parse(sourceTypesVal.value) as readonly string[]).map(asTypeId) } catch { /* ignore parse error */ }
     }
 
-    let targetTypes: TypeId[] = []
+    let targetTypes: readonly TypeId[] = []
     if (targetTypesVal?.kind === 'list') {
         targetTypes = targetTypesVal.items.map(i => i.kind === 'text' ? asTypeId(i.value) : asTypeId('unknown'))
     } else if (targetTypesVal?.kind === 'text') {
-        try { targetTypes = (JSON.parse(targetTypesVal.value) as string[]).map(asTypeId) } catch { /* ignore parse error */ }
+        try { targetTypes = (JSON.parse(targetTypesVal.value) as readonly string[]).map(asTypeId) } catch { /* ignore parse error */ }
     }
 
     return {
@@ -97,7 +97,7 @@ function extractNodeTypeDefinition(node: Node): NodeTypeDefinition {
 }
 
 
-function validateValue(val: PropertyValue, def: PropertyDefinition): ValidationError[] {
+function validateValue(val: PropertyValue, def: PropertyDefinition): readonly ValidationError[] {
     // Check kind
     if (val.kind !== def.valueKind) {
         return [{
@@ -116,10 +116,10 @@ function validateValue(val: PropertyValue, def: PropertyDefinition): ValidationE
     return []
 }
 
-function validateProperties(properties: ReadonlyMap<string, PropertyValue>, definitions: readonly PropertyDefinition[]): ValidationError[] {
+function validateProperties(properties: ReadonlyMap<string, PropertyValue>, definitions: readonly PropertyDefinition[]): readonly ValidationError[] {
     return pipe(
         definitions,
-        flatMap((propDef): ValidationError[] => {
+        flatMap((propDef): readonly ValidationError[] => {
             const val = properties.get(propDef.name)
 
             if (propDef.required && val === undefined) {

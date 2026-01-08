@@ -80,7 +80,7 @@ export default tseslint.config(
       'functional/no-loop-statements': 'error',
 
       // Disable noisy rules from lite for now to make it manageable
-      'functional/prefer-readonly-type': 'off',
+      'functional/prefer-readonly-type': 'error',
       'functional/no-mixed-types': 'off',
       'functional/no-return-void': 'off',
       'functional/no-class-inheritance': 'off',

@@ -3,10 +3,10 @@ import { PropertyValue, PropertyValueKind, ScalarValue } from '@canopy/types';
 import { cn } from '../../utils/cn';
 
 interface PropertyInputProps {
-  value: PropertyValue;
-  onChange: (value: PropertyValue) => void;
-  className?: string | undefined;
-  kind?: PropertyValueKind | undefined; // In case we're creating a new property and value is undefined (though props say value is required here, handling creation might be separate)
+  readonly value: PropertyValue;
+  readonly onChange: (value: PropertyValue) => void;
+  readonly className?: string | undefined;
+  readonly kind?: PropertyValueKind | undefined; // In case we're creating a new property and value is undefined (though props say value is required here, handling creation might be separate)
 }
 
 // Helper to update a scalar value while preserving its kind
@@ -86,7 +86,7 @@ export const PropertyInput: React.FC<PropertyInputProps> = ({ value, onChange, c
   return <ScalarInput value={value} onChange={onChange} className={className} />;
 };
 
-const ScalarInput: React.FC<{ value: ScalarValue, onChange: (val: ScalarValue) => void, className?: string | undefined }> = ({ value, onChange, className }) => {
+const ScalarInput: React.FC<{ readonly value: ScalarValue, readonly onChange: (val: ScalarValue) => void, readonly className?: string | undefined }> = ({ value, onChange, className }) => {
   const baseInputClass = cn("border rounded px-2 py-1 w-full text-sm", className);
 
   switch (value.kind) {

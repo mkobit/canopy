@@ -3,15 +3,15 @@ import { Edge, Node } from '@canopy/types';
 
 export interface GraphNode extends Node {
   // Extend basic node with UI state (position)
-  position: { x: number, y: number };
+  readonly position: { readonly x: number, readonly y: number };
 }
 
 export interface EdgeViewProps {
-  edge: Edge;
-  source: GraphNode;
-  target: GraphNode;
-  selected?: boolean | undefined;
-  onClick?: ((edge: Edge) => void) | undefined;
+  readonly edge: Edge;
+  readonly source: GraphNode;
+  readonly target: GraphNode;
+  readonly selected?: boolean | undefined;
+  readonly onClick?: ((edge: Edge) => void) | undefined;
 }
 
 export const EdgeView: React.FC<EdgeViewProps> = ({ edge, source, target, selected, onClick }) => {

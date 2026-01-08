@@ -22,7 +22,7 @@ describe('ops with validation', () => {
     function createGraphWithTypes() {
         let g = createGraph()
 
-        const personProps: PropertyDefinition[] = [
+        const personProps: readonly PropertyDefinition[] = [
             { name: 'age', valueKind: 'number', required: true, description: 'Age' }
         ]
         const personTypeNode = createNode({

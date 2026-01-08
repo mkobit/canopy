@@ -5,12 +5,12 @@ import { reduce, filter, unique, flatMap } from 'remeda';
 type GraphItem = Node | Edge;
 
 export class QueryEngine {
-  constructor(private graph: Graph) {}
+  constructor(private readonly graph: Graph) {}
 
   execute(query: Query): QueryResult {
     // We need to keep track of isNodeContext which changes based on steps.
     // reduce is suitable here.
-    const initial: { items: GraphItem[], isNodeContext: boolean } = { items: [], isNodeContext: false };
+    const initial: { readonly items: readonly GraphItem[], readonly isNodeContext: boolean } = { items: [], isNodeContext: false };
 
     const result = reduce(
       query.steps,
@@ -36,7 +36,7 @@ export class QueryEngine {
               throw new Error('Traversal can only be performed on nodes.');
             }
             return {
-              items: this.traverse(acc.items as Node[], step.edgeType, step.direction),
+              items: this.traverse(acc.items as readonly Node[], step.edgeType, step.direction),
               isNodeContext: true // Traversal returns nodes
             };
           case 'sort':
@@ -57,25 +57,25 @@ export class QueryEngine {
     );
 
     if (result.isNodeContext) {
-      return { nodes: result.items as Node[], edges: [] };
+      return { nodes: result.items as readonly Node[], edges: [] };
     } else {
-      return { nodes: [], edges: result.items as Edge[] };
+      return { nodes: [], edges: result.items as readonly Edge[] };
     }
   }
 
-  private scanNodes(type?: string): Node[] {
+  private scanNodes(type?: string): readonly Node[] {
     const nodes = Array.from(this.graph.nodes.values());
     if (!type) return nodes;
     return filter(nodes, node => node.type === type);
   }
 
-  private scanEdges(type?: string): Edge[] {
+  private scanEdges(type?: string): readonly Edge[] {
     const edges = Array.from(this.graph.edges.values());
     if (!type) return edges;
     return filter(edges, edge => edge.type === type);
   }
 
-  private applyFilter(items: GraphItem[], predicate: Filter): GraphItem[] {
+  private applyFilter(items: readonly GraphItem[], predicate: Filter): readonly GraphItem[] {
     return filter(items, item => {
       let propValue: unknown;
 
@@ -123,7 +123,7 @@ export class QueryEngine {
     });
   }
 
-  private traverse(nodes: Node[], edgeType: string | undefined, direction: 'out' | 'in' | 'both'): Node[] {
+  private traverse(nodes: readonly Node[], edgeType: string | undefined, direction: 'out' | 'in' | 'both'): readonly Node[] {
     const nodeIds = new Set(nodes.map(n => n.id));
 
     // Get all edges that match the criteria
@@ -136,30 +136,31 @@ export class QueryEngine {
           const sourceMatches = nodeIds.has(edge.source);
           const targetMatches = nodeIds.has(edge.target);
 
-          const result: Node[] = [];
-
           if (direction === 'out' && sourceMatches) {
             const targetNode = this.graph.nodes.get(edge.target);
-            if (targetNode) result.push(targetNode);
+            return targetNode ? [targetNode] : [];
           } else if (direction === 'in' && targetMatches) {
             const sourceNode = this.graph.nodes.get(edge.source);
-            if (sourceNode) result.push(sourceNode);
+            return sourceNode ? [sourceNode] : [];
           } else if (direction === 'both') {
+            const res = [];
             if (sourceMatches) {
-              const targetNode = this.graph.nodes.get(edge.target);
-              if (targetNode) result.push(targetNode);
+                const targetNode = this.graph.nodes.get(edge.target);
+                if (targetNode) res.push(targetNode);
             }
             if (targetMatches) {
-              const sourceNode = this.graph.nodes.get(edge.source);
-              if (sourceNode) result.push(sourceNode);
+                const sourceNode = this.graph.nodes.get(edge.source);
+                if (sourceNode) res.push(sourceNode);
             }
+            return res;
           }
-          return result;
+
+          return [];
       })
     );
   }
 
-  private applySort(items: GraphItem[], sort: Sort): GraphItem[] {
+  private applySort(items: readonly GraphItem[], sort: Sort): readonly GraphItem[] {
     return [...items].sort((a, b) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const valA = this.unwrapValue(a.properties.get(sort.property)) as any;

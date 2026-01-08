@@ -40,7 +40,7 @@ describe('validation', () => {
         let g = createGraph()
 
         // Define a "Person" node type
-        const personProps: PropertyDefinition[] = [
+        const personProps: readonly PropertyDefinition[] = [
             { name: 'name', valueKind: 'text', required: true, description: 'Full Name' },
             { name: 'age', valueKind: 'number', required: false, description: 'Age' }
         ]
@@ -67,7 +67,7 @@ describe('validation', () => {
         g = addNode(g, taskTypeNode)
 
         // Define "AssignedTo" edge type
-        const assignedToProps: PropertyDefinition[] = [
+        const assignedToProps: readonly PropertyDefinition[] = [
             { name: 'role', valueKind: 'text', required: true, description: 'Role' }
         ]
         const assignedToTypeNode = createNode({

@@ -3,7 +3,7 @@ import { createInstant } from '@canopy/types'
 import { validateNode, validateEdge } from './validation'
 
 export interface GraphOperationOptions {
-  validate?: boolean
+  readonly validate?: boolean
 }
 
 /**
