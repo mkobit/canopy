@@ -46,6 +46,13 @@ Versions are defined in `mise.toml` and must match `package.json` (verified via 
 *   Activate shell: `eval "$(mise activate bash)"` (or add to `~/.bashrc`)
 *   Trust config: `mise trust`
 
+## Task tracking (Beads)
+
+We use Beads (`bd`) for distributed task tracking.
+Issues are stored in `.beads/` and versioned with git.
+Use `pnpm bd` to execute commands (e.g., `pnpm bd create "Fix bug" -p 1`).
+Refer to the [Beads documentation](https://github.com/steveyegge/beads) for detailed usage.
+
 ## Programming style requirements
 
 All code must follow a functional programming style, avoiding mutations and side effects.
@@ -73,3 +80,29 @@ Views are portable and can be exported along with the graph data.
 System views (All Nodes, By Type, Recent) are bootstrapped by default.
 Views do not contain rendering logic; they only describe *how* data should be presented.
 Templates are placeholder definitions for UI components that can render specific layouts.
+
+## Landing the Plane (Session Completion)
+
+**When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
+
+**MANDATORY WORKFLOW:**
+
+1. **File issues for remaining work** - Create issues for anything that needs follow-up
+2. **Run quality gates** (if code changed) - Tests, linters, builds
+3. **Update issue status** - Close finished work, update in-progress items
+4. **PUSH TO REMOTE** - This is MANDATORY:
+   ```bash
+   git pull --rebase
+   bd sync
+   git push
+   git status  # MUST show "up to date with origin"
+   ```
+5. **Clean up** - Clear stashes, prune remote branches
+6. **Verify** - All changes committed AND pushed
+7. **Hand off** - Provide context for next session
+
+**CRITICAL RULES:**
+- Work is NOT complete until `git push` succeeds
+- NEVER stop before pushing - that leaves work stranded locally
+- NEVER say "ready to push when you are" - YOU must push
+- If push fails, resolve and retry until it succeeds
