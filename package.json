@@ -14,7 +14,8 @@
     "format": "prettier --write .",
     "typecheck": "pnpm -r typecheck",
     "prepare": "husky",
-    "bd": "bd"
+    "bd": "bd",
+    "postinstall": "bd hooks install"
   },
   "devDependencies": {
     "@beads/bd": "^0.46.0",
