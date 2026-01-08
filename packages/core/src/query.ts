@@ -18,7 +18,7 @@ export function getEdge(graph: Graph, id: EdgeId): Edge | undefined {
 /**
  * Retrieves all nodes of a given type.
  */
-export function getNodesByType(graph: Graph, type: TypeId): Node[] {
+export function getNodesByType(graph: Graph, type: TypeId): readonly Node[] {
   return filter(
       Array.from(graph.nodes.values()),
       node => node.type === type
@@ -28,7 +28,7 @@ export function getNodesByType(graph: Graph, type: TypeId): Node[] {
 /**
  * Retrieves all edges outgoing from a node.
  */
-export function getEdgesFrom(graph: Graph, nodeId: NodeId): Edge[] {
+export function getEdgesFrom(graph: Graph, nodeId: NodeId): readonly Edge[] {
   return filter(
       Array.from(graph.edges.values()),
       edge => edge.source === nodeId
@@ -38,7 +38,7 @@ export function getEdgesFrom(graph: Graph, nodeId: NodeId): Edge[] {
 /**
  * Retrieves all edges incoming to a node.
  */
-export function getEdgesTo(graph: Graph, nodeId: NodeId): Edge[] {
+export function getEdgesTo(graph: Graph, nodeId: NodeId): readonly Edge[] {
   return filter(
       Array.from(graph.edges.values()),
       edge => edge.target === nodeId

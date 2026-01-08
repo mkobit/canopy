@@ -4,15 +4,17 @@ import * as AwarenessProtocol from 'y-protocols/awareness';
 import { SyncProvider } from '../types';
 
 export class InMemoryProvider implements SyncProvider {
-  doc: Y.Doc;
-  awareness: Awareness;
+  readonly doc: Y.Doc;
+  readonly awareness: Awareness;
+  // eslint-disable-next-line functional/prefer-readonly-type
   connected = false;
-  // eslint-disable-next-line @typescript-eslint/ban-types
-  handlers: Map<string, Function[]> = new Map<string, Function[]>();
+  // eslint-disable-next-line @typescript-eslint/ban-types, functional/prefer-readonly-type
+  readonly handlers: Map<string, Function[]> = new Map<string, Function[]>();
 
   // Shared state for all instances to simulate network
-  static networks: Map<string, Set<InMemoryProvider>> = new Map<string, Set<InMemoryProvider>>();
-  roomName: string;
+  // eslint-disable-next-line functional/prefer-readonly-type
+  static readonly networks: Map<string, Set<InMemoryProvider>> = new Map<string, Set<InMemoryProvider>>();
+  readonly roomName: string;
 
   constructor(roomName: string, doc: Y.Doc, awareness: Awareness) {
     this.doc = doc;
@@ -24,13 +26,13 @@ export class InMemoryProvider implements SyncProvider {
     this.awareness.on('update', this.handleAwarenessUpdate);
   }
 
-  private handleDocUpdate = (update: Uint8Array, origin: unknown) => {
+  private readonly handleDocUpdate = (update: Uint8Array, origin: unknown) => {
     if (origin !== this && this.connected) {
       this.broadcastDocUpdate(update);
     }
   };
 
-  private handleAwarenessUpdate = ({ added, updated, removed }: { added: number[], updated: number[], removed: number[] }, origin: unknown) => {
+  private readonly handleAwarenessUpdate = ({ added, updated, removed }: { readonly added: readonly number[], readonly updated: readonly number[], readonly removed: readonly number[] }, origin: unknown) => {
     if (origin !== 'remote' && this.connected) {
       const changedClients = added.concat(updated).concat(removed);
       const update = AwarenessProtocol.encodeAwarenessUpdate(this.awareness, changedClients);
@@ -118,14 +120,14 @@ export class InMemoryProvider implements SyncProvider {
     this.emit('status', { status: 'disconnected' });
   }
 
-  on(event: 'status', handler: (event: { status: 'connected' | 'disconnected' | 'connecting' }) => void) {
+  on(event: 'status', handler: (event: { readonly status: 'connected' | 'disconnected' | 'connecting' }) => void) {
     if (!this.handlers.has(event)) {
       this.handlers.set(event, []);
     }
     this.handlers.get(event)?.push(handler);
   }
 
-  off(event: 'status', handler: (event: { status: 'connected' | 'disconnected' | 'connecting' }) => void) {
+  off(event: 'status', handler: (event: { readonly status: 'connected' | 'disconnected' | 'connecting' }) => void) {
     const handlers = this.handlers.get(event);
     if (handlers) {
       this.handlers.set(event, handlers.filter(h => h !== handler));

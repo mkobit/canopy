@@ -2,13 +2,13 @@ import { Graph, Node, Edge, PropertyValue } from '@canopy/types';
 import { filter } from 'remeda';
 
 export class GraphQuery {
-  private graph: Graph;
+  private readonly graph: Graph;
 
   constructor(graph: Graph) {
     this.graph = graph;
   }
 
-  findNodes(type: string, properties?: Record<string, PropertyValue>): Node[] {
+  findNodes(type: string, properties?: Record<string, PropertyValue>): readonly Node[] {
     return filter(
       Array.from(this.graph.nodes.values()),
       node => {
@@ -32,7 +32,7 @@ export class GraphQuery {
     );
   }
 
-  findEdges(_type: string, _source?: string, _target?: string, _properties?: Record<string, PropertyValue>): Edge[] {
+  findEdges(_type: string, _source?: string, _target?: string, _properties?: Record<string, PropertyValue>): readonly Edge[] {
       // simplified legacy implementation
       return [];
   }

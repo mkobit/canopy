@@ -2,9 +2,9 @@ import React from 'react';
 import { cn } from '../../utils/cn';
 
 interface BlockEditorProps {
-  value: string;
-  onChange: (value: string) => void;
-  className?: string;
+  readonly value: string;
+  readonly onChange: (value: string) => void;
+  readonly className?: string;
 }
 
 export const BlockEditor: React.FC<BlockEditorProps> = ({ value, onChange, className }) => {

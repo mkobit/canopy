@@ -2,9 +2,9 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { StorageAdapter, IndexedDBAdapter } from '@canopy/storage';
 
 interface StorageContextType {
-  storage: StorageAdapter | null;
-  isLoading: boolean;
-  error: Error | null;
+  readonly storage: StorageAdapter | null;
+  readonly isLoading: boolean;
+  readonly error: Error | null;
 }
 
 const StorageContext = createContext<StorageContextType>({
@@ -13,7 +13,7 @@ const StorageContext = createContext<StorageContextType>({
   error: null,
 });
 
-export const StorageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const StorageProvider: React.FC<{ readonly children: React.ReactNode }> = ({ children }) => {
   const [storage, setStorage] = useState<StorageAdapter | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);

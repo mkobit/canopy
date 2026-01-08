@@ -4,15 +4,15 @@ import { Graph, GraphId, NodeId, EdgeId, asInstant, PropertyValue, Node, Edge } 
 import { useStorage } from './StorageContext';
 
 interface GraphContextType {
-  graph: Graph | null;
-  syncEngine: SyncEngine | null;
-  isLoading: boolean;
-  error: Error | null;
-  loadGraph: (graphId: GraphId) => Promise<void>;
-  closeGraph: () => void;
-  saveGraph: () => Promise<void>;
+  readonly graph: Graph | null;
+  readonly syncEngine: SyncEngine | null;
+  readonly isLoading: boolean;
+  readonly error: Error | null;
+  readonly loadGraph: (graphId: GraphId) => Promise<void>;
+  readonly closeGraph: () => void;
+  readonly saveGraph: () => Promise<void>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  createNode: (type: string, properties?: Record<string, any>) => Promise<NodeId | null>;
+  readonly createNode: (type: string, properties?: Record<string, any>) => Promise<NodeId | null>;
 }
 
 const GraphContext = createContext<GraphContextType>({
@@ -26,7 +26,7 @@ const GraphContext = createContext<GraphContextType>({
   createNode: async () => null,
 });
 
-export const GraphProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const GraphProvider: React.FC<{ readonly children: React.ReactNode }> = ({ children }) => {
   const { storage } = useStorage();
   const [syncEngine, setSyncEngine] = useState<SyncEngine | null>(null);
   const syncEngineRef = useRef<SyncEngine | null>(null); // Ref to avoid dependency cycles

@@ -8,7 +8,7 @@ import { GraphStorageMetadata } from '@canopy/storage';
 export const HomePage = () => {
   const { storage, isLoading: storageLoading } = useStorage();
   const navigate = useNavigate();
-  const [graphs, setGraphs] = useState<GraphStorageMetadata[]>([]);
+  const [graphs, setGraphs] = useState<readonly GraphStorageMetadata[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {

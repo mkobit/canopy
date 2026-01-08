@@ -25,11 +25,11 @@ import { map } from 'remeda';
 type StorableProperties = Record<string, PropertyValue>;
 
 interface StorableNode extends Omit<Node, 'properties'> {
-  properties: StorableProperties;
+  readonly properties: StorableProperties;
 }
 
 interface StorableEdge extends Omit<Edge, 'properties'> {
-  properties: StorableProperties;
+  readonly properties: StorableProperties;
 }
 
 // Zod schemas for Storable types
@@ -59,7 +59,7 @@ const propertiesToStorable = (props: ReadonlyMap<string, PropertyValue>): Storab
   return Object.fromEntries(props);
 };
 
-const storableToProperties = (props: StorableProperties): Map<string, PropertyValue> => {
+const storableToProperties = (props: StorableProperties): ReadonlyMap<string, PropertyValue> => {
   return new Map(Object.entries(props));
 };
 
@@ -95,9 +95,9 @@ const storableToEdge = (storable: unknown): Edge => {
 };
 
 export class GraphStore {
-  doc: Y.Doc;
-  nodes: Y.Map<unknown>; // Stored as plain JSON object
-  edges: Y.Map<unknown>;
+  readonly doc: Y.Doc;
+  readonly nodes: Y.Map<unknown>; // Stored as plain JSON object
+  readonly edges: Y.Map<unknown>;
 
   constructor(doc: Y.Doc) {
     this.doc = doc;
@@ -107,7 +107,7 @@ export class GraphStore {
 
   addNode(
     data: Omit<Node, 'id' | 'metadata'> & {
-      id?: string;
+      readonly id?: string;
     }
   ): Node {
     const now = createInstant();
@@ -178,7 +178,7 @@ export class GraphStore {
 
   addEdge(
     data: Omit<Edge, 'id' | 'metadata'> & {
-      id?: string;
+      readonly id?: string;
     }
   ): Edge {
     if (!this.nodes.has(data.source)) {

@@ -22,14 +22,14 @@ function scalar(val: string | number | boolean): ScalarValue {
 }
 
 // Helper to create a list property
-function list(items: string[]): PropertyValue {
+function list(items: readonly string[]): PropertyValue {
   return { kind: 'list', items: items.map(i => ({ kind: 'text', value: i })) };
 }
 
 export interface SaveQueryOptions {
-  description?: string;
-  nodeTypes?: string[];
-  parameters?: string[];
+  readonly description?: string;
+  readonly nodeTypes?: readonly string[];
+  readonly parameters?: readonly string[];
 }
 
 export function saveQueryDefinition(
@@ -37,23 +37,23 @@ export function saveQueryDefinition(
   name: string,
   query: Query,
   options: SaveQueryOptions = {}
-): { graph: Graph; nodeId: NodeId } {
+): { readonly graph: Graph; readonly nodeId: NodeId } {
   const nodeId = createNodeId();
 
-  const baseProperties: [string, PropertyValue][] = [
+  const baseProperties: readonly (readonly [string, PropertyValue])[] = [
     ['name', scalar(name)],
     ['definition', scalar(JSON.stringify(query))],
   ];
 
-  const descriptionProp: [string, PropertyValue][] = options.description
+  const descriptionProp: readonly (readonly [string, PropertyValue])[] = options.description
     ? [['description', scalar(options.description)]]
     : [];
 
-  const nodeTypesProp: [string, PropertyValue][] = options.nodeTypes && options.nodeTypes.length > 0
+  const nodeTypesProp: readonly (readonly [string, PropertyValue])[] = options.nodeTypes && options.nodeTypes.length > 0
     ? [['nodeTypes', list(options.nodeTypes)]]
     : [];
 
-  const parametersProp: [string, PropertyValue][] = options.parameters && options.parameters.length > 0
+  const parametersProp: readonly (readonly [string, PropertyValue])[] = options.parameters && options.parameters.length > 0
     ? [['parameters', list(options.parameters)]]
     : [];
 
@@ -100,7 +100,7 @@ export function getQueryDefinition(graph: Graph, nodeId: NodeId): Query {
   }
 }
 
-export function listQueryDefinitions(graph: Graph): Node[] {
+export function listQueryDefinitions(graph: Graph): readonly Node[] {
   return Array.from(graph.nodes.values()).filter(
     (node) => node.type === SYSTEM_IDS.QUERY_DEFINITION
   );

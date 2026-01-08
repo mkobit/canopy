@@ -7,6 +7,7 @@ export class SyncEngine {
   readonly doc: Y.Doc;
   readonly store: GraphStore;
   readonly awareness: Awareness;
+  // eslint-disable-next-line functional/prefer-readonly-type
   private provider: SyncProvider | null = null;
 
   constructor(options: SyncEngineOptions = {}) {
@@ -84,15 +85,15 @@ export class SyncEngine {
   /**
    * Get all awareness states
    */
-  getAwarenessStates(): Map<number, Record<string, unknown>> {
+  getAwarenessStates(): ReadonlyMap<number, Record<string, unknown>> {
     return this.awareness.getStates();
   }
 
-  onAwarenessUpdate(handler: (changes: { added: number[], updated: number[], removed: number[] }, origin: unknown) => void) {
+  onAwarenessUpdate(handler: (changes: { readonly added: readonly number[], readonly updated: readonly number[], readonly removed: readonly number[] }, origin: unknown) => void) {
       this.awareness.on('change', handler);
   }
 
-  offAwarenessUpdate(handler: (changes: { added: number[], updated: number[], removed: number[] }, origin: unknown) => void) {
+  offAwarenessUpdate(handler: (changes: { readonly added: readonly number[], readonly updated: readonly number[], readonly removed: readonly number[] }, origin: unknown) => void) {
       this.awareness.off('change', handler);
   }
 }

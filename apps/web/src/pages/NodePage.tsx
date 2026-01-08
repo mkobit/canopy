@@ -7,12 +7,12 @@ import { ArrowLeft, Save, Trash, Link as LinkIcon } from 'lucide-react';
 import { filter, map } from 'remeda';
 
 export const NodePage = () => {
-  const { nodeId } = useParams<{ nodeId: string }>();
+  const { nodeId } = useParams<{ readonly nodeId: string }>();
   const { graph, syncEngine, saveGraph } = useGraph();
   const navigate = useNavigate();
   const [currentNode, setCurrentNode] = useState<Node | undefined>(undefined);
   const [isEditing, setIsEditing] = useState(false);
-  const [editedProps, setEditedProps] = useState<Map<string, PropertyValue>>(new Map());
+  const [editedProps, setEditedProps] = useState<ReadonlyMap<string, PropertyValue>>(new Map());
 
   // Subscribe/Fetch node from graph
   useEffect(() => {
@@ -122,7 +122,7 @@ export const NodePage = () => {
 
                     <div className="space-y-4">
                         <h3 className="font-semibold text-gray-900">Properties</h3>
-                        {map(Array.from(editedProps.entries()), ([key, val]: [string, PropertyValue]) => (
+                        {map(Array.from(editedProps.entries()), ([key, val]: readonly [string, PropertyValue]) => (
                             <div key={key} className="space-y-1">
                                 <label className="text-sm text-gray-600">{key}</label>
                                 {/* Rudimentary property editor */}

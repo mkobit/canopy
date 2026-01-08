@@ -5,16 +5,16 @@ import { EdgeView, GraphNode } from './EdgeView';
 import { cn } from '../../utils/cn';
 
 interface GraphCanvasProps {
-  nodes: GraphNode[];
-  edges: Edge[];
-  selectedNodeIds?: Set<string>;
-  selectedEdgeIds?: Set<string>;
-  onNodeClick?: (node: GraphNode) => void;
-  onEdgeClick?: ((edge: Edge) => void) | undefined;
-  onBackgroundClick?: (() => void) | undefined;
-  className?: string | undefined;
-  width?: number | string | undefined;
-  height?: number | string;
+  readonly nodes: readonly GraphNode[];
+  readonly edges: readonly Edge[];
+  readonly selectedNodeIds?: ReadonlySet<string>;
+  readonly selectedEdgeIds?: ReadonlySet<string>;
+  readonly onNodeClick?: (node: GraphNode) => void;
+  readonly onEdgeClick?: ((edge: Edge) => void) | undefined;
+  readonly onBackgroundClick?: (() => void) | undefined;
+  readonly className?: string | undefined;
+  readonly width?: number | string | undefined;
+  readonly height?: number | string;
 }
 
 export const GraphCanvas: React.FC<GraphCanvasProps> = ({

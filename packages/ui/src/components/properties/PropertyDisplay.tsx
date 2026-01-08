@@ -3,9 +3,9 @@ import { PropertyValue, PropertyValueKind, ScalarValue } from '@canopy/types';
 import { cn } from '../../utils/cn';
 
 interface PropertyDisplayProps {
-  value: PropertyValue;
-  className?: string;
-  kind?: PropertyValueKind; // Optional override or context
+  readonly value: PropertyValue;
+  readonly className?: string;
+  readonly kind?: PropertyValueKind; // Optional override or context
 }
 
 export const PropertyDisplay: React.FC<PropertyDisplayProps> = ({ value, className }) => {
@@ -24,7 +24,7 @@ export const PropertyDisplay: React.FC<PropertyDisplayProps> = ({ value, classNa
   return <div className={className}><ScalarDisplay value={value} /></div>;
 };
 
-const ScalarDisplay: React.FC<{ value: ScalarValue }> = ({ value }) => {
+const ScalarDisplay: React.FC<{ readonly value: ScalarValue }> = ({ value }) => {
   switch (value.kind) {
     case 'text':
       return <span className="text-gray-900">{value.value}</span>;

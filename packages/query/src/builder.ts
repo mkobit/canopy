@@ -1,83 +1,79 @@
 import { Query, QueryStep, Operator } from './model';
 
 export class QueryBuilder {
-  protected steps: QueryStep[] = [];
+  protected readonly steps: readonly QueryStep[];
 
-  constructor(initialSteps: QueryStep[] = []) {
-    this.steps = [...initialSteps];
+  constructor(steps: readonly QueryStep[] = []) {
+    this.steps = steps;
   }
 
   build(): Query {
     return { steps: this.steps };
   }
 
-  protected addStep(step: QueryStep): this {
-    this.steps.push(step);
-    return this;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected addStep(step: QueryStep): any {
+    // This allows subclasses to return their own type via constructor
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const Ctor = this.constructor as any;
+    return new Ctor([...this.steps, step]);
   }
 }
 
 export class NodeQueryBuilder extends QueryBuilder {
-  constructor(type?: string) {
-    super();
-    this.addStep({ kind: 'node-scan', type });
+  constructor(stepsOrType?: readonly QueryStep[] | string) {
+    if (Array.isArray(stepsOrType)) {
+      super(stepsOrType);
+    } else {
+      super([{ kind: 'node-scan', type: stepsOrType as string }]);
+    }
   }
 
-  where(property: string, operator: Operator, value?: unknown): this {
-    this.addStep({ kind: 'filter', predicate: { property, operator, value } });
-    return this;
+  where(property: string, operator: Operator, value?: unknown): NodeQueryBuilder {
+    return this.addStep({ kind: 'filter', predicate: { property, operator, value } });
   }
 
-  orderBy(property: string, direction: 'asc' | 'desc' = 'asc'): this {
-    this.addStep({ kind: 'sort', sort: { property, direction } });
-    return this;
+  orderBy(property: string, direction: 'asc' | 'desc' = 'asc'): NodeQueryBuilder {
+    return this.addStep({ kind: 'sort', sort: { property, direction } });
   }
 
-  limit(limit: number): this {
-    this.addStep({ kind: 'limit', limit });
-    return this;
+  limit(limit: number): NodeQueryBuilder {
+    return this.addStep({ kind: 'limit', limit });
   }
 
   // Traversal returns a NodeQueryBuilder because it results in Nodes
   traverse(edgeType?: string, direction: 'out' | 'in' | 'both' = 'out'): NodeQueryBuilder {
-    // We append the traversal step to the current steps
-    this.addStep({ kind: 'traversal', edgeType, direction });
-    // Since traversal returns nodes, we are still a NodeQueryBuilder (conceptually)
-    // but effectively we are starting a "new context" of nodes.
-    // However, in a pipeline, we just add the step.
-    return this;
+    return this.addStep({ kind: 'traversal', edgeType, direction });
   }
 }
 
 export class EdgeQueryBuilder extends QueryBuilder {
-  constructor(type?: string) {
-    super();
-    this.addStep({ kind: 'edge-scan', type });
+  constructor(stepsOrType?: readonly QueryStep[] | string) {
+    if (Array.isArray(stepsOrType)) {
+      super(stepsOrType);
+    } else {
+      super([{ kind: 'edge-scan', type: stepsOrType as string }]);
+    }
   }
 
-  where(property: string, operator: Operator, value?: unknown): this {
-    this.addStep({ kind: 'filter', predicate: { property, operator, value } });
-    return this;
+  where(property: string, operator: Operator, value?: unknown): EdgeQueryBuilder {
+    return this.addStep({ kind: 'filter', predicate: { property, operator, value } });
   }
 
-  from(nodeId: string): this {
-    this.addStep({ kind: 'filter', predicate: { property: 'source', operator: 'eq', value: nodeId } });
-    return this;
+  from(nodeId: string): EdgeQueryBuilder {
+    return this.addStep({ kind: 'filter', predicate: { property: 'source', operator: 'eq', value: nodeId } });
   }
 
-  to(nodeId: string): this {
-    this.addStep({ kind: 'filter', predicate: { property: 'target', operator: 'eq', value: nodeId } });
-    return this;
+  to(nodeId: string): EdgeQueryBuilder {
+    return this.addStep({ kind: 'filter', predicate: { property: 'target', operator: 'eq', value: nodeId } });
   }
 
-  orderBy(property: string, direction: 'asc' | 'desc' = 'asc'): this {
-    this.addStep({ kind: 'sort', sort: { property, direction } });
-    return this;
+  orderBy(property: string, direction: 'asc' | 'desc' = 'asc'): EdgeQueryBuilder {
+    return this.addStep({ kind: 'sort', sort: { property, direction } });
   }
 
-  limit(limit: number): this {
-    this.addStep({ kind: 'limit', limit });
-    return this;
+  limit(limit: number): EdgeQueryBuilder {
+    return this.addStep({ kind: 'limit', limit });
   }
 }
 

@@ -48,7 +48,7 @@ function list(items: readonly string[]): PropertyValue {
 export function saveViewDefinition(
   graph: Graph,
   view: ViewDefinition
-): { graph: Graph; nodeId: NodeId } {
+): { readonly graph: Graph; readonly nodeId: NodeId } {
   const nodeId = createNodeId();
 
   const baseProperties: readonly (readonly [string, PropertyValue])[] = [
@@ -103,10 +103,10 @@ export function getViewDefinition(graph: Graph, nodeId: NodeId): ViewDefinition 
   const displayProperties = node.properties.get('displayProperties');
   const pageSize = node.properties.get('pageSize');
 
-  let sort: Sort[] | undefined;
+  let sort: readonly Sort[] | undefined;
   if (sortProp && sortProp.kind === 'text') {
     try {
-      sort = JSON.parse(sortProp.value) as Sort[];
+      sort = JSON.parse(sortProp.value) as readonly Sort[];
     } catch (e) {
       // Ignore invalid JSON sort
     }
@@ -131,7 +131,7 @@ export function getViewDefinition(graph: Graph, nodeId: NodeId): ViewDefinition 
   };
 }
 
-export function listViewDefinitions(graph: Graph): Node[] {
+export function listViewDefinitions(graph: Graph): readonly Node[] {
   return Array.from(graph.nodes.values()).filter(
     (node) => node.type === SYSTEM_IDS.VIEW_DEFINITION
   );

@@ -4,7 +4,7 @@ import { Home, Search, PlusCircle, Settings } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useGraph } from '../context/GraphContext';
 
-const Sidebar = ({ onQuickCapture }: { onQuickCapture: () => void }) => {
+const Sidebar = ({ onQuickCapture }: { readonly onQuickCapture: () => void }) => {
   return (
     <div className="w-64 h-screen bg-gray-50 border-r border-gray-200 flex flex-col">
       <div className="p-4 border-b border-gray-200">

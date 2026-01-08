@@ -7,9 +7,11 @@ export interface SQLitePersistence {
 }
 
 export class SQLiteAdapter implements StorageAdapter {
+  // eslint-disable-next-line functional/prefer-readonly-type
   private db: Database | null = null;
+  // eslint-disable-next-line functional/prefer-readonly-type
   private SQL: SqlJsStatic | null = null;
-  private persistence: SQLitePersistence | null;
+  private readonly persistence: SQLitePersistence | null;
 
   constructor(persistence?: SQLitePersistence) {
     this.persistence = persistence || null;
@@ -104,9 +106,10 @@ export class SQLiteAdapter implements StorageAdapter {
     await this.persist();
   }
 
-  async list(): Promise<GraphStorageMetadata[]> {
+  async list(): Promise<readonly GraphStorageMetadata[]> {
     if (!this.db) throw new Error('Database not initialized');
 
+    // eslint-disable-next-line functional/prefer-readonly-type
     const result: GraphStorageMetadata[] = [];
     const stmt = this.db.prepare('SELECT id, name, created_at, updated_at FROM graphs');
 
