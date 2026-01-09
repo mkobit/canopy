@@ -27,9 +27,31 @@ export default tseslint.config(
   prettier,
   // Functional Plugin Configuration
   {
-    ...functional.configs.lite,
+    ...functional.configs.recommended,
+    ...functional.configs.noMutations,
     // Disable type-checked rules for files without type info
     files: ['**/*.ts', '**/*.tsx'],
+    rules: {
+      ...functional.configs.recommended.rules,
+      ...functional.configs.noMutations.rules,
+      // Fix crash in prefer-immutable-types
+      'functional/prefer-immutable-types': 'off',
+      'functional/type-declaration-immutability': 'off',
+
+      // Adjust rules for practicality
+      'functional/no-return-void': 'off',
+      'functional/no-expression-statements': 'off',
+      'functional/no-mixed-types': 'off',
+      'functional/functional-parameters': 'off',
+      'functional/no-conditional-statements': 'off',
+      // Classes and Throw are too fundamental to the current architecture to remove
+      'functional/no-classes': 'off',
+      'functional/no-throw-statements': 'off',
+    },
+    // Tests are naturally imperative (setup, state mutations in mock, etc.)
+    ignores: ['**/*.test.ts', '**/*.spec.ts', '**/tests/**/*.ts', '**/__tests__/**/*.ts'],
+  },
+  {
     languageOptions: {
       parserOptions: {
         project: ['./tsconfig.base.json', 'packages/*/tsconfig.json', 'apps/*/tsconfig.json'],
@@ -66,28 +88,13 @@ export default tseslint.config(
       'import/no-unresolved': 'off', // TypeScript handles this
 
       // Functional plugin overrides
-      // Enforce immutability (part of lite, but tweaking)
+      // Enforce immutability
       'functional/immutable-data': ['error', {
           ignoreClasses: true,
           ignoreImmediateMutation: true,
           // Allow mutations of refs in React (common pattern)
           ignoreAccessorPattern: ['**.current', '**.value'],
       }],
-      'functional/no-let': ['error', {
-        allowInFunctions: true
-      }],
-      // Enforce no loop statements - prefer map/filter/reduce or remeda
-      'functional/no-loop-statements': 'error',
-
-      // Disable noisy rules from lite for now to make it manageable
-      'functional/prefer-readonly-type': 'error',
-      'functional/no-mixed-types': 'off',
-      'functional/no-return-void': 'off',
-      'functional/no-class-inheritance': 'off',
-      'functional/no-this-expressions': 'off',
-      'functional/no-throw-statements': 'off',
-      'functional/prefer-immutable-types': 'off',
-      'functional/functional-parameters': 'off',
     },
   },
 );

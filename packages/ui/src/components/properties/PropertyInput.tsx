@@ -60,19 +60,17 @@ export const PropertyInput: React.FC<PropertyInputProps> = ({ value, onChange, c
             // However, the `value` prop has `kind: 'list'` but `items` might be empty.
             // If items is empty, we need the `kind` prop to know what to add, or default to text.
             // For now, let's default to text if empty, or copy the kind of the first item.
-            let newItem: ScalarValue = { kind: 'text', value: '' };
-            if (value.items.length > 0) {
-                 const first = value.items[0];
-                 if (first) {
-                     // Create a safe default based on kind
-                     switch(first.kind) {
-                         case 'text': newItem = { kind: 'text', value: '' }; break;
-                         case 'number': newItem = { kind: 'number', value: 0 }; break;
-                         case 'boolean': newItem = { kind: 'boolean', value: false }; break;
-                         // ... others
-                     }
-                 }
-            }
+            const getDefaultItem = (firstItem?: ScalarValue): ScalarValue => {
+              if (!firstItem) return { kind: 'text', value: '' };
+              switch(firstItem.kind) {
+                 case 'text': return { kind: 'text', value: '' };
+                 case 'number': return { kind: 'number', value: 0 };
+                 case 'boolean': return { kind: 'boolean', value: false };
+                 default: return { kind: 'text', value: '' };
+              }
+            };
+
+            const newItem = getDefaultItem(value.items.length > 0 ? value.items[0] : undefined);
             onChange({ ...value, items: [...value.items, newItem] });
           }}
           className="text-blue-500 hover:bg-blue-50 px-2 py-1 rounded text-sm border border-dashed border-blue-200 w-full"

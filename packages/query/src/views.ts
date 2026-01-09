@@ -103,14 +103,16 @@ export function getViewDefinition(graph: Graph, nodeId: NodeId): ViewDefinition 
   const displayProperties = node.properties.get('displayProperties');
   const pageSize = node.properties.get('pageSize');
 
-  let sort: readonly Sort[] | undefined;
-  if (sortProp && sortProp.kind === 'text') {
-    try {
-      sort = JSON.parse(sortProp.value) as readonly Sort[];
-    } catch (e) {
-      // Ignore invalid JSON sort
+  const sort: readonly Sort[] | undefined = (() => {
+    if (sortProp && sortProp.kind === 'text') {
+      try {
+        return JSON.parse(sortProp.value) as readonly Sort[];
+      } catch (e) {
+        // Ignore invalid JSON sort
+      }
     }
-  }
+    return undefined;
+  })();
 
   const displayPropertiesList = (displayProperties && displayProperties.kind === 'list')
       ? displayProperties.items

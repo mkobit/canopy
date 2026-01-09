@@ -113,12 +113,7 @@ export class GraphStore {
     const now = createInstant();
 
     // Validate or generate ID safely
-    let id: NodeId;
-    if (data.id) {
-        id = asNodeId(data.id);
-    } else {
-        id = createNodeId();
-    }
+    const id: NodeId = data.id ? asNodeId(data.id) : createNodeId();
 
     const node: Node = {
       id,
@@ -189,12 +184,7 @@ export class GraphStore {
     }
 
     const now = createInstant();
-    let id: EdgeId;
-    if (data.id) {
-        id = asEdgeId(data.id);
-    } else {
-        id = createEdgeId();
-    }
+    const id: EdgeId = data.id ? asEdgeId(data.id) : createEdgeId();
 
     const edge: Edge = {
       id,

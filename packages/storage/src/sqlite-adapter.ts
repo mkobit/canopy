@@ -22,10 +22,7 @@ export class SQLiteAdapter implements StorageAdapter {
 
     this.SQL = await initSqlJs();
 
-    let data: Uint8Array | null = null;
-    if (this.persistence) {
-      data = await this.persistence.read();
-    }
+    const data = this.persistence ? await this.persistence.read() : null;
 
     if (data) {
       this.db = new this.SQL.Database(data);

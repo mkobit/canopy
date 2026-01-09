@@ -77,47 +77,51 @@ export class QueryEngine {
 
   private applyFilter(items: readonly GraphItem[], predicate: Filter): readonly GraphItem[] {
     return filter(items, item => {
-      let propValue: unknown;
+      // Let's try a different approach to avoid `let`.
+      // We can use a helper function to extract value.
+      const getPropValue = (): unknown => {
+          if ('source' in item && predicate.property === 'source') return item.source;
+          if ('target' in item && predicate.property === 'target') return item.target;
 
-      // Special handling for edge source/target which are top-level properties on Edge
-      if ('source' in item && predicate.property === 'source') {
-        propValue = item.source;
-      } else if ('target' in item && predicate.property === 'target') {
-        propValue = item.target;
-      } else {
-        // Normal property lookup
-        const prop = item.properties.get(predicate.property);
-        if (!prop && predicate.operator !== 'exists') return false; // Default strictness
-        if (!prop && predicate.operator === 'exists') return false; // Doesn't exist
+          const prop = item.properties.get(predicate.property);
+          if (prop) return this.unwrapValue(prop);
+          return undefined;
+      };
 
-        // Unwrap PropertyValue for comparison
-        if (prop) {
-           propValue = this.unwrapValue(prop);
-        }
+      const pVal = getPropValue();
+      if (pVal === undefined) {
+         if (predicate.operator === 'exists') return false;
+         // Special case: if operator is NOT exists, it fails if undefined?
+         // Original: if (!prop && predicate.operator !== 'exists') return false;
+         // So if missing, it fails all checks except maybe 'neq'? Original logic seems strict.
+         // Wait, `neq` undefined might be true? "propValue !== value". undefined !== 'foo' is true.
+         // But original said `return false` if !prop.
+         // So strict existence requirement for non-exists operators.
+         return false;
       }
 
       const value = predicate.value;
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const p = propValue as any;
+      const p = pVal as any;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const v = value as any;
 
       switch (predicate.operator) {
-        case 'eq': return propValue === value;
-        case 'neq': return propValue !== value;
+        case 'eq': return pVal === value;
+        case 'neq': return pVal !== value;
         case 'gt': return p > v;
         case 'gte': return p >= v;
         case 'lt': return p < v;
         case 'lte': return p <= v;
         case 'contains':
-          if (Array.isArray(propValue)) {
-            return propValue.includes(value);
-          } else if (typeof propValue === 'string') {
-            return propValue.includes(value as string);
+          if (Array.isArray(pVal)) {
+            return pVal.includes(value);
+          } else if (typeof pVal === 'string') {
+            return pVal.includes(value as string);
           }
           return false;
-        case 'exists': return propValue !== undefined && propValue !== null;
+        case 'exists': return pVal !== undefined && pVal !== null;
         default: return false;
       }
     });
