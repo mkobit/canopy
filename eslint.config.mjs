@@ -27,29 +27,19 @@ export default tseslint.config(
   prettier,
   // Functional Plugin Configuration
   {
-    ...functional.configs.recommended,
-    ...functional.configs.noMutations,
-    // Disable type-checked rules for files without type info
+    ...functional.configs.externalTypeScriptRecommended,
     files: ['**/*.ts', '**/*.tsx'],
-    rules: {
-      ...functional.configs.recommended.rules,
-      ...functional.configs.noMutations.rules,
-      // Fix crash in prefer-immutable-types
-      'functional/prefer-immutable-types': 'off',
-      'functional/type-declaration-immutability': 'off',
-
-      // Adjust rules for practicality
-      'functional/no-return-void': 'off',
-      'functional/no-expression-statements': 'off',
-      'functional/no-mixed-types': 'off',
-      'functional/functional-parameters': 'off',
-      'functional/no-conditional-statements': 'off',
-      // Classes and Throw are too fundamental to the current architecture to remove
-      'functional/no-classes': 'off',
-      'functional/no-throw-statements': 'off',
-    },
-    // Tests are naturally imperative (setup, state mutations in mock, etc.)
-    ignores: ['**/*.test.ts', '**/*.spec.ts', '**/tests/**/*.ts', '**/__tests__/**/*.ts'],
+    ignores: ['**/*.test.ts', '**/*.spec.ts', '**/tests/**/*.ts', '**/__tests__/**/*.ts', 'apps/web/src/test/setup.ts'],
+  },
+  {
+    ...functional.configs.recommended,
+    files: ['**/*.ts', '**/*.tsx'],
+    ignores: ['**/*.test.ts', '**/*.spec.ts', '**/tests/**/*.ts', '**/__tests__/**/*.ts', 'apps/web/src/test/setup.ts'],
+  },
+  {
+    ...functional.configs.stylistic,
+    files: ['**/*.ts', '**/*.tsx'],
+    ignores: ['**/*.test.ts', '**/*.spec.ts', '**/tests/**/*.ts', '**/__tests__/**/*.ts', 'apps/web/src/test/setup.ts'],
   },
   {
     languageOptions: {
@@ -95,6 +85,19 @@ export default tseslint.config(
           // Allow mutations of refs in React (common pattern)
           ignoreAccessorPattern: ['**.current', '**.value'],
       }],
+
+      // Adjust rules for practicality (as suggested by user documentation/examples)
+      'functional/no-return-void': 'off',
+      'functional/no-expression-statements': 'off',
+      'functional/no-mixed-types': 'off',
+      'functional/functional-parameters': 'off',
+      'functional/no-conditional-statements': 'off',
+      'functional/no-classes': 'off',
+      'functional/no-throw-statements': 'off',
+
+      // Crashes the linter in some files (ErrorType encountered), so must be disabled
+      'functional/prefer-immutable-types': 'off',
+      'functional/type-declaration-immutability': 'off',
     },
   },
 );

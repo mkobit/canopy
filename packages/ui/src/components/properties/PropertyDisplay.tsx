@@ -24,7 +24,7 @@ export const PropertyDisplay: React.FC<PropertyDisplayProps> = ({ value, classNa
   return <div className={className}><ScalarDisplay value={value} /></div>;
 };
 
-const ScalarDisplay: React.FC<{ readonly value: ScalarValue }> = ({ value }) => {
+const ScalarDisplay: React.FC<Readonly<{ value: ScalarValue }>> = ({ value }) => {
   switch (value.kind) {
     case 'text':
       return <span className="text-gray-900">{value.value}</span>;

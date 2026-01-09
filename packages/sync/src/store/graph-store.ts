@@ -106,9 +106,9 @@ export class GraphStore {
   }
 
   addNode(
-    data: Omit<Node, 'id' | 'metadata'> & {
-      readonly id?: string;
-    }
+    data: Omit<Node, 'id' | 'metadata'> & Readonly<{
+      id?: string;
+    }>
   ): Node {
     const now = createInstant();
 
@@ -172,9 +172,9 @@ export class GraphStore {
   }
 
   addEdge(
-    data: Omit<Edge, 'id' | 'metadata'> & {
-      readonly id?: string;
-    }
+    data: Omit<Edge, 'id' | 'metadata'> & Readonly<{
+      id?: string;
+    }>
   ): Edge {
     if (!this.nodes.has(data.source)) {
       throw new Error(`Source node ${data.source} not found`);

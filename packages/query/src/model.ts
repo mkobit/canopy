@@ -19,12 +19,12 @@ export interface Traversal {
 
 // A step in the query pipeline
 export type QueryStep =
-  | { readonly kind: 'node-scan'; readonly type?: string | undefined } // Start with nodes
-  | { readonly kind: 'edge-scan'; readonly type?: string | undefined } // Start with edges
-  | { readonly kind: 'filter'; readonly predicate: Filter } // Filter current set
-  | { readonly kind: 'traversal'; readonly edgeType?: string | undefined; readonly direction: 'out' | 'in' | 'both' } // Map nodes to connected nodes
-  | { readonly kind: 'sort'; readonly sort: Sort }
-  | { readonly kind: 'limit'; readonly limit: number };
+  | Readonly<{ kind: 'node-scan'; type?: string | undefined }> // Start with nodes
+  | Readonly<{ kind: 'edge-scan'; type?: string | undefined }> // Start with edges
+  | Readonly<{ kind: 'filter'; predicate: Filter }> // Filter current set
+  | Readonly<{ kind: 'traversal'; edgeType?: string | undefined; direction: 'out' | 'in' | 'both' }> // Map nodes to connected nodes
+  | Readonly<{ kind: 'sort'; sort: Sort }>
+  | Readonly<{ kind: 'limit'; limit: number }>;
 
 export interface Query {
   readonly steps: readonly QueryStep[];

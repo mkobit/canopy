@@ -32,7 +32,7 @@ export class InMemoryProvider implements SyncProvider {
     }
   };
 
-  private readonly handleAwarenessUpdate = ({ added, updated, removed }: { readonly added: readonly number[], readonly updated: readonly number[], readonly removed: readonly number[] }, origin: unknown) => {
+  private readonly handleAwarenessUpdate = ({ added, updated, removed }: Readonly<{ added: readonly number[], updated: readonly number[], removed: readonly number[] }>, origin: unknown) => {
     if (origin !== 'remote' && this.connected) {
       const changedClients = added.concat(updated).concat(removed);
       const update = AwarenessProtocol.encodeAwarenessUpdate(this.awareness, changedClients);
@@ -120,14 +120,14 @@ export class InMemoryProvider implements SyncProvider {
     this.emit('status', { status: 'disconnected' });
   }
 
-  on(event: 'status', handler: (event: { readonly status: 'connected' | 'disconnected' | 'connecting' }) => void) {
+  on(event: 'status', handler: (event: Readonly<{ status: 'connected' | 'disconnected' | 'connecting' }>) => void) {
     if (!this.handlers.has(event)) {
       this.handlers.set(event, []);
     }
     this.handlers.get(event)?.push(handler);
   }
 
-  off(event: 'status', handler: (event: { readonly status: 'connected' | 'disconnected' | 'connecting' }) => void) {
+  off(event: 'status', handler: (event: Readonly<{ status: 'connected' | 'disconnected' | 'connecting' }>) => void) {
     const handlers = this.handlers.get(event);
     if (handlers) {
       this.handlers.set(event, handlers.filter(h => h !== handler));

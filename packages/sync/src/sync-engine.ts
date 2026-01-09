@@ -89,11 +89,11 @@ export class SyncEngine {
     return this.awareness.getStates();
   }
 
-  onAwarenessUpdate(handler: (changes: { readonly added: readonly number[], readonly updated: readonly number[], readonly removed: readonly number[] }, origin: unknown) => void) {
+  onAwarenessUpdate(handler: (changes: Readonly<{ added: readonly number[], updated: readonly number[], removed: readonly number[] }>, origin: unknown) => void) {
       this.awareness.on('change', handler);
   }
 
-  offAwarenessUpdate(handler: (changes: { readonly added: readonly number[], readonly updated: readonly number[], readonly removed: readonly number[] }, origin: unknown) => void) {
+  offAwarenessUpdate(handler: (changes: Readonly<{ added: readonly number[], updated: readonly number[], removed: readonly number[] }>, origin: unknown) => void) {
       this.awareness.off('change', handler);
   }
 }

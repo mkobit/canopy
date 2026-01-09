@@ -5,12 +5,12 @@ export interface SyncProvider {
   /**
    * connect the provider
    */
-  connect(): void;
+  readonly connect: () => void;
 
   /**
    * disconnect the provider
    */
-  disconnect(): void;
+  readonly disconnect: () => void;
 
   /**
    * The underlying Yjs awareness instance
@@ -25,8 +25,8 @@ export interface SyncProvider {
   /**
    * Subscribe to connection status changes
    */
-  on(event: 'status', handler: (event: { readonly status: 'connected' | 'disconnected' | 'connecting' }) => void): void;
-  off(event: 'status', handler: (event: { readonly status: 'connected' | 'disconnected' | 'connecting' }) => void): void;
+  readonly on: (event: 'status', handler: (event: Readonly<{ status: 'connected' | 'disconnected' | 'connecting' }>) => void) => void;
+  readonly off: (event: 'status', handler: (event: Readonly<{ status: 'connected' | 'disconnected' | 'connecting' }>) => void) => void;
 }
 
 export interface SyncEngineOptions {

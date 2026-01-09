@@ -6,6 +6,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const packageJsonPath = path.join(__dirname, '../package.json');
 const miseTomlPath = path.join(__dirname, '../mise.toml');
 
+// eslint-disable-next-line no-console
 console.log('Verifying version consistency...');
 
 // Read package.json
@@ -40,4 +41,5 @@ if (packageNodeVersion !== miseNodeVersion) {
   process.exit(1);
 }
 
+// eslint-disable-next-line no-console
 console.log(`✅ Versions match: Node ${packageNodeVersion}`);
