@@ -20,6 +20,7 @@ export class QueryBuilder {
   }
 }
 
+// eslint-disable-next-line functional/no-class-inheritance
 export class NodeQueryBuilder extends QueryBuilder {
   constructor(stepsOrType?: readonly QueryStep[] | string) {
     if (Array.isArray(stepsOrType)) {
@@ -47,6 +48,7 @@ export class NodeQueryBuilder extends QueryBuilder {
   }
 }
 
+// eslint-disable-next-line functional/no-class-inheritance
 export class EdgeQueryBuilder extends QueryBuilder {
   constructor(stepsOrType?: readonly QueryStep[] | string) {
     if (Array.isArray(stepsOrType)) {

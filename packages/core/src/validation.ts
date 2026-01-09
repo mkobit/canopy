@@ -54,19 +54,25 @@ function extractEdgeTypeDefinition(node: Node): EdgeTypeDefinition | undefined {
     const sourceTypesVal = node.properties.get('sourceTypes')
     const targetTypesVal = node.properties.get('targetTypes')
 
-    let sourceTypes: readonly TypeId[] = []
-    if (sourceTypesVal?.kind === 'list') {
-        sourceTypes = sourceTypesVal.items.map(i => i.kind === 'text' ? asTypeId(i.value) : asTypeId('unknown'))
-    } else if (sourceTypesVal?.kind === 'text') {
-        try { sourceTypes = (JSON.parse(sourceTypesVal.value) as readonly string[]).map(asTypeId) } catch { /* ignore parse error */ }
-    }
+    const sourceTypes: readonly TypeId[] = (() => {
+      if (sourceTypesVal?.kind === 'list') {
+        return sourceTypesVal.items.map(i => i.kind === 'text' ? asTypeId(i.value) : asTypeId('unknown'))
+      }
+      if (sourceTypesVal?.kind === 'text') {
+        try { return (JSON.parse(sourceTypesVal.value) as readonly string[]).map(asTypeId) } catch { return [] }
+      }
+      return []
+    })()
 
-    let targetTypes: readonly TypeId[] = []
-    if (targetTypesVal?.kind === 'list') {
-        targetTypes = targetTypesVal.items.map(i => i.kind === 'text' ? asTypeId(i.value) : asTypeId('unknown'))
-    } else if (targetTypesVal?.kind === 'text') {
-        try { targetTypes = (JSON.parse(targetTypesVal.value) as readonly string[]).map(asTypeId) } catch { /* ignore parse error */ }
-    }
+    const targetTypes: readonly TypeId[] = (() => {
+      if (targetTypesVal?.kind === 'list') {
+        return targetTypesVal.items.map(i => i.kind === 'text' ? asTypeId(i.value) : asTypeId('unknown'))
+      }
+      if (targetTypesVal?.kind === 'text') {
+        try { return (JSON.parse(targetTypesVal.value) as readonly string[]).map(asTypeId) } catch { return [] }
+      }
+      return []
+    })()
 
     return {
         id: asTypeId(node.id),
@@ -161,11 +167,8 @@ export function validateNode(graph: Graph, node: Node): ValidationResult {
 export function validateEdge(graph: Graph, edge: Edge): ValidationResult {
     // 1. Lookup EdgeType
     const edgeTypeId = asNodeId(edge.type)
-    let defNode = graph.nodes.get(edgeTypeId)
-
-    if (defNode && defNode.type !== SYSTEM_IDS.EDGE_TYPE) {
-        defNode = undefined
-    }
+    const rawDefNode = graph.nodes.get(edgeTypeId)
+    const defNode = (rawDefNode && rawDefNode.type === SYSTEM_IDS.EDGE_TYPE) ? rawDefNode : undefined
 
     if (!defNode) {
         return SUCCESS
