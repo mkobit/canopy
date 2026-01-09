@@ -84,7 +84,7 @@ export const PropertyInput: React.FC<PropertyInputProps> = ({ value, onChange, c
   return <ScalarInput value={value} onChange={onChange} className={className} />;
 };
 
-const ScalarInput: React.FC<{ readonly value: ScalarValue, readonly onChange: (val: ScalarValue) => void, readonly className?: string | undefined }> = ({ value, onChange, className }) => {
+const ScalarInput: React.FC<Readonly<{ value: ScalarValue, onChange: (val: ScalarValue) => void, className?: string | undefined }>> = ({ value, onChange, className }) => {
   const baseInputClass = cn("border rounded px-2 py-1 w-full text-sm", className);
 
   switch (value.kind) {

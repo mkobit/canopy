@@ -13,7 +13,7 @@ const StorageContext = createContext<StorageContextType>({
   error: null,
 });
 
-export const StorageProvider: React.FC<{ readonly children: React.ReactNode }> = ({ children }) => {
+export const StorageProvider: React.FC<Readonly<{ children: React.ReactNode }>> = ({ children }) => {
   const [storage, setStorage] = useState<StorageAdapter | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);

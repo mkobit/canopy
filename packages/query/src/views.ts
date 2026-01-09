@@ -48,7 +48,7 @@ function list(items: readonly string[]): PropertyValue {
 export function saveViewDefinition(
   graph: Graph,
   view: ViewDefinition
-): { readonly graph: Graph; readonly nodeId: NodeId } {
+): Readonly<{ graph: Graph; nodeId: NodeId }> {
   const nodeId = createNodeId();
 
   const baseProperties: readonly (readonly [string, PropertyValue])[] = [

@@ -7,7 +7,7 @@ import { ArrowLeft, Save, Trash, Link as LinkIcon } from 'lucide-react';
 import { filter, map } from 'remeda';
 
 export const NodePage = () => {
-  const { nodeId } = useParams<{ readonly nodeId: string }>();
+  const { nodeId } = useParams<Readonly<{ nodeId: string }>>();
   const { graph, syncEngine, saveGraph } = useGraph();
   const navigate = useNavigate();
   const [currentNode, setCurrentNode] = useState<Node | undefined>(undefined);

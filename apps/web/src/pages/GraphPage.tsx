@@ -4,7 +4,7 @@ import { useGraph } from '../context/GraphContext';
 import { asGraphId } from '@canopy/types';
 
 export const GraphPage = () => {
-  const { graphId } = useParams<{ readonly graphId: string }>();
+  const { graphId } = useParams<Readonly<{ graphId: string }>>();
   const { loadGraph, graph, isLoading, error } = useGraph();
   const navigate = useNavigate();
 

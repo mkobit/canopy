@@ -10,12 +10,12 @@ export interface StorageAdapter {
   /**
    * Initialize the backend (e.g., open DB connection).
    */
-  init(): Promise<void>;
+  readonly init: () => Promise<void>;
 
   /**
    * Close the backend connection.
    */
-  close(): Promise<void>;
+  readonly close: () => Promise<void>;
 
   /**
    * Save a graph snapshot.
@@ -23,23 +23,23 @@ export interface StorageAdapter {
    * @param snapshot The binary snapshot (Yjs update).
    * @param metadata Metadata about the graph.
    */
-  save(graphId: string, snapshot: Uint8Array, metadata: GraphStorageMetadata): Promise<void>;
+  readonly save: (graphId: string, snapshot: Uint8Array, metadata: GraphStorageMetadata) => Promise<void>;
 
   /**
    * Load a graph snapshot.
    * @param graphId The graph ID.
    * @returns The snapshot if found, null otherwise.
    */
-  load(graphId: string): Promise<Uint8Array | null>;
+  readonly load: (graphId: string) => Promise<Uint8Array | null>;
 
   /**
    * Delete a graph.
    * @param graphId The graph ID.
    */
-  delete(graphId: string): Promise<void>;
+  readonly delete: (graphId: string) => Promise<void>;
 
   /**
    * List all stored graphs.
    */
-  list(): Promise<readonly GraphStorageMetadata[]>;
+  readonly list: () => Promise<readonly GraphStorageMetadata[]>;
 }

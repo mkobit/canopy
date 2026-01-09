@@ -26,7 +26,7 @@ const GraphContext = createContext<GraphContextType>({
   createNode: async () => null,
 });
 
-export const GraphProvider: React.FC<{ readonly children: React.ReactNode }> = ({ children }) => {
+export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = ({ children }) => {
   const { storage } = useStorage();
   const [syncEngine, setSyncEngine] = useState<SyncEngine | null>(null);
   const syncEngineRef = useRef<SyncEngine | null>(null); // Ref to avoid dependency cycles

@@ -37,7 +37,7 @@ export function saveQueryDefinition(
   name: string,
   query: Query,
   options: SaveQueryOptions = {}
-): { readonly graph: Graph; readonly nodeId: NodeId } {
+): Readonly<{ graph: Graph; nodeId: NodeId }> {
   const nodeId = createNodeId();
 
   const baseProperties: readonly (readonly [string, PropertyValue])[] = [

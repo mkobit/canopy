@@ -2,14 +2,14 @@ import { openDB, DBSchema, IDBPDatabase } from 'idb';
 import { StorageAdapter, GraphStorageMetadata } from './types';
 
 interface CanopyDB extends DBSchema {
-  readonly graphs: {
-    readonly key: string;
-    readonly value: {
-      readonly id: string;
-      readonly snapshot: Uint8Array;
-      readonly metadata: GraphStorageMetadata;
+  readonly graphs: Readonly<{
+    key: string;
+    value: {
+      id: string;
+      snapshot: Uint8Array;
+      metadata: GraphStorageMetadata;
     };
-  };
+  }>;
 }
 
 export class IndexedDBAdapter implements StorageAdapter {

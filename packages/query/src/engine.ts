@@ -10,7 +10,7 @@ export class QueryEngine {
   execute(query: Query): QueryResult {
     // We need to keep track of isNodeContext which changes based on steps.
     // reduce is suitable here.
-    const initial: { readonly items: readonly GraphItem[], readonly isNodeContext: boolean } = { items: [], isNodeContext: false };
+    const initial: Readonly<{ items: readonly GraphItem[], isNodeContext: boolean }> = { items: [], isNodeContext: false };
 
     const result = reduce(
       query.steps,
