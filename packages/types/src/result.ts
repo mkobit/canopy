@@ -24,11 +24,12 @@ export function unwrap<T, E>(result: Result<T, E>): T {
     throw result.error;
 }
 
-export function fromThrowable<T>(fn: () => T): Result<T, Error> {
+export function fromThrowable<T>(fn: () => T, errorHandler?: (e: unknown) => Error): Result<T, Error> {
   try {
     return ok(fn());
   } catch (e) {
-    return err(e instanceof Error ? e : new Error(String(e)));
+    const error = errorHandler ? errorHandler(e) : (e instanceof Error ? e : new Error(String(e)));
+    return err(error);
   }
 }
 

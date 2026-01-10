@@ -11,11 +11,10 @@ export class QueryBuilder {
     return { steps: this.steps };
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  protected addStep(step: QueryStep): any {
+  protected addStep<T extends QueryBuilder>(this: T, step: QueryStep): T {
     // This allows subclasses to return their own type via constructor
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const Ctor = this.constructor as any;
+    const Ctor = this.constructor as new (steps: readonly QueryStep[]) => T;
     return new Ctor([...this.steps, step]);
   }
 }

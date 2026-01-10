@@ -115,18 +115,13 @@ export class QueryEngine {
 
       const value = predicate.value;
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const p = pVal as any;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const v = value as any;
-
       switch (predicate.operator) {
         case 'eq': return pVal === value;
         case 'neq': return pVal !== value;
-        case 'gt': return p > v;
-        case 'gte': return p >= v;
-        case 'lt': return p < v;
-        case 'lte': return p <= v;
+        case 'gt': return this.compare(pVal, value) > 0;
+        case 'gte': return this.compare(pVal, value) >= 0;
+        case 'lt': return this.compare(pVal, value) < 0;
+        case 'lte': return this.compare(pVal, value) <= 0;
         case 'contains':
           if (Array.isArray(pVal)) {
             return pVal.includes(value);
@@ -179,18 +174,31 @@ export class QueryEngine {
 
   private applySort(items: readonly GraphItem[], sort: Sort): readonly GraphItem[] {
     return [...items].sort((a, b) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const valA = this.unwrapValue(a.properties.get(sort.property)) as any;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const valB = this.unwrapValue(b.properties.get(sort.property)) as any;
+      const valA = this.unwrapValue(a.properties.get(sort.property));
+      const valB = this.unwrapValue(b.properties.get(sort.property));
 
       if (valA === valB) return 0;
       if (valA === undefined) return 1; // undefined last
       if (valB === undefined) return -1;
 
-      const comparison = valA < valB ? -1 : 1;
+      const comparison = this.compare(valA, valB);
       return sort.direction === 'asc' ? comparison : -comparison;
     });
+  }
+
+  private compare(a: unknown, b: unknown): number {
+    if (typeof a === 'number' && typeof b === 'number') {
+      return a < b ? -1 : (a > b ? 1 : 0);
+    }
+    if (typeof a === 'string' && typeof b === 'string') {
+      return a < b ? -1 : (a > b ? 1 : 0);
+    }
+    if (typeof a === 'boolean' && typeof b === 'boolean') {
+      return a === b ? 0 : (a ? 1 : -1);
+    }
+    // Incomparable or mixed types treat as equal for sorting stability or specific ordering?
+    // Let's rely on string representation fallback or just return 0
+    return 0;
   }
 
   private unwrapValue(prop: PropertyValue | undefined): unknown {

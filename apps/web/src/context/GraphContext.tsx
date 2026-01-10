@@ -4,6 +4,8 @@ import { Graph, GraphId, NodeId, EdgeId, asInstant, PropertyValue, Node, Edge, R
 import { useStorage } from './StorageContext';
 import { z } from 'zod';
 import { asTypeId } from '@canopy/types';
+import { TypeIdSchema } from '@canopy/schema';
+import { TypeId } from '@canopy/types';
 
 interface GraphContextState {
   readonly graph: Graph | null;
@@ -146,8 +148,11 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
     }, [storage, currentGraphId, graph]);
 
   // Schema for validating inputs to createNode
+  // Note: We need to specify the output type explicitly because Zod's inference sometimes
+  // struggles with branded types across packages if not careful, but here TypeIdSchema
+  // should already return TypeId.
   const CreateNodeInputSchema = z.object({
-      type: z.string().min(1),
+      type: TypeIdSchema,
       properties: z.record(z.string(), z.unknown()).optional()
   });
 
@@ -159,7 +164,8 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
           // Validate inputs
           const input = CreateNodeInputSchema.parse({ type, properties });
 
-          const typeId = asTypeId(input.type);
+          // Force cast because Zod schema is separate from type definition
+          const typeId = input.type as unknown as TypeId;
 
           // Safer mapping using Type Checking or explicit conversion
           // We only accept strings as text properties for now, similar to before but explicit

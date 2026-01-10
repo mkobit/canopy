@@ -8,7 +8,8 @@ import {
   ScalarValue,
   Result,
   ok,
-  err
+  err,
+  fromThrowable
 } from '@canopy/types';
 import { SYSTEM_IDS, addNode } from '@canopy/core';
 import { Query, Sort } from './model';
@@ -143,11 +144,8 @@ export function getViewDefinition(graph: Graph, nodeId: NodeId): Result<ViewDefi
 
   const sort: readonly Sort[] | undefined = (() => {
     if (sortProp && sortProp.kind === 'text') {
-      try {
-        return JSON.parse(sortProp.value) as readonly Sort[];
-      } catch (e) {
-        // Ignore invalid JSON sort
-      }
+      const parsed = fromThrowable(() => JSON.parse(sortProp.value) as readonly Sort[]);
+      if (parsed.ok) return parsed.value;
     }
     return undefined;
   })();

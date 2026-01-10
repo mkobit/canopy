@@ -9,7 +9,8 @@ import {
   ScalarValue,
   Result,
   ok,
-  err
+  err,
+  fromThrowable
 } from '@canopy/types';
 import { SYSTEM_IDS, addNode } from '@canopy/core';
 import { Query } from './model';
@@ -108,11 +109,9 @@ export function getQueryDefinition(graph: Graph, nodeId: NodeId): Result<Query, 
     return err(new Error(`Query definition node ${nodeId} has invalid definition property`));
   }
 
-  try {
-    return ok(JSON.parse(definitionProp.value) as Query);
-  } catch (e) {
-    return err(new Error(`Failed to parse query definition for node ${nodeId}: ${e}`));
-  }
+  return fromThrowable(() => {
+    return JSON.parse(definitionProp.value) as Query;
+  }, (e) => new Error(`Failed to parse query definition for node ${nodeId}: ${e}`));
 }
 
 export function listQueryDefinitions(graph: Graph): readonly Node[] {
