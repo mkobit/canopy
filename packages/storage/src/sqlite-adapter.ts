@@ -1,6 +1,6 @@
 import initSqlJs, { Database, SqlJsStatic } from 'sql.js';
 import { StorageAdapter, GraphStorageMetadata } from './types';
-import { Result, ok, err } from '@canopy/types';
+import { Result, ok, err, fromAsyncThrowable } from '@canopy/types';
 
 export interface SQLitePersistence {
   readonly read: () => Promise<Uint8Array | null>;
@@ -21,7 +21,7 @@ export class SQLiteAdapter implements StorageAdapter {
   async init(): Promise<Result<void, Error>> {
     if (this.db) return ok(undefined);
 
-    try {
+    return fromAsyncThrowable(async () => {
       this.SQL = await initSqlJs();
 
       const data = this.persistence ? await this.persistence.read() : null;
@@ -32,10 +32,8 @@ export class SQLiteAdapter implements StorageAdapter {
         this.db = new this.SQL.Database();
         this.initSchema();
       }
-      return ok(undefined);
-    } catch (e) {
-      return err(e instanceof Error ? e : new Error(String(e)));
-    }
+      return undefined;
+    });
   }
 
   private initSchema() {
@@ -53,11 +51,13 @@ export class SQLiteAdapter implements StorageAdapter {
   }
 
   async close(): Promise<Result<void, Error>> {
-    if (this.db) {
-      this.db.close();
-      this.db = null;
-    }
-    return ok(undefined);
+    return fromAsyncThrowable(async () => {
+        if (this.db) {
+            this.db.close();
+            this.db = null;
+        }
+        return undefined;
+    });
   }
 
   private async persist(): Promise<void> {
@@ -70,9 +70,10 @@ export class SQLiteAdapter implements StorageAdapter {
   async save(graphId: string, snapshot: Uint8Array, metadata: GraphStorageMetadata): Promise<Result<void, Error>> {
     if (!this.db) return err(new Error('Database not initialized'));
 
-    try {
+    return fromAsyncThrowable(async () => {
       // Check if exists to decide insert or update? Or just REPLACE INTO (sqlite) or INSERT OR REPLACE
-      const stmt = this.db.prepare(`
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const stmt = this.db!.prepare(`
         INSERT OR REPLACE INTO graphs (id, name, snapshot, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?)
       `);
@@ -87,51 +88,48 @@ export class SQLiteAdapter implements StorageAdapter {
       stmt.free();
 
       await this.persist();
-      return ok(undefined);
-    } catch (e) {
-      return err(e instanceof Error ? e : new Error(String(e)));
-    }
+      return undefined;
+    });
   }
 
   async load(graphId: string): Promise<Result<Uint8Array | null, Error>> {
     if (!this.db) return err(new Error('Database not initialized'));
 
-    try {
-      const stmt = this.db.prepare('SELECT snapshot FROM graphs WHERE id = ?');
+    return fromAsyncThrowable(async () => {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const stmt = this.db!.prepare('SELECT snapshot FROM graphs WHERE id = ?');
       stmt.bind([graphId]);
 
       if (stmt.step()) {
         const result = stmt.getAsObject();
         stmt.free();
-        return ok(result.snapshot as Uint8Array);
+        return result.snapshot as Uint8Array;
       }
 
       stmt.free();
-      return ok(null);
-    } catch (e) {
-      return err(e instanceof Error ? e : new Error(String(e)));
-    }
+      return null;
+    });
   }
 
   async delete(graphId: string): Promise<Result<void, Error>> {
     if (!this.db) return err(new Error('Database not initialized'));
 
-    try {
-      this.db.run('DELETE FROM graphs WHERE id = ?', [graphId]);
+    return fromAsyncThrowable(async () => {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      this.db!.run('DELETE FROM graphs WHERE id = ?', [graphId]);
       await this.persist();
-      return ok(undefined);
-    } catch (e) {
-      return err(e instanceof Error ? e : new Error(String(e)));
-    }
+      return undefined;
+    });
   }
 
   async list(): Promise<Result<readonly GraphStorageMetadata[], Error>> {
     if (!this.db) return err(new Error('Database not initialized'));
 
-    try {
+    return fromAsyncThrowable(async () => {
       // eslint-disable-next-line functional/prefer-readonly-type
       const result: GraphStorageMetadata[] = [];
-      const stmt = this.db.prepare('SELECT id, name, created_at, updated_at FROM graphs');
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const stmt = this.db!.prepare('SELECT id, name, created_at, updated_at FROM graphs');
 
       // eslint-disable-next-line functional/no-loop-statements
       while (stmt.step()) {
@@ -145,9 +143,7 @@ export class SQLiteAdapter implements StorageAdapter {
       }
 
       stmt.free();
-      return ok(result);
-    } catch (e) {
-      return err(e instanceof Error ? e : new Error(String(e)));
-    }
+      return result;
+    });
   }
 }

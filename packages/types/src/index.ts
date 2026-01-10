@@ -61,7 +61,7 @@ export type {
 } from './validation'
 
 export type { Result } from './result'
-export { ok, err, isOk, isErr, unwrap } from './result'
+export { ok, err, isOk, isErr, unwrap, fromThrowable, fromAsyncThrowable } from './result'
 
 export {
     createNodeId,
