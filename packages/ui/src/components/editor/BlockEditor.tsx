@@ -1,11 +1,16 @@
 import React from 'react';
 import { cn } from '../../utils/cn';
 
-interface BlockEditorProps {
+interface BlockEditorData {
   readonly value: string;
-  readonly onChange: (value: string) => void;
   readonly className?: string;
 }
+
+interface BlockEditorEvents {
+  readonly onChange: (value: string) => void;
+}
+
+type BlockEditorProps = BlockEditorData & BlockEditorEvents;
 
 export const BlockEditor: React.FC<BlockEditorProps> = ({ value, onChange, className }) => {
   // Simple textarea for now that autosizes or just a div

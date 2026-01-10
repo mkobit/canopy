@@ -3,17 +3,22 @@ import { SyncEngine } from '@canopy/sync';
 import { Graph, GraphId, NodeId, EdgeId, asInstant, PropertyValue, Node, Edge } from '@canopy/types';
 import { useStorage } from './StorageContext';
 
-interface GraphContextType {
+interface GraphContextState {
   readonly graph: Graph | null;
   readonly syncEngine: SyncEngine | null;
   readonly isLoading: boolean;
   readonly error: Error | null;
+}
+
+interface GraphContextActions {
   readonly loadGraph: (graphId: GraphId) => Promise<void>;
   readonly closeGraph: () => void;
   readonly saveGraph: () => Promise<void>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   readonly createNode: (type: string, properties?: Record<string, any>) => Promise<NodeId | null>;
 }
+
+type GraphContextType = GraphContextState & GraphContextActions;
 
 const GraphContext = createContext<GraphContextType>({
   graph: null,

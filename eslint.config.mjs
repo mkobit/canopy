@@ -89,7 +89,6 @@ export default tseslint.config(
       // Adjust rules for practicality (as suggested by user documentation/examples)
       'functional/no-return-void': 'off',
       'functional/no-expression-statements': 'off',
-      'functional/no-mixed-types': 'off',
       'functional/functional-parameters': 'off',
       'functional/no-conditional-statements': 'off',
       'functional/no-classes': 'off',

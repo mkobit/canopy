@@ -3,13 +3,18 @@ import { Node } from '@canopy/types';
 import { cn } from '../../utils/cn';
 import { PropertyDisplay } from '../properties/PropertyDisplay';
 
-export interface NodeViewProps {
+export interface NodeViewData {
   readonly node: Node;
   readonly className?: string;
   readonly selected?: boolean;
-  readonly onClick?: (node: Node) => void;
   readonly style?: React.CSSProperties;
 }
+
+export interface NodeViewEvents {
+  readonly onClick?: (node: Node) => void;
+}
+
+export type NodeViewProps = NodeViewData & NodeViewEvents;
 
 export const NodeView: React.FC<NodeViewProps> = ({ node, className, selected, onClick, style }) => {
   return (

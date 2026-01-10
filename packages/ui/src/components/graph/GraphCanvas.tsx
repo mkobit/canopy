@@ -4,27 +4,34 @@ import { NodeView } from './NodeView';
 import { EdgeView, GraphNode } from './EdgeView';
 import { cn } from '../../utils/cn';
 
-interface GraphCanvasProps {
+interface GraphCanvasData {
   readonly nodes: readonly GraphNode[];
   readonly edges: readonly Edge[];
   readonly selectedNodeIds?: ReadonlySet<string>;
   readonly selectedEdgeIds?: ReadonlySet<string>;
-  readonly onNodeClick?: (node: GraphNode) => void;
-  readonly onEdgeClick?: ((edge: Edge) => void) | undefined;
-  readonly onBackgroundClick?: (() => void) | undefined;
   readonly className?: string | undefined;
   readonly width?: number | string | undefined;
   readonly height?: number | string;
 }
+
+interface GraphCanvasEvents {
+  readonly onNodeClick?: (node: GraphNode) => void;
+  readonly onEdgeClick?: (edge: Edge) => void;
+  readonly onBackgroundClick?: () => void;
+}
+
+type GraphCanvasProps = GraphCanvasData & GraphCanvasEvents;
+
+const noop = () => { /* noop */ };
 
 export const GraphCanvas: React.FC<GraphCanvasProps> = ({
   nodes,
   edges,
   selectedNodeIds = new Set(),
   selectedEdgeIds = new Set(),
-  onNodeClick,
-  onEdgeClick,
-  onBackgroundClick,
+  onNodeClick = noop,
+  onEdgeClick = noop,
+  onBackgroundClick = noop,
   className,
   width = '100%',
   height = '600px',
@@ -67,7 +74,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
           key={node.id}
           node={node}
           selected={selectedNodeIds.has(node.id)}
-          onClick={() => onNodeClick?.(node)}
+          onClick={() => onNodeClick(node)}
           style={{
             position: 'absolute',
             left: node.position.x,
