@@ -91,7 +91,9 @@ export default tseslint.config(
       'functional/no-return-void': 'error',
       'functional/no-throw-statements': 'error',
       'functional/no-expression-statements': 'off',
-      'functional/functional-parameters': 'off',
+      'functional/functional-parameters': ['error', {
+        enforceParameterCount: false,
+      }],
       'functional/no-conditional-statements': 'off',
       'functional/no-classes': 'off',
 
