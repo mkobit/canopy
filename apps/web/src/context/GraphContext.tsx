@@ -4,14 +4,6 @@ import { Graph, GraphId, NodeId, EdgeId, asInstant, PropertyValue, Node, Edge, R
 import { useStorage } from './StorageContext';
 import { z } from 'zod';
 import { asTypeId } from '@canopy/types';
-// We don't import TypeIdSchema directly if it's not exported, but we can use asTypeId.
-// Actually, I saw TypeIdSchema in packages/schema/src/schemas.ts but it was transforming string to TypeId.
-// Let's import TypeIdSchema if possible, or just build a validator.
-// I'll check exports again. packages/schema/src/index.ts exports * from schemas.
-// The file reading showed `export const NodeTypeDefinitionSchema ...`.
-// I didn't see `TypeIdSchema` explicitly exported in the `read_file` output but I might have missed it or it's implicitly used.
-// Wait, I saw `type: z.string().min(1).transform(asTypeId)` inside NodeSchema.
-// I can just use `asTypeId` with a simple Zod string validation.
 
 interface GraphContextState {
   readonly graph: Graph | null;
@@ -65,6 +57,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
 
         // 1. Load snapshot from storage
         const snapshotResult = await storage.load(graphId);
+        // eslint-disable-next-line functional/no-throw-statements
         if (!snapshotResult.ok) throw snapshotResult.error;
         const snapshot = snapshotResult.value;
 
@@ -139,6 +132,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
                    createdAt,
                    updatedAt: new Date().toISOString()
               });
+              // eslint-disable-next-line functional/no-throw-statements
               if (!result.ok) throw result.error;
               return undefined;
           });
@@ -169,26 +163,26 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
 
           // Safer mapping using Type Checking or explicit conversion
           // We only accept strings as text properties for now, similar to before but explicit
-          const propsMap = new Map<string, PropertyValue>();
 
-          if (input.properties) {
-              Object.entries(input.properties).forEach(([key, value]) => {
-                  if (typeof value === 'string') {
-                      propsMap.set(key, { kind: 'text', value: value });
-                  }
-                  // We can add other types here as needed
-              });
-          }
+          const entries = input.properties
+              ? Object.entries(input.properties)
+                  .filter(([_, value]) => typeof value === 'string')
+                  .map(([key, value]) => [key, { kind: 'text', value: value }] as const)
+              : [];
+
+          const propsMap = new Map<string, PropertyValue>(entries as Iterable<readonly [string, PropertyValue]>);
 
           const newNodeResult = syncEngineRef.current!.store.addNode({
               type: typeId,
               properties: propsMap
           });
 
+          // eslint-disable-next-line functional/no-throw-statements
           if (!newNodeResult.ok) throw newNodeResult.error;
           const newNode = newNodeResult.value;
 
           const saveResult = await saveGraph();
+          // eslint-disable-next-line functional/no-throw-statements
           if (!saveResult.ok) throw saveResult.error;
 
           return newNode.id;

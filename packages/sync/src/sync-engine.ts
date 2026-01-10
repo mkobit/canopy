@@ -2,7 +2,7 @@ import * as Y from 'yjs';
 import { Awareness } from 'y-protocols/awareness';
 import { GraphStore } from './store/graph-store';
 import { SyncProvider, SyncEngineOptions } from './types';
-import { Result, ok, err, fromThrowable } from '@canopy/types';
+import { Result, fromThrowable } from '@canopy/types';
 
 export class SyncEngine {
   readonly doc: Y.Doc;
@@ -30,10 +30,12 @@ export class SyncEngine {
     return fromThrowable(() => {
       if (this.provider) {
         const disconnectResult = this.provider.disconnect();
+        // eslint-disable-next-line functional/no-throw-statements
         if (!disconnectResult.ok) throw disconnectResult.error;
       }
       this.provider = provider;
       const connectResult = provider.connect();
+      // eslint-disable-next-line functional/no-throw-statements
       if (!connectResult.ok) throw connectResult.error;
       return undefined;
     });
@@ -44,8 +46,9 @@ export class SyncEngine {
       if (this.provider) {
           const result = this.provider.disconnect();
           this.provider = null;
+          // eslint-disable-next-line functional/no-throw-statements
           if (!result.ok) throw result.error;
-          return result.value;
+          // Return is void, so we just return undefined on success
       }
       return undefined;
     });
