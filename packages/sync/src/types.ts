@@ -1,5 +1,6 @@
 import * as Y from 'yjs';
 import { Awareness } from 'y-protocols/awareness';
+import { Result } from '@canopy/types';
 
 export interface SyncProviderState {
   /**
@@ -17,12 +18,12 @@ export interface SyncProviderActions {
   /**
    * connect the provider
    */
-  readonly connect: () => undefined;
+  readonly connect: () => Result<void, Error>;
 
   /**
    * disconnect the provider
    */
-  readonly disconnect: () => undefined;
+  readonly disconnect: () => Result<void, Error>;
 
   /**
    * Subscribe to connection status changes

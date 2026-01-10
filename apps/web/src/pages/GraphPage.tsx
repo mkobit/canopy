@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useParams, Outlet, useNavigate } from 'react-router-dom';
 import { useGraph } from '../context/GraphContext';
 import { asGraphId } from '@canopy/types';
+import { toHandler } from '../utils/handlers';
 
 export const GraphPage = () => {
   const { graphId } = useParams<Readonly<{ graphId: string }>>();
@@ -25,7 +26,7 @@ export const GraphPage = () => {
         <div className="text-red-600 font-semibold">Error loading graph</div>
         <p className="text-gray-600">{error.message}</p>
         <button
-          onClick={() => { navigate('/'); return undefined; }}
+          onClick={toHandler(() => navigate('/'))}
           className="px-4 py-2 bg-gray-100 rounded hover:bg-gray-200"
         >
           Back to Home
