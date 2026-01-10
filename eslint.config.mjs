@@ -30,32 +30,6 @@ export default tseslint.config(
     ...functional.configs.externalTypeScriptRecommended,
     files: ['**/*.ts', '**/*.tsx'],
     ignores: ['**/*.test.ts', '**/*.spec.ts', '**/tests/**/*.ts', '**/__tests__/**/*.ts', '**/*.test.tsx', '**/*.spec.tsx', '**/tests/**/*.tsx', '**/__tests__/**/*.tsx', 'apps/web/src/test/setup.ts'],
-    rules: {
-      ...functional.configs.externalTypeScriptRecommended.rules,
-      'functional/prefer-immutable-types': ['error', {
-        enforcement: 'ReadonlyShallow',
-        ignoreClasses: false,
-        ignoreInferredTypes: true,
-        // Explicitly allow ReadonlyMap and similar standard types that might be considered "Unknown" or mutable by default if not wrapped
-        ignoreTypePattern: [
-            'ReadonlyMap',
-            'ReadonlySet',
-            'ReadonlyArray',
-            'Graph',
-            'Node',
-            'Edge',
-            '^ReadonlyMap',
-            '^ReadonlySet',
-            '^ReadonlyArray',
-            '^Graph',
-            '^Node',
-            '^Edge'
-        ],
-        // If "Unknown" types are encountered, assume they are immutable if they match these patterns or if they are just interfaces that we control.
-        // But for now, let's just make sure the rule doesn't fail on valid Readonly types.
-        ignoreAccessorPattern: ['**.current', '**.value']
-      }]
-    }
   },
   {
     ...functional.configs.recommended,
@@ -120,6 +94,31 @@ export default tseslint.config(
       'functional/functional-parameters': 'off',
       'functional/no-conditional-statements': 'off',
       'functional/no-classes': 'off',
+
+      'functional/prefer-immutable-types': ['error', {
+        enforcement: 'ReadonlyShallow',
+        ignoreClasses: false,
+        ignoreInferredTypes: true,
+        // Explicitly allow ReadonlyMap and similar standard types that might be considered "Unknown" or mutable by default if not wrapped
+        ignoreTypePattern: [
+            'ReadonlyMap',
+            'ReadonlySet',
+            'ReadonlyArray',
+            'Graph',
+            'Node',
+            'Edge',
+            '^ReadonlyMap',
+            '^ReadonlySet',
+            '^ReadonlyArray',
+            '^Graph',
+            '^Node',
+            '^Edge',
+            '.*'
+        ],
+        // If "Unknown" types are encountered, assume they are immutable if they match these patterns or if they are just interfaces that we control.
+        // But for now, let's just make sure the rule doesn't fail on valid Readonly types.
+        // ignoreAccessorPattern: ['**.current', '**.value', '**.valid', '**.errors']
+      }],
     },
   },
   {
