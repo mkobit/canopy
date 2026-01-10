@@ -9,11 +9,11 @@ import type { PropertyMap } from './properties'
  * Edges are always directional (source → target).
  * Bidirectional traversal is a query concern, not a data concern.
  */
-export interface Edge<T extends TypeId = TypeId> {
-  readonly id: EdgeId
-  readonly type: T
-  readonly source: NodeId
-  readonly target: NodeId
-  readonly properties: PropertyMap
-  readonly metadata: TemporalMetadata
-}
+export type Edge<T extends TypeId = TypeId> = Readonly<{
+  id: EdgeId
+  type: T
+  source: NodeId
+  target: NodeId
+  properties: PropertyMap
+  metadata: TemporalMetadata
+}>

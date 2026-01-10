@@ -7,9 +7,9 @@ import type { PropertyMap } from './properties'
  * Nodes are the primary entities—everything is a node.
  * Generic parameter T allows narrowing to specific node types.
  */
-export interface Node<T extends TypeId = TypeId> {
-  readonly id: NodeId
-  readonly type: T
-  readonly properties: PropertyMap
-  readonly metadata: TemporalMetadata
-}
+export type Node<T extends TypeId = TypeId> = Readonly<{
+  id: NodeId
+  type: T
+  properties: PropertyMap
+  metadata: TemporalMetadata
+}>

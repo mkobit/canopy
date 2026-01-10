@@ -94,8 +94,20 @@ export default tseslint.config(
       'functional/functional-parameters': 'off',
       'functional/no-conditional-statements': 'off',
       'functional/no-classes': 'off',
-
-      // Crashes the linter in some files (ErrorType encountered), so must be disabled
+    },
+  },
+  {
+    files: [
+      'packages/sync/**/*.ts',
+      'packages/ui/**/*.tsx',
+      'packages/ui/**/*.ts',
+      'packages/query/src/legacy.ts',
+      'packages/query/src/builder.ts',
+      'packages/query/src/engine.ts',
+      'packages/query/src/stored.ts',
+      'packages/query/src/views.ts',
+    ],
+    rules: {
       'functional/prefer-immutable-types': 'off',
       'functional/type-declaration-immutability': 'off',
     },
