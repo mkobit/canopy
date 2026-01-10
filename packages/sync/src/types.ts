@@ -1,7 +1,19 @@
 import * as Y from 'yjs';
 import { Awareness } from 'y-protocols/awareness';
 
-export interface SyncProvider {
+export interface SyncProviderState {
+  /**
+   * The underlying Yjs awareness instance
+   */
+  readonly awareness: Awareness;
+
+  /**
+   * The underlying Yjs doc
+   */
+  readonly doc: Y.Doc;
+}
+
+export interface SyncProviderActions {
   /**
    * connect the provider
    */
@@ -13,21 +25,13 @@ export interface SyncProvider {
   readonly disconnect: () => void;
 
   /**
-   * The underlying Yjs awareness instance
-   */
-  readonly awareness: Awareness;
-
-  /**
-   * The underlying Yjs doc
-   */
-  readonly doc: Y.Doc;
-
-  /**
    * Subscribe to connection status changes
    */
   readonly on: (event: 'status', handler: (event: Readonly<{ status: 'connected' | 'disconnected' | 'connecting' }>) => void) => void;
   readonly off: (event: 'status', handler: (event: Readonly<{ status: 'connected' | 'disconnected' | 'connecting' }>) => void) => void;
 }
+
+export type SyncProvider = SyncProviderState & SyncProviderActions;
 
 export interface SyncEngineOptions {
   /**

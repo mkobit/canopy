@@ -2,12 +2,17 @@ import React from 'react';
 import { PropertyValue, PropertyValueKind, ScalarValue } from '@canopy/types';
 import { cn } from '../../utils/cn';
 
-interface PropertyInputProps {
+interface PropertyInputData {
   readonly value: PropertyValue;
-  readonly onChange: (value: PropertyValue) => void;
   readonly className?: string | undefined;
   readonly kind?: PropertyValueKind | undefined; // In case we're creating a new property and value is undefined (though props say value is required here, handling creation might be separate)
 }
+
+interface PropertyInputEvents {
+  readonly onChange: (value: PropertyValue) => void;
+}
+
+type PropertyInputProps = PropertyInputData & PropertyInputEvents;
 
 // Helper to update a scalar value while preserving its kind
 const updateScalar = (original: ScalarValue, newValue: string | number | boolean): ScalarValue => {
