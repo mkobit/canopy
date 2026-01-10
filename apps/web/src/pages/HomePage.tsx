@@ -21,16 +21,15 @@ export const HomePage = () => {
   const loadGraphs = async () => {
     if (!storage) return undefined;
     setLoading(true);
-    try {
-      const listResult = await storage.list();
-      // eslint-disable-next-line functional/no-throw-statements
-      if (!listResult.ok) throw listResult.error;
-      setGraphs(listResult.value);
-    } catch (e) {
-      console.error("Failed to list graphs", e);
-    } finally {
-      setLoading(false);
+
+    const listResult = await storage.list();
+    if (listResult.ok) {
+        setGraphs(listResult.value);
+    } else {
+        console.error("Failed to list graphs", listResult.error);
     }
+
+    setLoading(false);
     return undefined;
   };
 
@@ -42,18 +41,17 @@ export const HomePage = () => {
     const id = createGraphId();
     const now = new Date().toISOString();
 
-    try {
-        const result = await storage.save(id, new Uint8Array(), {
-            id,
-            name,
-            createdAt: now,
-            updatedAt: now
-        });
-        // eslint-disable-next-line functional/no-throw-statements
-        if (!result.ok) throw result.error;
+    const result = await storage.save(id, new Uint8Array(), {
+        id,
+        name,
+        createdAt: now,
+        updatedAt: now
+    });
+
+    if (result.ok) {
         await loadGraphs();
-    } catch (e) {
-        console.error("Failed to create graph", e);
+    } else {
+        console.error("Failed to create graph", result.error);
     }
     return undefined;
   };
@@ -63,13 +61,11 @@ export const HomePage = () => {
       if (!storage) return undefined;
       if (!confirm("Are you sure you want to delete this graph?")) return undefined;
 
-      try {
-          const result = await storage.delete(id);
-          // eslint-disable-next-line functional/no-throw-statements
-          if (!result.ok) throw result.error;
+      const result = await storage.delete(id);
+      if (result.ok) {
           await loadGraphs();
-      } catch (e) {
-          console.error("Failed to delete graph", e);
+      } else {
+          console.error("Failed to delete graph", result.error);
       }
       return undefined;
   };

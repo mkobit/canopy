@@ -30,12 +30,12 @@ export class SyncEngine {
     return fromThrowable(() => {
       if (this.provider) {
         const disconnectResult = this.provider.disconnect();
-        // eslint-disable-next-line functional/no-throw-statements
+        // eslint-disable-next-line functional/no-throw-statements -- Re-throwing error to be caught by fromThrowable
         if (!disconnectResult.ok) throw disconnectResult.error;
       }
       this.provider = provider;
       const connectResult = provider.connect();
-      // eslint-disable-next-line functional/no-throw-statements
+      // eslint-disable-next-line functional/no-throw-statements -- Re-throwing error to be caught by fromThrowable
       if (!connectResult.ok) throw connectResult.error;
       return undefined;
     });
@@ -46,7 +46,7 @@ export class SyncEngine {
       if (this.provider) {
           const result = this.provider.disconnect();
           this.provider = null;
-          // eslint-disable-next-line functional/no-throw-statements
+          // eslint-disable-next-line functional/no-throw-statements -- Re-throwing error to be caught by fromThrowable
           if (!result.ok) throw result.error;
           // Return is void, so we just return undefined on success
       }

@@ -58,7 +58,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
 
         // 1. Load snapshot from storage
         const snapshotResult = await storage.load(graphId);
-        // eslint-disable-next-line functional/no-throw-statements
+        // eslint-disable-next-line functional/no-throw-statements -- Re-throwing error to be caught by fromAsyncThrowable
         if (!snapshotResult.ok) throw snapshotResult.error;
         const snapshot = snapshotResult.value;
 
@@ -133,7 +133,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
                    createdAt,
                    updatedAt: new Date().toISOString()
               });
-              // eslint-disable-next-line functional/no-throw-statements
+              // eslint-disable-next-line functional/no-throw-statements -- Re-throwing error to be caught by fromAsyncThrowable
               if (!result.ok) throw result.error;
               return undefined;
           });
@@ -182,12 +182,12 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
               properties: propsMap
           });
 
-          // eslint-disable-next-line functional/no-throw-statements
+          // eslint-disable-next-line functional/no-throw-statements -- Re-throwing error to be caught by fromAsyncThrowable
           if (!newNodeResult.ok) throw newNodeResult.error;
           const newNode = newNodeResult.value;
 
           const saveResult = await saveGraph();
-          // eslint-disable-next-line functional/no-throw-statements
+          // eslint-disable-next-line functional/no-throw-statements -- Re-throwing error to be caught by fromAsyncThrowable
           if (!saveResult.ok) throw saveResult.error;
 
           return newNode.id;
