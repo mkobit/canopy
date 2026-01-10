@@ -23,7 +23,9 @@ export const StorageProvider: React.FC<Readonly<{ children: React.ReactNode }>> 
       try {
         // Use IndexedDBAdapter for browser environment
         const adapter = new IndexedDBAdapter();
-        await adapter.init();
+        const result = await adapter.init();
+        // eslint-disable-next-line functional/no-throw-statements
+        if (!result.ok) throw result.error;
         setStorage(adapter);
       } catch (err) {
         console.error("Failed to initialize storage:", err);

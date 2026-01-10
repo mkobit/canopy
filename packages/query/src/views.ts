@@ -6,6 +6,9 @@ import {
   createInstant,
   PropertyValue,
   ScalarValue,
+  Result,
+  ok,
+  err
 } from '@canopy/types';
 import { SYSTEM_IDS, addNode } from '@canopy/core';
 import { Query, Sort } from './model';
@@ -28,11 +31,11 @@ export interface ResolvedView {
 }
 
 // Helper to wrap a scalar value
-function scalar(val: string | number | boolean): ScalarValue {
-  if (typeof val === 'string') return { kind: 'text', value: val };
-  if (typeof val === 'number') return { kind: 'number', value: val };
-  if (typeof val === 'boolean') return { kind: 'boolean', value: val };
-  throw new Error(`Unsupported scalar type: ${typeof val}`);
+function scalar(val: string | number | boolean): Result<ScalarValue, Error> {
+  if (typeof val === 'string') return ok({ kind: 'text', value: val });
+  if (typeof val === 'number') return ok({ kind: 'number', value: val });
+  if (typeof val === 'boolean') return ok({ kind: 'boolean', value: val });
+  return err(new Error(`Unsupported scalar type: ${typeof val}`));
 }
 
 // Helper to create a reference value
@@ -48,19 +51,52 @@ function list(items: readonly string[]): PropertyValue {
 export function saveViewDefinition(
   graph: Graph,
   view: ViewDefinition
-): Readonly<{ graph: Graph; nodeId: NodeId }> {
+): Result<{ graph: Graph; nodeId: NodeId }, Error> {
   const nodeId = createNodeId();
 
-  const baseProperties: readonly (readonly [string, PropertyValue])[] = [
-    ['name', scalar(view.name)],
+  // We need to unwrap or check scalars. Since these come from ViewDefinition which is typed,
+  // we can expect them to work, but strict checking requires it.
+  const nameVal = scalar(view.name);
+  if (!nameVal.ok) return err(nameVal.error);
+
+  const layoutVal = scalar(view.layout);
+  if (!layoutVal.ok) return err(layoutVal.error);
+
+  // eslint-disable-next-line functional/prefer-readonly-type
+  const baseProperties: [string, PropertyValue][] = [
+    ['name', nameVal.value],
     ['queryRef', reference(view.queryRef)],
-    ['layout', scalar(view.layout)],
-    ...(view.description ? [['description', scalar(view.description)] as const] : []),
-    ...(view.sort && view.sort.length > 0 ? [['sort', scalar(JSON.stringify(view.sort))] as const] : []),
-    ...(view.groupBy ? [['groupBy', scalar(view.groupBy)] as const] : []),
-    ...(view.displayProperties && view.displayProperties.length > 0 ? [['displayProperties', list(view.displayProperties)] as const] : []),
-    ...(view.pageSize ? [['pageSize', scalar(view.pageSize)] as const] : []),
+    ['layout', layoutVal.value],
   ];
+
+  if (view.description) {
+      const v = scalar(view.description);
+      if (!v.ok) return err(v.error);
+      // eslint-disable-next-line functional/immutable-data
+      baseProperties.push(['description', v.value]);
+  }
+  if (view.sort && view.sort.length > 0) {
+      const v = scalar(JSON.stringify(view.sort));
+      if (!v.ok) return err(v.error);
+      // eslint-disable-next-line functional/immutable-data
+      baseProperties.push(['sort', v.value]);
+  }
+  if (view.groupBy) {
+      const v = scalar(view.groupBy);
+      if (!v.ok) return err(v.error);
+      // eslint-disable-next-line functional/immutable-data
+      baseProperties.push(['groupBy', v.value]);
+  }
+  if (view.displayProperties && view.displayProperties.length > 0) {
+      // eslint-disable-next-line functional/immutable-data
+      baseProperties.push(['displayProperties', list(view.displayProperties)]);
+  }
+  if (view.pageSize) {
+      const v = scalar(view.pageSize);
+      if (!v.ok) return err(v.error);
+      // eslint-disable-next-line functional/immutable-data
+      baseProperties.push(['pageSize', v.value]);
+  }
 
   const properties = new Map(baseProperties);
 
@@ -75,27 +111,29 @@ export function saveViewDefinition(
   };
 
   const newGraph = addNode(graph, node);
-  return { graph: newGraph, nodeId };
+  if (!newGraph.ok) return err(newGraph.error);
+
+  return ok({ graph: newGraph.value, nodeId });
 }
 
-export function getViewDefinition(graph: Graph, nodeId: NodeId): ViewDefinition {
+export function getViewDefinition(graph: Graph, nodeId: NodeId): Result<ViewDefinition, Error> {
   const node = graph.nodes.get(nodeId);
   if (!node) {
-    throw new Error(`View definition node ${nodeId} not found`);
+    return err(new Error(`View definition node ${nodeId} not found`));
   }
 
   if (node.type !== SYSTEM_IDS.VIEW_DEFINITION) {
-    throw new Error(`Node ${nodeId} is not a View Definition`);
+    return err(new Error(`Node ${nodeId} is not a View Definition`));
   }
 
   const nameProp = node.properties.get('name');
-  if (!nameProp || nameProp.kind !== 'text') throw new Error('Invalid view name');
+  if (!nameProp || nameProp.kind !== 'text') return err(new Error('Invalid view name'));
 
   const queryRefProp = node.properties.get('queryRef');
-  if (!queryRefProp || queryRefProp.kind !== 'reference') throw new Error('Invalid view queryRef');
+  if (!queryRefProp || queryRefProp.kind !== 'reference') return err(new Error('Invalid view queryRef'));
 
   const layoutProp = node.properties.get('layout');
-  if (!layoutProp || layoutProp.kind !== 'text') throw new Error('Invalid view layout');
+  if (!layoutProp || layoutProp.kind !== 'text') return err(new Error('Invalid view layout'));
 
   const description = node.properties.get('description');
   const sortProp = node.properties.get('sort');
@@ -121,7 +159,7 @@ export function getViewDefinition(graph: Graph, nodeId: NodeId): ViewDefinition 
           .filter(s => s !== '')
       : undefined;
 
-  return {
+  return ok({
     name: nameProp.value,
     queryRef: queryRefProp.target,
     layout: layoutProp.value,
@@ -130,7 +168,7 @@ export function getViewDefinition(graph: Graph, nodeId: NodeId): ViewDefinition 
     ...(groupBy && groupBy.kind === 'text' ? { groupBy: groupBy.value } : {}),
     ...(displayPropertiesList ? { displayProperties: displayPropertiesList } : {}),
     ...(pageSize && pageSize.kind === 'number' ? { pageSize: pageSize.value } : {}),
-  };
+  });
 }
 
 export function listViewDefinitions(graph: Graph): readonly Node[] {
@@ -139,11 +177,15 @@ export function listViewDefinitions(graph: Graph): readonly Node[] {
   );
 }
 
-export function resolveView(graph: Graph, viewNodeId: NodeId): ResolvedView {
+export function resolveView(graph: Graph, viewNodeId: NodeId): Result<ResolvedView, Error> {
   const viewDef = getViewDefinition(graph, viewNodeId);
-  const queryDef = getQueryDefinition(graph, viewDef.queryRef);
-  return {
-    definition: viewDef,
-    query: queryDef
-  };
+  if (!viewDef.ok) return err(viewDef.error);
+
+  const queryDef = getQueryDefinition(graph, viewDef.value.queryRef);
+  if (!queryDef.ok) return err(queryDef.error);
+
+  return ok({
+    definition: viewDef.value,
+    query: queryDef.value
+  });
 }

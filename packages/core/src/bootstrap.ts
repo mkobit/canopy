@@ -1,5 +1,5 @@
 import type { Graph, Node, PropertyMap, TypeId, NodeId, PropertyValue, PropertyDefinition } from '@canopy/types'
-import { createInstant } from '@canopy/types'
+import { createInstant, unwrap } from '@canopy/types'
 import { addNode } from './ops'
 import { SYSTEM_IDS, SYSTEM_EDGE_TYPES } from './system'
 import { reduce } from 'remeda'
@@ -48,26 +48,26 @@ function createBootstrapNode(
 export function bootstrap(graph: Graph): Graph {
   // 1. Ensure NodeType definition exists
   const g1 = !graph.nodes.has(SYSTEM_IDS.NODE_TYPE_DEF)
-    ? addNode(graph, createBootstrapNode(
+    ? unwrap(addNode(graph, createBootstrapNode(
         SYSTEM_IDS.NODE_TYPE_DEF,
         SYSTEM_IDS.NODE_TYPE,
         'Node Type',
         'Defines a type of node in the graph.'
-      ))
+      )))
     : graph
 
   // 2. Ensure EdgeType definition exists
   const g2 = !g1.nodes.has(SYSTEM_IDS.EDGE_TYPE_DEF)
-    ? addNode(g1, createBootstrapNode(
+    ? unwrap(addNode(g1, createBootstrapNode(
         SYSTEM_IDS.EDGE_TYPE_DEF,
         SYSTEM_IDS.NODE_TYPE, // An EdgeType definition is a Node of type NodeType
         'Edge Type',
         'Defines a type of edge in the graph.'
-      ))
+      )))
     : g1
 
   const g3 = !g2.nodes.has(SYSTEM_IDS.QUERY_DEFINITION_DEF)
-    ? addNode(g2, createBootstrapNode(
+    ? unwrap(addNode(g2, createBootstrapNode(
         SYSTEM_IDS.QUERY_DEFINITION_DEF,
         SYSTEM_IDS.NODE_TYPE,
         'Query Definition',
@@ -81,11 +81,11 @@ export function bootstrap(graph: Graph): Graph {
               { name: 'parameters', valueKind: 'list', required: false, description: 'Declared parameter names this query accepts' }
           ] satisfies readonly PropertyDefinition[]))
         }
-      ))
+      )))
     : g2
 
   const g4 = !g3.nodes.has(SYSTEM_IDS.VIEW_DEFINITION_DEF)
-    ? addNode(g3, createBootstrapNode(
+    ? unwrap(addNode(g3, createBootstrapNode(
         SYSTEM_IDS.VIEW_DEFINITION_DEF,
         SYSTEM_IDS.NODE_TYPE,
         'View Definition',
@@ -102,11 +102,11 @@ export function bootstrap(graph: Graph): Graph {
               { name: 'pageSize', valueKind: 'number', required: false, description: 'Number of items per page' }
           ] satisfies readonly PropertyDefinition[]))
         }
-      ))
+      )))
     : g3
 
   const g5 = !g4.nodes.has(SYSTEM_IDS.TEMPLATE_DEF)
-    ? addNode(g4, createBootstrapNode(
+    ? unwrap(addNode(g4, createBootstrapNode(
         SYSTEM_IDS.TEMPLATE_DEF,
         SYSTEM_IDS.NODE_TYPE,
         'Template',
@@ -118,7 +118,7 @@ export function bootstrap(graph: Graph): Graph {
               { name: 'component', valueKind: 'text', required: false, description: 'Component name' }
           ] satisfies readonly PropertyDefinition[]))
         }
-      ))
+      )))
     : g4
 
   // 4. Core Edge Types
@@ -153,12 +153,12 @@ export function bootstrap(graph: Graph): Graph {
     coreEdgeTypes,
     (currentGraph: Graph, def): Graph => {
       if (!currentGraph.nodes.has(def.id)) {
-        return addNode(currentGraph, createBootstrapNode(
+        return unwrap(addNode(currentGraph, createBootstrapNode(
           def.id,
           SYSTEM_IDS.EDGE_TYPE, // These are definitions of edge types
           def.name,
           def.description
-        ))
+        )))
       }
       return currentGraph
     },
@@ -191,7 +191,7 @@ export function bootstrap(graph: Graph): Graph {
     systemQueries,
     (currentGraph: Graph, def): Graph => {
       if (!currentGraph.nodes.has(def.id)) {
-        return addNode(currentGraph, createBootstrapNode(
+        return unwrap(addNode(currentGraph, createBootstrapNode(
           def.id,
           SYSTEM_IDS.QUERY_DEFINITION,
           def.name,
@@ -199,7 +199,7 @@ export function bootstrap(graph: Graph): Graph {
           {
             definition: text(JSON.stringify(def.definition))
           }
-        ))
+        )))
       }
       return currentGraph
     },
@@ -241,13 +241,13 @@ export function bootstrap(graph: Graph): Graph {
           queryRef: reference(def.queryRef),
           ...(def.groupBy ? { groupBy: text(def.groupBy) } : {})
         }
-        return addNode(currentGraph, createBootstrapNode(
+        return unwrap(addNode(currentGraph, createBootstrapNode(
           def.id,
           SYSTEM_IDS.VIEW_DEFINITION,
           def.name,
           def.description,
           extraProps
-        ))
+        )))
       }
       return currentGraph
     },

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import {
   Graph, Node, Edge, PropertyValue,
   createGraphId, asTypeId, asInstant, asNodeId, asEdgeId, TextValue,
-  NodeId, EdgeId
+  NodeId, EdgeId, unwrap
 } from '@canopy/types';
 import { query } from '../src/builder';
 import { executeQuery } from '../src/engine';
@@ -84,7 +84,7 @@ describe('Query Engine', () => {
 
   it('queries all nodes of a given type', () => {
     const q = query().nodes('Person').build();
-    const result = executeQuery(graph, q);
+    const result = unwrap(executeQuery(graph, q));
     expect(result.nodes).toHaveLength(3);
     expect(result.edges).toHaveLength(0);
     const names = sort(map(result.nodes, n => (n.properties.get('name') as TextValue).value), (a, b) => a.localeCompare(b));
@@ -93,14 +93,14 @@ describe('Query Engine', () => {
 
   it('queries nodes where a property equals a value', () => {
     const q = query().nodes('Person').where('name', 'eq', 'Alice').build();
-    const result = executeQuery(graph, q);
+    const result = unwrap(executeQuery(graph, q));
     expect(result.nodes).toHaveLength(1);
     expect((result.nodes[0].properties.get('name') as TextValue).value).toBe('Alice');
   });
 
   it('queries nodes with comparison operators', () => {
     const q = query().nodes('Person').where('age', 'gt', 28).build();
-    const result = executeQuery(graph, q);
+    const result = unwrap(executeQuery(graph, q));
     expect(result.nodes).toHaveLength(2); // Alice (30) and Charlie (35)
     const names = sort(map(result.nodes, n => (n.properties.get('name') as TextValue).value), (a, b) => a.localeCompare(b));
     expect(names).toEqual(['Alice', 'Charlie']);
@@ -108,14 +108,14 @@ describe('Query Engine', () => {
 
   it('queries edges by type', () => {
     const q = query().edges('knows').build();
-    const result = executeQuery(graph, q);
+    const result = unwrap(executeQuery(graph, q));
     expect(result.edges).toHaveLength(2);
     expect(result.nodes).toHaveLength(0);
   });
 
   it('queries edges from a specific node', () => {
     const q = query().edges().from('1').build(); // Alice
-    const result = executeQuery(graph, q);
+    const result = unwrap(executeQuery(graph, q));
     expect(result.edges).toHaveLength(2); // knows Bob, works_at Acme
     const types = sort(map(result.edges, e => e.type), (a, b) => a.localeCompare(b));
     expect(types).toEqual(['knows', 'works_at']);
@@ -130,7 +130,7 @@ describe('Query Engine', () => {
       .traverse('knows', 'out')
       .build();
 
-    const result = executeQuery(graph, q);
+    const result = unwrap(executeQuery(graph, q));
     expect(result.nodes).toHaveLength(1);
     expect((result.nodes[0].properties.get('name') as TextValue).value).toBe('Bob');
     expect((result.nodes[0].properties.get('name') as TextValue).value).toBe('Bob');
@@ -142,21 +142,21 @@ describe('Query Engine', () => {
         .where('age', 'gt', 20)
         .where('age', 'lt', 30)
         .build();
-    const result = executeQuery(graph, q);
+    const result = unwrap(executeQuery(graph, q));
     expect(result.nodes).toHaveLength(1);
     expect((result.nodes[0].properties.get('name') as TextValue).value).toBe('Bob');
   });
 
   it('sorts results', () => {
     const q = query().nodes('Person').orderBy('age', 'desc').build();
-    const result = executeQuery(graph, q);
+    const result = unwrap(executeQuery(graph, q));
     const names = map(result.nodes, n => (n.properties.get('name') as TextValue).value);
     expect(names).toEqual(['Charlie', 'Alice', 'Bob']);
   });
 
   it('limits results', () => {
     const q = query().nodes('Person').limit(2).build();
-    const result = executeQuery(graph, q);
+    const result = unwrap(executeQuery(graph, q));
     expect(result.nodes).toHaveLength(2);
   });
 });

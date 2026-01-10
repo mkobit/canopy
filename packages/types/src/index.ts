@@ -60,6 +60,9 @@ export type {
   ValidationError,
 } from './validation'
 
+export type { Result } from './result'
+export { ok, err, isOk, isErr, unwrap } from './result'
+
 export {
     createNodeId,
     createEdgeId,
@@ -68,7 +71,9 @@ export {
     asGraphId,
     createInstant,
     asInstant,
+    parseInstant,
     asPlainDate,
+    parsePlainDate,
     asNodeId,
     asEdgeId
 } from './factories';

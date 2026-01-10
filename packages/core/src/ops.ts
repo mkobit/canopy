@@ -1,5 +1,5 @@
-import type { Graph, Node, Edge, NodeId, EdgeId } from '@canopy/types'
-import { createInstant } from '@canopy/types'
+import type { Graph, Node, Edge, NodeId, EdgeId, Result } from '@canopy/types'
+import { createInstant, ok, err } from '@canopy/types'
 import { validateNode, validateEdge } from './validation'
 
 export interface GraphOperationOptions {
@@ -9,31 +9,31 @@ export interface GraphOperationOptions {
 /**
  * Adds a node to the graph.
  * Returns a new graph with the node added.
- * Throws if a node with the same ID already exists.
+ * Returns Error if a node with the same ID already exists.
  */
-export function addNode(graph: Graph, node: Node, options: GraphOperationOptions = {}): Graph {
+export function addNode(graph: Graph, node: Node, options: GraphOperationOptions = {}): Result<Graph, Error> {
   if (graph.nodes.has(node.id)) {
-    throw new Error(`Node with ID ${node.id} already exists`)
+    return err(new Error(`Node with ID ${node.id} already exists`))
   }
 
   if (options.validate) {
     const result = validateNode(graph, node)
     if (!result.valid) {
       const msgs = result.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')
-      throw new Error(`Node validation failed: ${msgs}`)
+      return err(new Error(`Node validation failed: ${msgs}`))
     }
   }
 
   const newNodes = new Map([...graph.nodes, [node.id, node]])
 
-  return {
+  return ok({
     ...graph,
     nodes: newNodes,
     metadata: {
       ...graph.metadata,
       modified: createInstant(),
     },
-  }
+  })
 }
 
 /**
@@ -67,19 +67,19 @@ export function removeNode(graph: Graph, nodeId: NodeId): Graph {
 /**
  * Updates a node in the graph using a functional updater.
  * Returns a new graph.
- * Throws if the node does not exist.
+ * Returns Error if the node does not exist.
  */
-export function updateNode(graph: Graph, nodeId: NodeId, updater: (node: Node) => Node, options: GraphOperationOptions = {}): Graph {
+export function updateNode(graph: Graph, nodeId: NodeId, updater: (node: Node) => Node, options: GraphOperationOptions = {}): Result<Graph, Error> {
   const existingNode = graph.nodes.get(nodeId)
   if (!existingNode) {
-    throw new Error(`Node with ID ${nodeId} not found`)
+    return err(new Error(`Node with ID ${nodeId} not found`))
   }
 
   const updatedNode = updater(existingNode)
 
   // Ensure ID hasn't changed
   if (updatedNode.id !== nodeId) {
-      throw new Error(`Cannot change node ID during update`)
+      return err(new Error(`Cannot change node ID during update`))
   }
 
   if (options.validate) {
@@ -90,7 +90,7 @@ export function updateNode(graph: Graph, nodeId: NodeId, updater: (node: Node) =
     const result = validateNode(graph, updatedNode)
     if (!result.valid) {
       const msgs = result.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')
-      throw new Error(`Node validation failed: ${msgs}`)
+      return err(new Error(`Node validation failed: ${msgs}`))
     }
   }
 
@@ -107,50 +107,50 @@ export function updateNode(graph: Graph, nodeId: NodeId, updater: (node: Node) =
     return [id, node]
   }))
 
-  return {
+  return ok({
     ...graph,
     nodes: newNodes,
     metadata: {
       ...graph.metadata,
       modified: createInstant(),
     },
-  }
+  })
 }
 
 /**
  * Adds an edge to the graph.
  * Returns a new graph.
- * Throws if source or target nodes do not exist.
+ * Returns Error if source or target nodes do not exist.
  */
-export function addEdge(graph: Graph, edge: Edge, options: GraphOperationOptions = {}): Graph {
+export function addEdge(graph: Graph, edge: Edge, options: GraphOperationOptions = {}): Result<Graph, Error> {
   if (graph.edges.has(edge.id)) {
-    throw new Error(`Edge with ID ${edge.id} already exists`)
+    return err(new Error(`Edge with ID ${edge.id} already exists`))
   }
   if (!graph.nodes.has(edge.source)) {
-    throw new Error(`Source node ${edge.source} not found`)
+    return err(new Error(`Source node ${edge.source} not found`))
   }
   if (!graph.nodes.has(edge.target)) {
-    throw new Error(`Target node ${edge.target} not found`)
+    return err(new Error(`Target node ${edge.target} not found`))
   }
 
   if (options.validate) {
     const result = validateEdge(graph, edge)
     if (!result.valid) {
        const msgs = result.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')
-       throw new Error(`Edge validation failed: ${msgs}`)
+       return err(new Error(`Edge validation failed: ${msgs}`))
     }
   }
 
   const newEdges = new Map([...graph.edges, [edge.id, edge]])
 
-  return {
+  return ok({
     ...graph,
     edges: newEdges,
     metadata: {
       ...graph.metadata,
       modified: createInstant(),
     },
-  }
+  })
 }
 
 /**
@@ -177,34 +177,34 @@ export function removeEdge(graph: Graph, edgeId: EdgeId): Graph {
 /**
  * Updates an edge in the graph using a functional updater.
  * Returns a new graph.
- * Throws if the edge does not exist.
+ * Returns Error if the edge does not exist.
  */
-export function updateEdge(graph: Graph, edgeId: EdgeId, updater: (edge: Edge) => Edge, options: GraphOperationOptions = {}): Graph {
+export function updateEdge(graph: Graph, edgeId: EdgeId, updater: (edge: Edge) => Edge, options: GraphOperationOptions = {}): Result<Graph, Error> {
   const existingEdge = graph.edges.get(edgeId)
   if (!existingEdge) {
-    throw new Error(`Edge with ID ${edgeId} not found`)
+    return err(new Error(`Edge with ID ${edgeId} not found`))
   }
 
   const updatedEdge = updater(existingEdge)
 
   // Ensure ID hasn't changed
   if (updatedEdge.id !== edgeId) {
-      throw new Error(`Cannot change edge ID during update`)
+      return err(new Error(`Cannot change edge ID during update`))
   }
 
   // Verify source/target still exist (in case they were changed, though usually they shouldn't be)
   if (!graph.nodes.has(updatedEdge.source)) {
-      throw new Error(`Source node ${updatedEdge.source} not found`)
+      return err(new Error(`Source node ${updatedEdge.source} not found`))
   }
   if (!graph.nodes.has(updatedEdge.target)) {
-      throw new Error(`Target node ${updatedEdge.target} not found`)
+      return err(new Error(`Target node ${updatedEdge.target} not found`))
   }
 
   if (options.validate) {
     const result = validateEdge(graph, updatedEdge)
     if (!result.valid) {
        const msgs = result.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')
-       throw new Error(`Edge validation failed: ${msgs}`)
+       return err(new Error(`Edge validation failed: ${msgs}`))
     }
   }
 
@@ -221,12 +221,12 @@ export function updateEdge(graph: Graph, edgeId: EdgeId, updater: (edge: Edge) =
     return [id, edge]
   }))
 
-  return {
+  return ok({
     ...graph,
     edges: newEdges,
     metadata: {
       ...graph.metadata,
       modified: createInstant(),
     },
-  }
+  })
 }

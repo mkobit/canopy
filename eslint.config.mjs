@@ -92,7 +92,6 @@ export default tseslint.config(
       'functional/functional-parameters': 'off',
       'functional/no-conditional-statements': 'off',
       'functional/no-classes': 'off',
-      'functional/no-throw-statements': 'off',
 
       // Crashes the linter in some files (ErrorType encountered), so must be disabled
       'functional/prefer-immutable-types': 'off',

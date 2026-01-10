@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { createGraph } from '../src/graph'
 import { addNode, updateNode } from '../src/ops'
 import { SYSTEM_IDS } from '../src/system'
-import { createNodeId, asNodeId, asTypeId, createInstant, PropertyDefinition, PropertyValue } from '@canopy/types'
+import { createNodeId, asNodeId, asTypeId, createInstant, PropertyDefinition, PropertyValue, unwrap, isErr, isOk } from '@canopy/types'
 
 // Test helpers
 function createNode(props: Record<string, unknown>) {
@@ -33,18 +33,22 @@ describe('ops with validation', () => {
                 properties: { kind: 'text', value: JSON.stringify(personProps) }
             }
         })
-        g = addNode(g, personTypeNode)
+        g = unwrap(addNode(g, personTypeNode))
         return g
     }
 
-    it('addNode throws if validation fails and validation is enabled', () => {
+    it('addNode returns Error if validation fails and validation is enabled', () => {
         const g = createGraphWithTypes()
         const node = createNode({
             type: asTypeId('type-person'),
             properties: {} // missing age
         })
 
-        expect(() => addNode(g, node, { validate: true })).toThrow(/Node validation failed/)
+        const result = addNode(g, node, { validate: true })
+        expect(isErr(result)).toBe(true)
+        if (isErr(result)) {
+            expect(result.error.message).toMatch(/Node validation failed/)
+        }
     })
 
     it('addNode succeeds if validation fails but validation is disabled (default)', () => {
@@ -54,7 +58,8 @@ describe('ops with validation', () => {
             properties: {} // missing age
         })
 
-        expect(() => addNode(g, node)).not.toThrow()
+        const result = addNode(g, node)
+        expect(isOk(result)).toBe(true)
     })
 
     it('addNode succeeds if validation passes', () => {
@@ -64,21 +69,27 @@ describe('ops with validation', () => {
             properties: { age: { kind: 'number', value: 20 } }
         })
 
-        expect(() => addNode(g, node, { validate: true })).not.toThrow()
+        const result = addNode(g, node, { validate: true })
+        expect(isOk(result)).toBe(true)
     })
 
-    it('updateNode throws if validation fails', () => {
+    it('updateNode returns Error if validation fails', () => {
         let g = createGraphWithTypes()
         const node = createNode({
             id: asNodeId('p1'),
             type: asTypeId('type-person'),
             properties: { age: { kind: 'number', value: 20 } }
         })
-        g = addNode(g, node)
+        g = unwrap(addNode(g, node))
 
-        expect(() => updateNode(g, node.id, n => ({
+        const result = updateNode(g, node.id, n => ({
             ...n,
             properties: new Map() // remove age
-        }), { validate: true })).toThrow(/Node validation failed/)
+        }), { validate: true })
+
+        expect(isErr(result)).toBe(true)
+        if (isErr(result)) {
+            expect(result.error.message).toMatch(/Node validation failed/)
+        }
     })
 })

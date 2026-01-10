@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { SQLiteAdapter } from './sqlite-adapter';
 import { IndexedDBAdapter } from './indexeddb-adapter';
 import { GraphStorageMetadata } from './types';
+import { unwrap } from '@canopy/types';
 import 'fake-indexeddb/auto';
 
 // Mock data
@@ -27,30 +28,30 @@ describe('SQLiteAdapter', () => {
   });
 
   it('should save and load a graph', async () => {
-    await adapter.save(mockGraphId, mockSnapshot, mockMetadata);
-    const loaded = await adapter.load(mockGraphId);
+    await unwrap(await adapter.save(mockGraphId, mockSnapshot, mockMetadata));
+    const loaded = unwrap(await adapter.load(mockGraphId));
     expect(loaded).toEqual(mockSnapshot);
   });
 
   it('should return null for non-existent graph', async () => {
-    const loaded = await adapter.load('non-existent');
+    const loaded = unwrap(await adapter.load('non-existent'));
     expect(loaded).toBeNull();
   });
 
   it('should list graphs', async () => {
-    await adapter.save(mockGraphId, mockSnapshot, mockMetadata);
-    const list = await adapter.list();
+    await unwrap(await adapter.save(mockGraphId, mockSnapshot, mockMetadata));
+    const list = unwrap(await adapter.list());
     expect(list).toHaveLength(1);
     expect(list[0]!.id).toEqual(mockGraphId);
     expect(list[0]!.name).toEqual(mockMetadata.name);
   });
 
   it('should delete a graph', async () => {
-    await adapter.save(mockGraphId, mockSnapshot, mockMetadata);
-    await adapter.delete(mockGraphId);
-    const loaded = await adapter.load(mockGraphId);
+    await unwrap(await adapter.save(mockGraphId, mockSnapshot, mockMetadata));
+    await unwrap(await adapter.delete(mockGraphId));
+    const loaded = unwrap(await adapter.load(mockGraphId));
     expect(loaded).toBeNull();
-    const list = await adapter.list();
+    const list = unwrap(await adapter.list());
     expect(list).toHaveLength(0);
   });
 
@@ -62,18 +63,18 @@ describe('SQLiteAdapter', () => {
     };
 
     const persistAdapter = new SQLiteAdapter(persistence);
-    await persistAdapter.init();
-    await persistAdapter.save(mockGraphId, mockSnapshot, mockMetadata);
-    await persistAdapter.close();
+    await unwrap(await persistAdapter.init());
+    await unwrap(await persistAdapter.save(mockGraphId, mockSnapshot, mockMetadata));
+    await unwrap(await persistAdapter.close());
 
     expect(storedData).not.toBeNull();
 
     // Re-open with data
     const newAdapter = new SQLiteAdapter(persistence);
-    await newAdapter.init();
-    const loaded = await newAdapter.load(mockGraphId);
+    await unwrap(await newAdapter.init());
+    const loaded = unwrap(await newAdapter.load(mockGraphId));
     expect(loaded).toEqual(mockSnapshot);
-    await newAdapter.close();
+    await unwrap(await newAdapter.close());
   });
 });
 
@@ -90,27 +91,27 @@ describe('IndexedDBAdapter', () => {
   });
 
   it('should save and load a graph', async () => {
-    await adapter.save(mockGraphId, mockSnapshot, mockMetadata);
-    const loaded = await adapter.load(mockGraphId);
+    await unwrap(await adapter.save(mockGraphId, mockSnapshot, mockMetadata));
+    const loaded = unwrap(await adapter.load(mockGraphId));
     expect(loaded).toEqual(mockSnapshot);
   });
 
   it('should return null for non-existent graph', async () => {
-    const loaded = await adapter.load('non-existent');
+    const loaded = unwrap(await adapter.load('non-existent'));
     expect(loaded).toBeNull();
   });
 
   it('should list graphs', async () => {
-    await adapter.save(mockGraphId, mockSnapshot, mockMetadata);
-    const list = await adapter.list();
+    await unwrap(await adapter.save(mockGraphId, mockSnapshot, mockMetadata));
+    const list = unwrap(await adapter.list());
     expect(list).toHaveLength(1);
     expect(list[0]!.id).toEqual(mockGraphId);
   });
 
   it('should delete a graph', async () => {
-    await adapter.save(mockGraphId, mockSnapshot, mockMetadata);
-    await adapter.delete(mockGraphId);
-    const loaded = await adapter.load(mockGraphId);
+    await unwrap(await adapter.save(mockGraphId, mockSnapshot, mockMetadata));
+    await unwrap(await adapter.delete(mockGraphId));
+    const loaded = unwrap(await adapter.load(mockGraphId));
     expect(loaded).toBeNull();
   });
 });

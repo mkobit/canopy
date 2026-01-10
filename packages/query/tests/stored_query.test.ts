@@ -5,7 +5,7 @@ import { addNode } from '@canopy/core';
 import { QueryEngine } from '../src/engine';
 import { saveQueryDefinition, getQueryDefinition, listQueryDefinitions, executeStoredQuery } from '../src/stored';
 import { Query } from '../src/model';
-import { createNodeId, asTypeId, createInstant } from '@canopy/types';
+import { createNodeId, asTypeId, createInstant, unwrap, isErr } from '@canopy/types';
 
 describe('Stored Queries', () => {
     it('should save and retrieve a query definition', () => {
@@ -19,16 +19,16 @@ describe('Stored Queries', () => {
             ]
         };
 
-        const result = saveQueryDefinition(graph, 'High Priority Tasks', query, {
+        const result = unwrap(saveQueryDefinition(graph, 'High Priority Tasks', query, {
             description: 'Finds all high priority tasks',
             nodeTypes: ['node:type:task'],
             parameters: []
-        });
+        }));
 
         graph = result.graph;
         const nodeId = result.nodeId;
 
-        const retrievedQuery = getQueryDefinition(graph, nodeId);
+        const retrievedQuery = unwrap(getQueryDefinition(graph, nodeId));
         expect(retrievedQuery).toEqual(query);
 
         const nodes = listQueryDefinitions(graph);
@@ -48,25 +48,25 @@ describe('Stored Queries', () => {
         const task1 = createNodeId();
         const task2 = createNodeId();
 
-        graph = addNode(graph, {
+        graph = unwrap(addNode(graph, {
              id: task1,
              type: taskType,
              properties: new Map([
                  ['name', { kind: 'text', value: 'Task 1' }],
                  ['priority', { kind: 'text', value: 'high' }]
              ]),
-             metadata: { created: createInstant(), modified: createInstant() }
-        });
+             metadata: { created: createInstant(new Date('2023-01-01T00:00:00Z')), modified: createInstant(new Date('2023-01-01T00:00:00Z')) }
+        }));
 
-        graph = addNode(graph, {
+        graph = unwrap(addNode(graph, {
              id: task2,
              type: taskType,
              properties: new Map([
                  ['name', { kind: 'text', value: 'Task 2' }],
                  ['priority', { kind: 'text', value: 'low' }]
              ]),
-             metadata: { created: createInstant(), modified: createInstant() }
-        });
+             metadata: { created: createInstant(new Date('2023-01-01T00:00:00Z')), modified: createInstant(new Date('2023-01-01T00:00:00Z')) }
+        }));
 
         const query: Query = {
             steps: [
@@ -75,26 +75,30 @@ describe('Stored Queries', () => {
             ]
         };
 
-        const saveResult = saveQueryDefinition(graph, 'Tasks by Priority', query, {
+        const saveResult = unwrap(saveQueryDefinition(graph, 'Tasks by Priority', query, {
             parameters: ['priority']
-        });
+        }));
         graph = saveResult.graph;
 
         const engine = new QueryEngine(graph);
-        const result = executeStoredQuery(engine, graph, saveResult.nodeId, { priority: 'high' });
+        const result = unwrap(executeStoredQuery(engine, graph, saveResult.nodeId, { priority: 'high' }));
 
         expect(result.nodes.length).toBe(1);
         expect(result.nodes[0].id).toBe(task1);
 
-        const resultLow = executeStoredQuery(engine, graph, saveResult.nodeId, { priority: 'low' });
+        const resultLow = unwrap(executeStoredQuery(engine, graph, saveResult.nodeId, { priority: 'low' }));
         expect(resultLow.nodes.length).toBe(1);
         expect(resultLow.nodes[0].id).toBe(task2);
     });
 
-    it('should throw error for non-existent or invalid query nodes', () => {
+    it('should return Error for non-existent or invalid query nodes', () => {
         let graph = createGraph();
         graph = bootstrap(graph);
 
-        expect(() => getQueryDefinition(graph, createNodeId())).toThrow(/not found/);
+        const result = getQueryDefinition(graph, createNodeId());
+        expect(isErr(result)).toBe(true);
+        if (isErr(result)) {
+            expect(result.error.message).toMatch(/not found/);
+        }
     });
 });

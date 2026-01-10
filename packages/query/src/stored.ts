@@ -6,7 +6,10 @@ import {
   createNodeId,
   createInstant,
   PropertyValue,
-  ScalarValue
+  ScalarValue,
+  Result,
+  ok,
+  err
 } from '@canopy/types';
 import { SYSTEM_IDS, addNode } from '@canopy/core';
 import { Query } from './model';
@@ -14,11 +17,11 @@ import { QueryEngine } from './engine';
 import { mapValues, isPlainObject, isString } from 'remeda';
 
 // Helper to wrap a scalar value
-function scalar(val: string | number | boolean): ScalarValue {
-  if (typeof val === 'string') return { kind: 'text', value: val };
-  if (typeof val === 'number') return { kind: 'number', value: val };
-  if (typeof val === 'boolean') return { kind: 'boolean', value: val };
-  throw new Error(`Unsupported scalar type: ${typeof val}`);
+function scalar(val: string | number | boolean): Result<ScalarValue, Error> {
+  if (typeof val === 'string') return ok({ kind: 'text', value: val });
+  if (typeof val === 'number') return ok({ kind: 'number', value: val });
+  if (typeof val === 'boolean') return ok({ kind: 'boolean', value: val });
+  return err(new Error(`Unsupported scalar type: ${typeof val}`));
 }
 
 // Helper to create a list property
@@ -37,17 +40,27 @@ export function saveQueryDefinition(
   name: string,
   query: Query,
   options: SaveQueryOptions = {}
-): Readonly<{ graph: Graph; nodeId: NodeId }> {
+): Result<{ graph: Graph; nodeId: NodeId }, Error> {
   const nodeId = createNodeId();
 
-  const baseProperties: readonly (readonly [string, PropertyValue])[] = [
-    ['name', scalar(name)],
-    ['definition', scalar(JSON.stringify(query))],
+  const nameVal = scalar(name);
+  if (!nameVal.ok) return err(nameVal.error);
+
+  const defVal = scalar(JSON.stringify(query));
+  if (!defVal.ok) return err(defVal.error);
+
+  const baseProperties: (readonly [string, PropertyValue])[] = [
+    ['name', nameVal.value],
+    ['definition', defVal.value],
   ];
 
-  const descriptionProp: readonly (readonly [string, PropertyValue])[] = options.description
-    ? [['description', scalar(options.description)]]
-    : [];
+  // eslint-disable-next-line functional/no-let
+  let descriptionProp: readonly (readonly [string, PropertyValue])[] = [];
+  if (options.description) {
+      const descVal = scalar(options.description);
+      if (!descVal.ok) return err(descVal.error);
+      descriptionProp = [['description', descVal.value]];
+  }
 
   const nodeTypesProp: readonly (readonly [string, PropertyValue])[] = options.nodeTypes && options.nodeTypes.length > 0
     ? [['nodeTypes', list(options.nodeTypes)]]
@@ -75,28 +88,30 @@ export function saveQueryDefinition(
   };
 
   const newGraph = addNode(graph, node);
-  return { graph: newGraph, nodeId };
+  if (!newGraph.ok) return err(newGraph.error);
+
+  return ok({ graph: newGraph.value, nodeId });
 }
 
-export function getQueryDefinition(graph: Graph, nodeId: NodeId): Query {
+export function getQueryDefinition(graph: Graph, nodeId: NodeId): Result<Query, Error> {
   const node = graph.nodes.get(nodeId);
   if (!node) {
-    throw new Error(`Query definition node ${nodeId} not found`);
+    return err(new Error(`Query definition node ${nodeId} not found`));
   }
 
   if (node.type !== SYSTEM_IDS.QUERY_DEFINITION) {
-    throw new Error(`Node ${nodeId} is not a Query Definition`);
+    return err(new Error(`Node ${nodeId} is not a Query Definition`));
   }
 
   const definitionProp = node.properties.get('definition');
   if (!definitionProp || definitionProp.kind !== 'text') {
-    throw new Error(`Query definition node ${nodeId} has invalid definition property`);
+    return err(new Error(`Query definition node ${nodeId} has invalid definition property`));
   }
 
   try {
-    return JSON.parse(definitionProp.value) as Query;
+    return ok(JSON.parse(definitionProp.value) as Query);
   } catch (e) {
-    throw new Error(`Failed to parse query definition for node ${nodeId}: ${e}`);
+    return err(new Error(`Failed to parse query definition for node ${nodeId}: ${e}`));
   }
 }
 
@@ -131,8 +146,11 @@ export function executeStoredQuery(
   graph: Graph,
   queryNodeId: NodeId,
   params: Record<string, unknown> = {}
-): QueryResult {
-  const query = getQueryDefinition(graph, queryNodeId);
+): Result<QueryResult, Error> {
+  const queryResult = getQueryDefinition(graph, queryNodeId);
+  if (!queryResult.ok) return err(queryResult.error);
+
+  const query = queryResult.value;
   const substitutedQuery = substituteParams(query, params) as Query;
   return engine.execute(substitutedQuery);
 }

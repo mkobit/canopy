@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as Y from 'yjs';
 import { GraphStore } from './graph-store';
-import { asTypeId, asNodeId } from '@canopy/types';
+import { asTypeId, asNodeId, unwrap, isErr } from '@canopy/types';
 
 describe('GraphStore', () => {
   let doc: Y.Doc;
@@ -21,7 +21,7 @@ describe('GraphStore', () => {
         ])
       };
 
-      const node = store.addNode(nodeData);
+      const node = unwrap(store.addNode(nodeData));
 
       expect(node.id).toBeDefined();
       expect(node.type).toBe('person');
@@ -33,8 +33,8 @@ describe('GraphStore', () => {
     });
 
     it('should list all nodes', () => {
-        const node1 = store.addNode({ type: asTypeId('a'), properties: new Map() });
-        const node2 = store.addNode({ type: asTypeId('b'), properties: new Map() });
+        const node1 = unwrap(store.addNode({ type: asTypeId('a'), properties: new Map() }));
+        const node2 = unwrap(store.addNode({ type: asTypeId('b'), properties: new Map() }));
 
         const nodes = Array.from(store.getAllNodes());
         expect(nodes).toHaveLength(2);
@@ -43,11 +43,11 @@ describe('GraphStore', () => {
     });
 
     it('should update a node', () => {
-        const node = store.addNode({ type: asTypeId('person'), properties: new Map() });
+        const node = unwrap(store.addNode({ type: asTypeId('person'), properties: new Map() }));
 
-        const updated = store.updateNode(node.id, {
+        const updated = unwrap(store.updateNode(node.id, {
             properties: new Map([['age', { kind: 'number', value: 30 }]])
-        });
+        }));
 
         expect(updated.properties.get('age')).toEqual({ kind: 'number', value: 30 });
         // expect(updated.metadata.modified).not.toEqual(node.metadata.modified); // Flaky on fast execution
@@ -57,13 +57,14 @@ describe('GraphStore', () => {
     });
 
     it('should delete a node', () => {
-        const node = store.addNode({ type: asTypeId('person'), properties: new Map() });
+        const node = unwrap(store.addNode({ type: asTypeId('person'), properties: new Map() }));
         store.deleteNode(node.id);
         expect(store.getNode(node.id)).toBeUndefined();
     });
 
-    it('should throw when updating non-existent node', () => {
-        expect(() => store.updateNode('fake-id', {})).toThrow();
+    it('should return Error when updating non-existent node', () => {
+        const result = store.updateNode('fake-id', {});
+        expect(isErr(result)).toBe(true);
     });
   });
 
@@ -72,8 +73,8 @@ describe('GraphStore', () => {
       let targetId: string;
 
       beforeEach(() => {
-          const s = store.addNode({ type: asTypeId('source'), properties: new Map() });
-          const t = store.addNode({ type: asTypeId('target'), properties: new Map() });
+          const s = unwrap(store.addNode({ type: asTypeId('source'), properties: new Map() }));
+          const t = unwrap(store.addNode({ type: asTypeId('target'), properties: new Map() }));
           sourceId = s.id;
           targetId = t.id;
       });
@@ -86,7 +87,7 @@ describe('GraphStore', () => {
               properties: new Map()
           };
 
-          const edge = store.addEdge(edgeData);
+          const edge = unwrap(store.addEdge(edgeData));
           expect(edge.id).toBeDefined();
           expect(edge.source).toBe(sourceId);
           expect(edge.target).toBe(targetId);
@@ -96,25 +97,29 @@ describe('GraphStore', () => {
       });
 
       it('should validate source and target existence', () => {
-          expect(() => store.addEdge({
+          const result = store.addEdge({
               source: asNodeId('fake-source'),
               target: asNodeId(targetId),
               type: asTypeId('link'),
               properties: new Map()
-          })).toThrow(/Source node.*not found/);
+          });
+          expect(isErr(result)).toBe(true);
+          if (isErr(result)) {
+              expect(result.error.message).toMatch(/Source node.*not found/);
+          }
       });
 
       it('should update an edge', () => {
-           const edge = store.addEdge({
+           const edge = unwrap(store.addEdge({
               source: asNodeId(sourceId),
               target: asNodeId(targetId),
               type: asTypeId('link'),
               properties: new Map()
-          });
+          }));
 
-          const updated = store.updateEdge(edge.id, {
+          const updated = unwrap(store.updateEdge(edge.id, {
               properties: new Map([['weight', { kind: 'number', value: 1 }]])
-          });
+          }));
 
           expect(updated.properties.get('weight')).toEqual({ kind: 'number', value: 1 });
 
@@ -123,12 +128,12 @@ describe('GraphStore', () => {
       });
 
       it('should delete an edge', () => {
-           const edge = store.addEdge({
+           const edge = unwrap(store.addEdge({
               source: asNodeId(sourceId),
               target: asNodeId(targetId),
               type: asTypeId('link'),
               properties: new Map()
-          });
+          }));
 
           store.deleteEdge(edge.id);
           expect(store.getEdge(edge.id)).toBeUndefined();
