@@ -23,3 +23,19 @@ export function unwrap<T, E>(result: Result<T, E>): T {
     // eslint-disable-next-line functional/no-throw-statements
     throw result.error;
 }
+
+export function fromThrowable<T>(fn: () => T): Result<T, Error> {
+  try {
+    return ok(fn());
+  } catch (e) {
+    return err(e instanceof Error ? e : new Error(String(e)));
+  }
+}
+
+export async function fromAsyncThrowable<T>(fn: () => Promise<T>): Promise<Result<T, Error>> {
+  try {
+    return ok(await fn());
+  } catch (e) {
+    return err(e instanceof Error ? e : new Error(String(e)));
+  }
+}

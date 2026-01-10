@@ -2,7 +2,7 @@ import * as Y from 'yjs';
 import { Awareness } from 'y-protocols/awareness';
 import { GraphStore } from './store/graph-store';
 import { SyncProvider, SyncEngineOptions } from './types';
-import { Result, ok, err } from '@canopy/types';
+import { Result, fromThrowable } from '@canopy/types';
 
 export class SyncEngine {
   readonly doc: Y.Doc;
@@ -27,29 +27,31 @@ export class SyncEngine {
   }
 
   setProvider(provider: SyncProvider): Result<void, Error> {
-    try {
+    return fromThrowable(() => {
       if (this.provider) {
         const disconnectResult = this.provider.disconnect();
-        if (!disconnectResult.ok) return disconnectResult;
+        // eslint-disable-next-line functional/no-throw-statements
+        if (!disconnectResult.ok) throw disconnectResult.error;
       }
       this.provider = provider;
-      return provider.connect();
-    } catch (e) {
-      return err(e instanceof Error ? e : new Error(String(e)));
-    }
+      const connectResult = provider.connect();
+      // eslint-disable-next-line functional/no-throw-statements
+      if (!connectResult.ok) throw connectResult.error;
+      return undefined;
+    });
   }
 
   disconnectProvider(): Result<void, Error> {
-    try {
+    return fromThrowable(() => {
       if (this.provider) {
           const result = this.provider.disconnect();
           this.provider = null;
-          return result;
+          // eslint-disable-next-line functional/no-throw-statements
+          if (!result.ok) throw result.error;
+          // Return is void, so we just return undefined on success
       }
-      return ok(undefined);
-    } catch (e) {
-      return err(e instanceof Error ? e : new Error(String(e)));
-    }
+      return undefined;
+    });
   }
 
   getSnapshot(): Uint8Array {
@@ -57,42 +59,34 @@ export class SyncEngine {
   }
 
   applySnapshot(snapshot: Uint8Array): Result<void, Error> {
-    try {
+    return fromThrowable(() => {
       Y.applyUpdate(this.doc, snapshot);
-      return ok(undefined);
-    } catch (e) {
-      return err(e instanceof Error ? e : new Error(String(e)));
-    }
+      return undefined;
+    });
   }
 
   onDocUpdate(handler: (update: Uint8Array, origin: unknown) => unknown): Result<void, Error> {
-    try {
+    return fromThrowable(() => {
       this.doc.on('update', handler);
-      return ok(undefined);
-    } catch (e) {
-      return err(e instanceof Error ? e : new Error(String(e)));
-    }
+      return undefined;
+    });
   }
 
   offDocUpdate(handler: (update: Uint8Array, origin: unknown) => unknown): Result<void, Error> {
-    try {
+    return fromThrowable(() => {
       this.doc.off('update', handler);
-      return ok(undefined);
-    } catch (e) {
-      return err(e instanceof Error ? e : new Error(String(e)));
-    }
+      return undefined;
+    });
   }
 
   /**
    * Update local awareness state
    */
   setLocalState(state: Record<string, unknown>): Result<void, Error> {
-    try {
+    return fromThrowable(() => {
       this.awareness.setLocalState(state);
-      return ok(undefined);
-    } catch (e) {
-      return err(e instanceof Error ? e : new Error(String(e)));
-    }
+      return undefined;
+    });
   }
 
   /**
@@ -103,20 +97,16 @@ export class SyncEngine {
   }
 
   onAwarenessUpdate(handler: (changes: Readonly<{ added: readonly number[], updated: readonly number[], removed: readonly number[] }>, origin: unknown) => unknown): Result<void, Error> {
-    try {
+    return fromThrowable(() => {
       this.awareness.on('change', handler);
-      return ok(undefined);
-    } catch (e) {
-      return err(e instanceof Error ? e : new Error(String(e)));
-    }
+      return undefined;
+    });
   }
 
   offAwarenessUpdate(handler: (changes: Readonly<{ added: readonly number[], updated: readonly number[], removed: readonly number[] }>, origin: unknown) => unknown): Result<void, Error> {
-    try {
+    return fromThrowable(() => {
       this.awareness.off('change', handler);
-      return ok(undefined);
-    } catch (e) {
-      return err(e instanceof Error ? e : new Error(String(e)));
-    }
+      return undefined;
+    });
   }
 }

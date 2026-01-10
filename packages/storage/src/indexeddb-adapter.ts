@@ -1,6 +1,6 @@
 import { openDB, DBSchema, IDBPDatabase } from 'idb';
 import { StorageAdapter, GraphStorageMetadata } from './types';
-import { Result, ok, err } from '@canopy/types';
+import { Result, ok, err, fromAsyncThrowable } from '@canopy/types';
 
 interface CanopyDB extends DBSchema {
   readonly graphs: Readonly<{
@@ -24,7 +24,7 @@ export class IndexedDBAdapter implements StorageAdapter {
 
   async init(): Promise<Result<void, Error>> {
     if (this.db) return ok(undefined);
-    try {
+    return fromAsyncThrowable(async () => {
       this.db = await openDB<CanopyDB>(this.dbName, 1, {
         upgrade(db) {
           if (!db.objectStoreNames.contains('graphs')) {
@@ -33,61 +33,57 @@ export class IndexedDBAdapter implements StorageAdapter {
           return undefined;
         },
       });
-      return ok(undefined);
-    } catch (e) {
-      return err(e instanceof Error ? e : new Error(String(e)));
-    }
+      return undefined;
+    });
   }
 
   async close(): Promise<Result<void, Error>> {
-    if (this.db) {
-      this.db.close();
-      this.db = null;
-    }
-    return ok(undefined);
+    return fromAsyncThrowable(async () => {
+        if (this.db) {
+            this.db.close();
+            this.db = null;
+        }
+        return undefined;
+    });
   }
 
   async save(graphId: string, snapshot: Uint8Array, metadata: GraphStorageMetadata): Promise<Result<void, Error>> {
     if (!this.db) return err(new Error('Database not initialized'));
-    try {
-      await this.db.put('graphs', {
+    return fromAsyncThrowable(async () => {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      await this.db!.put('graphs', {
         id: graphId,
         snapshot,
         metadata,
       });
-      return ok(undefined);
-    } catch (e) {
-      return err(e instanceof Error ? e : new Error(String(e)));
-    }
+      return undefined;
+    });
   }
 
   async load(graphId: string): Promise<Result<Uint8Array | null, Error>> {
     if (!this.db) return err(new Error('Database not initialized'));
-    try {
-      const result = await this.db.get('graphs', graphId);
-      return ok(result ? result.snapshot : null);
-    } catch (e) {
-      return err(e instanceof Error ? e : new Error(String(e)));
-    }
+    return fromAsyncThrowable(async () => {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const result = await this.db!.get('graphs', graphId);
+      return result ? result.snapshot : null;
+    });
   }
 
   async delete(graphId: string): Promise<Result<void, Error>> {
     if (!this.db) return err(new Error('Database not initialized'));
-    try {
-      await this.db.delete('graphs', graphId);
-      return ok(undefined);
-    } catch (e) {
-      return err(e instanceof Error ? e : new Error(String(e)));
-    }
+    return fromAsyncThrowable(async () => {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      await this.db!.delete('graphs', graphId);
+      return undefined;
+    });
   }
 
   async list(): Promise<Result<readonly GraphStorageMetadata[], Error>> {
     if (!this.db) return err(new Error('Database not initialized'));
-    try {
-      const all = await this.db.getAll('graphs');
-      return ok(all.map((item) => item.metadata));
-    } catch (e) {
-      return err(e instanceof Error ? e : new Error(String(e)));
-    }
+    return fromAsyncThrowable(async () => {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const all = await this.db!.getAll('graphs');
+      return all.map((item) => item.metadata);
+    });
   }
 }

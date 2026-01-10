@@ -1,7 +1,9 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { SyncEngine } from '@canopy/sync';
-import { Graph, GraphId, NodeId, EdgeId, asInstant, PropertyValue, Node, Edge, Result, ok, err } from '@canopy/types';
+import { Graph, GraphId, NodeId, EdgeId, asInstant, PropertyValue, Node, Edge, Result, ok, err, fromThrowable, fromAsyncThrowable } from '@canopy/types';
 import { useStorage } from './StorageContext';
+import { z } from 'zod';
+import { asTypeId } from '@canopy/types';
 
 interface GraphContextState {
   readonly graph: Graph | null;
@@ -46,62 +48,54 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
 
     setIsLoading(true);
     setError(null);
-    try {
-      // Clean up previous engine if exists
-      if (syncEngineRef.current) {
-        syncEngineRef.current.disconnectProvider();
-      }
 
-      // 1. Load snapshot from storage
-      const snapshotResult = await storage.load(graphId);
-      if (!snapshotResult.ok) return snapshotResult;
-      const snapshot = snapshotResult.value;
+    const result = await fromAsyncThrowable(async () => {
+        // Clean up previous engine if exists
+        if (syncEngineRef.current) {
+            syncEngineRef.current.disconnectProvider();
+        }
 
-      // 2. Initialize SyncEngine
-      // If snapshot is undefined (new graph), we pass undefined, SyncEngine creates new Doc.
-      const engine = new SyncEngine(
-        snapshot ? { initialSnapshot: snapshot } : {}
-      );
+        // 1. Load snapshot from storage
+        const snapshotResult = await storage.load(graphId);
+        // eslint-disable-next-line functional/no-throw-statements
+        if (!snapshotResult.ok) throw snapshotResult.error;
+        const snapshot = snapshotResult.value;
 
-      setSyncEngine(engine);
-      syncEngineRef.current = engine;
-      setCurrentGraphId(graphId);
+        // 2. Initialize SyncEngine
+        // If snapshot is undefined (new graph), we pass undefined, SyncEngine creates new Doc.
+        const engine = new SyncEngine(
+            snapshot ? { initialSnapshot: snapshot } : {}
+        );
 
-      // Initial graph state
-      // SyncEngine.store doesn't expose getGraph(), but it exposes getAllNodes() and getAllEdges().
-      // We need to construct a Graph object.
-      // Wait, `Graph` type is immutable map. `GraphStore` is mutable.
-      // We need to bridge this.
-      // I'll create a helper to build Graph from Store.
-      updateGraphFromStore(engine, graphId);
+        setSyncEngine(engine);
+        syncEngineRef.current = engine;
+        setCurrentGraphId(graphId);
 
-      // Subscribe to updates
-      engine.doc.on('update', () => {
-         updateGraphFromStore(engine, graphId);
-         return undefined;
-      });
+        // Initial graph state
+        updateGraphFromStore(engine, graphId);
 
-      return ok(undefined);
-    } catch (err) {
-      console.error("Failed to load graph:", err);
-      const e = err instanceof Error ? err : new Error('Unknown error loading graph');
-      setError(e);
-      return { ok: false, error: e };
-    } finally {
-      setIsLoading(false);
+        // Subscribe to updates
+        engine.doc.on('update', () => {
+             updateGraphFromStore(engine, graphId);
+             return undefined;
+        });
+
+        return undefined;
+    });
+
+    if (!result.ok) {
+        console.error("Failed to load graph:", result.error);
+        setError(result.error);
     }
+
+    setIsLoading(false);
+    return result;
+
   }, [storage]); // Removed syncEngine from dependency
 
   const updateGraphFromStore = (engine: SyncEngine, graphId: GraphId) => {
       const nodes = new Map<NodeId, Node>(Array.from(engine.store.getAllNodes()).map(node => [node.id, node]));
       const edges = new Map<EdgeId, Edge>(Array.from(engine.store.getAllEdges()).map(edge => [edge.id, edge]));
-
-      // We need metadata for the graph itself.
-      // StorageAdapter returns { data, metadata }.
-      // But SyncEngine only took data (Uint8Array).
-      // We might need to fetch metadata separately or pass it through.
-      // For now, I'll mock the graph metadata or assume we have it.
-      // Let's rely on storage.getMetadata(graphId) if needed, but for now just construct.
 
       const now = asInstant(new Date().toISOString());
       setGraph({
@@ -115,75 +109,84 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
   };
 
   const closeGraph = useCallback((): Result<void, Error> => {
-    try {
-      if (syncEngineRef.current) {
-        syncEngineRef.current.disconnectProvider();
-        setSyncEngine(null);
-        syncEngineRef.current = null;
-      }
-      setGraph(null);
-      setCurrentGraphId(null);
-      return ok(undefined);
-    } catch (e) {
-      return err(e instanceof Error ? e : new Error(String(e)));
-    }
+    return fromThrowable(() => {
+        if (syncEngineRef.current) {
+            syncEngineRef.current.disconnectProvider();
+            setSyncEngine(null);
+            syncEngineRef.current = null;
+        }
+        setGraph(null);
+        setCurrentGraphId(null);
+        return undefined;
+    });
   }, []);
 
   const saveGraph = useCallback(async (): Promise<Result<void, Error>> => {
-    if (syncEngineRef.current && storage && currentGraphId && graph) {
-        try {
-          const snapshot = syncEngineRef.current.getSnapshot();
-          const createdAt = graph.metadata.created || new Date().toISOString();
-          const result = await storage.save(currentGraphId, snapshot, {
-               id: currentGraphId,
-               name: graph.name,
-               createdAt,
-               updatedAt: new Date().toISOString()
+      if (syncEngineRef.current && storage && currentGraphId && graph) {
+          return fromAsyncThrowable(async () => {
+              const snapshot = syncEngineRef.current!.getSnapshot();
+              const createdAt = graph.metadata.created || new Date().toISOString();
+              const result = await storage.save(currentGraphId, snapshot, {
+                   id: currentGraphId,
+                   name: graph.name,
+                   createdAt,
+                   updatedAt: new Date().toISOString()
+              });
+              // eslint-disable-next-line functional/no-throw-statements
+              if (!result.ok) throw result.error;
+              return undefined;
           });
-          return result;
-        } catch (e) {
-          return err(e instanceof Error ? e : new Error(String(e)));
-        }
-    }
-    // If not loaded, effectively a no-op success or error?
-    // Let's return error if called without graph
-    if (!syncEngineRef.current || !currentGraphId) return err(new Error("No graph loaded"));
-    if (!storage) return err(new Error("Storage not available"));
+      }
+      // If not loaded, effectively a no-op success or error?
+      // Let's return error if called without graph
+      if (!syncEngineRef.current || !currentGraphId) return err(new Error("No graph loaded"));
+      if (!storage) return err(new Error("Storage not available"));
 
-    return ok(undefined);
-  }, [storage, currentGraphId, graph]);
+      return ok(undefined);
+    }, [storage, currentGraphId, graph]);
+
+  // Schema for validating inputs to createNode
+  const CreateNodeInputSchema = z.object({
+      type: z.string().min(1),
+      properties: z.record(z.string(), z.unknown()).optional()
+  });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const createNode = useCallback(async (type: string, properties: Record<string, any> = {}): Promise<Result<NodeId, Error>> => {
       if (!syncEngineRef.current) return err(new Error("SyncEngine not initialized"));
 
-      // TODO: We are going to eventually phase out the try/catch pattern so should consider that here as well
-      try {
-          // TODO: feels like we need a todo here to address the casting and mapping issue
-          // Rudimentary generic mapping to PropertyValue
-          const propsMap = new Map<string, PropertyValue>(
-              Object.entries(properties)
-                  .filter(([_, value]) => typeof value === 'string')
-                  .map(([key, value]) => [key, { kind: 'text' as const, value: value as string }])
-          );
+      return fromAsyncThrowable(async () => {
+          // Validate inputs
+          const input = CreateNodeInputSchema.parse({ type, properties });
 
-          const newNodeResult = syncEngineRef.current.store.addNode({
-              // TODO: we are going to eventually forbid casting so need to fix this too aeither now or later
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              type: type as any, // Cast to TypeId
+          const typeId = asTypeId(input.type);
+
+          // Safer mapping using Type Checking or explicit conversion
+          // We only accept strings as text properties for now, similar to before but explicit
+
+          const entries = input.properties
+              ? Object.entries(input.properties)
+                  .filter(([_, value]) => typeof value === 'string')
+                  .map(([key, value]) => [key, { kind: 'text', value: value }] as const)
+              : [];
+
+          const propsMap = new Map<string, PropertyValue>(entries as Iterable<readonly [string, PropertyValue]>);
+
+          const newNodeResult = syncEngineRef.current!.store.addNode({
+              type: typeId,
               properties: propsMap
           });
 
-          if (!newNodeResult.ok) return newNodeResult;
+          // eslint-disable-next-line functional/no-throw-statements
+          if (!newNodeResult.ok) throw newNodeResult.error;
           const newNode = newNodeResult.value;
 
           const saveResult = await saveGraph();
-          if (!saveResult.ok) return saveResult;
+          // eslint-disable-next-line functional/no-throw-statements
+          if (!saveResult.ok) throw saveResult.error;
 
-          return ok(newNode.id);
-      } catch (e) {
-          return err(e instanceof Error ? e : new Error(String(e)));
-      }
+          return newNode.id;
+      });
   }, [saveGraph]);
 
   // Cleanup on unmount
