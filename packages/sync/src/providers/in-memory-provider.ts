@@ -2,6 +2,7 @@ import * as Y from 'yjs';
 import { Awareness } from 'y-protocols/awareness';
 import * as AwarenessProtocol from 'y-protocols/awareness';
 import { SyncProvider } from '../types';
+import { Result, ok, err } from '@canopy/types';
 
 export class InMemoryProvider implements SyncProvider {
   readonly doc: Y.Doc;
@@ -68,65 +69,73 @@ export class InMemoryProvider implements SyncProvider {
     return undefined;
   }
 
-  connect() {
-    if (!InMemoryProvider.networks.has(this.roomName)) {
-      InMemoryProvider.networks.set(this.roomName, new Set());
+  connect(): Result<void, Error> {
+    try {
+      if (!InMemoryProvider.networks.has(this.roomName)) {
+        InMemoryProvider.networks.set(this.roomName, new Set());
+      }
+      InMemoryProvider.networks.get(this.roomName)!.add(this);
+      this.connected = true;
+
+      // Sync with existing peers?
+      // In a real provider we would do a sync handshake.
+      // For this simple mock, we might rely on the fact that if we join, we might miss history unless we sync.
+      // But Yjs is resilient.
+      // Let's iterate peers and apply their state.
+      const network = InMemoryProvider.networks.get(this.roomName);
+      if (network) {
+        network.forEach(peer => {
+          if (peer !== this && peer.connected) {
+            // Sync step 1
+            const stateVector = Y.encodeStateVector(this.doc);
+            const diff = Y.encodeStateAsUpdate(peer.doc, stateVector);
+            Y.applyUpdate(this.doc, diff, this);
+
+            // Sync step 2 (peer needs my updates)
+            const peerStateVector = Y.encodeStateVector(peer.doc);
+            const myDiff = Y.encodeStateAsUpdate(this.doc, peerStateVector);
+            Y.applyUpdate(peer.doc, myDiff, this);
+
+            // Sync Awareness
+            // Send my state to peer
+            const myAwarenessUpdate = AwarenessProtocol.encodeAwarenessUpdate(this.awareness, [this.doc.clientID]);
+            AwarenessProtocol.applyAwarenessUpdate(peer.awareness, myAwarenessUpdate, 'remote');
+
+            // Get peer state
+            // Note: encodeAwarenessUpdate with [clientId] gets that client's state.
+            // But we don't know all client IDs easily without iterating.
+            // Awareness protocol usually syncs everything.
+            // For now let's just push ours. The peer should push theirs back if we had a full handshake.
+            // Let's cheat and push peer's state to us.
+            const peerAwarenessUpdate = AwarenessProtocol.encodeAwarenessUpdate(peer.awareness, Array.from(peer.awareness.getStates().keys()));
+            AwarenessProtocol.applyAwarenessUpdate(this.awareness, peerAwarenessUpdate, 'remote');
+          }
+          return undefined;
+        });
+      }
+
+      this.emit('status', { status: 'connected' });
+      return ok(undefined);
+    } catch (e) {
+      return err(e instanceof Error ? e : new Error(String(e)));
     }
-    InMemoryProvider.networks.get(this.roomName)!.add(this);
-    this.connected = true;
-
-    // Sync with existing peers?
-    // In a real provider we would do a sync handshake.
-    // For this simple mock, we might rely on the fact that if we join, we might miss history unless we sync.
-    // But Yjs is resilient.
-    // Let's iterate peers and apply their state.
-    const network = InMemoryProvider.networks.get(this.roomName);
-    if (network) {
-      network.forEach(peer => {
-        if (peer !== this && peer.connected) {
-          // Sync step 1
-          const stateVector = Y.encodeStateVector(this.doc);
-          const diff = Y.encodeStateAsUpdate(peer.doc, stateVector);
-          Y.applyUpdate(this.doc, diff, this);
-
-          // Sync step 2 (peer needs my updates)
-          const peerStateVector = Y.encodeStateVector(peer.doc);
-          const myDiff = Y.encodeStateAsUpdate(this.doc, peerStateVector);
-          Y.applyUpdate(peer.doc, myDiff, this);
-
-          // Sync Awareness
-          // Send my state to peer
-          const myAwarenessUpdate = AwarenessProtocol.encodeAwarenessUpdate(this.awareness, [this.doc.clientID]);
-          AwarenessProtocol.applyAwarenessUpdate(peer.awareness, myAwarenessUpdate, 'remote');
-
-          // Get peer state
-          // Note: encodeAwarenessUpdate with [clientId] gets that client's state.
-          // But we don't know all client IDs easily without iterating.
-          // Awareness protocol usually syncs everything.
-          // For now let's just push ours. The peer should push theirs back if we had a full handshake.
-          // Let's cheat and push peer's state to us.
-          const peerAwarenessUpdate = AwarenessProtocol.encodeAwarenessUpdate(peer.awareness, Array.from(peer.awareness.getStates().keys()));
-          AwarenessProtocol.applyAwarenessUpdate(this.awareness, peerAwarenessUpdate, 'remote');
-        }
-        return undefined;
-      });
-    }
-
-    this.emit('status', { status: 'connected' });
-    return undefined;
   }
 
-  disconnect() {
-    const network = InMemoryProvider.networks.get(this.roomName);
-    if (network) {
-        network.delete(this);
-        if (network.size === 0) {
-            InMemoryProvider.networks.delete(this.roomName);
-        }
+  disconnect(): Result<void, Error> {
+    try {
+      const network = InMemoryProvider.networks.get(this.roomName);
+      if (network) {
+          network.delete(this);
+          if (network.size === 0) {
+              InMemoryProvider.networks.delete(this.roomName);
+          }
+      }
+      this.connected = false;
+      this.emit('status', { status: 'disconnected' });
+      return ok(undefined);
+    } catch (e) {
+      return err(e instanceof Error ? e : new Error(String(e)));
     }
-    this.connected = false;
-    this.emit('status', { status: 'disconnected' });
-    return undefined;
   }
 
   on(event: 'status', handler: (event: Readonly<{ status: 'connected' | 'disconnected' | 'connecting' }>) => unknown) {
