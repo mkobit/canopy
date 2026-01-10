@@ -66,9 +66,12 @@ export const Layout = () => {
       if (!text) return undefined;
 
       try {
-          const nodeId = await createNode('Note', { name: text });
-          if (nodeId) {
-              navigate(`/graph/${graph.id}/node/${nodeId}`);
+          const result = await createNode('Note', { name: text });
+          if (result.ok) {
+              navigate(`/graph/${graph.id}/node/${result.value}`);
+          } else {
+              console.error("Failed to create node", result.error);
+              alert("Failed to create node: " + result.error.message);
           }
       } catch (e) {
           console.error("Failed to create node", e);
