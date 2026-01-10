@@ -1,5 +1,6 @@
 import initSqlJs, { Database, SqlJsStatic } from 'sql.js';
 import { StorageAdapter, GraphStorageMetadata } from './types';
+import { Result, ok, err } from '@canopy/types';
 
 export interface SQLitePersistence {
   readonly read: () => Promise<Uint8Array | null>;
@@ -17,23 +18,28 @@ export class SQLiteAdapter implements StorageAdapter {
     this.persistence = persistence || null;
   }
 
-  async init(): Promise<void> {
-    if (this.db) return;
+  async init(): Promise<Result<void, Error>> {
+    if (this.db) return ok(undefined);
 
-    this.SQL = await initSqlJs();
+    try {
+      this.SQL = await initSqlJs();
 
-    const data = this.persistence ? await this.persistence.read() : null;
+      const data = this.persistence ? await this.persistence.read() : null;
 
-    if (data) {
-      this.db = new this.SQL.Database(data);
-    } else {
-      this.db = new this.SQL.Database();
-      this.initSchema();
+      if (data) {
+        this.db = new this.SQL.Database(data);
+      } else {
+        this.db = new this.SQL.Database();
+        this.initSchema();
+      }
+      return ok(undefined);
+    } catch (e) {
+      return err(e instanceof Error ? e : new Error(String(e)));
     }
   }
 
   private initSchema() {
-    if (!this.db) throw new Error('Database not initialized');
+    if (!this.db) return; // Should not happen if called from init
     this.db.run(`
       CREATE TABLE IF NOT EXISTS graphs (
         id TEXT PRIMARY KEY,
@@ -45,11 +51,12 @@ export class SQLiteAdapter implements StorageAdapter {
     `);
   }
 
-  async close(): Promise<void> {
+  async close(): Promise<Result<void, Error>> {
     if (this.db) {
       this.db.close();
       this.db = null;
     }
+    return ok(undefined);
   }
 
   private async persist(): Promise<void> {
@@ -59,69 +66,87 @@ export class SQLiteAdapter implements StorageAdapter {
     }
   }
 
-  async save(graphId: string, snapshot: Uint8Array, metadata: GraphStorageMetadata): Promise<void> {
-    if (!this.db) throw new Error('Database not initialized');
+  async save(graphId: string, snapshot: Uint8Array, metadata: GraphStorageMetadata): Promise<Result<void, Error>> {
+    if (!this.db) return err(new Error('Database not initialized'));
 
-    // Check if exists to decide insert or update? Or just REPLACE INTO (sqlite) or INSERT OR REPLACE
-    const stmt = this.db.prepare(`
-      INSERT OR REPLACE INTO graphs (id, name, snapshot, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?)
-    `);
+    try {
+      // Check if exists to decide insert or update? Or just REPLACE INTO (sqlite) or INSERT OR REPLACE
+      const stmt = this.db.prepare(`
+        INSERT OR REPLACE INTO graphs (id, name, snapshot, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?)
+      `);
 
-    stmt.run([
-      graphId,
-      metadata.name,
-      snapshot,
-      metadata.createdAt,
-      metadata.updatedAt
-    ]);
-    stmt.free();
-
-    await this.persist();
-  }
-
-  async load(graphId: string): Promise<Uint8Array | null> {
-    if (!this.db) throw new Error('Database not initialized');
-
-    const stmt = this.db.prepare('SELECT snapshot FROM graphs WHERE id = ?');
-    stmt.bind([graphId]);
-
-    if (stmt.step()) {
-      const result = stmt.getAsObject();
+      stmt.run([
+        graphId,
+        metadata.name,
+        snapshot,
+        metadata.createdAt,
+        metadata.updatedAt
+      ]);
       stmt.free();
-      return result.snapshot as Uint8Array;
-    }
 
-    stmt.free();
-    return null;
+      await this.persist();
+      return ok(undefined);
+    } catch (e) {
+      return err(e instanceof Error ? e : new Error(String(e)));
+    }
   }
 
-  async delete(graphId: string): Promise<void> {
-    if (!this.db) throw new Error('Database not initialized');
+  async load(graphId: string): Promise<Result<Uint8Array | null, Error>> {
+    if (!this.db) return err(new Error('Database not initialized'));
 
-    this.db.run('DELETE FROM graphs WHERE id = ?', [graphId]);
-    await this.persist();
+    try {
+      const stmt = this.db.prepare('SELECT snapshot FROM graphs WHERE id = ?');
+      stmt.bind([graphId]);
+
+      if (stmt.step()) {
+        const result = stmt.getAsObject();
+        stmt.free();
+        return ok(result.snapshot as Uint8Array);
+      }
+
+      stmt.free();
+      return ok(null);
+    } catch (e) {
+      return err(e instanceof Error ? e : new Error(String(e)));
+    }
   }
 
-  async list(): Promise<readonly GraphStorageMetadata[]> {
-    if (!this.db) throw new Error('Database not initialized');
+  async delete(graphId: string): Promise<Result<void, Error>> {
+    if (!this.db) return err(new Error('Database not initialized'));
 
-    // eslint-disable-next-line functional/prefer-readonly-type
-    const result: GraphStorageMetadata[] = [];
-    const stmt = this.db.prepare('SELECT id, name, created_at, updated_at FROM graphs');
-
-    // eslint-disable-next-line functional/no-loop-statements
-    while (stmt.step()) {
-      const row = stmt.getAsObject();
-      result.push({
-        id: row.id as string,
-        name: row.name as string,
-        createdAt: row.created_at as string,
-        updatedAt: row.updated_at as string,
-      });
+    try {
+      this.db.run('DELETE FROM graphs WHERE id = ?', [graphId]);
+      await this.persist();
+      return ok(undefined);
+    } catch (e) {
+      return err(e instanceof Error ? e : new Error(String(e)));
     }
+  }
 
-    stmt.free();
-    return result;
+  async list(): Promise<Result<readonly GraphStorageMetadata[], Error>> {
+    if (!this.db) return err(new Error('Database not initialized'));
+
+    try {
+      // eslint-disable-next-line functional/prefer-readonly-type
+      const result: GraphStorageMetadata[] = [];
+      const stmt = this.db.prepare('SELECT id, name, created_at, updated_at FROM graphs');
+
+      // eslint-disable-next-line functional/no-loop-statements
+      while (stmt.step()) {
+        const row = stmt.getAsObject();
+        result.push({
+          id: row.id as string,
+          name: row.name as string,
+          createdAt: row.created_at as string,
+          updatedAt: row.updated_at as string,
+        });
+      }
+
+      stmt.free();
+      return ok(result);
+    } catch (e) {
+      return err(e instanceof Error ? e : new Error(String(e)));
+    }
   }
 }

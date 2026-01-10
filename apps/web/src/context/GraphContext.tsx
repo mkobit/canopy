@@ -53,7 +53,10 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
       }
 
       // 1. Load snapshot from storage
-      const snapshot = await storage.load(graphId);
+      const snapshotResult = await storage.load(graphId);
+      // eslint-disable-next-line functional/no-throw-statements
+      if (!snapshotResult.ok) throw snapshotResult.error;
+      const snapshot = snapshotResult.value;
 
       // 2. Initialize SyncEngine
       // If snapshot is undefined (new graph), we pass undefined, SyncEngine creates new Doc.
@@ -121,12 +124,14 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
     if (syncEngineRef.current && storage && currentGraphId && graph) {
         const snapshot = syncEngineRef.current.getSnapshot();
         const createdAt = graph.metadata.created || new Date().toISOString();
-        await storage.save(currentGraphId, snapshot, {
+        const result = await storage.save(currentGraphId, snapshot, {
              id: currentGraphId,
              name: graph.name,
              createdAt,
              updatedAt: new Date().toISOString()
         });
+        // eslint-disable-next-line functional/no-throw-statements
+        if (!result.ok) throw result.error;
     }
   }, [storage, currentGraphId, graph]);
 
@@ -141,11 +146,15 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
               .map(([key, value]) => [key, { kind: 'text' as const, value: value as string }])
       );
 
-      const newNode = syncEngineRef.current.store.addNode({
+      const newNodeResult = syncEngineRef.current.store.addNode({
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           type: type as any, // Cast to TypeId
           properties: propsMap
       });
+
+      // eslint-disable-next-line functional/no-throw-statements
+      if (!newNodeResult.ok) throw newNodeResult.error;
+      const newNode = newNodeResult.value;
 
       await saveGraph();
       return newNode.id;

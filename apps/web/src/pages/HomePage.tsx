@@ -21,8 +21,10 @@ export const HomePage = () => {
     if (!storage) return;
     setLoading(true);
     try {
-      const list = await storage.list();
-      setGraphs(list);
+      const listResult = await storage.list();
+      // eslint-disable-next-line functional/no-throw-statements
+      if (!listResult.ok) throw listResult.error;
+      setGraphs(listResult.value);
     } catch (e) {
       console.error("Failed to list graphs", e);
     } finally {
@@ -39,12 +41,14 @@ export const HomePage = () => {
     const now = new Date().toISOString();
 
     try {
-        await storage.save(id, new Uint8Array(), {
+        const result = await storage.save(id, new Uint8Array(), {
             id,
             name,
             createdAt: now,
             updatedAt: now
         });
+        // eslint-disable-next-line functional/no-throw-statements
+        if (!result.ok) throw result.error;
         await loadGraphs();
     } catch (e) {
         console.error("Failed to create graph", e);
@@ -57,7 +61,9 @@ export const HomePage = () => {
       if (!confirm("Are you sure you want to delete this graph?")) return;
 
       try {
-          await storage.delete(id);
+          const result = await storage.delete(id);
+          // eslint-disable-next-line functional/no-throw-statements
+          if (!result.ok) throw result.error;
           await loadGraphs();
       } catch (e) {
           console.error("Failed to delete graph", e);

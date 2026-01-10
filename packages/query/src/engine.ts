@@ -1,20 +1,29 @@
-import { Graph, Node, Edge, QueryResult, PropertyValue } from '@canopy/types';
+import { Graph, Node, Edge, QueryResult, PropertyValue, Result, ok, err } from '@canopy/types';
 import { Query, Filter, Sort, QueryStep } from './model';
 import { reduce, filter, unique, flatMap } from 'remeda';
 
 type GraphItem = Node | Edge;
 
+// Helper to accumulate results with error handling in reduce
+interface Accumulator {
+    readonly items: readonly GraphItem[];
+    readonly isNodeContext: boolean;
+    readonly error?: Error;
+}
+
 export class QueryEngine {
   constructor(private readonly graph: Graph) {}
 
-  execute(query: Query): QueryResult {
+  execute(query: Query): Result<QueryResult, Error> {
     // We need to keep track of isNodeContext which changes based on steps.
     // reduce is suitable here.
-    const initial: Readonly<{ items: readonly GraphItem[], isNodeContext: boolean }> = { items: [], isNodeContext: false };
+    const initial: Accumulator = { items: [], isNodeContext: false };
 
     const result = reduce(
       query.steps,
-      (acc, step: QueryStep) => {
+      (acc, step: QueryStep): Accumulator => {
+        if (acc.error) return acc; // Propagate error
+
         switch (step.kind) {
           case 'node-scan':
             return {
@@ -33,7 +42,7 @@ export class QueryEngine {
             };
           case 'traversal':
             if (!acc.isNodeContext) {
-              throw new Error('Traversal can only be performed on nodes.');
+              return { ...acc, error: new Error('Traversal can only be performed on nodes.') };
             }
             return {
               items: this.traverse(acc.items as readonly Node[], step.edgeType, step.direction),
@@ -56,10 +65,14 @@ export class QueryEngine {
       initial
     );
 
+    if (result.error) {
+        return err(result.error);
+    }
+
     if (result.isNodeContext) {
-      return { nodes: result.items as readonly Node[], edges: [] };
+      return ok({ nodes: result.items as readonly Node[], edges: [] });
     } else {
-      return { nodes: [], edges: result.items as readonly Edge[] };
+      return ok({ nodes: [], edges: result.items as readonly Edge[] });
     }
   }
 
@@ -202,7 +215,7 @@ export class QueryEngine {
   }
 }
 
-export function executeQuery(graph: Graph, query: Query): QueryResult {
+export function executeQuery(graph: Graph, query: Query): Result<QueryResult, Error> {
   const engine = new QueryEngine(graph);
   return engine.execute(query);
 }

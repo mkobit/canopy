@@ -1,5 +1,6 @@
 import { openDB, DBSchema, IDBPDatabase } from 'idb';
 import { StorageAdapter, GraphStorageMetadata } from './types';
+import { Result, ok, err } from '@canopy/types';
 
 interface CanopyDB extends DBSchema {
   readonly graphs: Readonly<{
@@ -21,47 +22,71 @@ export class IndexedDBAdapter implements StorageAdapter {
     this.dbName = dbName;
   }
 
-  async init(): Promise<void> {
-    if (this.db) return;
-    this.db = await openDB<CanopyDB>(this.dbName, 1, {
-      upgrade(db) {
-        if (!db.objectStoreNames.contains('graphs')) {
-          db.createObjectStore('graphs', { keyPath: 'id' });
-        }
-      },
-    });
+  async init(): Promise<Result<void, Error>> {
+    if (this.db) return ok(undefined);
+    try {
+      this.db = await openDB<CanopyDB>(this.dbName, 1, {
+        upgrade(db) {
+          if (!db.objectStoreNames.contains('graphs')) {
+            db.createObjectStore('graphs', { keyPath: 'id' });
+          }
+        },
+      });
+      return ok(undefined);
+    } catch (e) {
+      return err(e instanceof Error ? e : new Error(String(e)));
+    }
   }
 
-  async close(): Promise<void> {
+  async close(): Promise<Result<void, Error>> {
     if (this.db) {
       this.db.close();
       this.db = null;
     }
+    return ok(undefined);
   }
 
-  async save(graphId: string, snapshot: Uint8Array, metadata: GraphStorageMetadata): Promise<void> {
-    if (!this.db) throw new Error('Database not initialized');
-    await this.db.put('graphs', {
-      id: graphId,
-      snapshot,
-      metadata,
-    });
+  async save(graphId: string, snapshot: Uint8Array, metadata: GraphStorageMetadata): Promise<Result<void, Error>> {
+    if (!this.db) return err(new Error('Database not initialized'));
+    try {
+      await this.db.put('graphs', {
+        id: graphId,
+        snapshot,
+        metadata,
+      });
+      return ok(undefined);
+    } catch (e) {
+      return err(e instanceof Error ? e : new Error(String(e)));
+    }
   }
 
-  async load(graphId: string): Promise<Uint8Array | null> {
-    if (!this.db) throw new Error('Database not initialized');
-    const result = await this.db.get('graphs', graphId);
-    return result ? result.snapshot : null;
+  async load(graphId: string): Promise<Result<Uint8Array | null, Error>> {
+    if (!this.db) return err(new Error('Database not initialized'));
+    try {
+      const result = await this.db.get('graphs', graphId);
+      return ok(result ? result.snapshot : null);
+    } catch (e) {
+      return err(e instanceof Error ? e : new Error(String(e)));
+    }
   }
 
-  async delete(graphId: string): Promise<void> {
-    if (!this.db) throw new Error('Database not initialized');
-    await this.db.delete('graphs', graphId);
+  async delete(graphId: string): Promise<Result<void, Error>> {
+    if (!this.db) return err(new Error('Database not initialized'));
+    try {
+      await this.db.delete('graphs', graphId);
+      return ok(undefined);
+    } catch (e) {
+      return err(e instanceof Error ? e : new Error(String(e)));
+    }
   }
 
-  async list(): Promise<readonly GraphStorageMetadata[]> {
-    if (!this.db) throw new Error('Database not initialized');
-    const all = await this.db.getAll('graphs');
-    return all.map((item) => item.metadata);
+  async list(): Promise<Result<readonly GraphStorageMetadata[], Error>> {
+    if (!this.db) return err(new Error('Database not initialized'));
+    try {
+      const all = await this.db.getAll('graphs');
+      return ok(all.map((item) => item.metadata));
+    } catch (e) {
+      return err(e instanceof Error ? e : new Error(String(e)));
+    }
   }
 }

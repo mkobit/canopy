@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { SyncEngine } from '../sync-engine';
 import { InMemoryProvider } from './in-memory-provider';
-import { asTypeId } from '@canopy/types';
+import { asTypeId, unwrap } from '@canopy/types';
 
 describe('InMemoryProvider', () => {
   it('should sync changes between two engines using InMemoryProvider', () => {
@@ -15,7 +15,7 @@ describe('InMemoryProvider', () => {
     engine2.setProvider(provider2);
 
     // Make a change in engine1
-    const n1 = engine1.store.addNode({ type: asTypeId('n1'), properties: new Map([['synced', { kind: 'boolean', value: true }]]) });
+    const n1 = unwrap(engine1.store.addNode({ type: asTypeId('n1'), properties: new Map([['synced', { kind: 'boolean', value: true }]]) }));
 
     // Expect change in engine2
     const n1_on_2 = engine2.store.getNode(n1.id);

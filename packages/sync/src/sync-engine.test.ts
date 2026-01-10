@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { SyncEngine } from './sync-engine';
-import { createNodeId, asTypeId, PropertyValue } from '@canopy/types';
+import { createNodeId, asTypeId, PropertyValue, unwrap } from '@canopy/types';
 import * as Y from 'yjs';
 
 // Helpers
@@ -25,11 +25,11 @@ describe('SyncEngine', () => {
     const nodeId = createNodeId();
     const typeId = asTypeId('test-node');
 
-    engine.store.addNode({
+    unwrap(engine.store.addNode({
       id: nodeId,
       type: typeId,
       properties: new Map([['name', { kind: 'text', value: 'Test Node' }]])
-    });
+    }));
 
     const storedNode = engine.store.getNode(nodeId);
     expect(storedNode).toBeDefined();
@@ -38,15 +38,15 @@ describe('SyncEngine', () => {
 
   it('should allow adding edges via store', () => {
     const engine = new SyncEngine();
-    const n1 = engine.store.addNode({ type: asTypeId('n1'), properties: new Map() });
-    const n2 = engine.store.addNode({ type: asTypeId('n2'), properties: new Map() });
+    const n1 = unwrap(engine.store.addNode({ type: asTypeId('n1'), properties: new Map() }));
+    const n2 = unwrap(engine.store.addNode({ type: asTypeId('n2'), properties: new Map() }));
 
-    const edge = engine.store.addEdge({
+    const edge = unwrap(engine.store.addEdge({
       source: n1.id,
       target: n2.id,
       type: asTypeId('e1'),
       properties: new Map()
-    });
+    }));
 
     const storedEdge = engine.store.getEdge(edge.id);
     expect(storedEdge).toBeDefined();
@@ -56,7 +56,7 @@ describe('SyncEngine', () => {
 
   it('should support snapshot export and import', () => {
     const engine1 = new SyncEngine();
-    const n1 = engine1.store.addNode({ type: asTypeId('n1'), properties: new Map([['key', { kind: 'text', value: 'val' }]]) });
+    const n1 = unwrap(engine1.store.addNode({ type: asTypeId('n1'), properties: new Map([['key', { kind: 'text', value: 'val' }]]) }));
 
     const snapshot = engine1.getSnapshot();
 
@@ -71,7 +71,7 @@ describe('SyncEngine', () => {
 
   it('should support initial snapshot in constructor', () => {
     const engine1 = new SyncEngine();
-    const n1 = engine1.store.addNode({ type: asTypeId('n1'), properties: new Map([['key', { kind: 'text', value: 'val' }]]) });
+    const n1 = unwrap(engine1.store.addNode({ type: asTypeId('n1'), properties: new Map([['key', { kind: 'text', value: 'val' }]]) }));
     const snapshot = engine1.getSnapshot();
 
     const engine2 = new SyncEngine({ initialSnapshot: snapshot });
@@ -105,7 +105,7 @@ describe('SyncEngine', () => {
           Y.applyUpdate(engine1.doc, update);
       });
 
-      const n1 = engine1.store.addNode({ type: asTypeId('n1'), properties: new Map([['synced', { kind: 'boolean', value: true }]]) });
+      const n1 = unwrap(engine1.store.addNode({ type: asTypeId('n1'), properties: new Map([['synced', { kind: 'boolean', value: true }]]) }));
 
       const n1_on_2 = engine2.store.getNode(n1.id);
       expect(n1_on_2).toBeDefined();

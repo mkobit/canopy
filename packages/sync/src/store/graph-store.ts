@@ -11,7 +11,10 @@ import {
   createInstant,
   asNodeId,
   asEdgeId,
-  asTypeId
+  asTypeId,
+  Result,
+  ok,
+  err
 } from '@canopy/types';
 import {
   NodeSchema,
@@ -109,7 +112,7 @@ export class GraphStore {
     data: Omit<Node, 'id' | 'metadata'> & Readonly<{
       id?: string;
     }>
-  ): Node {
+  ): Result<Node, Error> {
     const now = createInstant();
 
     // Validate or generate ID safely
@@ -126,10 +129,13 @@ export class GraphStore {
     };
 
     // Validate schema on the domain object
-    NodeSchema.parse(node);
+    const validation = NodeSchema.safeParse(node);
+    if (!validation.success) {
+        return err(new Error(`Node validation failed: ${validation.error}`));
+    }
 
     this.nodes.set(node.id, nodeToStorable(node));
-    return node;
+    return ok(node);
   }
 
   getNode(id: string): Node | undefined {
@@ -141,10 +147,10 @@ export class GraphStore {
       return map(Array.from(this.nodes.values()), storableToNode)[Symbol.iterator]();
   }
 
-  updateNode(id: string, partial: Partial<Omit<Node, 'id' | 'metadata'>>): Node {
+  updateNode(id: string, partial: Partial<Omit<Node, 'id' | 'metadata'>>): Result<Node, Error> {
     const existing = this.getNode(id);
     if (!existing) {
-      throw new Error(`Node ${id} not found`);
+      return err(new Error(`Node ${id} not found`));
     }
 
     const now = createInstant();
@@ -158,29 +164,33 @@ export class GraphStore {
     };
 
     // Validate schema
-    NodeSchema.parse(updated);
+    const validation = NodeSchema.safeParse(updated);
+    if (!validation.success) {
+        return err(new Error(`Node validation failed: ${validation.error}`));
+    }
 
     this.nodes.set(id, nodeToStorable(updated));
-    return updated;
+    return ok(updated);
   }
 
-  deleteNode(id: string): void {
+  deleteNode(id: string): Result<void, Error> {
     if (!this.nodes.has(id)) {
-      throw new Error(`Node ${id} not found`);
+      return err(new Error(`Node ${id} not found`));
     }
     this.nodes.delete(id);
+    return ok(undefined);
   }
 
   addEdge(
     data: Omit<Edge, 'id' | 'metadata'> & Readonly<{
       id?: string;
     }>
-  ): Edge {
+  ): Result<Edge, Error> {
     if (!this.nodes.has(data.source)) {
-      throw new Error(`Source node ${data.source} not found`);
+      return err(new Error(`Source node ${data.source} not found`));
     }
     if (!this.nodes.has(data.target)) {
-      throw new Error(`Target node ${data.target} not found`);
+      return err(new Error(`Target node ${data.target} not found`));
     }
 
     const now = createInstant();
@@ -199,10 +209,13 @@ export class GraphStore {
     };
 
     // Validate schema
-    EdgeSchema.parse(edge);
+    const validation = EdgeSchema.safeParse(edge);
+    if (!validation.success) {
+        return err(new Error(`Edge validation failed: ${validation.error}`));
+    }
 
     this.edges.set(edge.id, edgeToStorable(edge));
-    return edge;
+    return ok(edge);
   }
 
   getEdge(id: string): Edge | undefined {
@@ -214,10 +227,10 @@ export class GraphStore {
       return map(Array.from(this.edges.values()), storableToEdge)[Symbol.iterator]();
   }
 
-  updateEdge(id: string, partial: Partial<Omit<Edge, 'id' | 'metadata'>>): Edge {
+  updateEdge(id: string, partial: Partial<Omit<Edge, 'id' | 'metadata'>>): Result<Edge, Error> {
       const existing = this.getEdge(id);
       if (!existing) {
-          throw new Error(`Edge ${id} not found`);
+          return err(new Error(`Edge ${id} not found`));
       }
 
       const now = createInstant();
@@ -232,23 +245,27 @@ export class GraphStore {
 
        // Check if source and target exist if they are being updated
         if (partial.source && !this.nodes.has(partial.source)) {
-            throw new Error(`Source node ${partial.source} not found`);
+            return err(new Error(`Source node ${partial.source} not found`));
         }
         if (partial.target && !this.nodes.has(partial.target)) {
-            throw new Error(`Target node ${partial.target} not found`);
+            return err(new Error(`Target node ${partial.target} not found`));
         }
 
       // Validate schema
-      EdgeSchema.parse(updated);
+      const validation = EdgeSchema.safeParse(updated);
+      if (!validation.success) {
+          return err(new Error(`Edge validation failed: ${validation.error}`));
+      }
 
       this.edges.set(id, edgeToStorable(updated));
-      return updated;
+      return ok(updated);
   }
 
-  deleteEdge(id: string): void {
+  deleteEdge(id: string): Result<void, Error> {
       if (!this.edges.has(id)) {
-          throw new Error(`Edge ${id} not found`);
+          return err(new Error(`Edge ${id} not found`));
       }
       this.edges.delete(id);
+      return ok(undefined);
   }
 }

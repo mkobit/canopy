@@ -3,7 +3,7 @@ import { createGraph } from '../src/graph'
 import { addNode } from '../src/ops'
 import { validateNode, validateEdge } from '../src/validation'
 import { SYSTEM_IDS } from '../src/system'
-import { asNodeId, asTypeId, createNodeId, createEdgeId, PropertyDefinition, PropertyValue, createInstant } from '@canopy/types'
+import { asNodeId, asTypeId, createNodeId, createEdgeId, PropertyDefinition, PropertyValue, createInstant, unwrap } from '@canopy/types'
 
 // Test helpers to replace missing factories
 function createNode(props: Record<string, unknown>) {
@@ -54,7 +54,7 @@ describe('validation', () => {
             }
         })
 
-        g = addNode(g, personTypeNode)
+        g = unwrap(addNode(g, personTypeNode))
 
         // Define a "Task" node type
         const taskTypeNode = createNode({
@@ -64,7 +64,7 @@ describe('validation', () => {
                 name: { kind: 'text', value: 'Task' }
             }
         })
-        g = addNode(g, taskTypeNode)
+        g = unwrap(addNode(g, taskTypeNode))
 
         // Define "AssignedTo" edge type
         const assignedToProps: readonly PropertyDefinition[] = [
@@ -80,7 +80,7 @@ describe('validation', () => {
                 targetTypes: { kind: 'list', items: [{ kind: 'text', value: 'type-person' }] }
             }
         })
-        g = addNode(g, assignedToTypeNode)
+        g = unwrap(addNode(g, assignedToTypeNode))
 
         return g
     }
@@ -146,8 +146,8 @@ describe('validation', () => {
         let g = createGraphWithTypes()
         const task = createNode({ id: asNodeId('task1'), type: asTypeId('type-task') })
         const person = createNode({ id: asNodeId('person1'), type: asTypeId('type-person') })
-        g = addNode(g, task)
-        g = addNode(g, person)
+        g = unwrap(addNode(g, task))
+        g = unwrap(addNode(g, person))
 
         const edge = createEdge({
             type: asTypeId('edge-assigned-to'),
@@ -166,8 +166,8 @@ describe('validation', () => {
         let g = createGraphWithTypes()
         const person1 = createNode({ id: asNodeId('person1'), type: asTypeId('type-person') })
         const person2 = createNode({ id: asNodeId('person2'), type: asTypeId('type-person') })
-        g = addNode(g, person1)
-        g = addNode(g, person2)
+        g = unwrap(addNode(g, person1))
+        g = unwrap(addNode(g, person2))
 
         // AssignedTo expects Source=Task, Target=Person. Here Source=Person.
         const edge = createEdge({
@@ -188,8 +188,8 @@ describe('validation', () => {
         let g = createGraphWithTypes()
         const task = createNode({ id: asNodeId('task1'), type: asTypeId('type-task') })
         const person = createNode({ id: asNodeId('person1'), type: asTypeId('type-person') })
-        g = addNode(g, task)
-        g = addNode(g, person)
+        g = unwrap(addNode(g, task))
+        g = unwrap(addNode(g, person))
 
         const edge = createEdge({
             type: asTypeId('edge-assigned-to'),

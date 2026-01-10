@@ -18,7 +18,8 @@ import {
     createEdgeId,
     asTypeId,
     createGraphId,
-    createInstant
+    createInstant,
+    unwrap
 } from '@canopy/types'
 import type { Node, Edge } from '@canopy/types'
 
@@ -52,23 +53,23 @@ describe('Core Graph Engine', () => {
     }
 
     it('should add nodes immutably', () => {
-        const g1 = addNode(emptyGraph, node1)
+        const g1 = unwrap(addNode(emptyGraph, node1))
         expect(g1.nodes.size).toBe(16) // 15 bootstrap + 1 new
         expect(g1.nodes.get(nodeId1)).toBe(node1)
         expect(emptyGraph.nodes.size).toBe(15) // Original unmodified (bootstrap nodes)
 
-        const g2 = addNode(g1, node2)
+        const g2 = unwrap(addNode(g1, node2))
         expect(g2.nodes.size).toBe(17) // 15 bootstrap + 2 new
         expect(g2.nodes.get(nodeId2)).toBe(node2)
         expect(g1.nodes.size).toBe(16) // Previous version unmodified
     })
 
     it('should update nodes immutably', () => {
-        const g1 = addNode(emptyGraph, node1)
-        const g2 = updateNode(g1, nodeId1, (n) => ({
+        const g1 = unwrap(addNode(emptyGraph, node1))
+        const g2 = unwrap(updateNode(g1, nodeId1, (n) => ({
             ...n,
             properties: new Map([['name', { kind: 'text', value: 'Alice' }]])
-        }))
+        })))
 
         expect(g2.nodes.get(nodeId1)?.properties.get('name')).toEqual({ kind: 'text', value: 'Alice' })
         expect(g1.nodes.get(nodeId1)?.properties.size).toBe(0) // Original unmodified
@@ -78,8 +79,8 @@ describe('Core Graph Engine', () => {
     })
 
     it('should remove nodes and connected edges', () => {
-        let g = addNode(emptyGraph, node1)
-        g = addNode(g, node2)
+        let g = unwrap(addNode(emptyGraph, node1))
+        g = unwrap(addNode(g, node2))
 
         const edgeId = createEdgeId()
         const edge: Edge = {
@@ -91,7 +92,7 @@ describe('Core Graph Engine', () => {
             metadata: { created: createInstant(), modified: createInstant() }
         }
 
-        g = addEdge(g, edge)
+        g = unwrap(addEdge(g, edge))
         expect(g.edges.size).toBe(1)
 
         const gRemoved = removeNode(g, nodeId1)
@@ -104,8 +105,8 @@ describe('Core Graph Engine', () => {
     })
 
     it('should query nodes and edges', () => {
-        let g = addNode(emptyGraph, node1)
-        g = addNode(g, node2)
+        let g = unwrap(addNode(emptyGraph, node1))
+        g = unwrap(addNode(g, node2))
 
         const edgeId = createEdgeId()
         const edge: Edge = {
@@ -116,7 +117,7 @@ describe('Core Graph Engine', () => {
             properties: new Map(),
             metadata: { created: createInstant(), modified: createInstant() }
         }
-        g = addEdge(g, edge)
+        g = unwrap(addEdge(g, edge))
 
         expect(getNode(g, nodeId1)).toBe(node1)
         expect(getEdge(g, edgeId)).toBe(edge)
@@ -134,8 +135,8 @@ describe('Core Graph Engine', () => {
     })
 
     it('should update edges immutably', () => {
-        let g = addNode(emptyGraph, node1)
-        g = addNode(g, node2)
+        let g = unwrap(addNode(emptyGraph, node1))
+        g = unwrap(addNode(g, node2))
 
         const edgeId = createEdgeId()
         const edge: Edge = {
@@ -146,20 +147,20 @@ describe('Core Graph Engine', () => {
             properties: new Map(),
             metadata: { created: createInstant(), modified: createInstant() }
         }
-        g = addEdge(g, edge)
+        g = unwrap(addEdge(g, edge))
 
-        const gUpdated = updateEdge(g, edgeId, (e) => ({
+        const gUpdated = unwrap(updateEdge(g, edgeId, (e) => ({
             ...e,
             properties: new Map([['since', { kind: 'number', value: 2023 }]])
-        }))
+        })))
 
         expect(gUpdated.edges.get(edgeId)?.properties.get('since')).toEqual({ kind: 'number', value: 2023 })
         expect(g.edges.get(edgeId)?.properties.size).toBe(0) // Original unmodified
     })
 
     it('should remove edges', () => {
-        let g = addNode(emptyGraph, node1)
-        g = addNode(g, node2)
+        let g = unwrap(addNode(emptyGraph, node1))
+        g = unwrap(addNode(g, node2))
 
         const edgeId = createEdgeId()
         const edge: Edge = {
@@ -170,7 +171,7 @@ describe('Core Graph Engine', () => {
             properties: new Map(),
             metadata: { created: createInstant(), modified: createInstant() }
         }
-        g = addEdge(g, edge)
+        g = unwrap(addEdge(g, edge))
 
         const gRemoved = removeEdge(g, edgeId)
         expect(gRemoved.edges.size).toBe(0)

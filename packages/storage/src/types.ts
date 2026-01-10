@@ -1,4 +1,6 @@
 
+import { Result } from '@canopy/types';
+
 export interface GraphStorageMetadata {
   readonly id: string;
   readonly name: string;
@@ -10,12 +12,12 @@ export interface StorageAdapter {
   /**
    * Initialize the backend (e.g., open DB connection).
    */
-  readonly init: () => Promise<void>;
+  readonly init: () => Promise<Result<void, Error>>;
 
   /**
    * Close the backend connection.
    */
-  readonly close: () => Promise<void>;
+  readonly close: () => Promise<Result<void, Error>>;
 
   /**
    * Save a graph snapshot.
@@ -23,23 +25,23 @@ export interface StorageAdapter {
    * @param snapshot The binary snapshot (Yjs update).
    * @param metadata Metadata about the graph.
    */
-  readonly save: (graphId: string, snapshot: Uint8Array, metadata: GraphStorageMetadata) => Promise<void>;
+  readonly save: (graphId: string, snapshot: Uint8Array, metadata: GraphStorageMetadata) => Promise<Result<void, Error>>;
 
   /**
    * Load a graph snapshot.
    * @param graphId The graph ID.
    * @returns The snapshot if found, null otherwise.
    */
-  readonly load: (graphId: string) => Promise<Uint8Array | null>;
+  readonly load: (graphId: string) => Promise<Result<Uint8Array | null, Error>>;
 
   /**
    * Delete a graph.
    * @param graphId The graph ID.
    */
-  readonly delete: (graphId: string) => Promise<void>;
+  readonly delete: (graphId: string) => Promise<Result<void, Error>>;
 
   /**
    * List all stored graphs.
    */
-  readonly list: () => Promise<readonly GraphStorageMetadata[]>;
+  readonly list: () => Promise<Result<readonly GraphStorageMetadata[], Error>>;
 }
