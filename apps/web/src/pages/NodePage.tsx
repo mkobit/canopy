@@ -23,6 +23,7 @@ export const NodePage = () => {
             setEditedProps(new Map(node.properties));
         }
     }
+    return undefined;
   }, [graph, nodeId]);
 
   if (!currentNode) {
@@ -37,7 +38,7 @@ export const NodePage = () => {
   }
 
   const handleSave = async () => {
-      if (!syncEngine || !currentNode) return;
+      if (!syncEngine || !currentNode) return undefined;
 
       try {
           syncEngine.store.updateNode(currentNode.id, {
@@ -50,6 +51,7 @@ export const NodePage = () => {
           console.error("Failed to save node", e);
           alert("Failed to save changes");
       }
+      return undefined;
   };
 
   const handlePropertyChange = (key: string, value: PropertyValue) => {
@@ -59,11 +61,12 @@ export const NodePage = () => {
           next.set(key, value);
           return next;
       });
+      return undefined;
   };
 
   const handleDelete = async () => {
-      if (!syncEngine || !currentNode) return;
-      if (!confirm("Delete this node?")) return;
+      if (!syncEngine || !currentNode) return undefined;
+      if (!confirm("Delete this node?")) return undefined;
 
       try {
           syncEngine.store.deleteNode(currentNode.id);
@@ -72,6 +75,7 @@ export const NodePage = () => {
       } catch (e) {
           console.error("Delete failed", e);
       }
+      return undefined;
   };
 
   // Find connected edges
@@ -94,7 +98,7 @@ export const NodePage = () => {
            <div className="flex items-center gap-2">
                {isEditing ? (
                    <>
-                       <button onClick={() => setIsEditing(false)} className="px-3 py-1.5 text-gray-600 hover:bg-gray-100 rounded-md">Cancel</button>
+                       <button onClick={() => { setIsEditing(false); return undefined; }} className="px-3 py-1.5 text-gray-600 hover:bg-gray-100 rounded-md">Cancel</button>
                        <button onClick={handleSave} className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700">
                            <Save size={16} /> Save
                        </button>
@@ -104,7 +108,7 @@ export const NodePage = () => {
                        <button onClick={handleDelete} className="p-2 hover:bg-red-50 text-gray-400 hover:text-red-600 rounded-md">
                            <Trash size={18} />
                        </button>
-                       <button onClick={() => setIsEditing(true)} className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200">
+                       <button onClick={() => { setIsEditing(true); return undefined; }} className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200">
                            Edit
                        </button>
                    </>
@@ -130,7 +134,7 @@ export const NodePage = () => {
                                     <textarea
                                         className="w-full p-2 border rounded-md"
                                         value={val.value}
-                                        onChange={(e) => handlePropertyChange(key, { ...val, value: e.target.value })}
+                                        onChange={(e) => { handlePropertyChange(key, { ...val, value: e.target.value }); return undefined; }}
                                     />
                                 )}
                                 {val.kind !== 'text' && (
@@ -159,7 +163,7 @@ export const NodePage = () => {
                                    return (
                                        <div
                                          key={edge.id}
-                                         onClick={() => navigate(`../node/${otherId}`)}
+                                         onClick={() => { navigate(`../node/${otherId}`); return undefined; }}
                                          className="p-3 border rounded-md hover:bg-gray-50 cursor-pointer flex justify-between items-center"
                                        >
                                            <div className="flex flex-col">

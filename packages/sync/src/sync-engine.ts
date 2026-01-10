@@ -50,6 +50,7 @@ export class SyncEngine {
 
     // So `setProvider` is just storing the reference and calling connect.
     provider.connect();
+    return undefined;
   }
 
   disconnectProvider() {
@@ -57,6 +58,7 @@ export class SyncEngine {
           this.provider.disconnect();
           this.provider = null;
       }
+      return undefined;
   }
 
   getSnapshot(): Uint8Array {
@@ -65,14 +67,17 @@ export class SyncEngine {
 
   applySnapshot(snapshot: Uint8Array) {
     Y.applyUpdate(this.doc, snapshot);
+    return undefined;
   }
 
-  onDocUpdate(handler: (update: Uint8Array, origin: unknown) => void) {
+  onDocUpdate(handler: (update: Uint8Array, origin: unknown) => unknown) {
     this.doc.on('update', handler);
+    return undefined;
   }
 
-  offDocUpdate(handler: (update: Uint8Array, origin: unknown) => void) {
+  offDocUpdate(handler: (update: Uint8Array, origin: unknown) => unknown) {
       this.doc.off('update', handler);
+      return undefined;
   }
 
   /**
@@ -80,6 +85,7 @@ export class SyncEngine {
    */
   setLocalState(state: Record<string, unknown>) {
     this.awareness.setLocalState(state);
+    return undefined;
   }
 
   /**
@@ -89,11 +95,13 @@ export class SyncEngine {
     return this.awareness.getStates();
   }
 
-  onAwarenessUpdate(handler: (changes: Readonly<{ added: readonly number[], updated: readonly number[], removed: readonly number[] }>, origin: unknown) => void) {
+  onAwarenessUpdate(handler: (changes: Readonly<{ added: readonly number[], updated: readonly number[], removed: readonly number[] }>, origin: unknown) => unknown) {
       this.awareness.on('change', handler);
+      return undefined;
   }
 
-  offAwarenessUpdate(handler: (changes: Readonly<{ added: readonly number[], updated: readonly number[], removed: readonly number[] }>, origin: unknown) => void) {
+  offAwarenessUpdate(handler: (changes: Readonly<{ added: readonly number[], updated: readonly number[], removed: readonly number[] }>, origin: unknown) => unknown) {
       this.awareness.off('change', handler);
+      return undefined;
   }
 }

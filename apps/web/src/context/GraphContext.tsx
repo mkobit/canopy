@@ -11,9 +11,9 @@ interface GraphContextState {
 }
 
 interface GraphContextActions {
-  readonly loadGraph: (graphId: GraphId) => Promise<void>;
-  readonly closeGraph: () => void;
-  readonly saveGraph: () => Promise<void>;
+  readonly loadGraph: (graphId: GraphId) => Promise<unknown>;
+  readonly closeGraph: () => unknown;
+  readonly saveGraph: () => Promise<unknown>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   readonly createNode: (type: string, properties?: Record<string, any>) => Promise<NodeId | null>;
 }
@@ -79,6 +79,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
       // Subscribe to updates
       engine.doc.on('update', () => {
          updateGraphFromStore(engine, graphId);
+         return undefined;
       });
 
     } catch (err) {
@@ -87,6 +88,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
     } finally {
       setIsLoading(false);
     }
+    return undefined;
   }, [storage]); // Removed syncEngine from dependency
 
   const updateGraphFromStore = (engine: SyncEngine, graphId: GraphId) => {
@@ -108,6 +110,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
           nodes,
           edges
       });
+      return undefined;
   };
 
   const closeGraph = useCallback(() => {
@@ -118,6 +121,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
     }
     setGraph(null);
     setCurrentGraphId(null);
+    return undefined;
   }, []);
 
   const saveGraph = useCallback(async () => {
@@ -133,6 +137,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
         // eslint-disable-next-line functional/no-throw-statements
         if (!result.ok) throw result.error;
     }
+    return undefined;
   }, [storage, currentGraphId, graph]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -166,6 +171,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
       if (syncEngineRef.current) {
         syncEngineRef.current.disconnectProvider();
       }
+      return undefined;
     };
   }, []);
 

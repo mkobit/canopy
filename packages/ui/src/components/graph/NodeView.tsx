@@ -11,7 +11,7 @@ export interface NodeViewData {
 }
 
 export interface NodeViewEvents {
-  readonly onClick?: (node: Node) => void;
+  readonly onClick?: (node: Node) => unknown;
 }
 
 export type NodeViewProps = NodeViewData & NodeViewEvents;
@@ -24,7 +24,7 @@ export const NodeView: React.FC<NodeViewProps> = ({ node, className, selected, o
         selected && "ring-2 ring-blue-500",
         className
       )}
-      onClick={() => onClick?.(node)}
+      onClick={() => { onClick?.(node); return undefined; }}
       style={style}
       data-node-id={node.id}
     >

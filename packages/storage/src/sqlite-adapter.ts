@@ -39,7 +39,7 @@ export class SQLiteAdapter implements StorageAdapter {
   }
 
   private initSchema() {
-    if (!this.db) return; // Should not happen if called from init
+    if (!this.db) return undefined; // Should not happen if called from init
     this.db.run(`
       CREATE TABLE IF NOT EXISTS graphs (
         id TEXT PRIMARY KEY,
@@ -49,6 +49,7 @@ export class SQLiteAdapter implements StorageAdapter {
         updated_at TEXT
       );
     `);
+    return undefined;
   }
 
   async close(): Promise<Result<void, Error>> {

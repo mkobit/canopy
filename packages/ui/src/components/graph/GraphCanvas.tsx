@@ -15,14 +15,14 @@ interface GraphCanvasData {
 }
 
 interface GraphCanvasEvents {
-  readonly onNodeClick?: (node: GraphNode) => void;
-  readonly onEdgeClick?: (edge: Edge) => void;
-  readonly onBackgroundClick?: () => void;
+  readonly onNodeClick?: (node: GraphNode) => unknown;
+  readonly onEdgeClick?: (edge: Edge) => unknown;
+  readonly onBackgroundClick?: () => unknown;
 }
 
 type GraphCanvasProps = GraphCanvasData & GraphCanvasEvents;
 
-const noop = () => { /* noop */ };
+const noop = () => { /* noop */ return undefined; };
 
 export const GraphCanvas: React.FC<GraphCanvasProps> = ({
   nodes,
@@ -74,7 +74,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
           key={node.id}
           node={node}
           selected={selectedNodeIds.has(node.id)}
-          onClick={() => onNodeClick(node)}
+          onClick={() => { onNodeClick(node); return undefined; }}
           style={{
             position: 'absolute',
             left: node.position.x,

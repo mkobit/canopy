@@ -11,7 +11,7 @@ export interface EdgeViewProps {
   readonly source: GraphNode;
   readonly target: GraphNode;
   readonly selected?: boolean | undefined;
-  readonly onClick?: ((edge: Edge) => void) | undefined;
+  readonly onClick?: ((edge: Edge) => unknown) | undefined;
 }
 
 export const EdgeView: React.FC<EdgeViewProps> = ({ edge, source, target, selected, onClick }) => {
@@ -36,7 +36,7 @@ export const EdgeView: React.FC<EdgeViewProps> = ({ edge, source, target, select
   const angle = Math.atan2(y2 - y1, x2 - x1) * (180 / Math.PI);
 
   return (
-    <g onClick={(e) => { e.stopPropagation(); onClick?.(edge); }} className="cursor-pointer group">
+    <g onClick={(e) => { e.stopPropagation(); onClick?.(edge); return undefined; }} className="cursor-pointer group">
       <line
         x1={x1}
         y1={y1}

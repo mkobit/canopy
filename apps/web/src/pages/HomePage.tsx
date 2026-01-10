@@ -15,10 +15,11 @@ export const HomePage = () => {
     if (storage) {
       loadGraphs();
     }
+    return undefined;
   }, [storage]);
 
   const loadGraphs = async () => {
-    if (!storage) return;
+    if (!storage) return undefined;
     setLoading(true);
     try {
       const listResult = await storage.list();
@@ -30,12 +31,13 @@ export const HomePage = () => {
     } finally {
       setLoading(false);
     }
+    return undefined;
   };
 
   const handleCreateGraph = async () => {
-    if (!storage) return;
+    if (!storage) return undefined;
     const name = prompt("Enter graph name:");
-    if (!name) return;
+    if (!name) return undefined;
 
     const id = createGraphId();
     const now = new Date().toISOString();
@@ -53,12 +55,13 @@ export const HomePage = () => {
     } catch (e) {
         console.error("Failed to create graph", e);
     }
+    return undefined;
   };
 
   const handleDeleteGraph = async (id: string, e: React.MouseEvent) => {
       e.stopPropagation();
-      if (!storage) return;
-      if (!confirm("Are you sure you want to delete this graph?")) return;
+      if (!storage) return undefined;
+      if (!confirm("Are you sure you want to delete this graph?")) return undefined;
 
       try {
           const result = await storage.delete(id);
@@ -68,11 +71,13 @@ export const HomePage = () => {
       } catch (e) {
           console.error("Failed to delete graph", e);
       }
+      return undefined;
   };
 
   const handleOpenGraph = (id: string) => {
       // Navigate to graph route
       navigate(`/graph/${id}`);
+      return undefined;
   };
 
   if (storageLoading || loading) return <div className="p-8">Loading...</div>;

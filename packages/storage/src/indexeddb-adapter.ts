@@ -30,6 +30,7 @@ export class IndexedDBAdapter implements StorageAdapter {
           if (!db.objectStoreNames.contains('graphs')) {
             db.createObjectStore('graphs', { keyPath: 'id' });
           }
+          return undefined;
         },
       });
       return ok(undefined);

@@ -17,18 +17,18 @@ export interface SyncProviderActions {
   /**
    * connect the provider
    */
-  readonly connect: () => void;
+  readonly connect: () => undefined;
 
   /**
    * disconnect the provider
    */
-  readonly disconnect: () => void;
+  readonly disconnect: () => undefined;
 
   /**
    * Subscribe to connection status changes
    */
-  readonly on: (event: 'status', handler: (event: Readonly<{ status: 'connected' | 'disconnected' | 'connecting' }>) => void) => void;
-  readonly off: (event: 'status', handler: (event: Readonly<{ status: 'connected' | 'disconnected' | 'connecting' }>) => void) => void;
+  readonly on: (event: 'status', handler: (event: Readonly<{ status: 'connected' | 'disconnected' | 'connecting' }>) => unknown) => undefined;
+  readonly off: (event: 'status', handler: (event: Readonly<{ status: 'connected' | 'disconnected' | 'connecting' }>) => unknown) => undefined;
 }
 
 export type SyncProvider = SyncProviderState & SyncProviderActions;

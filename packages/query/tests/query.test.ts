@@ -25,7 +25,6 @@ function createMockGraph(): Graph {
     );
 
     const nodeId = asNodeId(id);
-    // eslint-disable-next-line functional/immutable-data
     nodes.set(nodeId, {
       id: nodeId,
       type: asTypeId(type),
@@ -43,7 +42,6 @@ function createMockGraph(): Graph {
      );
 
     const edgeId = asEdgeId(id);
-    // eslint-disable-next-line functional/immutable-data
     edges.set(edgeId, {
       id: edgeId,
       type: asTypeId(type),

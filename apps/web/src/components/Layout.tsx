@@ -4,7 +4,7 @@ import { Home, Search, PlusCircle, Settings } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useGraph } from '../context/GraphContext';
 
-const Sidebar = ({ onQuickCapture }: Readonly<{ onQuickCapture: () => void }>) => {
+const Sidebar = ({ onQuickCapture }: Readonly<{ onQuickCapture: () => unknown }>) => {
   return (
     <div className="w-64 h-screen bg-gray-50 border-r border-gray-200 flex flex-col">
       <div className="p-4 border-b border-gray-200">
@@ -59,11 +59,11 @@ export const Layout = () => {
   const handleQuickCapture = async () => {
       if (!graph) {
           alert("Open a graph first.");
-          return;
+          return undefined;
       }
 
       const text = prompt("Quick Note:");
-      if (!text) return;
+      if (!text) return undefined;
 
       try {
           const nodeId = await createNode('Note', { name: text });
@@ -74,6 +74,7 @@ export const Layout = () => {
           console.error("Failed to create node", e);
           alert("Failed to create node.");
       }
+      return undefined;
   };
 
   return (
