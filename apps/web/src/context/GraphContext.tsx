@@ -3,7 +3,6 @@ import { SyncEngine } from '@canopy/sync';
 import { Graph, GraphId, NodeId, EdgeId, asInstant, PropertyValue, Node, Edge, Result, ok, err, fromThrowable, fromAsyncThrowable } from '@canopy/types';
 import { useStorage } from './StorageContext';
 import { z } from 'zod';
-import { asTypeId } from '@canopy/types';
 import { TypeIdSchema } from '@canopy/schema';
 import { TypeId } from '@canopy/types';
 

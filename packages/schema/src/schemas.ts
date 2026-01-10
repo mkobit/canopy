@@ -35,12 +35,12 @@ export const GraphIdSchema = z.string().uuid().transform(asGraphId);
 export const InstantSchema: z.ZodType<Instant, z.ZodTypeDef, unknown> = z
   .string()
   .datetime({ offset: true }) // ISO 8601 strict
-  .transform(val => asInstant(val));
+  .transform(asInstant);
 
 export const PlainDateSchema: z.ZodType<PlainDate, z.ZodTypeDef, unknown> = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid PlainDate format (YYYY-MM-DD)")
-  .transform(val => asPlainDate(val));
+  .transform(asPlainDate);
 
 export const TimestampSchema = InstantSchema;
 
