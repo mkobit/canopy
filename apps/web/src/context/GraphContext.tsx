@@ -157,7 +157,9 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
   const createNode = useCallback(async (type: string, properties: Record<string, any> = {}): Promise<Result<NodeId, Error>> => {
       if (!syncEngineRef.current) return err(new Error("SyncEngine not initialized"));
 
+      // TODO: We are going to eventually phase out the try/catch pattern so should consider that here as well
       try {
+          // TODO: feels like we need a todo here to address the casting and mapping issue
           // Rudimentary generic mapping to PropertyValue
           const propsMap = new Map<string, PropertyValue>(
               Object.entries(properties)
@@ -166,6 +168,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
           );
 
           const newNodeResult = syncEngineRef.current.store.addNode({
+              // TODO: we are going to eventually forbid casting so need to fix this too aeither now or later
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               type: type as any, // Cast to TypeId
               properties: propsMap
