@@ -9,6 +9,8 @@ export type { Graph, Node, Edge }
  * Creates a new empty graph.
  */
 export function createGraph(id: GraphId, name: string): Graph {
+  // We construct the graph object here. It is immutable after construction.
+  // The type Graph is Readonly<{...}>.
   const graph: Graph = {
     id,
     name,
