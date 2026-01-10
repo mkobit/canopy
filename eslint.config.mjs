@@ -29,17 +29,17 @@ export default tseslint.config(
   {
     ...functional.configs.externalTypeScriptRecommended,
     files: ['**/*.ts', '**/*.tsx'],
-    ignores: ['**/*.test.ts', '**/*.spec.ts', '**/tests/**/*.ts', '**/__tests__/**/*.ts', 'apps/web/src/test/setup.ts'],
+    ignores: ['**/*.test.ts', '**/*.spec.ts', '**/tests/**/*.ts', '**/__tests__/**/*.ts', '**/*.test.tsx', '**/*.spec.tsx', '**/tests/**/*.tsx', '**/__tests__/**/*.tsx', 'apps/web/src/test/setup.ts'],
   },
   {
     ...functional.configs.recommended,
     files: ['**/*.ts', '**/*.tsx'],
-    ignores: ['**/*.test.ts', '**/*.spec.ts', '**/tests/**/*.ts', '**/__tests__/**/*.ts', 'apps/web/src/test/setup.ts'],
+    ignores: ['**/*.test.ts', '**/*.spec.ts', '**/tests/**/*.ts', '**/__tests__/**/*.ts', '**/*.test.tsx', '**/*.spec.tsx', '**/tests/**/*.tsx', '**/__tests__/**/*.tsx', 'apps/web/src/test/setup.ts'],
   },
   {
     ...functional.configs.stylistic,
     files: ['**/*.ts', '**/*.tsx'],
-    ignores: ['**/*.test.ts', '**/*.spec.ts', '**/tests/**/*.ts', '**/__tests__/**/*.ts', 'apps/web/src/test/setup.ts'],
+    ignores: ['**/*.test.ts', '**/*.spec.ts', '**/tests/**/*.ts', '**/__tests__/**/*.ts', '**/*.test.tsx', '**/*.spec.tsx', '**/tests/**/*.tsx', '**/__tests__/**/*.tsx', 'apps/web/src/test/setup.ts'],
   },
   {
     languageOptions: {
@@ -56,6 +56,7 @@ export default tseslint.config(
     },
     // We only apply these rules to TS files that are part of the project
     files: ['**/*.ts', '**/*.tsx'],
+    ignores: ['**/*.test.ts', '**/*.spec.ts', '**/tests/**/*.ts', '**/__tests__/**/*.ts', '**/*.test.tsx', '**/*.spec.tsx', '**/tests/**/*.tsx', '**/__tests__/**/*.tsx', 'apps/web/src/test/setup.ts'],
     languageOptions: {
       globals: {
         ...globals.browser,
@@ -87,7 +88,7 @@ export default tseslint.config(
       }],
 
       // Adjust rules for practicality (as suggested by user documentation/examples)
-      'functional/no-return-void': 'off',
+      'functional/no-return-void': 'error',
       'functional/no-expression-statements': 'off',
       'functional/functional-parameters': 'off',
       'functional/no-conditional-statements': 'off',

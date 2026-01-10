@@ -42,7 +42,9 @@ describe('SQLiteAdapter', () => {
     await unwrap(await adapter.save(mockGraphId, mockSnapshot, mockMetadata));
     const list = unwrap(await adapter.list());
     expect(list).toHaveLength(1);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(list[0]!.id).toEqual(mockGraphId);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(list[0]!.name).toEqual(mockMetadata.name);
   });
 
@@ -105,6 +107,7 @@ describe('IndexedDBAdapter', () => {
     await unwrap(await adapter.save(mockGraphId, mockSnapshot, mockMetadata));
     const list = unwrap(await adapter.list());
     expect(list).toHaveLength(1);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(list[0]!.id).toEqual(mockGraphId);
   });
 

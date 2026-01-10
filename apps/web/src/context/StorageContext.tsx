@@ -33,9 +33,11 @@ export const StorageProvider: React.FC<Readonly<{ children: React.ReactNode }>> 
       } finally {
         setIsLoading(false);
       }
+      return undefined;
     };
 
     initStorage();
+    return undefined;
   }, []);
 
   return (

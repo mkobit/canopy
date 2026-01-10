@@ -9,7 +9,7 @@ interface PropertyInputData {
 }
 
 interface PropertyInputEvents {
-  readonly onChange: (value: PropertyValue) => void;
+  readonly onChange: (value: PropertyValue) => unknown;
 }
 
 type PropertyInputProps = PropertyInputData & PropertyInputEvents;
@@ -45,12 +45,14 @@ export const PropertyInput: React.FC<PropertyInputProps> = ({ value, onChange, c
             // eslint-disable-next-line functional/immutable-data
                  newItems[index] = newItem;
                  onChange({ ...value, items: newItems });
+                 return undefined;
                }}
              />
              <button
                onClick={() => {
                  const newItems = value.items.filter((_, i) => i !== index);
                  onChange({ ...value, items: newItems });
+                 return undefined;
                }}
                className="text-red-500 hover:bg-red-50 px-2 rounded"
              >
@@ -77,6 +79,7 @@ export const PropertyInput: React.FC<PropertyInputProps> = ({ value, onChange, c
 
             const newItem = getDefaultItem(value.items.length > 0 ? value.items[0] : undefined);
             onChange({ ...value, items: [...value.items, newItem] });
+            return undefined;
           }}
           className="text-blue-500 hover:bg-blue-50 px-2 py-1 rounded text-sm border border-dashed border-blue-200 w-full"
         >
@@ -89,7 +92,7 @@ export const PropertyInput: React.FC<PropertyInputProps> = ({ value, onChange, c
   return <ScalarInput value={value} onChange={onChange} className={className} />;
 };
 
-const ScalarInput: React.FC<Readonly<{ value: ScalarValue, onChange: (val: ScalarValue) => void, className?: string | undefined }>> = ({ value, onChange, className }) => {
+const ScalarInput: React.FC<Readonly<{ value: ScalarValue, onChange: (val: ScalarValue) => unknown, className?: string | undefined }>> = ({ value, onChange, className }) => {
   const baseInputClass = cn("border rounded px-2 py-1 w-full text-sm", className);
 
   switch (value.kind) {
@@ -98,7 +101,7 @@ const ScalarInput: React.FC<Readonly<{ value: ScalarValue, onChange: (val: Scala
         <input
           type="text"
           value={value.value}
-          onChange={(e) => onChange(updateScalar(value, e.target.value))}
+          onChange={(e) => { onChange(updateScalar(value, e.target.value)); return undefined; }}
           className={baseInputClass}
         />
       );
@@ -107,7 +110,7 @@ const ScalarInput: React.FC<Readonly<{ value: ScalarValue, onChange: (val: Scala
         <input
           type="number"
           value={value.value}
-          onChange={(e) => onChange(updateScalar(value, e.target.valueAsNumber))}
+          onChange={(e) => { onChange(updateScalar(value, e.target.valueAsNumber)); return undefined; }}
           className={baseInputClass}
         />
       );
@@ -116,7 +119,7 @@ const ScalarInput: React.FC<Readonly<{ value: ScalarValue, onChange: (val: Scala
         <input
           type="checkbox"
           checked={value.value}
-          onChange={(e) => onChange(updateScalar(value, e.target.checked))}
+          onChange={(e) => { onChange(updateScalar(value, e.target.checked)); return undefined; }}
           className={cn("h-4 w-4", className)}
         />
       );
@@ -126,7 +129,7 @@ const ScalarInput: React.FC<Readonly<{ value: ScalarValue, onChange: (val: Scala
         <input
           type="text"
           value={value.value}
-          onChange={(e) => onChange(updateScalar(value, e.target.value))}
+          onChange={(e) => { onChange(updateScalar(value, e.target.value)); return undefined; }}
           className={baseInputClass}
           placeholder="ISO 8601 Timestamp"
         />
@@ -136,7 +139,7 @@ const ScalarInput: React.FC<Readonly<{ value: ScalarValue, onChange: (val: Scala
           <input
             type="date"
             value={value.value}
-            onChange={(e) => onChange(updateScalar(value, e.target.value))}
+            onChange={(e) => { onChange(updateScalar(value, e.target.value)); return undefined; }}
             className={baseInputClass}
           />
         );
@@ -145,7 +148,7 @@ const ScalarInput: React.FC<Readonly<{ value: ScalarValue, onChange: (val: Scala
           <input
             type="text"
             value={value.target}
-            onChange={(e) => onChange(updateScalar(value, e.target.value))}
+            onChange={(e) => { onChange(updateScalar(value, e.target.value)); return undefined; }}
             className={baseInputClass}
             placeholder="Node ID"
           />

@@ -30,6 +30,7 @@ export class InMemoryProvider implements SyncProvider {
     if (origin !== this && this.connected) {
       this.broadcastDocUpdate(update);
     }
+    return undefined;
   };
 
   private readonly handleAwarenessUpdate = ({ added, updated, removed }: Readonly<{ added: readonly number[], updated: readonly number[], removed: readonly number[] }>, origin: unknown) => {
@@ -38,6 +39,7 @@ export class InMemoryProvider implements SyncProvider {
       const update = AwarenessProtocol.encodeAwarenessUpdate(this.awareness, changedClients);
       this.broadcastAwarenessUpdate(update);
     }
+    return undefined;
   };
 
   broadcastDocUpdate(update: Uint8Array) {
@@ -47,8 +49,10 @@ export class InMemoryProvider implements SyncProvider {
         if (peer !== this && peer.connected) {
           Y.applyUpdate(peer.doc, update, this);
         }
+        return undefined;
       });
     }
+    return undefined;
   }
 
   broadcastAwarenessUpdate(update: Uint8Array) {
@@ -58,8 +62,10 @@ export class InMemoryProvider implements SyncProvider {
         if (peer !== this && peer.connected) {
           AwarenessProtocol.applyAwarenessUpdate(peer.awareness, update, 'remote');
         }
+        return undefined;
       });
     }
+    return undefined;
   }
 
   connect() {
@@ -102,10 +108,12 @@ export class InMemoryProvider implements SyncProvider {
           const peerAwarenessUpdate = AwarenessProtocol.encodeAwarenessUpdate(peer.awareness, Array.from(peer.awareness.getStates().keys()));
           AwarenessProtocol.applyAwarenessUpdate(this.awareness, peerAwarenessUpdate, 'remote');
         }
+        return undefined;
       });
     }
 
     this.emit('status', { status: 'connected' });
+    return undefined;
   }
 
   disconnect() {
@@ -118,24 +126,28 @@ export class InMemoryProvider implements SyncProvider {
     }
     this.connected = false;
     this.emit('status', { status: 'disconnected' });
+    return undefined;
   }
 
-  on(event: 'status', handler: (event: Readonly<{ status: 'connected' | 'disconnected' | 'connecting' }>) => void) {
+  on(event: 'status', handler: (event: Readonly<{ status: 'connected' | 'disconnected' | 'connecting' }>) => unknown) {
     if (!this.handlers.has(event)) {
       this.handlers.set(event, []);
     }
     this.handlers.get(event)?.push(handler);
+    return undefined;
   }
 
-  off(event: 'status', handler: (event: Readonly<{ status: 'connected' | 'disconnected' | 'connecting' }>) => void) {
+  off(event: 'status', handler: (event: Readonly<{ status: 'connected' | 'disconnected' | 'connecting' }>) => unknown) {
     const handlers = this.handlers.get(event);
     if (handlers) {
       this.handlers.set(event, handlers.filter(h => h !== handler));
     }
+    return undefined;
   }
 
   emit(event: string, data: unknown) {
     // eslint-disable-next-line @typescript-eslint/ban-types
     this.handlers.get(event)?.forEach((h: Function) => h(data));
+    return undefined;
   }
 }

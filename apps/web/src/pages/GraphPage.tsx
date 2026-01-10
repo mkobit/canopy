@@ -12,6 +12,7 @@ export const GraphPage = () => {
     if (graphId) {
       loadGraph(asGraphId(graphId));
     }
+    return undefined;
   }, [graphId]);
 
   if (isLoading) {
@@ -24,7 +25,7 @@ export const GraphPage = () => {
         <div className="text-red-600 font-semibold">Error loading graph</div>
         <p className="text-gray-600">{error.message}</p>
         <button
-          onClick={() => navigate('/')}
+          onClick={() => { navigate('/'); return undefined; }}
           className="px-4 py-2 bg-gray-100 rounded hover:bg-gray-200"
         >
           Back to Home
