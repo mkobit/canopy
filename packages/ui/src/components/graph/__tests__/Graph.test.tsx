@@ -15,12 +15,12 @@ const mockNode: Node = {
   id: mockNodeId,
   type: mockTypeId,
   properties: new Map([['name', mockTextValue]]),
-  metadata: { created: createInstant(), modified: createInstant() }
+  metadata: { created: createInstant(), modified: createInstant() },
 };
 
 const mockGraphNode = {
-    ...mockNode,
-    position: { x: 100, y: 100 }
+  ...mockNode,
+  position: { x: 100, y: 100 },
 };
 
 describe('NodeView', () => {
@@ -56,7 +56,9 @@ describe('GraphCanvas', () => {
 
   it('handles background click', () => {
     const onBgClick = vi.fn();
-    const { container } = render(<GraphCanvas nodes={[]} edges={[]} onBackgroundClick={onBgClick} />);
+    const { container } = render(
+      <GraphCanvas nodes={[]} edges={[]} onBackgroundClick={onBgClick} />,
+    );
     // Click the main div
     fireEvent.click(container.firstChild as Element);
     expect(onBgClick).toHaveBeenCalled();

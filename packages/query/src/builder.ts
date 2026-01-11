@@ -1,4 +1,4 @@
-import { Query, QueryStep, Operator } from './model';
+import type { Query, QueryStep, Operator } from './model';
 
 export class QueryBuilder {
   protected readonly steps: readonly QueryStep[];
@@ -62,11 +62,17 @@ export class EdgeQueryBuilder extends QueryBuilder {
   }
 
   from(nodeId: string): EdgeQueryBuilder {
-    return this.addStep({ kind: 'filter', predicate: { property: 'source', operator: 'eq', value: nodeId } });
+    return this.addStep({
+      kind: 'filter',
+      predicate: { property: 'source', operator: 'eq', value: nodeId },
+    });
   }
 
   to(nodeId: string): EdgeQueryBuilder {
-    return this.addStep({ kind: 'filter', predicate: { property: 'target', operator: 'eq', value: nodeId } });
+    return this.addStep({
+      kind: 'filter',
+      predicate: { property: 'target', operator: 'eq', value: nodeId },
+    });
   }
 
   orderBy(property: string, direction: 'asc' | 'desc' = 'asc'): EdgeQueryBuilder {

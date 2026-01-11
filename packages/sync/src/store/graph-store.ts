@@ -1,20 +1,15 @@
-import * as Y from 'yjs';
+import type * as Y from 'yjs';
 import { z } from 'zod';
+import type { Node, Edge, NodeId, EdgeId, PropertyValue, Result } from '@canopy/types';
 import {
-  Node,
-  Edge,
-  NodeId,
-  EdgeId,
-  PropertyValue,
   createNodeId,
   createEdgeId,
   createInstant,
   asNodeId,
   asEdgeId,
   asTypeId,
-  Result,
   ok,
-  err
+  err,
 } from '@canopy/types';
 import {
   NodeSchema,
@@ -41,21 +36,20 @@ interface StorableEdge extends Omit<Edge, 'properties'> {
 const StorablePropertiesSchema = z.record(z.string(), PropertyValueSchema);
 
 const StorableNodeSchema: z.ZodType<StorableNode, z.ZodTypeDef, unknown> = z.object({
-    id: z.string().transform(val => asNodeId(val)),
-    type: z.string().transform(val => asTypeId(val)),
-    properties: StorablePropertiesSchema,
-    metadata: TemporalMetadataSchema
+  id: z.string().transform((val) => asNodeId(val)),
+  type: z.string().transform((val) => asTypeId(val)),
+  properties: StorablePropertiesSchema,
+  metadata: TemporalMetadataSchema,
 });
 
 const StorableEdgeSchema: z.ZodType<StorableEdge, z.ZodTypeDef, unknown> = z.object({
-    id: z.string().transform(val => asEdgeId(val)),
-    type: z.string().transform(val => asTypeId(val)),
-    source: z.string().transform(val => asNodeId(val)),
-    target: z.string().transform(val => asNodeId(val)),
-    properties: StorablePropertiesSchema,
-    metadata: TemporalMetadataSchema
+  id: z.string().transform((val) => asEdgeId(val)),
+  type: z.string().transform((val) => asTypeId(val)),
+  source: z.string().transform((val) => asNodeId(val)),
+  target: z.string().transform((val) => asNodeId(val)),
+  properties: StorablePropertiesSchema,
+  metadata: TemporalMetadataSchema,
 });
-
 
 // Converters
 const propertiesToStorable = (props: ReadonlyMap<string, PropertyValue>): StorableProperties => {
@@ -74,12 +68,12 @@ const nodeToStorable = (node: Node): StorableNode => {
 };
 
 const storableToNode = (storable: unknown): Node => {
-    // Validate that the stored object matches the expected schema
-    const n = StorableNodeSchema.parse(storable);
-    return {
-        ...n,
-        properties: storableToProperties(n.properties)
-    };
+  // Validate that the stored object matches the expected schema
+  const n = StorableNodeSchema.parse(storable);
+  return {
+    ...n,
+    properties: storableToProperties(n.properties),
+  };
 };
 
 const edgeToStorable = (edge: Edge): StorableEdge => {
@@ -90,11 +84,11 @@ const edgeToStorable = (edge: Edge): StorableEdge => {
 };
 
 const storableToEdge = (storable: unknown): Edge => {
-    const e = StorableEdgeSchema.parse(storable);
-    return {
-        ...e,
-        properties: storableToProperties(e.properties)
-    };
+  const e = StorableEdgeSchema.parse(storable);
+  return {
+    ...e,
+    properties: storableToProperties(e.properties),
+  };
 };
 
 export class GraphStore {
@@ -109,9 +103,10 @@ export class GraphStore {
   }
 
   addNode(
-    data: Omit<Node, 'id' | 'metadata'> & Readonly<{
-      id?: string;
-    }>
+    data: Omit<Node, 'id' | 'metadata'> &
+      Readonly<{
+        id?: string;
+      }>,
   ): Result<Node, Error> {
     const now = createInstant();
 
@@ -125,13 +120,13 @@ export class GraphStore {
       metadata: {
         created: now,
         modified: now,
-      }
+      },
     };
 
     // Validate schema on the domain object
     const validation = NodeSchema.safeParse(node);
     if (!validation.success) {
-        return err(new Error(`Node validation failed: ${validation.error}`));
+      return err(new Error(`Node validation failed: ${validation.error}`));
     }
 
     this.nodes.set(node.id, nodeToStorable(node));
@@ -144,7 +139,7 @@ export class GraphStore {
   }
 
   getAllNodes(): IterableIterator<Node> {
-      return map(Array.from(this.nodes.values()), storableToNode)[Symbol.iterator]();
+    return map(Array.from(this.nodes.values()), storableToNode)[Symbol.iterator]();
   }
 
   updateNode(id: string, partial: Partial<Omit<Node, 'id' | 'metadata'>>): Result<Node, Error> {
@@ -166,7 +161,7 @@ export class GraphStore {
     // Validate schema
     const validation = NodeSchema.safeParse(updated);
     if (!validation.success) {
-        return err(new Error(`Node validation failed: ${validation.error}`));
+      return err(new Error(`Node validation failed: ${validation.error}`));
     }
 
     this.nodes.set(id, nodeToStorable(updated));
@@ -182,9 +177,10 @@ export class GraphStore {
   }
 
   addEdge(
-    data: Omit<Edge, 'id' | 'metadata'> & Readonly<{
-      id?: string;
-    }>
+    data: Omit<Edge, 'id' | 'metadata'> &
+      Readonly<{
+        id?: string;
+      }>,
   ): Result<Edge, Error> {
     if (!this.nodes.has(data.source)) {
       return err(new Error(`Source node ${data.source} not found`));
@@ -205,13 +201,13 @@ export class GraphStore {
       metadata: {
         created: now,
         modified: now,
-      }
+      },
     };
 
     // Validate schema
     const validation = EdgeSchema.safeParse(edge);
     if (!validation.success) {
-        return err(new Error(`Edge validation failed: ${validation.error}`));
+      return err(new Error(`Edge validation failed: ${validation.error}`));
     }
 
     this.edges.set(edge.id, edgeToStorable(edge));
@@ -224,48 +220,48 @@ export class GraphStore {
   }
 
   getAllEdges(): IterableIterator<Edge> {
-      return map(Array.from(this.edges.values()), storableToEdge)[Symbol.iterator]();
+    return map(Array.from(this.edges.values()), storableToEdge)[Symbol.iterator]();
   }
 
   updateEdge(id: string, partial: Partial<Omit<Edge, 'id' | 'metadata'>>): Result<Edge, Error> {
-      const existing = this.getEdge(id);
-      if (!existing) {
-          return err(new Error(`Edge ${id} not found`));
-      }
+    const existing = this.getEdge(id);
+    if (!existing) {
+      return err(new Error(`Edge ${id} not found`));
+    }
 
-      const now = createInstant();
-      const updated: Edge = {
-          ...existing,
-          ...partial,
-          metadata: {
-              ...existing.metadata,
-              modified: now,
-          },
-      };
+    const now = createInstant();
+    const updated: Edge = {
+      ...existing,
+      ...partial,
+      metadata: {
+        ...existing.metadata,
+        modified: now,
+      },
+    };
 
-       // Check if source and target exist if they are being updated
-        if (partial.source && !this.nodes.has(partial.source)) {
-            return err(new Error(`Source node ${partial.source} not found`));
-        }
-        if (partial.target && !this.nodes.has(partial.target)) {
-            return err(new Error(`Target node ${partial.target} not found`));
-        }
+    // Check if source and target exist if they are being updated
+    if (partial.source && !this.nodes.has(partial.source)) {
+      return err(new Error(`Source node ${partial.source} not found`));
+    }
+    if (partial.target && !this.nodes.has(partial.target)) {
+      return err(new Error(`Target node ${partial.target} not found`));
+    }
 
-      // Validate schema
-      const validation = EdgeSchema.safeParse(updated);
-      if (!validation.success) {
-          return err(new Error(`Edge validation failed: ${validation.error}`));
-      }
+    // Validate schema
+    const validation = EdgeSchema.safeParse(updated);
+    if (!validation.success) {
+      return err(new Error(`Edge validation failed: ${validation.error}`));
+    }
 
-      this.edges.set(id, edgeToStorable(updated));
-      return ok(updated);
+    this.edges.set(id, edgeToStorable(updated));
+    return ok(updated);
   }
 
   deleteEdge(id: string): Result<void, Error> {
-      if (!this.edges.has(id)) {
-          return err(new Error(`Edge ${id} not found`));
-      }
-      this.edges.delete(id);
-      return ok(undefined);
+    if (!this.edges.has(id)) {
+      return err(new Error(`Edge ${id} not found`));
+    }
+    this.edges.delete(id);
+    return ok(undefined);
   }
 }

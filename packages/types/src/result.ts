@@ -1,4 +1,3 @@
-
 export type Result<T, E = Error> =
   | Readonly<{ ok: true; value: T }>
   | Readonly<{ ok: false; error: E }>;
@@ -20,18 +19,21 @@ export function isErr<T, E>(result: Result<T, E>): result is { ok: false; error:
  */
 // eslint-disable-next-line functional/no-throw-statements -- Intentionally throws to unwrap the value or fail hard
 export function unwrap<T, E>(result: Result<T, E>): T {
-    if (result.ok) {
-        return result.value;
-    }
-    // eslint-disable-next-line functional/no-throw-statements -- Intentionally throws to unwrap the value or fail hard
-    throw result.error;
+  if (result.ok) {
+    return result.value;
+  }
+  // eslint-disable-next-line functional/no-throw-statements -- Intentionally throws to unwrap the value or fail hard
+  throw result.error;
 }
 
-export function fromThrowable<T>(fn: () => T, errorHandler?: (e: unknown) => Error): Result<T, Error> {
+export function fromThrowable<T>(
+  fn: () => T,
+  errorHandler?: (e: unknown) => Error,
+): Result<T, Error> {
   try {
     return ok(fn());
   } catch (e) {
-    const error = errorHandler ? errorHandler(e) : (e instanceof Error ? e : new Error(String(e)));
+    const error = errorHandler ? errorHandler(e) : e instanceof Error ? e : new Error(String(e));
     return err(error);
   }
 }

@@ -1,6 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { createGraph, SYSTEM_IDS } from '@canopy/core';
-import { saveViewDefinition, getViewDefinition, resolveView, listViewDefinitions } from '../src/views';
+import {
+  saveViewDefinition,
+  getViewDefinition,
+  resolveView,
+  listViewDefinitions,
+} from '../src/views';
 import { saveQueryDefinition } from '../src/stored';
 import { Query } from '../src/model';
 import { unwrap, createGraphId } from '@canopy/types';
@@ -15,14 +20,16 @@ describe('View Definitions', () => {
     graph = g1;
 
     // Save view
-    const { graph: g2, nodeId: viewId } = unwrap(saveViewDefinition(graph, {
-      name: 'My View',
-      description: 'A test view',
-      queryRef: queryId,
-      layout: 'table',
-      sort: [{ property: 'name', direction: 'asc' }],
-      pageSize: 20
-    }));
+    const { graph: g2, nodeId: viewId } = unwrap(
+      saveViewDefinition(graph, {
+        name: 'My View',
+        description: 'A test view',
+        queryRef: queryId,
+        layout: 'table',
+        sort: [{ property: 'name', direction: 'asc' }],
+        pageSize: 20,
+      }),
+    );
     graph = g2;
 
     // Retrieve view
@@ -42,11 +49,13 @@ describe('View Definitions', () => {
     const { graph: g1, nodeId: queryId } = unwrap(saveQueryDefinition(graph, 'My Query', query));
     graph = g1;
 
-    const { graph: g2, nodeId: viewId } = unwrap(saveViewDefinition(graph, {
-      name: 'Resolved View',
-      queryRef: queryId,
-      layout: 'list'
-    }));
+    const { graph: g2, nodeId: viewId } = unwrap(
+      saveViewDefinition(graph, {
+        name: 'Resolved View',
+        queryRef: queryId,
+        layout: 'list',
+      }),
+    );
     graph = g2;
 
     const resolved = unwrap(resolveView(graph, viewId));
@@ -61,7 +70,9 @@ describe('View Definitions', () => {
     const views = listViewDefinitions(graph);
     expect(views.length).toBeGreaterThanOrEqual(3);
 
-    const names = views.map(v => v.properties.get('name')?.kind === 'text' ? v.properties.get('name')?.value : '');
+    const names = views.map((v) =>
+      v.properties.get('name')?.kind === 'text' ? v.properties.get('name')?.value : '',
+    );
     expect(names).toContain('All Nodes');
     expect(names).toContain('By Type');
     expect(names).toContain('Recent');

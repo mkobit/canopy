@@ -1,6 +1,6 @@
-import * as Y from 'yjs';
-import { Awareness } from 'y-protocols/awareness';
-import { Result } from '@canopy/types';
+import type * as Y from 'yjs';
+import type { Awareness } from 'y-protocols/awareness';
+import type { Result } from '@canopy/types';
 
 export interface SyncProviderState {
   /**
@@ -28,8 +28,14 @@ export interface SyncProviderActions {
   /**
    * Subscribe to connection status changes
    */
-  readonly on: (event: 'status', handler: (event: Readonly<{ status: 'connected' | 'disconnected' | 'connecting' }>) => unknown) => undefined;
-  readonly off: (event: 'status', handler: (event: Readonly<{ status: 'connected' | 'disconnected' | 'connecting' }>) => unknown) => undefined;
+  readonly on: (
+    event: 'status',
+    handler: (event: Readonly<{ status: 'connected' | 'disconnected' | 'connecting' }>) => unknown,
+  ) => undefined;
+  readonly off: (
+    event: 'status',
+    handler: (event: Readonly<{ status: 'connected' | 'disconnected' | 'connecting' }>) => unknown,
+  ) => undefined;
 }
 
 export type SyncProvider = SyncProviderState & SyncProviderActions;

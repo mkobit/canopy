@@ -4,7 +4,7 @@ import { render, screen } from '@testing-library/react';
 import { BlockEditor } from '../BlockEditor';
 
 describe('BlockEditor', () => {
-    // Note: contentEditable is hard to test in JSDOM environment fully, but we can test rendering and basic interactions.
+  // Note: contentEditable is hard to test in JSDOM environment fully, but we can test rendering and basic interactions.
   it('renders initial value', () => {
     const noop = () => {}; // eslint-disable-line @typescript-eslint/no-empty-function
     render(<BlockEditor value="<b>Hello</b>" onChange={noop} />);

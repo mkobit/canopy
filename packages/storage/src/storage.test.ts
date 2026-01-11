@@ -61,7 +61,9 @@ describe('SQLiteAdapter', () => {
     let storedData: Uint8Array | null = null;
     const persistence = {
       read: async () => storedData,
-      write: async (data: Uint8Array) => { storedData = data; }
+      write: async (data: Uint8Array) => {
+        storedData = data;
+      },
     };
 
     const persistAdapter = new SQLiteAdapter(persistence);

@@ -1,6 +1,6 @@
-import type { NodeId, TypeId } from './identifiers'
-import type { TemporalMetadata } from './temporal'
-import type { PropertyMap } from './properties'
+import type { NodeId, TypeId } from './identifiers';
+import type { TemporalMetadata } from './temporal';
+import type { PropertyMap } from './properties';
 
 /**
  * A node in the graph.
@@ -8,8 +8,8 @@ import type { PropertyMap } from './properties'
  * Generic parameter T allows narrowing to specific node types.
  */
 export type Node<T extends TypeId = TypeId> = Readonly<{
-  id: NodeId
-  type: T
-  properties: PropertyMap
-  metadata: TemporalMetadata
-}>
+  id: NodeId;
+  type: T;
+  properties: PropertyMap;
+  metadata: TemporalMetadata;
+}>;

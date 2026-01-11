@@ -1,10 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  isTextValue,
-  isNumberValue,
-  isNode,
-  isEdge
-} from '../src/guards';
+import { isTextValue, isNumberValue, isNode, isEdge } from '../src/guards';
 import type { TextValue, NumberValue } from '@canopy/types';
 
 describe('Type Guards', () => {
@@ -25,7 +20,7 @@ describe('Type Guards', () => {
       id: '123',
       type: 'T',
       properties: new Map(),
-      metadata: {}
+      metadata: {},
     };
     expect(isNode(node)).toBe(true);
     expect(isEdge(node)).toBe(false);

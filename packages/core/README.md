@@ -25,9 +25,9 @@ store.addNode({
     name: 'Person',
     properties: [
       { name: 'name', type: 'string', required: true },
-      { name: 'age', type: 'number' }
-    ]
-  }
+      { name: 'age', type: 'number' },
+    ],
+  },
 });
 
 // Create a Node
@@ -35,8 +35,8 @@ const alice = store.addNode({
   type: 'Person',
   properties: {
     name: 'Alice',
-    age: 30
-  }
+    age: 30,
+  },
 });
 
 console.log(alice);

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Node } from '@canopy/types';
+import type { Node } from '@canopy/types';
 import { cn } from '../../utils/cn';
 import { PropertyDisplay } from '../properties/PropertyDisplay';
 
@@ -16,15 +16,24 @@ export interface NodeViewEvents {
 
 export type NodeViewProps = NodeViewData & NodeViewEvents;
 
-export const NodeView: React.FC<NodeViewProps> = ({ node, className, selected, onClick, style }) => {
+export const NodeView: React.FC<NodeViewProps> = ({
+  node,
+  className,
+  selected,
+  onClick,
+  style,
+}) => {
   return (
     <div
       className={cn(
-        "bg-white border rounded shadow-sm p-4 w-64 cursor-pointer hover:shadow-md transition-shadow select-none",
-        selected && "ring-2 ring-blue-500",
-        className
+        'bg-white border rounded shadow-sm p-4 w-64 cursor-pointer hover:shadow-md transition-shadow select-none',
+        selected && 'ring-2 ring-blue-500',
+        className,
       )}
-      onClick={() => { onClick?.(node); return undefined; }}
+      onClick={() => {
+        onClick?.(node);
+        return undefined;
+      }}
       style={style}
       data-node-id={node.id}
     >
@@ -40,7 +49,9 @@ export const NodeView: React.FC<NodeViewProps> = ({ node, className, selected, o
       <div className="space-y-2">
         {Array.from(node.properties.entries()).map(([key, value]) => (
           <div key={key} className="text-sm">
-            <div className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-0.5">{key}</div>
+            <div className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-0.5">
+              {key}
+            </div>
             <PropertyDisplay value={value} />
           </div>
         ))}

@@ -1,8 +1,18 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
-  Graph, Node, Edge, PropertyValue,
-  createGraphId, asTypeId, asInstant, asNodeId, asEdgeId, TextValue,
-  NodeId, EdgeId, unwrap
+  Graph,
+  Node,
+  Edge,
+  PropertyValue,
+  createGraphId,
+  asTypeId,
+  asInstant,
+  asNodeId,
+  asEdgeId,
+  TextValue,
+  NodeId,
+  EdgeId,
+  unwrap,
 } from '@canopy/types';
 import { query } from '../src/builder';
 import { executeQuery } from '../src/engine';
@@ -16,12 +26,12 @@ function createMockGraph(): Graph {
   const createNode = (id: string, type: string, props: Record<string, unknown> = {}) => {
     // Functional property creation
     const properties = new Map<string, PropertyValue>(
-        Object.entries(props).map(([k, v]) => {
-            if (typeof v === 'string') return [k, { kind: 'text', value: v }];
-            if (typeof v === 'number') return [k, { kind: 'number', value: v }];
-            if (typeof v === 'boolean') return [k, { kind: 'boolean', value: v }];
-            return [k, { kind: 'text', value: String(v) }]; // Fallback
-        })
+      Object.entries(props).map(([k, v]) => {
+        if (typeof v === 'string') return [k, { kind: 'text', value: v }];
+        if (typeof v === 'number') return [k, { kind: 'number', value: v }];
+        if (typeof v === 'boolean') return [k, { kind: 'boolean', value: v }];
+        return [k, { kind: 'text', value: String(v) }]; // Fallback
+      }),
     );
 
     const nodeId = asNodeId(id);
@@ -32,14 +42,20 @@ function createMockGraph(): Graph {
     });
   };
 
-  const createEdge = (id: string, type: string, source: string, target: string, props: Record<string, unknown> = {}) => {
-     const properties = new Map<string, PropertyValue>(
-         Object.entries(props).map(([k, v]) => {
-            if (typeof v === 'string') return [k, { kind: 'text', value: v }];
-            if (typeof v === 'number') return [k, { kind: 'number', value: v }];
-             return [k, { kind: 'text', value: String(v) }];
-         })
-     );
+  const createEdge = (
+    id: string,
+    type: string,
+    source: string,
+    target: string,
+    props: Record<string, unknown> = {},
+  ) => {
+    const properties = new Map<string, PropertyValue>(
+      Object.entries(props).map(([k, v]) => {
+        if (typeof v === 'string') return [k, { kind: 'text', value: v }];
+        if (typeof v === 'number') return [k, { kind: 'number', value: v }];
+        return [k, { kind: 'text', value: String(v) }];
+      }),
+    );
 
     const edgeId = asEdgeId(id);
     edges.set(edgeId, {
@@ -65,8 +81,8 @@ function createMockGraph(): Graph {
     id: createGraphId('test-graph'),
     name: 'Test Graph',
     metadata: {
-        created: asInstant('2023-01-01T00:00:00Z'),
-        modified: asInstant('2023-01-01T00:00:00Z')
+      created: asInstant('2023-01-01T00:00:00Z'),
+      modified: asInstant('2023-01-01T00:00:00Z'),
     },
     nodes: nodes,
     edges: edges,
@@ -85,7 +101,10 @@ describe('Query Engine', () => {
     const result = unwrap(executeQuery(graph, q));
     expect(result.nodes).toHaveLength(3);
     expect(result.edges).toHaveLength(0);
-    const names = sort(map(result.nodes, n => (n.properties.get('name') as TextValue).value), (a, b) => a.localeCompare(b));
+    const names = sort(
+      map(result.nodes, (n) => (n.properties.get('name') as TextValue).value),
+      (a, b) => a.localeCompare(b),
+    );
     expect(names).toEqual(['Alice', 'Bob', 'Charlie']);
   });
 
@@ -100,7 +119,10 @@ describe('Query Engine', () => {
     const q = query().nodes('Person').where('age', 'gt', 28).build();
     const result = unwrap(executeQuery(graph, q));
     expect(result.nodes).toHaveLength(2); // Alice (30) and Charlie (35)
-    const names = sort(map(result.nodes, n => (n.properties.get('name') as TextValue).value), (a, b) => a.localeCompare(b));
+    const names = sort(
+      map(result.nodes, (n) => (n.properties.get('name') as TextValue).value),
+      (a, b) => a.localeCompare(b),
+    );
     expect(names).toEqual(['Alice', 'Charlie']);
   });
 
@@ -115,18 +137,17 @@ describe('Query Engine', () => {
     const q = query().edges().from('1').build(); // Alice
     const result = unwrap(executeQuery(graph, q));
     expect(result.edges).toHaveLength(2); // knows Bob, works_at Acme
-    const types = sort(map(result.edges, e => e.type), (a, b) => a.localeCompare(b));
+    const types = sort(
+      map(result.edges, (e) => e.type),
+      (a, b) => a.localeCompare(b),
+    );
     expect(types).toEqual(['knows', 'works_at']);
   });
 
   it('traverses from a node to connected nodes', () => {
     // Find people Alice knows
     // nodes(Person, name=Alice).traverse(knows, out)
-    const q = query()
-      .nodes('Person')
-      .where('name', 'eq', 'Alice')
-      .traverse('knows', 'out')
-      .build();
+    const q = query().nodes('Person').where('name', 'eq', 'Alice').traverse('knows', 'out').build();
 
     const result = unwrap(executeQuery(graph, q));
     expect(result.nodes).toHaveLength(1);
@@ -135,11 +156,7 @@ describe('Query Engine', () => {
   });
 
   it('combines multiple predicates', () => {
-    const q = query()
-        .nodes('Person')
-        .where('age', 'gt', 20)
-        .where('age', 'lt', 30)
-        .build();
+    const q = query().nodes('Person').where('age', 'gt', 20).where('age', 'lt', 30).build();
     const result = unwrap(executeQuery(graph, q));
     expect(result.nodes).toHaveLength(1);
     expect((result.nodes[0].properties.get('name') as TextValue).value).toBe('Bob');
@@ -148,7 +165,7 @@ describe('Query Engine', () => {
   it('sorts results', () => {
     const q = query().nodes('Person').orderBy('age', 'desc').build();
     const result = unwrap(executeQuery(graph, q));
-    const names = map(result.nodes, n => (n.properties.get('name') as TextValue).value);
+    const names = map(result.nodes, (n) => (n.properties.get('name') as TextValue).value);
     expect(names).toEqual(['Charlie', 'Alice', 'Bob']);
   });
 
