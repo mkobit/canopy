@@ -1,4 +1,5 @@
-import type { Result } from '@canopy/types';
+
+import { Result } from '@canopy/types';
 
 export interface GraphStorageMetadata {
   readonly id: string;
@@ -24,11 +25,7 @@ export interface StorageAdapter {
    * @param snapshot The binary snapshot (Yjs update).
    * @param metadata Metadata about the graph.
    */
-  readonly save: (
-    graphId: string,
-    snapshot: Uint8Array,
-    metadata: GraphStorageMetadata,
-  ) => Promise<Result<void, Error>>;
+  readonly save: (graphId: string, snapshot: Uint8Array, metadata: GraphStorageMetadata) => Promise<Result<void, Error>>;
 
   /**
    * Load a graph snapshot.

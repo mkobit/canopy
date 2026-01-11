@@ -1,9 +1,8 @@
 import * as Y from 'yjs';
 import { Awareness } from 'y-protocols/awareness';
 import { GraphStore } from './store/graph-store';
-import type { SyncProvider, SyncEngineOptions } from './types';
-import type { Result } from '@canopy/types';
-import { fromThrowable } from '@canopy/types';
+import { SyncProvider, SyncEngineOptions } from './types';
+import { Result, fromThrowable } from '@canopy/types';
 
 export class SyncEngine {
   readonly doc: Y.Doc;
@@ -45,11 +44,11 @@ export class SyncEngine {
   disconnectProvider(): Result<void, Error> {
     return fromThrowable(() => {
       if (this.provider) {
-        const result = this.provider.disconnect();
-        this.provider = null;
-        // eslint-disable-next-line functional/no-throw-statements -- Re-throwing error to be caught by fromThrowable
-        if (!result.ok) throw result.error;
-        // Return is void, so we just return undefined on success
+          const result = this.provider.disconnect();
+          this.provider = null;
+          // eslint-disable-next-line functional/no-throw-statements -- Re-throwing error to be caught by fromThrowable
+          if (!result.ok) throw result.error;
+          // Return is void, so we just return undefined on success
       }
       return undefined;
     });
@@ -97,32 +96,14 @@ export class SyncEngine {
     return this.awareness.getStates();
   }
 
-  onAwarenessUpdate(
-    handler: (
-      changes: Readonly<{
-        added: readonly number[];
-        updated: readonly number[];
-        removed: readonly number[];
-      }>,
-      origin: unknown,
-    ) => unknown,
-  ): Result<void, Error> {
+  onAwarenessUpdate(handler: (changes: Readonly<{ added: readonly number[], updated: readonly number[], removed: readonly number[] }>, origin: unknown) => unknown): Result<void, Error> {
     return fromThrowable(() => {
       this.awareness.on('change', handler);
       return undefined;
     });
   }
 
-  offAwarenessUpdate(
-    handler: (
-      changes: Readonly<{
-        added: readonly number[];
-        updated: readonly number[];
-        removed: readonly number[];
-      }>,
-      origin: unknown,
-    ) => unknown,
-  ): Result<void, Error> {
+  offAwarenessUpdate(handler: (changes: Readonly<{ added: readonly number[], updated: readonly number[], removed: readonly number[] }>, origin: unknown) => unknown): Result<void, Error> {
     return fromThrowable(() => {
       this.awareness.off('change', handler);
       return undefined;

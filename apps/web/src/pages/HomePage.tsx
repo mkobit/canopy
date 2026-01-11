@@ -3,7 +3,7 @@ import { useStorage } from '../context/StorageContext';
 import { useNavigate } from 'react-router-dom';
 import { createGraphId } from '@canopy/types';
 import { Plus, Trash2, FolderOpen } from 'lucide-react';
-import type { GraphStorageMetadata } from '@canopy/storage';
+import { GraphStorageMetadata } from '@canopy/storage';
 
 export const HomePage = () => {
   const { storage, isLoading: storageLoading } = useStorage();
@@ -24,9 +24,9 @@ export const HomePage = () => {
 
     const listResult = await storage.list();
     if (listResult.ok) {
-      setGraphs(listResult.value);
+        setGraphs(listResult.value);
     } else {
-      console.error('Failed to list graphs', listResult.error);
+        console.error("Failed to list graphs", listResult.error);
     }
 
     setLoading(false);
@@ -35,45 +35,45 @@ export const HomePage = () => {
 
   const handleCreateGraph = async () => {
     if (!storage) return undefined;
-    const name = prompt('Enter graph name:');
+    const name = prompt("Enter graph name:");
     if (!name) return undefined;
 
     const id = createGraphId();
     const now = new Date().toISOString();
 
     const result = await storage.save(id, new Uint8Array(), {
-      id,
-      name,
-      createdAt: now,
-      updatedAt: now,
+        id,
+        name,
+        createdAt: now,
+        updatedAt: now
     });
 
     if (result.ok) {
-      await loadGraphs();
+        await loadGraphs();
     } else {
-      console.error('Failed to create graph', result.error);
+        console.error("Failed to create graph", result.error);
     }
     return undefined;
   };
 
   const handleDeleteGraph = async (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!storage) return undefined;
-    if (!confirm('Are you sure you want to delete this graph?')) return undefined;
+      e.stopPropagation();
+      if (!storage) return undefined;
+      if (!confirm("Are you sure you want to delete this graph?")) return undefined;
 
-    const result = await storage.delete(id);
-    if (result.ok) {
-      await loadGraphs();
-    } else {
-      console.error('Failed to delete graph', result.error);
-    }
-    return undefined;
+      const result = await storage.delete(id);
+      if (result.ok) {
+          await loadGraphs();
+      } else {
+          console.error("Failed to delete graph", result.error);
+      }
+      return undefined;
   };
 
   const handleOpenGraph = (id: string) => {
-    // Navigate to graph route
-    navigate(`/graph/${id}`);
-    return undefined;
+      // Navigate to graph route
+      navigate(`/graph/${id}`);
+      return undefined;
   };
 
   if (storageLoading || loading) return <div className="p-8">Loading...</div>;
@@ -97,7 +97,7 @@ export const HomePage = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {graphs.map((g) => (
+          {graphs.map(g => (
             <div
               key={g.id}
               onClick={() => handleOpenGraph(g.id)}

@@ -1,7 +1,16 @@
 import { z } from 'zod';
-import type { Node, Edge, PropertyValue } from '@canopy/types';
-import { asNodeId, asEdgeId, asTypeId } from '@canopy/types';
-import { PropertyValueSchema, TemporalMetadataSchema } from '@canopy/schema';
+import {
+  Node,
+  Edge,
+  PropertyValue,
+  asNodeId,
+  asEdgeId,
+  asTypeId,
+} from '@canopy/types';
+import {
+  PropertyValueSchema,
+  TemporalMetadataSchema,
+} from '@canopy/schema';
 
 // Helper types for storage (Plain Objects)
 export type StorableProperties = Record<string, PropertyValue>;
@@ -18,17 +27,17 @@ export interface StorableEdge extends Omit<Edge, 'properties'> {
 export const StorablePropertiesSchema = z.record(z.string(), PropertyValueSchema);
 
 export const StorableNodeSchema: z.ZodType<StorableNode, z.ZodTypeDef, unknown> = z.object({
-  id: z.string().transform((val) => asNodeId(val)),
-  type: z.string().transform((val) => asTypeId(val)),
-  properties: StorablePropertiesSchema,
-  metadata: TemporalMetadataSchema,
+    id: z.string().transform(val => asNodeId(val)),
+    type: z.string().transform(val => asTypeId(val)),
+    properties: StorablePropertiesSchema,
+    metadata: TemporalMetadataSchema
 });
 
 export const StorableEdgeSchema: z.ZodType<StorableEdge, z.ZodTypeDef, unknown> = z.object({
-  id: z.string().transform((val) => asEdgeId(val)),
-  type: z.string().transform((val) => asTypeId(val)),
-  source: z.string().transform((val) => asNodeId(val)),
-  target: z.string().transform((val) => asNodeId(val)),
-  properties: StorablePropertiesSchema,
-  metadata: TemporalMetadataSchema,
+    id: z.string().transform(val => asEdgeId(val)),
+    type: z.string().transform(val => asTypeId(val)),
+    source: z.string().transform(val => asNodeId(val)),
+    target: z.string().transform(val => asNodeId(val)),
+    properties: StorablePropertiesSchema,
+    metadata: TemporalMetadataSchema
 });

@@ -1,7 +1,18 @@
-import type { Graph, Node, NodeId, PropertyValue, ScalarValue, Result } from '@canopy/types';
-import { createNodeId, createInstant, ok, err, fromThrowable } from '@canopy/types';
+import {
+  Graph,
+  Node,
+  NodeId,
+  createNodeId,
+  createInstant,
+  PropertyValue,
+  ScalarValue,
+  Result,
+  ok,
+  err,
+  fromThrowable
+} from '@canopy/types';
 import { SYSTEM_IDS, addNode } from '@canopy/core';
-import type { Query, Sort } from './model';
+import { Query, Sort } from './model';
 import { getQueryDefinition } from './stored';
 
 export interface ViewDefinition {
@@ -35,12 +46,12 @@ function reference(target: NodeId): PropertyValue {
 
 // Helper to create a list property
 function list(items: readonly string[]): PropertyValue {
-  return { kind: 'list', items: items.map((i) => ({ kind: 'text', value: i })) };
+  return { kind: 'list', items: items.map(i => ({ kind: 'text', value: i })) };
 }
 
 export function saveViewDefinition(
   graph: Graph,
-  view: ViewDefinition,
+  view: ViewDefinition
 ): Result<{ graph: Graph; nodeId: NodeId }, Error> {
   const nodeId = createNodeId();
 
@@ -60,32 +71,32 @@ export function saveViewDefinition(
   ];
 
   if (view.description) {
-    const v = scalar(view.description);
-    if (!v.ok) return err(v.error);
-    // eslint-disable-next-line functional/immutable-data
-    baseProperties.push(['description', v.value]);
+      const v = scalar(view.description);
+      if (!v.ok) return err(v.error);
+      // eslint-disable-next-line functional/immutable-data
+      baseProperties.push(['description', v.value]);
   }
   if (view.sort && view.sort.length > 0) {
-    const v = scalar(JSON.stringify(view.sort));
-    if (!v.ok) return err(v.error);
-    // eslint-disable-next-line functional/immutable-data
-    baseProperties.push(['sort', v.value]);
+      const v = scalar(JSON.stringify(view.sort));
+      if (!v.ok) return err(v.error);
+      // eslint-disable-next-line functional/immutable-data
+      baseProperties.push(['sort', v.value]);
   }
   if (view.groupBy) {
-    const v = scalar(view.groupBy);
-    if (!v.ok) return err(v.error);
-    // eslint-disable-next-line functional/immutable-data
-    baseProperties.push(['groupBy', v.value]);
+      const v = scalar(view.groupBy);
+      if (!v.ok) return err(v.error);
+      // eslint-disable-next-line functional/immutable-data
+      baseProperties.push(['groupBy', v.value]);
   }
   if (view.displayProperties && view.displayProperties.length > 0) {
-    // eslint-disable-next-line functional/immutable-data
-    baseProperties.push(['displayProperties', list(view.displayProperties)]);
+      // eslint-disable-next-line functional/immutable-data
+      baseProperties.push(['displayProperties', list(view.displayProperties)]);
   }
   if (view.pageSize) {
-    const v = scalar(view.pageSize);
-    if (!v.ok) return err(v.error);
-    // eslint-disable-next-line functional/immutable-data
-    baseProperties.push(['pageSize', v.value]);
+      const v = scalar(view.pageSize);
+      if (!v.ok) return err(v.error);
+      // eslint-disable-next-line functional/immutable-data
+      baseProperties.push(['pageSize', v.value]);
   }
 
   const properties = new Map(baseProperties);
@@ -120,8 +131,7 @@ export function getViewDefinition(graph: Graph, nodeId: NodeId): Result<ViewDefi
   if (!nameProp || nameProp.kind !== 'text') return err(new Error('Invalid view name'));
 
   const queryRefProp = node.properties.get('queryRef');
-  if (!queryRefProp || queryRefProp.kind !== 'reference')
-    return err(new Error('Invalid view queryRef'));
+  if (!queryRefProp || queryRefProp.kind !== 'reference') return err(new Error('Invalid view queryRef'));
 
   const layoutProp = node.properties.get('layout');
   if (!layoutProp || layoutProp.kind !== 'text') return err(new Error('Invalid view layout'));
@@ -140,12 +150,11 @@ export function getViewDefinition(graph: Graph, nodeId: NodeId): Result<ViewDefi
     return undefined;
   })();
 
-  const displayPropertiesList =
-    displayProperties && displayProperties.kind === 'list'
+  const displayPropertiesList = (displayProperties && displayProperties.kind === 'list')
       ? displayProperties.items
-          .filter((i) => i.kind === 'text')
-          .map((i) => (i.kind === 'text' ? i.value : '')) // Explicit check to satisfy types, though filter handles it
-          .filter((s) => s !== '')
+          .filter(i => i.kind === 'text')
+          .map(i => i.kind === 'text' ? i.value : '') // Explicit check to satisfy types, though filter handles it
+          .filter(s => s !== '')
       : undefined;
 
   return ok({
@@ -162,7 +171,7 @@ export function getViewDefinition(graph: Graph, nodeId: NodeId): Result<ViewDefi
 
 export function listViewDefinitions(graph: Graph): readonly Node[] {
   return Array.from(graph.nodes.values()).filter(
-    (node) => node.type === SYSTEM_IDS.VIEW_DEFINITION,
+    (node) => node.type === SYSTEM_IDS.VIEW_DEFINITION
   );
 }
 
@@ -175,6 +184,6 @@ export function resolveView(graph: Graph, viewNodeId: NodeId): Result<ResolvedVi
 
   return ok({
     definition: viewDef.value,
-    query: queryDef.value,
+    query: queryDef.value
   });
 }

@@ -1,5 +1,5 @@
 import React from 'react';
-import type { PropertyValue, PropertyValueKind, ScalarValue } from '@canopy/types';
+import { PropertyValue, PropertyValueKind, ScalarValue, asInstant, asPlainDate, asNodeId } from '@canopy/types';
 import { cn } from '../../utils/cn';
 
 interface PropertyInputData {
@@ -17,55 +17,44 @@ type PropertyInputProps = PropertyInputData & PropertyInputEvents;
 // Helper to update a scalar value while preserving its kind
 const updateScalar = (original: ScalarValue, newValue: string | number | boolean): ScalarValue => {
   switch (original.kind) {
-    case 'text':
-      return { ...original, value: String(newValue) };
-    case 'number':
-      return { ...original, value: Number(newValue) };
-    case 'boolean':
-      return { ...original, value: Boolean(newValue) };
+    case 'text': return { ...original, value: String(newValue) };
+    case 'number': return { ...original, value: Number(newValue) };
+    case 'boolean': return { ...original, value: Boolean(newValue) };
     // For specialized types, we cast for now but should validate in real usage
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    case 'instant':
-      return { ...original, value: String(newValue) as any };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    case 'plain-date':
-      return { ...original, value: String(newValue) as any };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    case 'reference':
-      return { ...original, target: String(newValue) as any };
-    case 'external-reference':
-      return original;
-    default:
-      return original;
+    case 'instant': return { ...original, value: asInstant(String(newValue)) };
+    case 'plain-date': return { ...original, value: asPlainDate(String(newValue)) };
+    case 'reference': return { ...original, target: asNodeId(String(newValue)) };
+    case 'external-reference': return original;
+    default: return original;
   }
 };
 
 export const PropertyInput: React.FC<PropertyInputProps> = ({ value, onChange, className }) => {
   if (value.kind === 'list') {
     return (
-      <div className={cn('space-y-2', className)}>
+      <div className={cn("space-y-2", className)}>
         {value.items.map((item, index) => (
           <div key={index} className="flex gap-2">
-            <ScalarInput
-              value={item}
-              onChange={(newItem) => {
-                const newItems = [...value.items];
-                // eslint-disable-next-line functional/immutable-data
-                newItems[index] = newItem;
-                onChange({ ...value, items: newItems });
-                return undefined;
-              }}
-            />
-            <button
-              onClick={() => {
-                const newItems = value.items.filter((_, i) => i !== index);
-                onChange({ ...value, items: newItems });
-                return undefined;
-              }}
-              className="text-red-500 hover:bg-red-50 px-2 rounded"
-            >
-              Remove
-            </button>
+             <ScalarInput
+               value={item}
+               onChange={(newItem) => {
+                 const newItems = [...value.items];
+            // eslint-disable-next-line functional/immutable-data
+                 newItems[index] = newItem;
+                 onChange({ ...value, items: newItems });
+                 return undefined;
+               }}
+             />
+             <button
+               onClick={() => {
+                 const newItems = value.items.filter((_, i) => i !== index);
+                 onChange({ ...value, items: newItems });
+                 return undefined;
+               }}
+               className="text-red-500 hover:bg-red-50 px-2 rounded"
+             >
+               Remove
+             </button>
           </div>
         ))}
         <button
@@ -77,15 +66,11 @@ export const PropertyInput: React.FC<PropertyInputProps> = ({ value, onChange, c
             // For now, let's default to text if empty, or copy the kind of the first item.
             const getDefaultItem = (firstItem?: ScalarValue): ScalarValue => {
               if (!firstItem) return { kind: 'text', value: '' };
-              switch (firstItem.kind) {
-                case 'text':
-                  return { kind: 'text', value: '' };
-                case 'number':
-                  return { kind: 'number', value: 0 };
-                case 'boolean':
-                  return { kind: 'boolean', value: false };
-                default:
-                  return { kind: 'text', value: '' };
+              switch(firstItem.kind) {
+                 case 'text': return { kind: 'text', value: '' };
+                 case 'number': return { kind: 'number', value: 0 };
+                 case 'boolean': return { kind: 'boolean', value: false };
+                 default: return { kind: 'text', value: '' };
               }
             };
 
@@ -104,14 +89,8 @@ export const PropertyInput: React.FC<PropertyInputProps> = ({ value, onChange, c
   return <ScalarInput value={value} onChange={onChange} className={className} />;
 };
 
-const ScalarInput: React.FC<
-  Readonly<{
-    value: ScalarValue;
-    onChange: (val: ScalarValue) => unknown;
-    className?: string | undefined;
-  }>
-> = ({ value, onChange, className }) => {
-  const baseInputClass = cn('border rounded px-2 py-1 w-full text-sm', className);
+const ScalarInput: React.FC<Readonly<{ value: ScalarValue, onChange: (val: ScalarValue) => unknown, className?: string | undefined }>> = ({ value, onChange, className }) => {
+  const baseInputClass = cn("border rounded px-2 py-1 w-full text-sm", className);
 
   switch (value.kind) {
     case 'text':
@@ -119,10 +98,7 @@ const ScalarInput: React.FC<
         <input
           type="text"
           value={value.value}
-          onChange={(e) => {
-            onChange(updateScalar(value, e.target.value));
-            return undefined;
-          }}
+          onChange={(e) => { onChange(updateScalar(value, e.target.value)); return undefined; }}
           className={baseInputClass}
         />
       );
@@ -131,10 +107,7 @@ const ScalarInput: React.FC<
         <input
           type="number"
           value={value.value}
-          onChange={(e) => {
-            onChange(updateScalar(value, e.target.valueAsNumber));
-            return undefined;
-          }}
+          onChange={(e) => { onChange(updateScalar(value, e.target.valueAsNumber)); return undefined; }}
           className={baseInputClass}
         />
       );
@@ -143,11 +116,8 @@ const ScalarInput: React.FC<
         <input
           type="checkbox"
           checked={value.value}
-          onChange={(e) => {
-            onChange(updateScalar(value, e.target.checked));
-            return undefined;
-          }}
-          className={cn('h-4 w-4', className)}
+          onChange={(e) => { onChange(updateScalar(value, e.target.checked)); return undefined; }}
+          className={cn("h-4 w-4", className)}
         />
       );
     case 'instant':
@@ -156,39 +126,30 @@ const ScalarInput: React.FC<
         <input
           type="text"
           value={value.value}
-          onChange={(e) => {
-            onChange(updateScalar(value, e.target.value));
-            return undefined;
-          }}
+          onChange={(e) => { onChange(updateScalar(value, e.target.value)); return undefined; }}
           className={baseInputClass}
           placeholder="ISO 8601 Timestamp"
         />
       );
     case 'plain-date':
-      return (
-        <input
-          type="date"
-          value={value.value}
-          onChange={(e) => {
-            onChange(updateScalar(value, e.target.value));
-            return undefined;
-          }}
-          className={baseInputClass}
-        />
-      );
+        return (
+          <input
+            type="date"
+            value={value.value}
+            onChange={(e) => { onChange(updateScalar(value, e.target.value)); return undefined; }}
+            className={baseInputClass}
+          />
+        );
     case 'reference':
-      return (
-        <input
-          type="text"
-          value={value.target}
-          onChange={(e) => {
-            onChange(updateScalar(value, e.target.value));
-            return undefined;
-          }}
-          className={baseInputClass}
-          placeholder="Node ID"
-        />
-      );
+        return (
+          <input
+            type="text"
+            value={value.target}
+            onChange={(e) => { onChange(updateScalar(value, e.target.value)); return undefined; }}
+            className={baseInputClass}
+            placeholder="Node ID"
+          />
+        );
     default:
       return <div className="text-gray-400 text-xs">Editing not supported for {value.kind}</div>;
   }
