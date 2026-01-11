@@ -4,7 +4,8 @@ import * as AwarenessProtocol from 'y-protocols/awareness';
 import { SyncProvider } from '../types';
 import { Result, ok, err } from '@canopy/types';
 
-type EventHandler = (data: unknown) => unknown;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type EventHandler = (...args: any[]) => unknown;
 
 export class InMemoryProvider implements SyncProvider {
   readonly doc: Y.Doc;
@@ -185,7 +186,7 @@ export class InMemoryProvider implements SyncProvider {
   }
 
   emit(event: string, data: unknown) {
-    this.handlers.get(event)?.forEach((h: EventHandler) => h(data));
+    this.handlers.get(event)?.forEach((h) => h(data));
     return undefined;
   }
 }
