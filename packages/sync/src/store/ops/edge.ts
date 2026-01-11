@@ -1,13 +1,14 @@
-import * as Y from 'yjs';
-import {
+import type * as Y from 'yjs';
+import type {
   Edge,
   EdgeId,
+  Result} from '@canopy/types';
+import {
   createEdgeId,
   createInstant,
   asEdgeId,
-  Result,
   ok,
-  err
+  err,
 } from '@canopy/types';
 import { EdgeSchema } from '@canopy/schema';
 import { map } from 'remeda';
@@ -18,7 +19,7 @@ export function addEdge(
   nodes: Y.Map<unknown>,
   data: Omit<Edge, 'id' | 'metadata'> & Readonly<{
     id?: string;
-  }>
+  }>,
 ): Result<Edge, Error> {
   if (!nodes.has(data.source)) {
     return err(new Error(`Source node ${data.source} not found`));
@@ -43,7 +44,7 @@ export function addEdge(
     metadata: {
       created: now,
       modified: now,
-    }
+    },
   };
 
   // Validate schema
@@ -81,7 +82,7 @@ export function updateEdge(
   edges: Y.Map<unknown>,
   nodes: Y.Map<unknown>,
   id: string,
-  partial: Partial<Omit<Edge, 'id' | 'metadata'>>
+  partial: Partial<Omit<Edge, 'id' | 'metadata'>>,
 ): Result<Edge, Error> {
     const existingResult = getEdge(edges, id);
     if (!existingResult.ok) {

@@ -1,10 +1,11 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { SyncEngine } from '@canopy/sync';
-import { Graph, GraphId, NodeId, EdgeId, asInstant, PropertyValue, Node, Edge, Result, ok, err, fromThrowable, fromAsyncThrowable } from '@canopy/types';
+import type { Graph, GraphId, NodeId, EdgeId, PropertyValue, Node, Edge, Result} from '@canopy/types';
+import { asInstant, ok, err, fromThrowable, fromAsyncThrowable } from '@canopy/types';
 import { useStorage } from './StorageContext';
 import { z } from 'zod';
 import { TypeIdSchema } from '@canopy/schema';
-import { TypeId } from '@canopy/types';
+import type { TypeId } from '@canopy/types';
 
 interface GraphContextState {
   readonly graph: Graph | null;
@@ -65,7 +66,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
         // 2. Initialize SyncEngine
         // If snapshot is undefined (new graph), we pass undefined, SyncEngine creates new Doc.
         const engine = new SyncEngine(
-            snapshot ? { initialSnapshot: snapshot } : {}
+            snapshot ? { initialSnapshot: snapshot } : {},
         );
 
         setSyncEngine(engine);
@@ -104,7 +105,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
           name: 'Graph', // We should load this
           metadata: { created: now, modified: now }, // Placeholder
           nodes,
-          edges
+          edges,
       });
       return undefined;
   };
@@ -131,7 +132,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
                    id: currentGraphId,
                    name: graph.name,
                    createdAt,
-                   updatedAt: new Date().toISOString()
+                   updatedAt: new Date().toISOString(),
               });
               // eslint-disable-next-line functional/no-throw-statements -- Re-throwing error to be caught by fromAsyncThrowable
               if (!result.ok) throw result.error;
@@ -152,7 +153,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
   // should already return TypeId.
   const CreateNodeInputSchema = z.object({
       type: TypeIdSchema,
-      properties: z.record(z.string(), z.unknown()).optional()
+      properties: z.record(z.string(), z.unknown()).optional(),
   });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -179,7 +180,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
 
           const newNodeResult = syncEngineRef.current!.store.addNode({
               type: typeId,
-              properties: propsMap
+              properties: propsMap,
           });
 
           // eslint-disable-next-line functional/no-throw-statements -- Re-throwing error to be caught by fromAsyncThrowable

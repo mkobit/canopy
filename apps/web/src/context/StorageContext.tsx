@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { StorageAdapter, IndexedDBAdapter } from '@canopy/storage';
+import type { StorageAdapter} from '@canopy/storage';
+import { IndexedDBAdapter } from '@canopy/storage';
 import { fromAsyncThrowable } from '@canopy/types';
 
 interface StorageContextType {

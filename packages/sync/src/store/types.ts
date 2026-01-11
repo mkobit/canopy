@@ -1,8 +1,9 @@
 import { z } from 'zod';
-import {
+import type {
   Node,
   Edge,
-  PropertyValue,
+  PropertyValue} from '@canopy/types';
+import {
   asNodeId,
   asEdgeId,
   asTypeId,
@@ -30,7 +31,7 @@ export const StorableNodeSchema: z.ZodType<StorableNode, z.ZodTypeDef, unknown> 
     id: z.string().transform(val => asNodeId(val)),
     type: z.string().transform(val => asTypeId(val)),
     properties: StorablePropertiesSchema,
-    metadata: TemporalMetadataSchema
+    metadata: TemporalMetadataSchema,
 });
 
 export const StorableEdgeSchema: z.ZodType<StorableEdge, z.ZodTypeDef, unknown> = z.object({
@@ -39,5 +40,5 @@ export const StorableEdgeSchema: z.ZodType<StorableEdge, z.ZodTypeDef, unknown> 
     source: z.string().transform(val => asNodeId(val)),
     target: z.string().transform(val => asNodeId(val)),
     properties: StorablePropertiesSchema,
-    metadata: TemporalMetadataSchema
+    metadata: TemporalMetadataSchema,
 });

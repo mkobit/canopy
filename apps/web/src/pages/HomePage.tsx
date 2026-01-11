@@ -3,7 +3,7 @@ import { useStorage } from '../context/StorageContext';
 import { useNavigate } from 'react-router-dom';
 import { createGraphId } from '@canopy/types';
 import { Plus, Trash2, FolderOpen } from 'lucide-react';
-import { GraphStorageMetadata } from '@canopy/storage';
+import type { GraphStorageMetadata } from '@canopy/storage';
 
 export const HomePage = () => {
   const { storage, isLoading: storageLoading } = useStorage();
@@ -45,7 +45,7 @@ export const HomePage = () => {
         id,
         name,
         createdAt: now,
-        updatedAt: now
+        updatedAt: now,
     });
 
     if (result.ok) {

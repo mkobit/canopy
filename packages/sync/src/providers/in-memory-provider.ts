@@ -1,8 +1,9 @@
 import * as Y from 'yjs';
-import { Awareness } from 'y-protocols/awareness';
+import type { Awareness } from 'y-protocols/awareness';
 import * as AwarenessProtocol from 'y-protocols/awareness';
-import { SyncProvider } from '../types';
-import { Result, ok, err } from '@canopy/types';
+import type { SyncProvider } from '../types';
+import type { Result} from '@canopy/types';
+import { ok, err } from '@canopy/types';
 
 export class InMemoryProvider implements SyncProvider {
   readonly doc: Y.Doc;

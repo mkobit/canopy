@@ -1,5 +1,5 @@
 
-import { Result } from '@canopy/types';
+import type { Result } from '@canopy/types';
 
 export interface GraphStorageMetadata {
   readonly id: string;

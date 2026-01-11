@@ -1,5 +1,5 @@
 import React from 'react';
-import { Node } from '@canopy/types';
+import type { Node } from '@canopy/types';
 import { cn } from '../../utils/cn';
 import { PropertyDisplay } from '../properties/PropertyDisplay';
 
@@ -22,7 +22,7 @@ export const NodeView: React.FC<NodeViewProps> = ({ node, className, selected, o
       className={cn(
         "bg-white border rounded shadow-sm p-4 w-64 cursor-pointer hover:shadow-md transition-shadow select-none",
         selected && "ring-2 ring-blue-500",
-        className
+        className,
       )}
       onClick={() => { onClick?.(node); return undefined; }}
       style={style}

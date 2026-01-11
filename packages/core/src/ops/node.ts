@@ -96,8 +96,8 @@ export function updateNode(graph: Graph, nodeId: NodeId, updater: (node: Node) =
         ...updatedNode,
         metadata: {
           ...updatedNode.metadata,
-          modified: createInstant()
-        }
+          modified: createInstant(),
+        },
       }]
     }
     return [id, node]

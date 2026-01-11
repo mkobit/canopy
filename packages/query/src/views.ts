@@ -1,18 +1,19 @@
-import {
+import type {
   Graph,
   Node,
   NodeId,
-  createNodeId,
-  createInstant,
   PropertyValue,
   ScalarValue,
-  Result,
+  Result} from '@canopy/types';
+import {
+  createNodeId,
+  createInstant,
   ok,
   err,
-  fromThrowable
+  fromThrowable,
 } from '@canopy/types';
 import { SYSTEM_IDS, addNode } from '@canopy/core';
-import { Query, Sort } from './model';
+import type { Query, Sort } from './model';
 import { getQueryDefinition } from './stored';
 
 export interface ViewDefinition {
@@ -51,7 +52,7 @@ function list(items: readonly string[]): PropertyValue {
 
 export function saveViewDefinition(
   graph: Graph,
-  view: ViewDefinition
+  view: ViewDefinition,
 ): Result<{ graph: Graph; nodeId: NodeId }, Error> {
   const nodeId = createNodeId();
 
@@ -171,7 +172,7 @@ export function getViewDefinition(graph: Graph, nodeId: NodeId): Result<ViewDefi
 
 export function listViewDefinitions(graph: Graph): readonly Node[] {
   return Array.from(graph.nodes.values()).filter(
-    (node) => node.type === SYSTEM_IDS.VIEW_DEFINITION
+    (node) => node.type === SYSTEM_IDS.VIEW_DEFINITION,
   );
 }
 
@@ -184,6 +185,6 @@ export function resolveView(graph: Graph, viewNodeId: NodeId): Result<ResolvedVi
 
   return ok({
     definition: viewDef.value,
-    query: queryDef.value
+    query: queryDef.value,
   });
 }
