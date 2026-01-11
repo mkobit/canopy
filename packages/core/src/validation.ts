@@ -8,7 +8,7 @@ import type {
   ValidationError,
   PropertyDefinition,
   PropertyValue,
-  TypeId,
+  TypeId
 } from '@canopy/types'
 import { asTypeId, asNodeId } from '@canopy/types'
 import { PropertyDefinitionSchema } from '@canopy/schema'
@@ -82,7 +82,7 @@ function extractEdgeTypeDefinition(node: Node): EdgeTypeDefinition | undefined {
         sourceTypes,
         targetTypes,
         transitive: false, // TODO
-        inverse: undefined, // TODO
+        inverse: undefined // TODO
     }
 }
 
@@ -98,7 +98,7 @@ function extractNodeTypeDefinition(node: Node): NodeTypeDefinition {
         description: description?.kind === 'text' ? description.value : undefined,
         properties,
         validOutgoingEdges: [], // TODO
-        validIncomingEdges: [], // TODO
+        validIncomingEdges: [] // TODO
     }
 }
 
@@ -110,7 +110,7 @@ function validateValue(val: PropertyValue, def: PropertyDefinition): readonly Va
             path: [def.name],
             message: `Property '${def.name}' expected type '${def.valueKind}' but got '${val.kind}'`,
             expected: def.valueKind,
-            actual: val.kind,
+            actual: val.kind
         }]
     }
 
@@ -133,7 +133,7 @@ function validateProperties(properties: ReadonlyMap<string, PropertyValue>, defi
                     path: [propDef.name],
                     message: `Missing required property '${propDef.name}'`,
                     expected: 'defined',
-                    actual: 'undefined',
+                    actual: 'undefined'
                 }]
             }
 
@@ -141,7 +141,7 @@ function validateProperties(properties: ReadonlyMap<string, PropertyValue>, defi
                 return validateValue(val, propDef)
             }
             return []
-        }),
+        })
     )
 }
 
@@ -188,11 +188,11 @@ export function validateEdge(graph: Graph, edge: Edge): ValidationResult {
                     path: ['source'],
                     message: `Source node type '${node.type}' is not allowed for edge type '${edge.type}'`,
                     expected: def.sourceTypes.join(' | '),
-                    actual: node.type,
+                    actual: node.type
                 }]
             }
             return []
-        }),
+        })
     )
 
     const targetErrors = pipe(
@@ -205,11 +205,11 @@ export function validateEdge(graph: Graph, edge: Edge): ValidationResult {
                     path: ['target'],
                     message: `Target node type '${node.type}' is not allowed for edge type '${edge.type}'`,
                     expected: def.targetTypes.join(' | '),
-                    actual: node.type,
+                    actual: node.type
                 }]
             }
             return []
-        }),
+        })
     )
 
     // 3. Validate properties

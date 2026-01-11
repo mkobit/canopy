@@ -75,5 +75,5 @@ export {
     asPlainDate,
     parsePlainDate,
     asNodeId,
-    asEdgeId,
+    asEdgeId
 } from './factories';

@@ -1,14 +1,13 @@
-import type * as Y from 'yjs';
-import type {
+import * as Y from 'yjs';
+import {
   Node,
   NodeId,
-  Result} from '@canopy/types';
-import {
   createNodeId,
   createInstant,
   asNodeId,
+  Result,
   ok,
-  err,
+  err
 } from '@canopy/types';
 import { NodeSchema } from '@canopy/schema';
 import { map } from 'remeda';
@@ -18,7 +17,7 @@ export function addNode(
   nodes: Y.Map<unknown>,
   data: Omit<Node, 'id' | 'metadata'> & Readonly<{
     id?: string;
-  }>,
+  }>
 ): Result<Node, Error> {
   const now = createInstant();
 
@@ -36,7 +35,7 @@ export function addNode(
     metadata: {
       created: now,
       modified: now,
-    },
+    }
   };
 
   // Validate schema on the domain object
@@ -73,7 +72,7 @@ export function getAllNodes(nodes: Y.Map<unknown>): Result<IterableIterator<Node
 export function updateNode(
   nodes: Y.Map<unknown>,
   id: string,
-  partial: Partial<Omit<Node, 'id' | 'metadata'>>,
+  partial: Partial<Omit<Node, 'id' | 'metadata'>>
 ): Result<Node, Error> {
   const existingResult = getNode(nodes, id);
   if (!existingResult.ok) {

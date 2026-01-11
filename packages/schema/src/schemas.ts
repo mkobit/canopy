@@ -12,7 +12,7 @@ import type {
   PropertyDefinition,
   Graph,
   NodeId,
-  EdgeId,
+  EdgeId
 } from '@canopy/types';
 
 import {
@@ -21,7 +21,7 @@ import {
     asTypeId,
     asGraphId,
     asInstant,
-    asPlainDate,
+    asPlainDate
 } from '@canopy/types';
 
 // Helpers to transform strings to branded types using the "as" casters from types.
@@ -52,12 +52,12 @@ const InstantValueSchema = z.object({ kind: z.literal('instant'), value: Instant
 const PlainDateValueSchema = z.object({ kind: z.literal('plain-date'), value: PlainDateSchema });
 const ReferenceValueSchema = z.object({
     kind: z.literal('reference'),
-    target: NodeIdSchema,
+    target: NodeIdSchema
 });
 const ExternalReferenceValueSchema = z.object({
     kind: z.literal('external-reference'),
     graph: GraphIdSchema,
-    target: NodeIdSchema,
+    target: NodeIdSchema
 });
 
 const ScalarValueSchema: z.ZodType<ScalarValue, z.ZodTypeDef, unknown> = z.discriminatedUnion('kind', [
@@ -67,13 +67,13 @@ const ScalarValueSchema: z.ZodType<ScalarValue, z.ZodTypeDef, unknown> = z.discr
   InstantValueSchema,
   PlainDateValueSchema,
   ReferenceValueSchema,
-  ExternalReferenceValueSchema,
+  ExternalReferenceValueSchema
 ]);
 
 // List Value - array of scalars
 const ListValueSchema = z.object({
   kind: z.literal('list'),
-  items: z.array(ScalarValueSchema),
+  items: z.array(ScalarValueSchema)
 });
 
 // Property Value
@@ -85,7 +85,7 @@ export const PropertyValueSchema: z.ZodType<PropertyValue, z.ZodTypeDef, unknown
   PlainDateValueSchema,
   ReferenceValueSchema,
   ExternalReferenceValueSchema,
-  ListValueSchema,
+  ListValueSchema
 ]);
 
 export const PropertyDefinitionSchema: z.ZodType<PropertyDefinition, z.ZodTypeDef, unknown> = z.object({
@@ -95,7 +95,7 @@ export const PropertyDefinitionSchema: z.ZodType<PropertyDefinition, z.ZodTypeDe
   description: z.string().optional(),
 }).transform(val => ({
   ...val,
-  description: val.description ?? undefined, // ensure explicit undefined if missing (though optional usually means | undefined)
+  description: val.description ?? undefined // ensure explicit undefined if missing (though optional usually means | undefined)
 }));
 
 export const TemporalMetadataSchema: z.ZodType<TemporalMetadata, z.ZodTypeDef, unknown> = z.object({
@@ -107,14 +107,14 @@ export const TemporalMetadataSchema: z.ZodType<TemporalMetadata, z.ZodTypeDef, u
 // Allows parsing from a Map or a plain object (JSON record).
 export const PropertyMapSchema = z.union([
   z.map(z.string(), PropertyValueSchema),
-  z.record(z.string(), PropertyValueSchema).transform((record) => new Map(Object.entries(record))),
+  z.record(z.string(), PropertyValueSchema).transform((record) => new Map(Object.entries(record)))
 ]);
 
 export const NodeSchema: z.ZodType<Node, z.ZodTypeDef, unknown> = z.object({
   id: NodeIdSchema,
   type: TypeIdSchema,
   properties: PropertyMapSchema,
-  metadata: TemporalMetadataSchema,
+  metadata: TemporalMetadataSchema
 });
 
 export const EdgeSchema: z.ZodType<Edge, z.ZodTypeDef, unknown> = z.object({
@@ -123,7 +123,7 @@ export const EdgeSchema: z.ZodType<Edge, z.ZodTypeDef, unknown> = z.object({
   source: NodeIdSchema,
   target: NodeIdSchema,
   properties: PropertyMapSchema,
-  metadata: TemporalMetadataSchema,
+  metadata: TemporalMetadataSchema
 });
 
 export const GraphSchema: z.ZodType<Graph, z.ZodTypeDef, unknown> = z.object({
@@ -134,18 +134,18 @@ export const GraphSchema: z.ZodType<Graph, z.ZodTypeDef, unknown> = z.object({
     z.map(NodeIdSchema, NodeSchema),
     z.record(z.string().uuid(), NodeSchema).transform((record) => {
         return new Map<NodeId, Node>(
-            Object.entries(record).map(([key, value]) => [asNodeId(key), value]),
+            Object.entries(record).map(([key, value]) => [asNodeId(key), value])
         );
-    }),
+    })
   ]),
   edges: z.union([
       z.map(EdgeIdSchema, EdgeSchema),
       z.record(z.string().uuid(), EdgeSchema).transform((record) => {
           return new Map<EdgeId, Edge>(
-            Object.entries(record).map(([key, value]) => [asEdgeId(key), value]),
+            Object.entries(record).map(([key, value]) => [asEdgeId(key), value])
           );
-      }),
-  ]),
+      })
+  ])
 });
 
 export const NodeTypeDefinitionSchema: z.ZodType<NodeTypeDefinition, z.ZodTypeDef, unknown> = z.object({
@@ -157,7 +157,7 @@ export const NodeTypeDefinitionSchema: z.ZodType<NodeTypeDefinition, z.ZodTypeDe
   validIncomingEdges: z.array(TypeIdSchema),
 }).transform(val => ({
   ...val,
-  description: val.description ?? undefined,
+  description: val.description ?? undefined
 }));
 
 export const EdgeTypeDefinitionSchema: z.ZodType<EdgeTypeDefinition, z.ZodTypeDef, unknown> = z.object({
@@ -172,5 +172,5 @@ export const EdgeTypeDefinitionSchema: z.ZodType<EdgeTypeDefinition, z.ZodTypeDe
 }).transform(val => ({
   ...val,
   description: val.description ?? undefined,
-  inverse: val.inverse ?? undefined,
+  inverse: val.inverse ?? undefined
 }));

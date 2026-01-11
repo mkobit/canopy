@@ -1,5 +1,5 @@
-import type * as Y from 'yjs';
-import type {
+import * as Y from 'yjs';
+import {
   Node,
   Edge,
   Result,
@@ -21,7 +21,7 @@ export class GraphStore {
   addNode(
     data: Omit<Node, 'id' | 'metadata'> & Readonly<{
       id?: string;
-    }>,
+    }>
   ): Result<Node, Error> {
     return NodeOps.addNode(this.nodes, data);
   }
@@ -51,7 +51,7 @@ export class GraphStore {
   addEdge(
     data: Omit<Edge, 'id' | 'metadata'> & Readonly<{
       id?: string;
-    }>,
+    }>
   ): Result<Edge, Error> {
     return EdgeOps.addEdge(this.edges, this.nodes, data);
   }

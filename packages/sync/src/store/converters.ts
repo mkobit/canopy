@@ -1,13 +1,12 @@
-import type {
+import {
   Node,
   Edge,
   PropertyValue,
 } from '@canopy/types';
-import type {
+import {
   StorableProperties,
   StorableNode,
-  StorableEdge} from './types';
-import {
+  StorableEdge,
   StorableNodeSchema,
   StorableEdgeSchema,
 } from './types';
@@ -32,7 +31,7 @@ export const storableToNode = (storable: unknown): Node => {
     const n = StorableNodeSchema.parse(storable);
     return {
         ...n,
-        properties: storableToProperties(n.properties),
+        properties: storableToProperties(n.properties)
     };
 };
 
@@ -47,6 +46,6 @@ export const storableToEdge = (storable: unknown): Edge => {
     const e = StorableEdgeSchema.parse(storable);
     return {
         ...e,
-        properties: storableToProperties(e.properties),
+        properties: storableToProperties(e.properties)
     };
 };

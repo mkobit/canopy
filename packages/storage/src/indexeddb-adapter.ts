@@ -1,8 +1,6 @@
-import type { DBSchema, IDBPDatabase } from 'idb';
-import { openDB } from 'idb';
-import type { StorageAdapter, GraphStorageMetadata } from './types';
-import type { Result} from '@canopy/types';
-import { ok, err, fromAsyncThrowable } from '@canopy/types';
+import { openDB, DBSchema, IDBPDatabase } from 'idb';
+import { StorageAdapter, GraphStorageMetadata } from './types';
+import { Result, ok, err, fromAsyncThrowable } from '@canopy/types';
 
 interface CanopyDB extends DBSchema {
   readonly graphs: Readonly<{

@@ -103,8 +103,8 @@ export function updateEdge(graph: Graph, edgeId: EdgeId, updater: (edge: Edge) =
         ...updatedEdge,
         metadata: {
           ...updatedEdge.metadata,
-          modified: createInstant(),
-        },
+          modified: createInstant()
+        }
       }]
     }
     return [id, edge]

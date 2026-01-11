@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useGraph } from '../context/GraphContext';
 import { NodeView } from '@canopy/ui';
-import type { Node, NodeId, PropertyValue } from '@canopy/types';
+import { Node, NodeId, PropertyValue } from '@canopy/types';
 import { ArrowLeft, Save, Trash, Link as LinkIcon } from 'lucide-react';
 import { filter, map } from 'remeda';
 
@@ -42,7 +42,7 @@ export const NodePage = () => {
 
       try {
           syncEngine.store.updateNode(currentNode.id, {
-              properties: new Map(editedProps),
+              properties: new Map(editedProps)
           });
 
           await saveGraph(); // Persist changes
@@ -84,7 +84,7 @@ export const NodePage = () => {
 
       return filter(
           Array.from(graph.edges.values()),
-          (edge) => edge.source === currentNode.id || edge.target === currentNode.id,
+          (edge) => edge.source === currentNode.id || edge.target === currentNode.id
       );
   }, [graph, currentNode]);
 

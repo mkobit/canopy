@@ -10,7 +10,7 @@ import type {
   PropertyValue,
   ListValue,
   Node,
-  Edge,
+  Edge
 } from '@canopy/types';
 
 export function isTextValue(value: ScalarValue): value is TextValue {

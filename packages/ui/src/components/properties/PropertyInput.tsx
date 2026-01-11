@@ -1,5 +1,5 @@
 import React from 'react';
-import type { PropertyValue, PropertyValueKind, ScalarValue } from '@canopy/types';
+import { PropertyValue, PropertyValueKind, ScalarValue, asInstant, asPlainDate, asNodeId } from '@canopy/types';
 import { cn } from '../../utils/cn';
 
 interface PropertyInputData {
@@ -21,12 +21,9 @@ const updateScalar = (original: ScalarValue, newValue: string | number | boolean
     case 'number': return { ...original, value: Number(newValue) };
     case 'boolean': return { ...original, value: Boolean(newValue) };
     // For specialized types, we cast for now but should validate in real usage
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    case 'instant': return { ...original, value: String(newValue) as any };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    case 'plain-date': return { ...original, value: String(newValue) as any };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    case 'reference': return { ...original, target: String(newValue) as any };
+    case 'instant': return { ...original, value: asInstant(String(newValue)) };
+    case 'plain-date': return { ...original, value: asPlainDate(String(newValue)) };
+    case 'reference': return { ...original, target: asNodeId(String(newValue)) };
     case 'external-reference': return original;
     default: return original;
   }

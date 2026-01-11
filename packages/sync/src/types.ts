@@ -1,6 +1,6 @@
-import type * as Y from 'yjs';
-import type { Awareness } from 'y-protocols/awareness';
-import type { Result } from '@canopy/types';
+import * as Y from 'yjs';
+import { Awareness } from 'y-protocols/awareness';
+import { Result } from '@canopy/types';
 
 export interface SyncProviderState {
   /**

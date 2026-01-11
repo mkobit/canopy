@@ -4,7 +4,8 @@ import {
   createGraphId, asTypeId, asInstant, asNodeId, asEdgeId, TextValue,
   NodeId, EdgeId, unwrap
 } from '@canopy/types';
-import { query } from '../src/builder';
+import { pipe } from 'remeda';
+import { query, nodes, edges, where, orderBy, limit, traverse, from } from '../src/pipeline';
 import { executeQuery } from '../src/engine';
 import { map, sort } from 'remeda';
 
@@ -81,7 +82,10 @@ describe('Query Engine', () => {
   });
 
   it('queries all nodes of a given type', () => {
-    const q = query().nodes('Person').build();
+    const q = pipe(
+      query(),
+      nodes('Person')
+    );
     const result = unwrap(executeQuery(graph, q));
     expect(result.nodes).toHaveLength(3);
     expect(result.edges).toHaveLength(0);
@@ -90,14 +94,22 @@ describe('Query Engine', () => {
   });
 
   it('queries nodes where a property equals a value', () => {
-    const q = query().nodes('Person').where('name', 'eq', 'Alice').build();
+    const q = pipe(
+      query(),
+      nodes('Person'),
+      where('name', 'eq', 'Alice')
+    );
     const result = unwrap(executeQuery(graph, q));
     expect(result.nodes).toHaveLength(1);
     expect((result.nodes[0].properties.get('name') as TextValue).value).toBe('Alice');
   });
 
   it('queries nodes with comparison operators', () => {
-    const q = query().nodes('Person').where('age', 'gt', 28).build();
+    const q = pipe(
+      query(),
+      nodes('Person'),
+      where('age', 'gt', 28)
+    );
     const result = unwrap(executeQuery(graph, q));
     expect(result.nodes).toHaveLength(2); // Alice (30) and Charlie (35)
     const names = sort(map(result.nodes, n => (n.properties.get('name') as TextValue).value), (a, b) => a.localeCompare(b));
@@ -105,14 +117,21 @@ describe('Query Engine', () => {
   });
 
   it('queries edges by type', () => {
-    const q = query().edges('knows').build();
+    const q = pipe(
+      query(),
+      edges('knows')
+    );
     const result = unwrap(executeQuery(graph, q));
     expect(result.edges).toHaveLength(2);
     expect(result.nodes).toHaveLength(0);
   });
 
   it('queries edges from a specific node', () => {
-    const q = query().edges().from('1').build(); // Alice
+    const q = pipe(
+        query(),
+        edges(),
+        from('1')
+    ); // Alice
     const result = unwrap(executeQuery(graph, q));
     expect(result.edges).toHaveLength(2); // knows Bob, works_at Acme
     const types = sort(map(result.edges, e => e.type), (a, b) => a.localeCompare(b));
@@ -122,11 +141,12 @@ describe('Query Engine', () => {
   it('traverses from a node to connected nodes', () => {
     // Find people Alice knows
     // nodes(Person, name=Alice).traverse(knows, out)
-    const q = query()
-      .nodes('Person')
-      .where('name', 'eq', 'Alice')
-      .traverse('knows', 'out')
-      .build();
+    const q = pipe(
+      query(),
+      nodes('Person'),
+      where('name', 'eq', 'Alice'),
+      traverse('knows', 'out')
+    );
 
     const result = unwrap(executeQuery(graph, q));
     expect(result.nodes).toHaveLength(1);
@@ -135,25 +155,34 @@ describe('Query Engine', () => {
   });
 
   it('combines multiple predicates', () => {
-    const q = query()
-        .nodes('Person')
-        .where('age', 'gt', 20)
-        .where('age', 'lt', 30)
-        .build();
+    const q = pipe(
+      query(),
+      nodes('Person'),
+      where('age', 'gt', 20),
+      where('age', 'lt', 30)
+    );
     const result = unwrap(executeQuery(graph, q));
     expect(result.nodes).toHaveLength(1);
     expect((result.nodes[0].properties.get('name') as TextValue).value).toBe('Bob');
   });
 
   it('sorts results', () => {
-    const q = query().nodes('Person').orderBy('age', 'desc').build();
+    const q = pipe(
+        query(),
+        nodes('Person'),
+        orderBy('age', 'desc')
+    );
     const result = unwrap(executeQuery(graph, q));
     const names = map(result.nodes, n => (n.properties.get('name') as TextValue).value);
     expect(names).toEqual(['Charlie', 'Alice', 'Bob']);
   });
 
   it('limits results', () => {
-    const q = query().nodes('Person').limit(2).build();
+    const q = pipe(
+      query(),
+      nodes('Person'),
+      limit(2)
+    );
     const result = unwrap(executeQuery(graph, q));
     expect(result.nodes).toHaveLength(2);
   });

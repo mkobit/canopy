@@ -1,6 +1,5 @@
-import type { Graph, Node, Edge, QueryResult, PropertyValue, Result, ScalarValue } from '@canopy/types';
-import { ok, err } from '@canopy/types';
-import type { Query, Filter, Sort, QueryStep } from './model';
+import { Graph, Node, Edge, QueryResult, PropertyValue, Result, ok, err } from '@canopy/types';
+import { Query, Filter, Sort, QueryStep } from './model';
 import { reduce, filter, unique, flatMap } from 'remeda';
 
 type GraphItem = Node | Edge;
@@ -29,17 +28,17 @@ export class QueryEngine {
           case 'node-scan':
             return {
               items: this.scanNodes(step.type),
-              isNodeContext: true,
+              isNodeContext: true
             };
           case 'edge-scan':
             return {
               items: this.scanEdges(step.type),
-              isNodeContext: false,
+              isNodeContext: false
             };
           case 'filter':
             return {
               ...acc,
-              items: this.applyFilter(acc.items, step.predicate),
+              items: this.applyFilter(acc.items, step.predicate)
             };
           case 'traversal':
             if (!acc.isNodeContext) {
@@ -47,23 +46,23 @@ export class QueryEngine {
             }
             return {
               items: this.traverse(acc.items as readonly Node[], step.edgeType, step.direction),
-              isNodeContext: true, // Traversal returns nodes
+              isNodeContext: true // Traversal returns nodes
             };
           case 'sort':
             return {
               ...acc,
-              items: this.applySort(acc.items, step.sort),
+              items: this.applySort(acc.items, step.sort)
             };
           case 'limit':
             return {
               ...acc,
-              items: acc.items.slice(0, step.limit),
+              items: acc.items.slice(0, step.limit)
             };
           default:
             return acc;
         }
       },
-      initial,
+      initial
     );
 
     if (result.error) {
@@ -169,7 +168,7 @@ export class QueryEngine {
           }
 
           return [];
-      }),
+      })
     );
   }
 
@@ -210,7 +209,7 @@ export class QueryEngine {
     return this.unwrapScalar(prop);
   }
 
-  private unwrapScalar(scalar: ScalarValue): unknown {
+  private unwrapScalar(scalar: import('@canopy/types').ScalarValue): unknown {
     if ('value' in scalar) {
       return scalar.value;
     }

@@ -2,16 +2,17 @@ import { describe, it, expect } from 'vitest';
 import { createGraph, SYSTEM_IDS } from '@canopy/core';
 import { saveViewDefinition, getViewDefinition, resolveView, listViewDefinitions } from '../src/views';
 import { saveQueryDefinition } from '../src/stored';
-import { Query } from '../src/model';
 import { unwrap, createGraphId } from '@canopy/types';
+import { pipe } from 'remeda';
+import { query, nodes } from '../src/pipeline';
 
 describe('View Definitions', () => {
   it('should save and retrieve a view definition', () => {
     let graph = unwrap(createGraph(createGraphId(), 'Test Graph'));
 
     // Create a query first
-    const query: Query = { steps: [{ kind: 'node-scan' }] };
-    const { graph: g1, nodeId: queryId } = unwrap(saveQueryDefinition(graph, 'My Query', query));
+    const q = pipe(query(), nodes());
+    const { graph: g1, nodeId: queryId } = unwrap(saveQueryDefinition(graph, 'My Query', q));
     graph = g1;
 
     // Save view
@@ -38,8 +39,8 @@ describe('View Definitions', () => {
   it('should resolve a view to its query', () => {
     let graph = unwrap(createGraph(createGraphId(), 'Test Graph'));
 
-    const query: Query = { steps: [{ kind: 'node-scan' }] };
-    const { graph: g1, nodeId: queryId } = unwrap(saveQueryDefinition(graph, 'My Query', query));
+    const q = pipe(query(), nodes());
+    const { graph: g1, nodeId: queryId } = unwrap(saveQueryDefinition(graph, 'My Query', q));
     graph = g1;
 
     const { graph: g2, nodeId: viewId } = unwrap(saveViewDefinition(graph, {
@@ -51,7 +52,7 @@ describe('View Definitions', () => {
 
     const resolved = unwrap(resolveView(graph, viewId));
     expect(resolved.definition.name).toBe('Resolved View');
-    expect(resolved.query).toEqual(query);
+    expect(resolved.query).toEqual(q);
   });
 
   it('should list all view definitions', () => {
