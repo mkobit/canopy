@@ -111,10 +111,10 @@ export function saveViewDefinition(
     },
   };
 
-  const newGraph = addNode(graph, node);
-  if (!newGraph.ok) return err(newGraph.error);
+  const newGraphResult = addNode(graph, node);
+  if (!newGraphResult.ok) return err(newGraphResult.error);
 
-  return ok({ graph: newGraph.value, nodeId });
+  return ok({ graph: newGraphResult.value, nodeId });
 }
 
 export function getViewDefinition(graph: Graph, nodeId: NodeId): Result<ViewDefinition, Error> {

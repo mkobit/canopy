@@ -49,7 +49,12 @@ function reduceResult<T, R>(
   if (items.length === 0) {
     return ok(initial)
   }
-  const [head, ...tail] = items
+  const head = items[0]
+  if (head === undefined) {
+      // This should theoretically not happen due to length check, but safe for noUncheckedIndexedAccess
+      return ok(initial)
+  }
+  const tail = items.slice(1)
   const res = fn(initial, head)
   if (!res.ok) {
     return res
