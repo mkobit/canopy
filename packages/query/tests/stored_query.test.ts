@@ -1,16 +1,15 @@
 import { describe, it, expect } from 'vitest';
 import { createGraph } from '@canopy/core';
-import { bootstrap } from '@canopy/core';
 import { addNode } from '@canopy/core';
 import { QueryEngine } from '../src/engine';
 import { saveQueryDefinition, getQueryDefinition, listQueryDefinitions, executeStoredQuery } from '../src/stored';
 import { Query } from '../src/model';
-import { createNodeId, asTypeId, createInstant, unwrap, isErr } from '@canopy/types';
+import { createNodeId, asTypeId, createInstant, createGraphId, unwrap, isErr } from '@canopy/types';
 
 describe('Stored Queries', () => {
     it('should save and retrieve a query definition', () => {
-        let graph = createGraph();
-        graph = bootstrap(graph);
+        // createGraph calls bootstrap internally now
+        let graph = unwrap(createGraph(createGraphId(), 'Test Graph'));
 
         const query: Query = {
             steps: [
@@ -40,8 +39,7 @@ describe('Stored Queries', () => {
     });
 
     it('should execute a stored query with parameter substitution', () => {
-        let graph = createGraph();
-        graph = bootstrap(graph);
+        let graph = unwrap(createGraph(createGraphId(), 'Test Graph'));
 
         // Add some sample data
         const taskType = asTypeId('node:type:task');
@@ -92,8 +90,7 @@ describe('Stored Queries', () => {
     });
 
     it('should return Error for non-existent or invalid query nodes', () => {
-        let graph = createGraph();
-        graph = bootstrap(graph);
+        let graph = unwrap(createGraph(createGraphId(), 'Test Graph'));
 
         const result = getQueryDefinition(graph, createNodeId());
         expect(isErr(result)).toBe(true);

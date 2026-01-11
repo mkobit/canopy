@@ -1,14 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { createGraph, bootstrap, SYSTEM_IDS } from '@canopy/core';
+import { createGraph, SYSTEM_IDS } from '@canopy/core';
 import { saveViewDefinition, getViewDefinition, resolveView, listViewDefinitions } from '../src/views';
 import { saveQueryDefinition } from '../src/stored';
 import { Query } from '../src/model';
-import { unwrap } from '@canopy/types';
+import { unwrap, createGraphId } from '@canopy/types';
 
 describe('View Definitions', () => {
   it('should save and retrieve a view definition', () => {
-    let graph = createGraph();
-    graph = bootstrap(graph);
+    let graph = unwrap(createGraph(createGraphId(), 'Test Graph'));
 
     // Create a query first
     const query: Query = { steps: [{ kind: 'node-scan' }] };
@@ -37,8 +36,7 @@ describe('View Definitions', () => {
   });
 
   it('should resolve a view to its query', () => {
-    let graph = createGraph();
-    graph = bootstrap(graph);
+    let graph = unwrap(createGraph(createGraphId(), 'Test Graph'));
 
     const query: Query = { steps: [{ kind: 'node-scan' }] };
     const { graph: g1, nodeId: queryId } = unwrap(saveQueryDefinition(graph, 'My Query', query));
@@ -57,8 +55,7 @@ describe('View Definitions', () => {
   });
 
   it('should list all view definitions', () => {
-    let graph = createGraph();
-    graph = bootstrap(graph);
+    let graph = unwrap(createGraph(createGraphId(), 'Test Graph'));
 
     // Check default system views
     const views = listViewDefinitions(graph);
@@ -71,8 +68,7 @@ describe('View Definitions', () => {
   });
 
   it('should have correct default views setup via bootstrap', () => {
-    let graph = createGraph();
-    graph = bootstrap(graph);
+    let graph = unwrap(createGraph(createGraphId(), 'Test Graph'));
 
     const allNodesView = unwrap(getViewDefinition(graph, SYSTEM_IDS.VIEW_ALL_NODES));
     expect(allNodesView.name).toBe('All Nodes');

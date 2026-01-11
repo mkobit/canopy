@@ -1,8 +1,7 @@
-import type { Graph, Node, PropertyMap, TypeId, NodeId, PropertyValue, PropertyDefinition } from '@canopy/types'
-import { createInstant, unwrap } from '@canopy/types'
+import type { Graph, Node, PropertyMap, TypeId, NodeId, PropertyValue, PropertyDefinition, Result } from '@canopy/types'
+import { createInstant, ok, err } from '@canopy/types'
 import { addNode } from './ops'
 import { SYSTEM_IDS, SYSTEM_EDGE_TYPES } from './system'
-import { reduce } from 'remeda'
 
 // Helper to create a property map
 function createProperties(props: Record<string, PropertyValue>): PropertyMap {
@@ -41,33 +40,54 @@ function createBootstrapNode(
   }
 }
 
+// Helper to reduce results safely
+function reduceResult<T, R>(
+  items: readonly T[],
+  fn: (acc: R, item: T) => Result<R, Error>,
+  initial: R
+): Result<R, Error> {
+  let acc = initial
+  for (const item of items) {
+    const res = fn(acc, item)
+    if (!res.ok) return res
+    acc = res.value
+  }
+  return ok(acc)
+}
+
 /**
  * Bootstraps a graph with system nodes.
  * This is idempotent - it only adds nodes if they are missing.
  */
-export function bootstrap(graph: Graph): Graph {
+export function bootstrap(graph: Graph): Result<Graph, Error> {
   // 1. Ensure NodeType definition exists
-  const g1 = !graph.nodes.has(SYSTEM_IDS.NODE_TYPE_DEF)
-    ? unwrap(addNode(graph, createBootstrapNode(
+  let g: Graph = graph
+
+  if (!g.nodes.has(SYSTEM_IDS.NODE_TYPE_DEF)) {
+    const res = addNode(g, createBootstrapNode(
         SYSTEM_IDS.NODE_TYPE_DEF,
         SYSTEM_IDS.NODE_TYPE,
         'Node Type',
         'Defines a type of node in the graph.'
-      )))
-    : graph
+      ))
+    if (!res.ok) return res
+    g = res.value
+  }
 
   // 2. Ensure EdgeType definition exists
-  const g2 = !g1.nodes.has(SYSTEM_IDS.EDGE_TYPE_DEF)
-    ? unwrap(addNode(g1, createBootstrapNode(
+  if (!g.nodes.has(SYSTEM_IDS.EDGE_TYPE_DEF)) {
+     const res = addNode(g, createBootstrapNode(
         SYSTEM_IDS.EDGE_TYPE_DEF,
         SYSTEM_IDS.NODE_TYPE, // An EdgeType definition is a Node of type NodeType
         'Edge Type',
         'Defines a type of edge in the graph.'
-      )))
-    : g1
+      ))
+      if (!res.ok) return res
+      g = res.value
+  }
 
-  const g3 = !g2.nodes.has(SYSTEM_IDS.QUERY_DEFINITION_DEF)
-    ? unwrap(addNode(g2, createBootstrapNode(
+  if (!g.nodes.has(SYSTEM_IDS.QUERY_DEFINITION_DEF)) {
+    const res = addNode(g, createBootstrapNode(
         SYSTEM_IDS.QUERY_DEFINITION_DEF,
         SYSTEM_IDS.NODE_TYPE,
         'Query Definition',
@@ -81,11 +101,13 @@ export function bootstrap(graph: Graph): Graph {
               { name: 'parameters', valueKind: 'list', required: false, description: 'Declared parameter names this query accepts' }
           ] satisfies readonly PropertyDefinition[]))
         }
-      )))
-    : g2
+      ))
+      if (!res.ok) return res
+      g = res.value
+  }
 
-  const g4 = !g3.nodes.has(SYSTEM_IDS.VIEW_DEFINITION_DEF)
-    ? unwrap(addNode(g3, createBootstrapNode(
+  if (!g.nodes.has(SYSTEM_IDS.VIEW_DEFINITION_DEF)) {
+    const res = addNode(g, createBootstrapNode(
         SYSTEM_IDS.VIEW_DEFINITION_DEF,
         SYSTEM_IDS.NODE_TYPE,
         'View Definition',
@@ -102,11 +124,13 @@ export function bootstrap(graph: Graph): Graph {
               { name: 'pageSize', valueKind: 'number', required: false, description: 'Number of items per page' }
           ] satisfies readonly PropertyDefinition[]))
         }
-      )))
-    : g3
+      ))
+      if (!res.ok) return res
+      g = res.value
+  }
 
-  const g5 = !g4.nodes.has(SYSTEM_IDS.TEMPLATE_DEF)
-    ? unwrap(addNode(g4, createBootstrapNode(
+  if (!g.nodes.has(SYSTEM_IDS.TEMPLATE_DEF)) {
+    const res = addNode(g, createBootstrapNode(
         SYSTEM_IDS.TEMPLATE_DEF,
         SYSTEM_IDS.NODE_TYPE,
         'Template',
@@ -118,8 +142,10 @@ export function bootstrap(graph: Graph): Graph {
               { name: 'component', valueKind: 'text', required: false, description: 'Component name' }
           ] satisfies readonly PropertyDefinition[]))
         }
-      )))
-    : g4
+      ))
+      if (!res.ok) return res
+      g = res.value
+  }
 
   // 4. Core Edge Types
   const coreEdgeTypes = [
@@ -149,21 +175,24 @@ export function bootstrap(graph: Graph): Graph {
     }
   ] as const
 
-  const g6 = reduce(
+  const g6Result = reduceResult(
     coreEdgeTypes,
-    (currentGraph: Graph, def): Graph => {
+    (currentGraph: Graph, def): Result<Graph, Error> => {
       if (!currentGraph.nodes.has(def.id)) {
-        return unwrap(addNode(currentGraph, createBootstrapNode(
+        return addNode(currentGraph, createBootstrapNode(
           def.id,
           SYSTEM_IDS.EDGE_TYPE, // These are definitions of edge types
           def.name,
           def.description
-        )))
+        ))
       }
-      return currentGraph
+      return ok(currentGraph)
     },
-    g5
+    g
   )
+
+  if (!g6Result.ok) return g6Result
+  g = g6Result.value
 
   // 5. System Queries
   const systemQueries = [
@@ -187,11 +216,11 @@ export function bootstrap(graph: Graph): Graph {
     }
   ]
 
-  const g7 = reduce(
+  const g7Result = reduceResult(
     systemQueries,
-    (currentGraph: Graph, def): Graph => {
+    (currentGraph: Graph, def): Result<Graph, Error> => {
       if (!currentGraph.nodes.has(def.id)) {
-        return unwrap(addNode(currentGraph, createBootstrapNode(
+        return addNode(currentGraph, createBootstrapNode(
           def.id,
           SYSTEM_IDS.QUERY_DEFINITION,
           def.name,
@@ -199,12 +228,15 @@ export function bootstrap(graph: Graph): Graph {
           {
             definition: text(JSON.stringify(def.definition))
           }
-        )))
+        ))
       }
-      return currentGraph
+      return ok(currentGraph)
     },
-    g6
+    g
   )
+
+  if (!g7Result.ok) return g7Result
+  g = g7Result.value
 
   // 6. System Views
   const systemViews = [
@@ -232,27 +264,27 @@ export function bootstrap(graph: Graph): Graph {
     }
   ]
 
-  const g8 = reduce(
+  const g8Result = reduceResult(
     systemViews,
-    (currentGraph: Graph, def): Graph => {
+    (currentGraph: Graph, def): Result<Graph, Error> => {
       if (!currentGraph.nodes.has(def.id)) {
         const extraProps = {
           layout: text(def.layout),
           queryRef: reference(def.queryRef),
           ...(def.groupBy ? { groupBy: text(def.groupBy) } : {})
         }
-        return unwrap(addNode(currentGraph, createBootstrapNode(
+        return addNode(currentGraph, createBootstrapNode(
           def.id,
           SYSTEM_IDS.VIEW_DEFINITION,
           def.name,
           def.description,
           extraProps
-        )))
+        ))
       }
-      return currentGraph
+      return ok(currentGraph)
     },
-    g7
+    g
   )
 
-  return g8
+  return g8Result
 }

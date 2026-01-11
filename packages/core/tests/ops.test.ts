@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { createGraph } from '../src/graph'
-import { addNode, updateNode } from '../src/ops'
+import { addNode, updateNode } from '../src/ops/index'
 import { SYSTEM_IDS } from '../src/system'
-import { createNodeId, asNodeId, asTypeId, createInstant, PropertyDefinition, PropertyValue, unwrap, isErr, isOk } from '@canopy/types'
+import { createNodeId, asNodeId, asTypeId, createInstant, createGraphId, PropertyDefinition, PropertyValue, unwrap, isErr, isOk } from '@canopy/types'
 
 // Test helpers
 function createNode(props: Record<string, unknown>) {
@@ -20,7 +20,8 @@ function createNode(props: Record<string, unknown>) {
 
 describe('ops with validation', () => {
     function createGraphWithTypes() {
-        let g = createGraph()
+        // Mock ID and Name as they are required by new createGraph signature
+        let g = unwrap(createGraph(createGraphId(), 'Test Graph'))
 
         const personProps: readonly PropertyDefinition[] = [
             { name: 'age', valueKind: 'number', required: true, description: 'Age' }
