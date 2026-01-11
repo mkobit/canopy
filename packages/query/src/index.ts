@@ -1,5 +1,5 @@
 export * from './model';
-export * from './builder';
+export * from './pipeline';
 export * from './engine';
 export * from './stored';
 export * from './views';

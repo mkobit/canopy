@@ -3,22 +3,22 @@ import { createGraph } from '@canopy/core';
 import { addNode } from '@canopy/core';
 import { QueryEngine } from '../src/engine';
 import { saveQueryDefinition, getQueryDefinition, listQueryDefinitions, executeStoredQuery } from '../src/stored';
-import { Query } from '../src/model';
 import { createNodeId, asTypeId, createInstant, createGraphId, unwrap, isErr } from '@canopy/types';
+import { pipe } from 'remeda';
+import { query, nodes, where } from '../src/pipeline';
 
 describe('Stored Queries', () => {
     it('should save and retrieve a query definition', () => {
         // createGraph calls bootstrap internally now
         let graph = unwrap(createGraph(createGraphId(), 'Test Graph'));
 
-        const query: Query = {
-            steps: [
-                { kind: 'node-scan', type: 'node:type:task' },
-                { kind: 'filter', predicate: { property: 'priority', operator: 'eq', value: 'high' } }
-            ]
-        };
+        const q = pipe(
+            query(),
+            nodes('node:type:task'),
+            where('priority', 'eq', 'high')
+        );
 
-        const result = unwrap(saveQueryDefinition(graph, 'High Priority Tasks', query, {
+        const result = unwrap(saveQueryDefinition(graph, 'High Priority Tasks', q, {
             description: 'Finds all high priority tasks',
             nodeTypes: ['node:type:task'],
             parameters: []
@@ -28,13 +28,13 @@ describe('Stored Queries', () => {
         const nodeId = result.nodeId;
 
         const retrievedQuery = unwrap(getQueryDefinition(graph, nodeId));
-        expect(retrievedQuery).toEqual(query);
+        expect(retrievedQuery).toEqual(q);
 
-        const nodes = listQueryDefinitions(graph);
+        const nodesList = listQueryDefinitions(graph);
         // 1 new query + 3 system queries = 4
-        expect(nodes.length).toBe(4);
+        expect(nodesList.length).toBe(4);
 
-        const myQuery = nodes.find(n => n.properties.get('name')?.kind === 'text' && n.properties.get('name')?.value === 'High Priority Tasks');
+        const myQuery = nodesList.find(n => n.properties.get('name')?.kind === 'text' && n.properties.get('name')?.value === 'High Priority Tasks');
         expect(myQuery).toBeDefined();
     });
 
@@ -66,14 +66,13 @@ describe('Stored Queries', () => {
              metadata: { created: createInstant(new Date('2023-01-01T00:00:00Z')), modified: createInstant(new Date('2023-01-01T00:00:00Z')) }
         }));
 
-        const query: Query = {
-            steps: [
-                { kind: 'node-scan', type: 'node:type:task' },
-                { kind: 'filter', predicate: { property: 'priority', operator: 'eq', value: '$priority' } }
-            ]
-        };
+        const q = pipe(
+            query(),
+            nodes('node:type:task'),
+            where('priority', 'eq', '$priority')
+        );
 
-        const saveResult = unwrap(saveQueryDefinition(graph, 'Tasks by Priority', query, {
+        const saveResult = unwrap(saveQueryDefinition(graph, 'Tasks by Priority', q, {
             parameters: ['priority']
         }));
         graph = saveResult.graph;
