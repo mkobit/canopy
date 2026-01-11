@@ -3,7 +3,7 @@ import { createGraph } from '../src/graph'
 import { addNode } from '../src/ops'
 import { validateNode, validateEdge } from '../src/validation'
 import { SYSTEM_IDS } from '../src/system'
-import { asNodeId, asTypeId, createNodeId, createEdgeId, PropertyDefinition, PropertyValue, createInstant, unwrap } from '@canopy/types'
+import { asNodeId, asTypeId, createNodeId, createGraphId, createEdgeId, PropertyDefinition, PropertyValue, createInstant, unwrap } from '@canopy/types'
 
 // Test helpers to replace missing factories
 function createNode(props: Record<string, unknown>) {
@@ -37,7 +37,7 @@ function createEdge(props: Record<string, unknown>) {
 describe('validation', () => {
     // Setup helper to create a graph with a type definition
     function createGraphWithTypes() {
-        let g = createGraph()
+        let g = unwrap(createGraph(createGraphId(), 'Test Graph'))
 
         // Define a "Person" node type
         const personProps: readonly PropertyDefinition[] = [

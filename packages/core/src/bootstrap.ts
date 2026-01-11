@@ -1,8 +1,7 @@
-import type { Graph, Node, PropertyMap, TypeId, NodeId, PropertyValue, PropertyDefinition } from '@canopy/types'
-import { createInstant, unwrap } from '@canopy/types'
+import type { Graph, Node, PropertyMap, TypeId, NodeId, PropertyValue, PropertyDefinition, Result } from '@canopy/types'
+import { createInstant, ok } from '@canopy/types'
 import { addNode } from './ops'
 import { SYSTEM_IDS, SYSTEM_EDGE_TYPES } from './system'
-import { reduce } from 'remeda'
 
 // Helper to create a property map
 function createProperties(props: Record<string, PropertyValue>): PropertyMap {
@@ -41,85 +40,109 @@ function createBootstrapNode(
   }
 }
 
+// Helper to reduce results safely using recursion to avoid loops
+function reduceResult<T, R>(
+  items: readonly T[],
+  fn: (acc: R, item: T) => Result<R, Error>,
+  initial: R
+): Result<R, Error> {
+  if (items.length === 0) {
+    return ok(initial)
+  }
+  const head = items[0]
+  if (head === undefined) {
+      // This should theoretically not happen due to length check, but safe for noUncheckedIndexedAccess
+      return ok(initial)
+  }
+  const tail = items.slice(1)
+  const res = fn(initial, head)
+  if (!res.ok) {
+    return res
+  }
+  return reduceResult(tail, fn, res.value)
+}
+
 /**
  * Bootstraps a graph with system nodes.
  * This is idempotent - it only adds nodes if they are missing.
  */
-export function bootstrap(graph: Graph): Graph {
-  // 1. Ensure NodeType definition exists
-  const g1 = !graph.nodes.has(SYSTEM_IDS.NODE_TYPE_DEF)
-    ? unwrap(addNode(graph, createBootstrapNode(
-        SYSTEM_IDS.NODE_TYPE_DEF,
-        SYSTEM_IDS.NODE_TYPE,
-        'Node Type',
-        'Defines a type of node in the graph.'
-      )))
-    : graph
+export function bootstrap(graph: Graph): Result<Graph, Error> {
+  const steps: readonly ((g: Graph) => Result<Graph, Error>)[] = [
+    // 1. Ensure NodeType definition exists
+    (g) => !g.nodes.has(SYSTEM_IDS.NODE_TYPE_DEF)
+      ? addNode(g, createBootstrapNode(
+          SYSTEM_IDS.NODE_TYPE_DEF,
+          SYSTEM_IDS.NODE_TYPE,
+          'Node Type',
+          'Defines a type of node in the graph.'
+        ))
+      : ok(g),
 
-  // 2. Ensure EdgeType definition exists
-  const g2 = !g1.nodes.has(SYSTEM_IDS.EDGE_TYPE_DEF)
-    ? unwrap(addNode(g1, createBootstrapNode(
-        SYSTEM_IDS.EDGE_TYPE_DEF,
-        SYSTEM_IDS.NODE_TYPE, // An EdgeType definition is a Node of type NodeType
-        'Edge Type',
-        'Defines a type of edge in the graph.'
-      )))
-    : g1
+    // 2. Ensure EdgeType definition exists
+    (g) => !g.nodes.has(SYSTEM_IDS.EDGE_TYPE_DEF)
+      ? addNode(g, createBootstrapNode(
+          SYSTEM_IDS.EDGE_TYPE_DEF,
+          SYSTEM_IDS.NODE_TYPE,
+          'Edge Type',
+          'Defines a type of edge in the graph.'
+        ))
+      : ok(g),
 
-  const g3 = !g2.nodes.has(SYSTEM_IDS.QUERY_DEFINITION_DEF)
-    ? unwrap(addNode(g2, createBootstrapNode(
-        SYSTEM_IDS.QUERY_DEFINITION_DEF,
-        SYSTEM_IDS.NODE_TYPE,
-        'Query Definition',
-        'Defines a stored query in the graph.',
-        {
-          properties: text(JSON.stringify([
-              { name: 'name', valueKind: 'text', required: true, description: 'Human-readable query name' },
-              { name: 'description', valueKind: 'text', required: false, description: 'What this query finds' },
-              { name: 'nodeTypes', valueKind: 'list', required: false, description: 'Which node types this query targets' },
-              { name: 'definition', valueKind: 'text', required: true, description: 'The query in stored format (JSON)' },
-              { name: 'parameters', valueKind: 'list', required: false, description: 'Declared parameter names this query accepts' }
-          ] satisfies readonly PropertyDefinition[]))
-        }
-      )))
-    : g2
+    (g) => !g.nodes.has(SYSTEM_IDS.QUERY_DEFINITION_DEF)
+      ? addNode(g, createBootstrapNode(
+          SYSTEM_IDS.QUERY_DEFINITION_DEF,
+          SYSTEM_IDS.NODE_TYPE,
+          'Query Definition',
+          'Defines a stored query in the graph.',
+          {
+            properties: text(JSON.stringify([
+                { name: 'name', valueKind: 'text', required: true, description: 'Human-readable query name' },
+                { name: 'description', valueKind: 'text', required: false, description: 'What this query finds' },
+                { name: 'nodeTypes', valueKind: 'list', required: false, description: 'Which node types this query targets' },
+                { name: 'definition', valueKind: 'text', required: true, description: 'The query in stored format (JSON)' },
+                { name: 'parameters', valueKind: 'list', required: false, description: 'Declared parameter names this query accepts' }
+            ] satisfies readonly PropertyDefinition[]))
+          }
+        ))
+      : ok(g),
 
-  const g4 = !g3.nodes.has(SYSTEM_IDS.VIEW_DEFINITION_DEF)
-    ? unwrap(addNode(g3, createBootstrapNode(
-        SYSTEM_IDS.VIEW_DEFINITION_DEF,
-        SYSTEM_IDS.NODE_TYPE,
-        'View Definition',
-        'Defines a view of data in the graph.',
-        {
-          properties: text(JSON.stringify([
-              { name: 'name', valueKind: 'text', required: true, description: 'Human-readable view name' },
-              { name: 'description', valueKind: 'text', required: false, description: 'What this view shows' },
-              { name: 'queryRef', valueKind: 'reference', required: true, description: 'Reference to a QueryDefinition node' },
-              { name: 'layout', valueKind: 'text', required: true, description: 'list | table | cards | graph | document' },
-              { name: 'sort', valueKind: 'text', required: false, description: 'JSON string of sort criteria' },
-              { name: 'groupBy', valueKind: 'text', required: false, description: 'Property name to group results' },
-              { name: 'displayProperties', valueKind: 'list', required: false, description: 'Properties to show' },
-              { name: 'pageSize', valueKind: 'number', required: false, description: 'Number of items per page' }
-          ] satisfies readonly PropertyDefinition[]))
-        }
-      )))
-    : g3
+    (g) => !g.nodes.has(SYSTEM_IDS.VIEW_DEFINITION_DEF)
+      ? addNode(g, createBootstrapNode(
+          SYSTEM_IDS.VIEW_DEFINITION_DEF,
+          SYSTEM_IDS.NODE_TYPE,
+          'View Definition',
+          'Defines a view of data in the graph.',
+          {
+            properties: text(JSON.stringify([
+                { name: 'name', valueKind: 'text', required: true, description: 'Human-readable view name' },
+                { name: 'description', valueKind: 'text', required: false, description: 'What this view shows' },
+                { name: 'queryRef', valueKind: 'reference', required: true, description: 'Reference to a QueryDefinition node' },
+                { name: 'layout', valueKind: 'text', required: true, description: 'list | table | cards | graph | document' },
+                { name: 'sort', valueKind: 'text', required: false, description: 'JSON string of sort criteria' },
+                { name: 'groupBy', valueKind: 'text', required: false, description: 'Property name to group results' },
+                { name: 'displayProperties', valueKind: 'list', required: false, description: 'Properties to show' },
+                { name: 'pageSize', valueKind: 'number', required: false, description: 'Number of items per page' }
+            ] satisfies readonly PropertyDefinition[]))
+          }
+        ))
+      : ok(g),
 
-  const g5 = !g4.nodes.has(SYSTEM_IDS.TEMPLATE_DEF)
-    ? unwrap(addNode(g4, createBootstrapNode(
-        SYSTEM_IDS.TEMPLATE_DEF,
-        SYSTEM_IDS.NODE_TYPE,
-        'Template',
-        'Defines a UI template.',
-        {
-          properties: text(JSON.stringify([
-              { name: 'name', valueKind: 'text', required: true, description: 'Template name' },
-              { name: 'layout', valueKind: 'text', required: true, description: 'Layout handled by this template' },
-              { name: 'component', valueKind: 'text', required: false, description: 'Component name' }
-          ] satisfies readonly PropertyDefinition[]))
-        }
-      )))
-    : g4
+    (g) => !g.nodes.has(SYSTEM_IDS.TEMPLATE_DEF)
+      ? addNode(g, createBootstrapNode(
+          SYSTEM_IDS.TEMPLATE_DEF,
+          SYSTEM_IDS.NODE_TYPE,
+          'Template',
+          'Defines a UI template.',
+          {
+            properties: text(JSON.stringify([
+                { name: 'name', valueKind: 'text', required: true, description: 'Template name' },
+                { name: 'layout', valueKind: 'text', required: true, description: 'Layout handled by this template' },
+                { name: 'component', valueKind: 'text', required: false, description: 'Component name' }
+            ] satisfies readonly PropertyDefinition[]))
+          }
+        ))
+      : ok(g),
+  ]
 
   // 4. Core Edge Types
   const coreEdgeTypes = [
@@ -149,22 +172,6 @@ export function bootstrap(graph: Graph): Graph {
     }
   ] as const
 
-  const g6 = reduce(
-    coreEdgeTypes,
-    (currentGraph: Graph, def): Graph => {
-      if (!currentGraph.nodes.has(def.id)) {
-        return unwrap(addNode(currentGraph, createBootstrapNode(
-          def.id,
-          SYSTEM_IDS.EDGE_TYPE, // These are definitions of edge types
-          def.name,
-          def.description
-        )))
-      }
-      return currentGraph
-    },
-    g5
-  )
-
   // 5. System Queries
   const systemQueries = [
     {
@@ -186,25 +193,6 @@ export function bootstrap(graph: Graph): Graph {
       definition: { steps: [{ kind: 'node-scan' }, { kind: 'sort', sort: { property: 'metadata.modified', direction: 'desc' } }] }
     }
   ]
-
-  const g7 = reduce(
-    systemQueries,
-    (currentGraph: Graph, def): Graph => {
-      if (!currentGraph.nodes.has(def.id)) {
-        return unwrap(addNode(currentGraph, createBootstrapNode(
-          def.id,
-          SYSTEM_IDS.QUERY_DEFINITION,
-          def.name,
-          def.description,
-          {
-            definition: text(JSON.stringify(def.definition))
-          }
-        )))
-      }
-      return currentGraph
-    },
-    g6
-  )
 
   // 6. System Views
   const systemViews = [
@@ -232,27 +220,27 @@ export function bootstrap(graph: Graph): Graph {
     }
   ]
 
-  const g8 = reduce(
-    systemViews,
-    (currentGraph: Graph, def): Graph => {
-      if (!currentGraph.nodes.has(def.id)) {
-        const extraProps = {
-          layout: text(def.layout),
-          queryRef: reference(def.queryRef),
-          ...(def.groupBy ? { groupBy: text(def.groupBy) } : {})
-        }
-        return unwrap(addNode(currentGraph, createBootstrapNode(
-          def.id,
-          SYSTEM_IDS.VIEW_DEFINITION,
-          def.name,
-          def.description,
-          extraProps
-        )))
-      }
-      return currentGraph
-    },
-    g7
-  )
+  // Chain everything
+  const allSteps: readonly ((g: Graph) => Result<Graph, Error>)[] = [
+      ...steps,
+      (g) => reduceResult(coreEdgeTypes, (cg, def) => !cg.nodes.has(def.id)
+          ? addNode(cg, createBootstrapNode(def.id, SYSTEM_IDS.EDGE_TYPE, def.name, def.description))
+          : ok(cg), g),
+      (g) => reduceResult(systemQueries, (cg, def) => !cg.nodes.has(def.id)
+          ? addNode(cg, createBootstrapNode(def.id, SYSTEM_IDS.QUERY_DEFINITION, def.name, def.description, { definition: text(JSON.stringify(def.definition)) }))
+          : ok(cg), g),
+      (g) => reduceResult(systemViews, (cg, def) => {
+          if (!cg.nodes.has(def.id)) {
+             const extraProps = {
+                layout: text(def.layout),
+                queryRef: reference(def.queryRef),
+                ...(def.groupBy ? { groupBy: text(def.groupBy) } : {})
+             }
+             return addNode(cg, createBootstrapNode(def.id, SYSTEM_IDS.VIEW_DEFINITION, def.name, def.description, extraProps))
+          }
+          return ok(cg)
+      }, g)
+  ]
 
-  return g8
+  return reduceResult(allSteps, (g, step) => step(g), graph)
 }
