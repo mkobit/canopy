@@ -1,23 +1,16 @@
-import * as Y from 'yjs';
-import {
-  Node,
-  NodeId,
-  createNodeId,
-  createInstant,
-  asNodeId,
-  Result,
-  ok,
-  err
-} from '@canopy/types';
+import type * as Y from 'yjs';
+import type { Node, NodeId, Result } from '@canopy/types';
+import { createNodeId, createInstant, asNodeId, ok, err } from '@canopy/types';
 import { NodeSchema } from '@canopy/schema';
 import { map } from 'remeda';
 import { nodeToStorable, storableToNode } from '../converters';
 
 export function addNode(
   nodes: Y.Map<unknown>,
-  data: Omit<Node, 'id' | 'metadata'> & Readonly<{
-    id?: string;
-  }>
+  data: Omit<Node, 'id' | 'metadata'> &
+    Readonly<{
+      id?: string;
+    }>,
 ): Result<Node, Error> {
   const now = createInstant();
 
@@ -35,13 +28,13 @@ export function addNode(
     metadata: {
       created: now,
       modified: now,
-    }
+    },
   };
 
   // Validate schema on the domain object
   const validation = NodeSchema.safeParse(node);
   if (!validation.success) {
-      return err(new Error(`Node validation failed: ${validation.error}`));
+    return err(new Error(`Node validation failed: ${validation.error}`));
   }
 
   nodes.set(node.id, nodeToStorable(node));
@@ -72,7 +65,7 @@ export function getAllNodes(nodes: Y.Map<unknown>): Result<IterableIterator<Node
 export function updateNode(
   nodes: Y.Map<unknown>,
   id: string,
-  partial: Partial<Omit<Node, 'id' | 'metadata'>>
+  partial: Partial<Omit<Node, 'id' | 'metadata'>>,
 ): Result<Node, Error> {
   const existingResult = getNode(nodes, id);
   if (!existingResult.ok) {
@@ -93,7 +86,7 @@ export function updateNode(
   // Validate schema
   const validation = NodeSchema.safeParse(updated);
   if (!validation.success) {
-      return err(new Error(`Node validation failed: ${validation.error}`));
+    return err(new Error(`Node validation failed: ${validation.error}`));
   }
 
   nodes.set(id, nodeToStorable(updated));

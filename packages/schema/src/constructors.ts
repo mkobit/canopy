@@ -1,3 +1,4 @@
+import type { Result } from '@canopy/types';
 import {
   type NodeId,
   type EdgeId,
@@ -14,9 +15,8 @@ import {
   createNodeId as generateNodeId,
   createEdgeId as generateEdgeId,
   createGraphId as generateGraphId,
-  Result,
   ok,
-  err
+  err,
 } from '@canopy/types';
 
 // UUID regex (generic)
@@ -81,7 +81,7 @@ export function createTypeId(id: string): Result<TypeId, Error> {
   }
   // Allow alphanumeric, dashes, underscores, dots, colons.
   if (!/^[a-zA-Z0-9_\-.:]+$/.test(id)) {
-     return err(new Error(`Invalid TypeId: '${id}' contains invalid characters.`));
+    return err(new Error(`Invalid TypeId: '${id}' contains invalid characters.`));
   }
   return ok(asTypeId(id));
 }
@@ -113,20 +113,24 @@ export function createPlainDate(dateString: string): Result<PlainDate, Error> {
   // Validate logical date (e.g. not 2023-02-30)
   const date = new Date(dateString);
   if (isNaN(date.getTime())) {
-     return err(new Error(`Invalid PlainDate: '${dateString}' is not a valid date.`));
+    return err(new Error(`Invalid PlainDate: '${dateString}' is not a valid date.`));
   }
   // Check if date components match input to avoid rollover (e.g. Feb 31 -> Mar 3)
   const [year, month, day] = dateString.split('-').map(Number);
-  if (date.getUTCFullYear() !== year || date.getUTCMonth() + 1 !== month || date.getUTCDate() !== day) {
-       // Note: Date parses YYYY-MM-DD as UTC.
-       // But to be safe, let's just trust the regex + basic Date validity for "plain date".
-       // Actually, Date.parse("2023-02-31") returns a valid timestamp (rollover).
-       // We should check stricter.
-       // Re-format to check rollover.
-       const isoDate = date.toISOString().split('T')[0];
-       if (isoDate !== dateString) {
-          return err(new Error(`Invalid PlainDate: '${dateString}' does not exist.`));
-       }
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() + 1 !== month ||
+    date.getUTCDate() !== day
+  ) {
+    // Note: Date parses YYYY-MM-DD as UTC.
+    // But to be safe, let's just trust the regex + basic Date validity for "plain date".
+    // Actually, Date.parse("2023-02-31") returns a valid timestamp (rollover).
+    // We should check stricter.
+    // Re-format to check rollover.
+    const isoDate = date.toISOString().split('T')[0];
+    if (isoDate !== dateString) {
+      return err(new Error(`Invalid PlainDate: '${dateString}' does not exist.`));
+    }
   }
 
   return ok(asPlainDate(dateString));

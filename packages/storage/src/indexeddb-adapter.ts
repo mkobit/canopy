@@ -1,6 +1,8 @@
-import { openDB, DBSchema, IDBPDatabase } from 'idb';
-import { StorageAdapter, GraphStorageMetadata } from './types';
-import { Result, ok, err, fromAsyncThrowable } from '@canopy/types';
+import type { DBSchema, IDBPDatabase } from 'idb';
+import { openDB } from 'idb';
+import type { StorageAdapter, GraphStorageMetadata } from './types';
+import type { Result } from '@canopy/types';
+import { ok, err, fromAsyncThrowable } from '@canopy/types';
 
 interface CanopyDB extends DBSchema {
   readonly graphs: Readonly<{
@@ -39,15 +41,19 @@ export class IndexedDBAdapter implements StorageAdapter {
 
   async close(): Promise<Result<void, Error>> {
     return fromAsyncThrowable(async () => {
-        if (this.db) {
-            this.db.close();
-            this.db = null;
-        }
-        return undefined;
+      if (this.db) {
+        this.db.close();
+        this.db = null;
+      }
+      return undefined;
     });
   }
 
-  async save(graphId: string, snapshot: Uint8Array, metadata: GraphStorageMetadata): Promise<Result<void, Error>> {
+  async save(
+    graphId: string,
+    snapshot: Uint8Array,
+    metadata: GraphStorageMetadata,
+  ): Promise<Result<void, Error>> {
     if (!this.db) return err(new Error('Database not initialized'));
     return fromAsyncThrowable(async () => {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
