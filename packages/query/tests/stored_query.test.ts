@@ -90,7 +90,7 @@ describe('Stored Queries', () => {
     });
 
     it('should return Error for non-existent or invalid query nodes', () => {
-        let graph = unwrap(createGraph(createGraphId(), 'Test Graph'));
+        const graph = unwrap(createGraph(createGraphId(), 'Test Graph'));
 
         const result = getQueryDefinition(graph, createNodeId());
         expect(isErr(result)).toBe(true);

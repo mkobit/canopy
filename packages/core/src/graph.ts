@@ -1,5 +1,5 @@
 import type { Graph, Node, Edge, GraphId, Result } from '@canopy/types'
-import { createInstant, ok } from '@canopy/types'
+import { createInstant } from '@canopy/types'
 import { bootstrap } from './bootstrap'
 
 // Re-export types for convenience

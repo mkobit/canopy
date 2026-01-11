@@ -55,7 +55,7 @@ describe('View Definitions', () => {
   });
 
   it('should list all view definitions', () => {
-    let graph = unwrap(createGraph(createGraphId(), 'Test Graph'));
+    const graph = unwrap(createGraph(createGraphId(), 'Test Graph'));
 
     // Check default system views
     const views = listViewDefinitions(graph);
@@ -68,7 +68,7 @@ describe('View Definitions', () => {
   });
 
   it('should have correct default views setup via bootstrap', () => {
-    let graph = unwrap(createGraph(createGraphId(), 'Test Graph'));
+    const graph = unwrap(createGraph(createGraphId(), 'Test Graph'));
 
     const allNodesView = unwrap(getViewDefinition(graph, SYSTEM_IDS.VIEW_ALL_NODES));
     expect(allNodesView.name).toBe('All Nodes');
