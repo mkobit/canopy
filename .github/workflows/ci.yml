@@ -43,19 +43,26 @@ jobs:
             ${{ runner.os }}-pnpm-store-
 
       - name: Install dependencies
+        id: install
         run: pnpm install
 
       - name: Lint
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm lint
 
       - name: Typecheck
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm typecheck
 
       - name: Build
+        id: build
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm build
 
       - name: Test
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: pnpm test -- run --coverage
 
       - name: Upload coverage
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v3
