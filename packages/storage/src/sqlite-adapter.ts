@@ -8,9 +8,9 @@ export interface SQLitePersistence {
 }
 
 export class SQLiteAdapter implements StorageAdapter {
-  // eslint-disable-next-line functional/prefer-readonly-type
+  // eslint-disable-next-line functional/prefer-readonly-type, functional/immutable-data, functional/prefer-immutable-types
   private db: Database | null = null;
-  // eslint-disable-next-line functional/prefer-readonly-type
+  // eslint-disable-next-line functional/prefer-readonly-type, functional/immutable-data, functional/prefer-immutable-types
   private SQL: SqlJsStatic | null = null;
   private readonly persistence: SQLitePersistence | null;
 

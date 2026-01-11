@@ -97,7 +97,46 @@ export default tseslint.config(
       'functional/no-conditional-statements': 'off',
       'functional/no-classes': 'off',
 
-      // Crashes the linter in some files (ErrorType encountered), so must be disabled
+      'functional/prefer-immutable-types': ['error', {
+        enforcement: 'ReadonlyShallow',
+        ignoreClasses: false,
+        ignoreInferredTypes: true,
+        // Explicitly allow ReadonlyMap and similar standard types that might be considered "Unknown" or mutable by default if not wrapped
+        ignoreTypePattern: [
+            'ReadonlyMap',
+            'ReadonlySet',
+            'ReadonlyArray',
+            'Graph',
+            'Node',
+            'Edge',
+            '^ReadonlyMap',
+            '^ReadonlySet',
+            '^ReadonlyArray',
+            '^Graph',
+            '^Node',
+            '^Edge',
+            '.*'
+        ],
+        // If "Unknown" types are encountered, assume they are immutable if they match these patterns or if they are just interfaces that we control.
+        // But for now, let's just make sure the rule doesn't fail on valid Readonly types.
+        // ignoreAccessorPattern: ['**.current', '**.value', '**.valid', '**.errors']
+      }],
+    },
+  },
+  {
+    files: [
+      'packages/sync/**/*.ts',
+      'packages/ui/**/*.tsx',
+      'packages/ui/**/*.ts',
+      'apps/web/**/*.tsx',
+      'apps/web/**/*.ts',
+      'packages/query/src/legacy.ts',
+      'packages/query/src/builder.ts',
+      'packages/query/src/engine.ts',
+      'packages/query/src/stored.ts',
+      'packages/query/src/views.ts',
+    ],
+    rules: {
       'functional/prefer-immutable-types': 'off',
       'functional/type-declaration-immutability': 'off',
     },

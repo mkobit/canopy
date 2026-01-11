@@ -7,18 +7,18 @@ import type { Edge } from './edge'
  * A graph is the aggregate root—the bounded context for a collection of nodes and edges.
  * Analogous to a vault or database.
  */
-export interface Graph {
-  readonly id: GraphId
-  readonly name: string
-  readonly metadata: TemporalMetadata
-  readonly nodes: ReadonlyMap<NodeId, Node>
-  readonly edges: ReadonlyMap<EdgeId, Edge>
-}
+export type Graph = Readonly<{
+  id: GraphId
+  name: string
+  metadata: TemporalMetadata
+  nodes: ReadonlyMap<NodeId, Node>
+  edges: ReadonlyMap<EdgeId, Edge>
+}>
 
 /**
  * Result of a graph query or traversal.
  */
-export interface QueryResult {
-  readonly nodes: readonly Node[]
-  readonly edges: readonly Edge[]
-}
+export type QueryResult = Readonly<{
+  nodes: readonly Node[]
+  edges: readonly Edge[]
+}>

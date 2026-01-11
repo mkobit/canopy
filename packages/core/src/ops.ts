@@ -2,9 +2,9 @@ import type { Graph, Node, Edge, NodeId, EdgeId, Result } from '@canopy/types'
 import { createInstant, ok, err } from '@canopy/types'
 import { validateNode, validateEdge } from './validation'
 
-export interface GraphOperationOptions {
-  readonly validate?: boolean
-}
+export type GraphOperationOptions = Readonly<{
+  validate?: boolean
+}>
 
 /**
  * Adds a node to the graph.
