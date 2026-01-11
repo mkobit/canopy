@@ -25,7 +25,7 @@ import type { Node, Edge } from '@canopy/types'
 
 describe('Core Graph Engine', () => {
     const graphId = createGraphId()
-    const emptyGraph = createGraph(graphId, 'Test Graph')
+    const emptyGraph = unwrap(createGraph(graphId, 'Test Graph'))
 
     it('should create a graph with bootstrap nodes', () => {
         expect(emptyGraph.id).toBe(graphId)
@@ -95,7 +95,7 @@ describe('Core Graph Engine', () => {
         g = unwrap(addEdge(g, edge))
         expect(g.edges.size).toBe(1)
 
-        const gRemoved = removeNode(g, nodeId1)
+        const gRemoved = unwrap(removeNode(g, nodeId1))
         expect(gRemoved.nodes.size).toBe(16) // 15 bootstrap + 1 remaining node
         expect(gRemoved.nodes.has(nodeId1)).toBe(false)
         expect(gRemoved.edges.size).toBe(0) // Edge should be removed
@@ -173,7 +173,7 @@ describe('Core Graph Engine', () => {
         }
         g = unwrap(addEdge(g, edge))
 
-        const gRemoved = removeEdge(g, edgeId)
+        const gRemoved = unwrap(removeEdge(g, edgeId))
         expect(gRemoved.edges.size).toBe(0)
         expect(g.edges.size).toBe(1) // Original unmodified
     })

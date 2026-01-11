@@ -1,13 +1,13 @@
 import { describe, it, expect } from 'vitest'
 import { createGraph } from './graph'
-import { asGraphId } from '@canopy/types'
+import { asGraphId, unwrap } from '@canopy/types'
 import { SYSTEM_IDS } from './system'
 import { getNodeTypes, getEdgeTypes, getNodeType } from './queries'
 import { bootstrap } from './bootstrap'
 
 describe('Meta-circular bootstrap', () => {
   it('creates a graph with system nodes', () => {
-    const graph = createGraph(asGraphId('test-graph'), 'Test Graph')
+    const graph = unwrap(createGraph(asGraphId('test-graph'), 'Test Graph'))
 
     // Check NodeType definition
     const nodeTypeDef = graph.nodes.get(SYSTEM_IDS.NODE_TYPE_DEF)
@@ -29,16 +29,16 @@ describe('Meta-circular bootstrap', () => {
   })
 
   it('is idempotent', () => {
-    const graph1 = createGraph(asGraphId('test-graph'), 'Test Graph')
+    const graph1 = unwrap(createGraph(asGraphId('test-graph'), 'Test Graph'))
     const sizeAfterFirstBootstrap = graph1.nodes.size
 
-    const graph2 = bootstrap(graph1)
+    const graph2 = unwrap(bootstrap(graph1))
     expect(graph2.nodes.size).toBe(sizeAfterFirstBootstrap)
     expect(graph2).toEqual(graph1) // Should be structurally equal as no changes were made
   })
 
   it('provides query helpers', () => {
-    const graph = createGraph(asGraphId('test-graph'), 'Test Graph')
+    const graph = unwrap(createGraph(asGraphId('test-graph'), 'Test Graph'))
 
     const nodeTypes = getNodeTypes(graph)
     // Should contain NodeType definition and EdgeType definition (as EdgeType definition node has type NodeType... wait)
