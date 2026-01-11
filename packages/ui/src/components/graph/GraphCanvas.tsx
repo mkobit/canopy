@@ -1,7 +1,8 @@
 import React from 'react';
-import { Edge } from '@canopy/types';
+import type { Edge } from '@canopy/types';
 import { NodeView } from './NodeView';
-import { EdgeView, GraphNode } from './EdgeView';
+import type { GraphNode } from './EdgeView';
+import { EdgeView } from './EdgeView';
 import { cn } from '../../utils/cn';
 
 interface GraphCanvasData {

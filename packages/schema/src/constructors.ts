@@ -1,3 +1,5 @@
+import type {
+  Result} from '@canopy/types';
 import {
   type NodeId,
   type EdgeId,
@@ -14,9 +16,8 @@ import {
   createNodeId as generateNodeId,
   createEdgeId as generateEdgeId,
   createGraphId as generateGraphId,
-  Result,
   ok,
-  err
+  err,
 } from '@canopy/types';
 
 // UUID regex (generic)

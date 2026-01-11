@@ -1,5 +1,5 @@
 import React from 'react';
-import { Edge, Node } from '@canopy/types';
+import type { Edge, Node } from '@canopy/types';
 
 export interface GraphNode extends Node {
   // Extend basic node with UI state (position)

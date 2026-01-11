@@ -1,6 +1,8 @@
-import initSqlJs, { Database, SqlJsStatic } from 'sql.js';
-import { StorageAdapter, GraphStorageMetadata } from './types';
-import { Result, ok, err, fromAsyncThrowable } from '@canopy/types';
+import type { Database, SqlJsStatic } from 'sql.js';
+import initSqlJs from 'sql.js';
+import type { StorageAdapter, GraphStorageMetadata } from './types';
+import type { Result} from '@canopy/types';
+import { ok, err, fromAsyncThrowable } from '@canopy/types';
 
 export interface SQLitePersistence {
   readonly read: () => Promise<Uint8Array | null>;
@@ -83,7 +85,7 @@ export class SQLiteAdapter implements StorageAdapter {
         metadata.name,
         snapshot,
         metadata.createdAt,
-        metadata.updatedAt
+        metadata.updatedAt,
       ]);
       stmt.free();
 

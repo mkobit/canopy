@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useGraph } from '../context/GraphContext';
 import { Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { PropertyValue, Node } from '@canopy/types';
+import type { PropertyValue, Node } from '@canopy/types';
 import { filter, map } from 'remeda';
 
 export const SearchPage = () => {

@@ -1,4 +1,4 @@
-import { Graph, Node, Edge, PropertyValue } from '@canopy/types';
+import type { Graph, Node, Edge, PropertyValue } from '@canopy/types';
 import { filter } from 'remeda';
 
 export class GraphQuery {
@@ -28,7 +28,7 @@ export class GraphQuery {
             }
             return true;
         });
-      }
+      },
     );
   }
 

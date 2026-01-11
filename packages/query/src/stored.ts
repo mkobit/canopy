@@ -1,20 +1,21 @@
-import {
+import type {
   Graph,
   Node,
   NodeId,
   QueryResult,
-  createNodeId,
-  createInstant,
   PropertyValue,
   ScalarValue,
-  Result,
+  Result} from '@canopy/types';
+import {
+  createNodeId,
+  createInstant,
   ok,
   err,
-  fromThrowable
+  fromThrowable,
 } from '@canopy/types';
 import { SYSTEM_IDS, addNode } from '@canopy/core';
-import { Query } from './model';
-import { QueryEngine } from './engine';
+import type { Query } from './model';
+import type { QueryEngine } from './engine';
 import { mapValues, isPlainObject, isString } from 'remeda';
 
 // Helper to wrap a scalar value
@@ -40,7 +41,7 @@ export function saveQueryDefinition(
   graph: Graph,
   name: string,
   query: Query,
-  options: SaveQueryOptions = {}
+  options: SaveQueryOptions = {},
 ): Result<{ graph: Graph; nodeId: NodeId }, Error> {
   const nodeId = createNodeId();
 
@@ -75,7 +76,7 @@ export function saveQueryDefinition(
     ...baseProperties,
     ...descriptionProp,
     ...nodeTypesProp,
-    ...parametersProp
+    ...parametersProp,
   ]);
 
   const node: Node = {
@@ -116,7 +117,7 @@ export function getQueryDefinition(graph: Graph, nodeId: NodeId): Result<Query, 
 
 export function listQueryDefinitions(graph: Graph): readonly Node[] {
   return Array.from(graph.nodes.values()).filter(
-    (node) => node.type === SYSTEM_IDS.QUERY_DEFINITION
+    (node) => node.type === SYSTEM_IDS.QUERY_DEFINITION,
   );
 }
 
@@ -144,7 +145,7 @@ export function executeStoredQuery(
   engine: QueryEngine,
   graph: Graph,
   queryNodeId: NodeId,
-  params: Record<string, unknown> = {}
+  params: Record<string, unknown> = {},
 ): Result<QueryResult, Error> {
   const queryResult = getQueryDefinition(graph, queryNodeId);
   if (!queryResult.ok) return err(queryResult.error);

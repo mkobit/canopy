@@ -1,4 +1,4 @@
-import { Query, QueryStep, Operator } from './model';
+import type { Query, QueryStep, Operator } from './model';
 
 export class QueryBuilder {
   protected readonly steps: readonly QueryStep[];

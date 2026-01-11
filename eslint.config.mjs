@@ -73,6 +73,8 @@ export default tseslint.config(
       '@typescript-eslint/prefer-ts-expect-error': 'off',
       '@typescript-eslint/no-non-null-assertion': 'off',
       '@typescript-eslint/no-var-requires': 'off',
+      '@typescript-eslint/consistent-type-imports': ['error', { prefer: 'type-imports', fixStyle: 'separate-type-imports' }],
+      '@typescript-eslint/comma-dangle': ['error', 'always-multiline'],
 
       // Import plugin rules
       'import/extensions': ['error', 'never', { json: 'always' }],
