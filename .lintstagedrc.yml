@@ -1,0 +1,9 @@
+"*.?([cm])[jt]s?(x)":
+  - eslint --fix
+  - prettier --write
+
+"*.{json,md,yml,yaml}":
+  - prettier --write
+
+"pnpm-lock.yaml":
+  - "pnpm dedupe && :"
