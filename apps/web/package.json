@@ -24,7 +24,7 @@
     "react-router-dom": "^7.11.0",
     "remeda": "^2.33.1",
     "tailwind-merge": "^3.4.0",
-    "yjs": "^13.6.28",
+    "yjs": "^13.6.29",
     "zod": "^4.3.5"
   },
   "devDependencies": {
