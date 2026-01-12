@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useGraph } from '../context/GraphContext';
 import { NodeView } from '@canopy/ui';
-import { Node, NodeId, PropertyValue } from '@canopy/types';
+import type { Node, NodeId, PropertyValue } from '@canopy/types';
 import { ArrowLeft, Save, Trash, Link as LinkIcon } from 'lucide-react';
 import { filter, map } from 'remeda';
 
@@ -10,12 +10,16 @@ export const NodePage = () => {
   const { nodeId } = useParams<Readonly<{ nodeId: string }>>();
   const { graph, syncEngine, saveGraph } = useGraph();
   const navigate = useNavigate();
-  const [currentNode, setCurrentNode] = useState<Node | undefined>(undefined);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedProps, setEditedProps] = useState<ReadonlyMap<string, PropertyValue>>(new Map());
+  const [currentNode,
+setCurrentNode] = useState<Node | undefined>(undefined);
+  const [isEditing,
+setIsEditing] = useState(false);
+  const [editedProps,
+setEditedProps] = useState<ReadonlyMap<string, PropertyValue>>(new Map());
 
   // Subscribe/Fetch node from graph
-  useEffect(() => {
+  useEffect(
+() => {
     if (graph && nodeId) {
         const node = graph.nodes.get(nodeId as NodeId);
         setCurrentNode(node);
@@ -24,7 +28,10 @@ export const NodePage = () => {
         }
     }
     return undefined;
-  }, [graph, nodeId]);
+  },
+[graph,
+nodeId],
+);
 
   if (!currentNode) {
       return (
@@ -41,14 +48,20 @@ export const NodePage = () => {
       if (!syncEngine || !currentNode) return undefined;
 
       try {
-          syncEngine.store.updateNode(currentNode.id, {
-              properties: new Map(editedProps)
-          });
+          syncEngine.store.updateNode(
+currentNode.id,
+{
+              properties: new Map(editedProps),
+          },
+);
 
           await saveGraph(); // Persist changes
           setIsEditing(false);
       } catch (e) {
-          console.error("Failed to save node", e);
+          console.error(
+"Failed to save node",
+e,
+);
           alert("Failed to save changes");
       }
       return undefined;
@@ -58,7 +71,10 @@ export const NodePage = () => {
       setEditedProps(prev => {
           const next = new Map(prev);
   // eslint-disable-next-line functional/immutable-data
-          next.set(key, value);
+          next.set(
+key,
+value,
+);
           return next;
       });
       return undefined;
@@ -73,20 +89,27 @@ export const NodePage = () => {
           await saveGraph();
           navigate('../'); // Go up to graph view
       } catch (e) {
-          console.error("Delete failed", e);
+          console.error(
+"Delete failed",
+e,
+);
       }
       return undefined;
   };
 
   // Find connected edges
-  const connectedEdges = useMemo(() => {
+  const connectedEdges = useMemo(
+() => {
       if (!graph || !currentNode) return [];
 
       return filter(
           Array.from(graph.edges.values()),
-          (edge) => edge.source === currentNode.id || edge.target === currentNode.id
+          (edge) => edge.source === currentNode.id || edge.target === currentNode.id,
       );
-  }, [graph, currentNode]);
+  },
+[graph,
+currentNode],
+);
 
   return (
     <div className="max-w-3xl mx-auto bg-white min-h-full shadow-sm border-x border-gray-100 flex flex-col">
@@ -126,7 +149,10 @@ export const NodePage = () => {
 
                     <div className="space-y-4">
                         <h3 className="font-semibold text-gray-900">Properties</h3>
-                        {map(Array.from(editedProps.entries()), ([key, val]: readonly [string, PropertyValue]) => (
+                        {map(
+Array.from(editedProps.entries()),
+([key,
+val]: readonly [string, PropertyValue]) => (
                             <div key={key} className="space-y-1">
                                 <label className="text-sm text-gray-600">{key}</label>
                                 {/* Rudimentary property editor */}
@@ -134,7 +160,11 @@ export const NodePage = () => {
                                     <textarea
                                         className="w-full p-2 border rounded-md"
                                         value={val.value}
-                                        onChange={(e) => { handlePropertyChange(key, { ...val, value: e.target.value }); return undefined; }}
+                                        onChange={(e) => { handlePropertyChange(
+key,
+{ ...val,
+value: e.target.value },
+); return undefined; }}
                                     />
                                 )}
                                 {val.kind !== 'text' && (
@@ -143,7 +173,8 @@ export const NodePage = () => {
                                     </div>
                                 )}
                             </div>
-                        ))}
+                        ),
+)}
                     </div>
                 </div>
             ) : (
@@ -157,7 +188,9 @@ export const NodePage = () => {
                                <LinkIcon size={20} /> Connections
                            </h3>
                            <div className="grid gap-3">
-                               {map(connectedEdges, edge => {
+                               {map(
+connectedEdges,
+edge => {
                                    const otherId = edge.source === currentNode.id ? edge.target : edge.source;
                                    const otherNode = graph?.nodes.get(otherId);
                                    return (
@@ -180,7 +213,8 @@ export const NodePage = () => {
                                             </span>
                                        </div>
                                    );
-                               })}
+                               },
+)}
                            </div>
                        </div>
                    )}

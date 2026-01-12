@@ -8,14 +8,20 @@ import { findNode } from './utils'
  * Returns all nodes that define node types.
  */
 export function getNodeTypes(graph: Readonly<Graph>): readonly Node[] {
-  return filter(Array.from(graph.nodes.values()), node => node.type === SYSTEM_IDS.NODE_TYPE)
+  return filter(
+Array.from(graph.nodes.values()),
+node => node.type === SYSTEM_IDS.NODE_TYPE,
+)
 }
 
 /**
  * Returns all nodes that define edge types.
  */
 export function getEdgeTypes(graph: Readonly<Graph>): readonly Node[] {
-  return filter(Array.from(graph.nodes.values()), node => node.type === SYSTEM_IDS.EDGE_TYPE)
+  return filter(
+Array.from(graph.nodes.values()),
+node => node.type === SYSTEM_IDS.EDGE_TYPE,
+)
 }
 
 /**
@@ -35,9 +41,12 @@ export function getNodeType(graph: Readonly<Graph>, typeNameOrId: string): Node 
 
     // Fallback: search by name property
     // This assumes names are unique, which isn't guaranteed but useful for loose lookup
-    return findNode(graph, n => {
+    return findNode(
+graph,
+n => {
         if (n.type !== SYSTEM_IDS.NODE_TYPE) return false
         const nameProp = n.properties.get('name')
         return nameProp?.kind === 'text' && nameProp.value === typeNameOrId
-    })
+    },
+)
 }

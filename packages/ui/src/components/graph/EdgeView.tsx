@@ -1,5 +1,5 @@
 import React from 'react';
-import { Edge, Node } from '@canopy/types';
+import type { Edge, Node } from '@canopy/types';
 
 export interface GraphNode extends Node {
   // Extend basic node with UI state (position)
@@ -33,7 +33,10 @@ export const EdgeView: React.FC<EdgeViewProps> = ({ edge, source, target, select
   const midY = (y1 + y2) / 2;
 
   // Calculate angle for arrowhead
-  const angle = Math.atan2(y2 - y1, x2 - x1) * (180 / Math.PI);
+  const angle = Math.atan2(
+y2 - y1,
+x2 - x1,
+) * (180 / Math.PI);
 
   return (
     <g onClick={(e) => { e.stopPropagation(); onClick?.(edge); return undefined; }} className="cursor-pointer group">

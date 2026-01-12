@@ -1,4 +1,4 @@
-import { Graph, Node, Edge, PropertyValue } from '@canopy/types';
+import type { Graph, Node, Edge, PropertyValue } from '@canopy/types';
 import { filter } from 'remeda';
 
 export class GraphQuery {
@@ -16,7 +16,8 @@ export class GraphQuery {
 
         if (!properties) return true;
 
-        return Object.entries(properties).every(([key, value]) => {
+        return Object.entries(properties).every(([key,
+value]) => {
             const prop = node.properties.get(key);
             if (!prop) return false;
 
@@ -28,7 +29,7 @@ export class GraphQuery {
             }
             return true;
         });
-      }
+      },
     );
   }
 
