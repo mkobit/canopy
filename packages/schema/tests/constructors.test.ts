@@ -1,10 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  createNodeId,
-  createTypeId,
-  createInstant,
-  createPlainDate
-} from '../src/constructors';
+import { createNodeId, createTypeId, createInstant, createPlainDate } from '../src/constructors';
 import { unwrap, isErr } from '@canopy/types';
 
 describe('Constructors', () => {

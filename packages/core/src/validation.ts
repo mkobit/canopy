@@ -17,13 +17,11 @@ import { SYSTEM_IDS } from './system';
 import { pipe, map, flatMap, filter } from 'remeda';
 
 // Helper to create a success result
-const SUCCESS: ValidationResult = { valid: true,
-errors: [] };
+const SUCCESS: ValidationResult = { valid: true, errors: [] };
 
 // Helper to create an error result
 function failure(errors: readonly ValidationError[]): ValidationResult {
-  return { valid: false,
-errors };
+  return { valid: false, errors };
 }
 
 // Extract properties from a definition node
@@ -59,7 +57,8 @@ function extractEdgeTypeDefinition(node: Node): EdgeTypeDefinition | undefined {
   const sourceTypes: readonly TypeId[] = (() => {
     if (sourceTypesVal?.kind === 'list') {
       return sourceTypesVal.items.map((i) =>
-        i.kind === 'text' ? asTypeId(i.value) : asTypeId('unknown'));
+        i.kind === 'text' ? asTypeId(i.value) : asTypeId('unknown'),
+      );
     }
     if (sourceTypesVal?.kind === 'text') {
       try {
@@ -74,7 +73,8 @@ function extractEdgeTypeDefinition(node: Node): EdgeTypeDefinition | undefined {
   const targetTypes: readonly TypeId[] = (() => {
     if (targetTypesVal?.kind === 'list') {
       return targetTypesVal.items.map((i) =>
-        i.kind === 'text' ? asTypeId(i.value) : asTypeId('unknown'));
+        i.kind === 'text' ? asTypeId(i.value) : asTypeId('unknown'),
+      );
     }
     if (targetTypesVal?.kind === 'text') {
       try {
@@ -156,10 +156,7 @@ function validateProperties(
       }
 
       if (val !== undefined) {
-        return validateValue(
-val,
-propDef,
-);
+        return validateValue(val, propDef);
       }
       return [];
     }),
@@ -168,10 +165,7 @@ propDef,
 
 export function validateNode(graph: Graph, node: Node): ValidationResult {
   // 1. Lookup NodeType
-  const defNode = getNodeType(
-graph,
-node.type,
-);
+  const defNode = getNodeType(graph, node.type);
   if (!defNode) {
     return SUCCESS;
   }
@@ -179,10 +173,7 @@ node.type,
   const def = extractNodeTypeDefinition(defNode);
 
   // 2. Validate properties
-  const errors = validateProperties(
-node.properties,
-def.properties,
-);
+  const errors = validateProperties(node.properties, def.properties);
 
   if (errors.length > 0) {
     return failure(errors);
@@ -244,14 +235,9 @@ export function validateEdge(graph: Graph, edge: Edge): ValidationResult {
   );
 
   // 3. Validate properties
-  const propertyErrors = validateProperties(
-edge.properties,
-def.properties,
-);
+  const propertyErrors = validateProperties(edge.properties, def.properties);
 
-  const errors = [...sourceErrors,
-...targetErrors,
-...propertyErrors];
+  const errors = [...sourceErrors, ...targetErrors, ...propertyErrors];
 
   if (errors.length > 0) {
     return failure(errors);

@@ -15,8 +15,8 @@ pnpm list -r --depth 1
 
 1.  `@canopy/types` has zero runtime dependencies—pure TypeScript types only.
 2.  `@canopy/core` owns the graph model—other packages do not directly manipulate graph state.
-    *   New graphs are automatically bootstrapped with system nodes (NodeType, EdgeType, etc.).
-    *   Well-known system IDs are defined in `@canopy/core/system`.
+    - New graphs are automatically bootstrapped with system nodes (NodeType, EdgeType, etc.).
+    - Well-known system IDs are defined in `@canopy/core/system`.
 3.  Yjs integration lives in `@canopy/sync`, not scattered across packages.
 4.  `@canopy/query` is isolated to enable swapping Cypher for ISO GQL later.
 5.  UI components are stateless—`@canopy/ui` receives data via props, does not fetch or mutate.
@@ -28,13 +28,13 @@ pnpm list -r --depth 1
 
 ## Development workflow
 
-| Task | Command |
-| :--- | :--- |
-| Install dependencies | `pnpm install` |
-| Run tests | `pnpm test run` |
-| Build all packages | `pnpm build` |
-| Lint codebase | `pnpm lint` |
-| Type check | `pnpm typecheck` |
+| Task                 | Command          |
+| :------------------- | :--------------- |
+| Install dependencies | `pnpm install`   |
+| Run tests            | `pnpm test run`  |
+| Build all packages   | `pnpm build`     |
+| Lint codebase        | `pnpm lint`      |
+| Type check           | `pnpm typecheck` |
 
 ## Environment setup
 
@@ -42,9 +42,10 @@ We use `mise` to align local tool versions (Node.js) with CI.
 Versions are defined in `mise.toml` and must match `package.json` (verified via `pnpm lint`).
 
 ### Local commands
-*   Install tools: `mise install`
-*   Activate shell: `eval "$(mise activate bash)"` (or add to `~/.bashrc`)
-*   Trust config: `mise trust`
+
+- Install tools: `mise install`
+- Activate shell: `eval "$(mise activate bash)"` (or add to `~/.bashrc`)
+- Trust config: `mise trust`
 
 ## Task tracking (Beads)
 
@@ -78,7 +79,7 @@ A ViewDefinition pairs a stored QueryDefinition with presentation metadata (layo
 The UI layer resolves a ViewDefinition to get both the executable query and the display configuration.
 Views are portable and can be exported along with the graph data.
 System views (All Nodes, By Type, Recent) are bootstrapped by default.
-Views do not contain rendering logic; they only describe *how* data should be presented.
+Views do not contain rendering logic; they only describe _how_ data should be presented.
 Templates are placeholder definitions for UI components that can render specific layouts.
 
 ## Landing the Plane (Session Completion)
@@ -102,6 +103,7 @@ Templates are placeholder definitions for UI components that can render specific
 7. **Hand off** - Provide context for next session
 
 **CRITICAL RULES:**
+
 - Work is NOT complete until `git push` succeeds
 - NEVER stop before pushing - that leaves work stranded locally
 - NEVER say "ready to push when you are" - YOU must push

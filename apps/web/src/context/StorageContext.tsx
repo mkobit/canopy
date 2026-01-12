@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import type { StorageAdapter} from '@canopy/storage';
+import type { StorageAdapter } from '@canopy/storage';
 import { IndexedDBAdapter } from '@canopy/storage';
 import { fromAsyncThrowable } from '@canopy/types';
 
@@ -15,33 +15,28 @@ const StorageContext = createContext<StorageContextType>({
   error: null,
 });
 
-export const StorageProvider: React.FC<Readonly<{ children: React.ReactNode }>> = ({ children }) => {
-  const [storage,
-setStorage] = useState<StorageAdapter | null>(null);
-  const [isLoading,
-setIsLoading] = useState(true);
-  const [error,
-setError] = useState<Error | null>(null);
+export const StorageProvider: React.FC<Readonly<{ children: React.ReactNode }>> = ({
+  children,
+}) => {
+  const [storage, setStorage] = useState<StorageAdapter | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
-  useEffect(
-() => {
+  useEffect(() => {
     const initStorage = async () => {
       const result = await fromAsyncThrowable(async () => {
-          // Use IndexedDBAdapter for browser environment
-          const adapter = new IndexedDBAdapter();
-          const initResult = await adapter.init();
-          // eslint-disable-next-line functional/no-throw-statements -- Re-throwing error to be caught by fromAsyncThrowable
-          if (!initResult.ok) throw initResult.error;
-          setStorage(adapter);
-          return undefined;
+        // Use IndexedDBAdapter for browser environment
+        const adapter = new IndexedDBAdapter();
+        const initResult = await adapter.init();
+        // eslint-disable-next-line functional/no-throw-statements -- Re-throwing error to be caught by fromAsyncThrowable
+        if (!initResult.ok) throw initResult.error;
+        setStorage(adapter);
+        return undefined;
       });
 
       if (!result.ok) {
-          console.error(
-"Failed to initialize storage:",
-result.error,
-);
-          setError(result.error);
+        console.error('Failed to initialize storage:', result.error);
+        setError(result.error);
       }
       setIsLoading(false);
       return undefined;
@@ -49,14 +44,10 @@ result.error,
 
     initStorage();
     return undefined;
-  },
-[],
-);
+  }, []);
 
   return (
-    <StorageContext.Provider value={{ storage,
-isLoading,
-error }}>
+    <StorageContext.Provider value={{ storage, isLoading, error }}>
       {children}
     </StorageContext.Provider>
   );

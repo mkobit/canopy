@@ -2,6 +2,7 @@
 import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import prettier from 'eslint-config-prettier';
+import prettierPlugin from 'eslint-plugin-prettier';
 import globals from 'globals';
 import functional from 'eslint-plugin-functional';
 import importPlugin from 'eslint-plugin-import';
@@ -26,6 +27,14 @@ export default tseslint.config(
   ...tseslint.configs.strict,
   ...tseslint.configs.stylistic,
   prettier,
+  {
+    plugins: {
+      prettier: prettierPlugin,
+    },
+    rules: {
+      'prettier/prettier': 'error',
+    },
+  },
   // Functional Plugin Configuration
   {
     ...functional.configs.externalTypeScriptRecommended,
@@ -120,11 +129,6 @@ export default tseslint.config(
           fixStyle: 'separate-type-imports',
         },
       ],
-      'comma-dangle': ['error', 'always-multiline'],
-      'function-call-argument-newline': ['error', 'always'],
-      'function-paren-newline': ['error', 'multiline-arguments'],
-      'object-property-newline': ['error', { allowAllPropertiesOnSameLine: false }],
-      'array-element-newline': ['error', 'always'],
       '@typescript-eslint/ban-ts-comment': 'warn',
       '@typescript-eslint/prefer-ts-expect-error': 'off',
       '@typescript-eslint/no-non-null-assertion': 'off',

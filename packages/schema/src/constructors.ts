@@ -1,5 +1,4 @@
-import type {
-  Result} from '@canopy/types';
+import type { Result } from '@canopy/types';
 import {
   type NodeId,
   type EdgeId,
@@ -41,10 +40,7 @@ export function createNodeId(id?: string): Result<NodeId, Error> {
   if (id === undefined) {
     return ok(generateNodeId());
   }
-  const validation = validateUuid(
-id,
-'NodeId',
-);
+  const validation = validateUuid(id, 'NodeId');
   if (!validation.ok) return err(validation.error);
   return ok(asNodeId(id));
 }
@@ -57,10 +53,7 @@ export function createEdgeId(id?: string): Result<EdgeId, Error> {
   if (id === undefined) {
     return ok(generateEdgeId());
   }
-  const validation = validateUuid(
-id,
-'EdgeId',
-);
+  const validation = validateUuid(id, 'EdgeId');
   if (!validation.ok) return err(validation.error);
   return ok(asEdgeId(id));
 }
@@ -73,10 +66,7 @@ export function createGraphId(id?: string): Result<GraphId, Error> {
   if (id === undefined) {
     return ok(generateGraphId());
   }
-  const validation = validateUuid(
-id,
-'GraphId',
-);
+  const validation = validateUuid(id, 'GraphId');
   if (!validation.ok) return err(validation.error);
   return ok(asGraphId(id));
 }
@@ -91,7 +81,7 @@ export function createTypeId(id: string): Result<TypeId, Error> {
   }
   // Allow alphanumeric, dashes, underscores, dots, colons.
   if (!/^[a-zA-Z0-9_\-.:]+$/.test(id)) {
-     return err(new Error(`Invalid TypeId: '${id}' contains invalid characters.`));
+    return err(new Error(`Invalid TypeId: '${id}' contains invalid characters.`));
   }
   return ok(asTypeId(id));
 }
@@ -123,22 +113,24 @@ export function createPlainDate(dateString: string): Result<PlainDate, Error> {
   // Validate logical date (e.g. not 2023-02-30)
   const date = new Date(dateString);
   if (isNaN(date.getTime())) {
-     return err(new Error(`Invalid PlainDate: '${dateString}' is not a valid date.`));
+    return err(new Error(`Invalid PlainDate: '${dateString}' is not a valid date.`));
   }
   // Check if date components match input to avoid rollover (e.g. Feb 31 -> Mar 3)
-  const [year,
-month,
-day] = dateString.split('-').map(Number);
-  if (date.getUTCFullYear() !== year || date.getUTCMonth() + 1 !== month || date.getUTCDate() !== day) {
-       // Note: Date parses YYYY-MM-DD as UTC.
-       // But to be safe, let's just trust the regex + basic Date validity for "plain date".
-       // Actually, Date.parse("2023-02-31") returns a valid timestamp (rollover).
-       // We should check stricter.
-       // Re-format to check rollover.
-       const isoDate = date.toISOString().split('T')[0];
-       if (isoDate !== dateString) {
-          return err(new Error(`Invalid PlainDate: '${dateString}' does not exist.`));
-       }
+  const [year, month, day] = dateString.split('-').map(Number);
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() + 1 !== month ||
+    date.getUTCDate() !== day
+  ) {
+    // Note: Date parses YYYY-MM-DD as UTC.
+    // But to be safe, let's just trust the regex + basic Date validity for "plain date".
+    // Actually, Date.parse("2023-02-31") returns a valid timestamp (rollover).
+    // We should check stricter.
+    // Re-format to check rollover.
+    const isoDate = date.toISOString().split('T')[0];
+    if (isoDate !== dateString) {
+      return err(new Error(`Invalid PlainDate: '${dateString}' does not exist.`));
+    }
   }
 
   return ok(asPlainDate(dateString));

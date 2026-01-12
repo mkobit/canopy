@@ -8,20 +8,15 @@ import type { GraphStorageMetadata } from '@canopy/storage';
 export const HomePage = () => {
   const { storage, isLoading: storageLoading } = useStorage();
   const navigate = useNavigate();
-  const [graphs,
-setGraphs] = useState<readonly GraphStorageMetadata[]>([]);
-  const [loading,
-setLoading] = useState(false);
+  const [graphs, setGraphs] = useState<readonly GraphStorageMetadata[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(
-() => {
+  useEffect(() => {
     if (storage) {
       loadGraphs();
     }
     return undefined;
-  },
-[storage],
-);
+  }, [storage]);
 
   const loadGraphs = async () => {
     if (!storage) return undefined;
@@ -29,12 +24,9 @@ setLoading] = useState(false);
 
     const listResult = await storage.list();
     if (listResult.ok) {
-        setGraphs(listResult.value);
+      setGraphs(listResult.value);
     } else {
-        console.error(
-"Failed to list graphs",
-listResult.error,
-);
+      console.error('Failed to list graphs', listResult.error);
     }
 
     setLoading(false);
@@ -43,55 +35,45 @@ listResult.error,
 
   const handleCreateGraph = async () => {
     if (!storage) return undefined;
-    const name = prompt("Enter graph name:");
+    const name = prompt('Enter graph name:');
     if (!name) return undefined;
 
     const id = createGraphId();
     const now = new Date().toISOString();
 
-    const result = await storage.save(
-id,
-new Uint8Array(),
-{
-        id,
-        name,
-        createdAt: now,
-        updatedAt: now,
-    },
-);
+    const result = await storage.save(id, new Uint8Array(), {
+      id,
+      name,
+      createdAt: now,
+      updatedAt: now,
+    });
 
     if (result.ok) {
-        await loadGraphs();
+      await loadGraphs();
     } else {
-        console.error(
-"Failed to create graph",
-result.error,
-);
+      console.error('Failed to create graph', result.error);
     }
     return undefined;
   };
 
   const handleDeleteGraph = async (id: string, e: React.MouseEvent) => {
-      e.stopPropagation();
-      if (!storage) return undefined;
-      if (!confirm("Are you sure you want to delete this graph?")) return undefined;
+    e.stopPropagation();
+    if (!storage) return undefined;
+    if (!confirm('Are you sure you want to delete this graph?')) return undefined;
 
-      const result = await storage.delete(id);
-      if (result.ok) {
-          await loadGraphs();
-      } else {
-          console.error(
-"Failed to delete graph",
-result.error,
-);
-      }
-      return undefined;
+    const result = await storage.delete(id);
+    if (result.ok) {
+      await loadGraphs();
+    } else {
+      console.error('Failed to delete graph', result.error);
+    }
+    return undefined;
   };
 
   const handleOpenGraph = (id: string) => {
-      // Navigate to graph route
-      navigate(`/graph/${id}`);
-      return undefined;
+    // Navigate to graph route
+    navigate(`/graph/${id}`);
+    return undefined;
   };
 
   if (storageLoading || loading) return <div className="p-8">Loading...</div>;
@@ -115,7 +97,7 @@ result.error,
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {graphs.map(g => (
+          {graphs.map((g) => (
             <div
               key={g.id}
               onClick={() => handleOpenGraph(g.id)}
@@ -128,17 +110,11 @@ result.error,
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900">{g.name}</h3>
-                    <p className="text-sm text-gray-500 font-mono mt-1">{g.id.slice(
-0,
-8,
-)}...</p>
+                    <p className="text-sm text-gray-500 font-mono mt-1">{g.id.slice(0, 8)}...</p>
                   </div>
                 </div>
                 <button
-                  onClick={(e) => handleDeleteGraph(
-g.id,
-e,
-)}
+                  onClick={(e) => handleDeleteGraph(g.id, e)}
                   className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full opacity-0 group-hover:opacity-100 transition-all"
                 >
                   <Trash2 size={18} />

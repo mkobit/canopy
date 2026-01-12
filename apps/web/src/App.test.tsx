@@ -10,7 +10,7 @@ import 'fake-indexeddb/auto';
 // Mock matchMedia for testing-library
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
-  value: vi.fn().mockImplementation(query => ({
+  value: vi.fn().mockImplementation((query) => ({
     matches: false,
     media: query,
     onchange: null,
@@ -27,11 +27,11 @@ describe('HomePage', () => {
     render(
       <StorageProvider>
         <GraphProvider>
-            <BrowserRouter>
-              <HomePage />
-            </BrowserRouter>
+          <BrowserRouter>
+            <HomePage />
+          </BrowserRouter>
         </GraphProvider>
-      </StorageProvider>
+      </StorageProvider>,
     );
     // Wait for loading to finish or default state
     expect(await screen.findByText('Your Graphs')).toBeDefined();

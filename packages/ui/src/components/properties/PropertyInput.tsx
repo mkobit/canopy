@@ -1,14 +1,6 @@
 import React from 'react';
-import type {
-  PropertyValue,
-  PropertyValueKind,
-  ScalarValue} from '@canopy/types';
-import {
-  asInstant,
-  asPlainDate,
-  asNodeId,
-  asGraphId,
-} from '@canopy/types';
+import type { PropertyValue, PropertyValueKind, ScalarValue } from '@canopy/types';
+import { asInstant, asPlainDate, asNodeId, asGraphId } from '@canopy/types';
 import { cn } from '../../utils/cn';
 
 interface PropertyInputData {
@@ -27,23 +19,17 @@ type PropertyInputProps = PropertyInputData & PropertyInputEvents;
 const updateScalar = (original: ScalarValue, newValue: string | number | boolean): ScalarValue => {
   switch (original.kind) {
     case 'text':
-      return { ...original,
-value: String(newValue) };
+      return { ...original, value: String(newValue) };
     case 'number':
-      return { ...original,
-value: Number(newValue) };
+      return { ...original, value: Number(newValue) };
     case 'boolean':
-      return { ...original,
-value: Boolean(newValue) };
+      return { ...original, value: Boolean(newValue) };
     case 'instant':
-      return { ...original,
-value: asInstant(String(newValue)) };
+      return { ...original, value: asInstant(String(newValue)) };
     case 'plain-date':
-      return { ...original,
-value: asPlainDate(String(newValue)) };
+      return { ...original, value: asPlainDate(String(newValue)) };
     case 'reference':
-      return { ...original,
-target: asNodeId(String(newValue)) };
+      return { ...original, target: asNodeId(String(newValue)) };
     case 'external-reference':
       return original;
     default:
@@ -54,10 +40,7 @@ target: asNodeId(String(newValue)) };
 export const PropertyInput: React.FC<PropertyInputProps> = ({ value, onChange, className }) => {
   if (value.kind === 'list') {
     return (
-      <div className={cn(
-'space-y-2',
-className,
-)}>
+      <div className={cn('space-y-2', className)}>
         {value.items.map((item, index) => (
           <div key={index} className="flex gap-2">
             <ScalarInput
@@ -66,16 +49,14 @@ className,
                 const newItems = [...value.items];
                 // eslint-disable-next-line functional/immutable-data
                 newItems[index] = newItem;
-                onChange({ ...value,
-items: newItems });
+                onChange({ ...value, items: newItems });
                 return undefined;
               }}
             />
             <button
               onClick={() => {
                 const newItems = value.items.filter((_, i) => i !== index);
-                onChange({ ...value,
-items: newItems });
+                onChange({ ...value, items: newItems });
                 return undefined;
               }}
               className="text-red-500 hover:bg-red-50 px-2 rounded"
@@ -92,40 +73,30 @@ items: newItems });
             // If items is empty, we need the `kind` prop to know what to add, or default to text.
             // For now, let's default to text if empty, or copy the kind of the first item.
             const getDefaultItem = (firstItem?: ScalarValue): ScalarValue => {
-              if (!firstItem) return { kind: 'text',
-value: '' };
+              if (!firstItem) return { kind: 'text', value: '' };
               switch (firstItem.kind) {
                 case 'text':
-                  return { kind: 'text',
-value: '' };
+                  return { kind: 'text', value: '' };
                 case 'number':
-                  return { kind: 'number',
-value: 0 };
+                  return { kind: 'number', value: 0 };
                 case 'boolean':
-                  return { kind: 'boolean',
-value: false };
+                  return { kind: 'boolean', value: false };
                 case 'instant':
-                  return { kind: 'instant',
-value: asInstant(new Date().toISOString()) };
+                  return { kind: 'instant', value: asInstant(new Date().toISOString()) };
                 case 'plain-date':
                   return {
                     kind: 'plain-date',
                     value: asPlainDate(new Date().toISOString().split('T')[0]!),
                   };
                 case 'reference':
-                  return { kind: 'reference',
-target: asNodeId('') };
+                  return { kind: 'reference', target: asNodeId('') };
                 case 'external-reference':
-                  return { kind: 'external-reference',
-graph: asGraphId(''),
-target: asNodeId('') };
+                  return { kind: 'external-reference', graph: asGraphId(''), target: asNodeId('') };
               }
             };
 
             const newItem = getDefaultItem(value.items.length > 0 ? value.items[0] : undefined);
-            onChange({ ...value,
-items: [...value.items,
-newItem] });
+            onChange({ ...value, items: [...value.items, newItem] });
             return undefined;
           }}
           className="text-blue-500 hover:bg-blue-50 px-2 py-1 rounded text-sm border border-dashed border-blue-200 w-full"
@@ -146,10 +117,7 @@ const ScalarInput: React.FC<
     className?: string | undefined;
   }>
 > = ({ value, onChange, className }) => {
-  const baseInputClass = cn(
-'border rounded px-2 py-1 w-full text-sm',
-className,
-);
+  const baseInputClass = cn('border rounded px-2 py-1 w-full text-sm', className);
 
   switch (value.kind) {
     case 'text':
@@ -158,10 +126,7 @@ className,
           type="text"
           value={value.value}
           onChange={(e) => {
-            onChange(updateScalar(
-value,
-e.target.value,
-));
+            onChange(updateScalar(value, e.target.value));
             return undefined;
           }}
           className={baseInputClass}
@@ -173,10 +138,7 @@ e.target.value,
           type="number"
           value={value.value}
           onChange={(e) => {
-            onChange(updateScalar(
-value,
-e.target.valueAsNumber,
-));
+            onChange(updateScalar(value, e.target.valueAsNumber));
             return undefined;
           }}
           className={baseInputClass}
@@ -188,16 +150,10 @@ e.target.valueAsNumber,
           type="checkbox"
           checked={value.value}
           onChange={(e) => {
-            onChange(updateScalar(
-value,
-e.target.checked,
-));
+            onChange(updateScalar(value, e.target.checked));
             return undefined;
           }}
-          className={cn(
-'h-4 w-4',
-className,
-)}
+          className={cn('h-4 w-4', className)}
         />
       );
     case 'instant':
@@ -207,10 +163,7 @@ className,
           type="text"
           value={value.value}
           onChange={(e) => {
-            onChange(updateScalar(
-value,
-e.target.value,
-));
+            onChange(updateScalar(value, e.target.value));
             return undefined;
           }}
           className={baseInputClass}
@@ -223,10 +176,7 @@ e.target.value,
           type="date"
           value={value.value}
           onChange={(e) => {
-            onChange(updateScalar(
-value,
-e.target.value,
-));
+            onChange(updateScalar(value, e.target.value));
             return undefined;
           }}
           className={baseInputClass}
@@ -238,10 +188,7 @@ e.target.value,
           type="text"
           value={value.target}
           onChange={(e) => {
-            onChange(updateScalar(
-value,
-e.target.value,
-));
+            onChange(updateScalar(value, e.target.value));
             return undefined;
           }}
           className={baseInputClass}
@@ -250,16 +197,12 @@ e.target.value,
       );
     case 'external-reference':
       return (
-        <div className={cn(
-'space-y-1',
-className,
-)}>
+        <div className={cn('space-y-1', className)}>
           <input
             type="text"
             value={value.graph}
             onChange={(e) => {
-              onChange({ ...value,
-graph: asGraphId(e.target.value) });
+              onChange({ ...value, graph: asGraphId(e.target.value) });
               return undefined;
             }}
             className={baseInputClass}
@@ -269,8 +212,7 @@ graph: asGraphId(e.target.value) });
             type="text"
             value={value.target}
             onChange={(e) => {
-              onChange({ ...value,
-target: asNodeId(e.target.value) });
+              onChange({ ...value, target: asNodeId(e.target.value) });
               return undefined;
             }}
             className={baseInputClass}

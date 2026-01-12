@@ -1,24 +1,16 @@
 import type * as Y from 'yjs';
-import type {
-  Node,
-  NodeId,
-  Result} from '@canopy/types';
-import {
-  createNodeId,
-  createInstant,
-  asNodeId,
-  ok,
-  err,
-} from '@canopy/types';
+import type { Node, NodeId, Result } from '@canopy/types';
+import { createNodeId, createInstant, asNodeId, ok, err } from '@canopy/types';
 import { NodeSchema } from '@canopy/schema';
 import { map } from 'remeda';
 import { nodeToStorable, storableToNode } from '../converters';
 
 export function addNode(
   nodes: Y.Map<unknown>,
-  data: Omit<Node, 'id' | 'metadata'> & Readonly<{
-    id?: string;
-  }>,
+  data: Omit<Node, 'id' | 'metadata'> &
+    Readonly<{
+      id?: string;
+    }>,
 ): Result<Node, Error> {
   const now = createInstant();
 
@@ -42,13 +34,10 @@ export function addNode(
   // Validate schema on the domain object
   const validation = NodeSchema.safeParse(node);
   if (!validation.success) {
-      return err(new Error(`Node validation failed: ${validation.error}`));
+    return err(new Error(`Node validation failed: ${validation.error}`));
   }
 
-  nodes.set(
-node.id,
-nodeToStorable(node),
-);
+  nodes.set(node.id, nodeToStorable(node));
   return ok(node);
 }
 
@@ -66,10 +55,7 @@ export function getNode(nodes: Y.Map<unknown>, id: string): Result<Node, Error> 
 
 export function getAllNodes(nodes: Y.Map<unknown>): Result<IterableIterator<Node>, Error> {
   try {
-    const iterator = map(
-Array.from(nodes.values()),
-storableToNode,
-)[Symbol.iterator]();
+    const iterator = map(Array.from(nodes.values()), storableToNode)[Symbol.iterator]();
     return ok(iterator);
   } catch (e) {
     return err(e instanceof Error ? e : new Error(String(e)));
@@ -81,10 +67,7 @@ export function updateNode(
   id: string,
   partial: Partial<Omit<Node, 'id' | 'metadata'>>,
 ): Result<Node, Error> {
-  const existingResult = getNode(
-nodes,
-id,
-);
+  const existingResult = getNode(nodes, id);
   if (!existingResult.ok) {
     return existingResult;
   }
@@ -103,13 +86,10 @@ id,
   // Validate schema
   const validation = NodeSchema.safeParse(updated);
   if (!validation.success) {
-      return err(new Error(`Node validation failed: ${validation.error}`));
+    return err(new Error(`Node validation failed: ${validation.error}`));
   }
 
-  nodes.set(
-id,
-nodeToStorable(updated),
-);
+  nodes.set(id, nodeToStorable(updated));
   return ok(updated);
 }
 

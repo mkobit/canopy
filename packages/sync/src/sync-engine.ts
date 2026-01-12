@@ -2,7 +2,7 @@ import * as Y from 'yjs';
 import { Awareness } from 'y-protocols/awareness';
 import { GraphStore } from './store/graph-store';
 import type { SyncProvider, SyncEngineOptions } from './types';
-import type { Result} from '@canopy/types';
+import type { Result } from '@canopy/types';
 import { fromThrowable } from '@canopy/types';
 
 export class SyncEngine {
@@ -16,10 +16,7 @@ export class SyncEngine {
     this.doc = new Y.Doc();
 
     if (options.initialSnapshot) {
-      Y.applyUpdate(
-this.doc,
-options.initialSnapshot,
-);
+      Y.applyUpdate(this.doc, options.initialSnapshot);
     }
 
     this.store = new GraphStore(this.doc);
@@ -48,11 +45,11 @@ options.initialSnapshot,
   disconnectProvider(): Result<void, Error> {
     return fromThrowable(() => {
       if (this.provider) {
-          const result = this.provider.disconnect();
-          this.provider = null;
-          // eslint-disable-next-line functional/no-throw-statements -- Re-throwing error to be caught by fromThrowable
-          if (!result.ok) throw result.error;
-          // Return is void, so we just return undefined on success
+        const result = this.provider.disconnect();
+        this.provider = null;
+        // eslint-disable-next-line functional/no-throw-statements -- Re-throwing error to be caught by fromThrowable
+        if (!result.ok) throw result.error;
+        // Return is void, so we just return undefined on success
       }
       return undefined;
     });
@@ -64,30 +61,21 @@ options.initialSnapshot,
 
   applySnapshot(snapshot: Uint8Array): Result<void, Error> {
     return fromThrowable(() => {
-      Y.applyUpdate(
-this.doc,
-snapshot,
-);
+      Y.applyUpdate(this.doc, snapshot);
       return undefined;
     });
   }
 
   onDocUpdate(handler: (update: Uint8Array, origin: unknown) => unknown): Result<void, Error> {
     return fromThrowable(() => {
-      this.doc.on(
-'update',
-handler,
-);
+      this.doc.on('update', handler);
       return undefined;
     });
   }
 
   offDocUpdate(handler: (update: Uint8Array, origin: unknown) => unknown): Result<void, Error> {
     return fromThrowable(() => {
-      this.doc.off(
-'update',
-handler,
-);
+      this.doc.off('update', handler);
       return undefined;
     });
   }
@@ -109,22 +97,34 @@ handler,
     return this.awareness.getStates();
   }
 
-  onAwarenessUpdate(handler: (changes: Readonly<{ added: readonly number[], updated: readonly number[], removed: readonly number[] }>, origin: unknown) => unknown): Result<void, Error> {
+  onAwarenessUpdate(
+    handler: (
+      changes: Readonly<{
+        added: readonly number[];
+        updated: readonly number[];
+        removed: readonly number[];
+      }>,
+      origin: unknown,
+    ) => unknown,
+  ): Result<void, Error> {
     return fromThrowable(() => {
-      this.awareness.on(
-'change',
-handler,
-);
+      this.awareness.on('change', handler);
       return undefined;
     });
   }
 
-  offAwarenessUpdate(handler: (changes: Readonly<{ added: readonly number[], updated: readonly number[], removed: readonly number[] }>, origin: unknown) => unknown): Result<void, Error> {
+  offAwarenessUpdate(
+    handler: (
+      changes: Readonly<{
+        added: readonly number[];
+        updated: readonly number[];
+        removed: readonly number[];
+      }>,
+      origin: unknown,
+    ) => unknown,
+  ): Result<void, Error> {
     return fromThrowable(() => {
-      this.awareness.off(
-'change',
-handler,
-);
+      this.awareness.off('change', handler);
       return undefined;
     });
   }

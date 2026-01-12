@@ -4,7 +4,7 @@ import {
   GraphSchema,
   InstantSchema,
   PlainDateSchema,
-  PropertyValueSchema
+  PropertyValueSchema,
 } from '../src/schemas';
 import type { NodeId } from '@canopy/types';
 
@@ -30,8 +30,8 @@ describe('Zod Schemas', () => {
       kind: 'list',
       items: [
         { kind: 'text', value: 'a' },
-        { kind: 'text', value: 'b' }
-      ]
+        { kind: 'text', value: 'b' },
+      ],
     };
     expect(PropertyValueSchema.parse(val)).toEqual(val);
   });
@@ -43,8 +43,8 @@ describe('Zod Schemas', () => {
       properties: new Map(),
       metadata: {
         created: '2023-10-27T10:00:00.000Z',
-        modified: '2023-10-27T10:00:00.000Z'
-      }
+        modified: '2023-10-27T10:00:00.000Z',
+      },
     };
 
     const parsed = NodeSchema.parse(nodeData);
@@ -57,18 +57,18 @@ describe('Zod Schemas', () => {
       id: '123e4567-e89b-12d3-a456-426614174000',
       type: 'Person',
       properties: {
-        "name": { "kind": "text", "value": "Alice" },
-        "age": { "kind": "number", "value": 30 }
+        name: { kind: 'text', value: 'Alice' },
+        age: { kind: 'number', value: 30 },
       },
       metadata: {
         created: '2023-10-27T10:00:00.000Z',
-        modified: '2023-10-27T10:00:00.000Z'
-      }
+        modified: '2023-10-27T10:00:00.000Z',
+      },
     };
 
     const parsed = NodeSchema.parse(jsonNode);
     expect(parsed.properties).toBeInstanceOf(Map);
-    expect(parsed.properties.get("name")).toEqual({ kind: "text", value: "Alice" });
+    expect(parsed.properties.get('name')).toEqual({ kind: 'text', value: 'Alice' });
   });
 
   it('should validate Graph from JSON object', () => {
@@ -77,7 +77,7 @@ describe('Zod Schemas', () => {
       name: 'Test Graph',
       metadata: {
         created: '2023-10-27T10:00:00.000Z',
-        modified: '2023-10-27T10:00:00.000Z'
+        modified: '2023-10-27T10:00:00.000Z',
       },
       nodes: {
         '123e4567-e89b-12d3-a456-426614174000': {
@@ -86,17 +86,19 @@ describe('Zod Schemas', () => {
           properties: {},
           metadata: {
             created: '2023-10-27T10:00:00.000Z',
-            modified: '2023-10-27T10:00:00.000Z'
-          }
-        }
+            modified: '2023-10-27T10:00:00.000Z',
+          },
+        },
       },
-      edges: {}
+      edges: {},
     };
 
     const parsed = GraphSchema.parse(jsonGraph);
     expect(parsed.nodes).toBeInstanceOf(Map);
     expect(parsed.nodes.size).toBe(1);
     // Cast key to string to avoid branded type issue in test
-    expect(parsed.nodes.get('123e4567-e89b-12d3-a456-426614174000' as unknown as NodeId)?.type).toBe('Person');
+    expect(
+      parsed.nodes.get('123e4567-e89b-12d3-a456-426614174000' as unknown as NodeId)?.type,
+    ).toBe('Person');
   });
 });

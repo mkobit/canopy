@@ -44,6 +44,7 @@ const friends = executeQuery(myGraph, q2);
 ## Architecture
 
 The package is split into:
+
 - `model.ts`: Defines the Intermediate Representation (IR) of a query.
 - `builder.ts`: Provides the fluent API to construct the IR.
 - `engine.ts`: Executes the IR against a Graph instance.

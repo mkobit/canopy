@@ -28,8 +28,14 @@ export interface SyncProviderActions {
   /**
    * Subscribe to connection status changes
    */
-  readonly on: (event: 'status', handler: (event: Readonly<{ status: 'connected' | 'disconnected' | 'connecting' }>) => unknown) => undefined;
-  readonly off: (event: 'status', handler: (event: Readonly<{ status: 'connected' | 'disconnected' | 'connecting' }>) => unknown) => undefined;
+  readonly on: (
+    event: 'status',
+    handler: (event: Readonly<{ status: 'connected' | 'disconnected' | 'connecting' }>) => unknown,
+  ) => undefined;
+  readonly off: (
+    event: 'status',
+    handler: (event: Readonly<{ status: 'connected' | 'disconnected' | 'connecting' }>) => unknown,
+  ) => undefined;
 }
 
 export type SyncProvider = SyncProviderState & SyncProviderActions;

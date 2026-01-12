@@ -1,23 +1,30 @@
-import type { Graph, Node, PropertyMap, TypeId, NodeId, PropertyValue, PropertyDefinition, Result } from '@canopy/types'
-import { createInstant, ok } from '@canopy/types'
-import { addNode } from './ops'
-import { SYSTEM_IDS, SYSTEM_EDGE_TYPES } from './system'
+import type {
+  Graph,
+  Node,
+  PropertyMap,
+  TypeId,
+  NodeId,
+  PropertyValue,
+  PropertyDefinition,
+  Result,
+} from '@canopy/types';
+import { createInstant, ok } from '@canopy/types';
+import { addNode } from './ops';
+import { SYSTEM_IDS, SYSTEM_EDGE_TYPES } from './system';
 
 // Helper to create a property map
 function createProperties(props: Record<string, PropertyValue>): PropertyMap {
-  return new Map(Object.entries(props))
+  return new Map(Object.entries(props));
 }
 
 // Helper to create a text value
 function text(value: string): PropertyValue {
-  return { kind: 'text',
-value }
+  return { kind: 'text', value };
 }
 
 // Helper to create a reference value
 function reference(target: NodeId): PropertyValue {
-  return { kind: 'reference',
-target }
+  return { kind: 'reference', target };
 }
 
 function createBootstrapNode(
@@ -39,7 +46,7 @@ function createBootstrapNode(
       created: createInstant(),
       modified: createInstant(),
     },
-  }
+  };
 }
 
 // Helper to reduce results safely using recursion to avoid loops
@@ -49,26 +56,19 @@ function reduceResult<T, R>(
   initial: R,
 ): Result<R, Error> {
   if (items.length === 0) {
-    return ok(initial)
+    return ok(initial);
   }
-  const head = items[0]
+  const head = items[0];
   if (head === undefined) {
-      // This should theoretically not happen due to length check, but safe for noUncheckedIndexedAccess
-      return ok(initial)
+    // This should theoretically not happen due to length check, but safe for noUncheckedIndexedAccess
+    return ok(initial);
   }
-  const tail = items.slice(1)
-  const res = fn(
-initial,
-head,
-)
+  const tail = items.slice(1);
+  const res = fn(initial, head);
   if (!res.ok) {
-    return res
+    return res;
   }
-  return reduceResult(
-tail,
-fn,
-res.value,
-)
+  return reduceResult(tail, fn, res.value);
 }
 
 /**
@@ -78,143 +78,186 @@ res.value,
 export function bootstrap(graph: Graph): Result<Graph, Error> {
   const steps: readonly ((g: Graph) => Result<Graph, Error>)[] = [
     // 1. Ensure NodeType definition exists
-    (g) => !g.nodes.has(SYSTEM_IDS.NODE_TYPE_DEF)
-      ? addNode(
-g,
-createBootstrapNode(
-          SYSTEM_IDS.NODE_TYPE_DEF,
-          SYSTEM_IDS.NODE_TYPE,
-          'Node Type',
-          'Defines a type of node in the graph.',
-        ),
-)
-      : ok(g),
+    (g) =>
+      !g.nodes.has(SYSTEM_IDS.NODE_TYPE_DEF)
+        ? addNode(
+            g,
+            createBootstrapNode(
+              SYSTEM_IDS.NODE_TYPE_DEF,
+              SYSTEM_IDS.NODE_TYPE,
+              'Node Type',
+              'Defines a type of node in the graph.',
+            ),
+          )
+        : ok(g),
 
     // 2. Ensure EdgeType definition exists
-    (g) => !g.nodes.has(SYSTEM_IDS.EDGE_TYPE_DEF)
-      ? addNode(
-g,
-createBootstrapNode(
-          SYSTEM_IDS.EDGE_TYPE_DEF,
-          SYSTEM_IDS.NODE_TYPE,
-          'Edge Type',
-          'Defines a type of edge in the graph.',
-        ),
-)
-      : ok(g),
+    (g) =>
+      !g.nodes.has(SYSTEM_IDS.EDGE_TYPE_DEF)
+        ? addNode(
+            g,
+            createBootstrapNode(
+              SYSTEM_IDS.EDGE_TYPE_DEF,
+              SYSTEM_IDS.NODE_TYPE,
+              'Edge Type',
+              'Defines a type of edge in the graph.',
+            ),
+          )
+        : ok(g),
 
-    (g) => !g.nodes.has(SYSTEM_IDS.QUERY_DEFINITION_DEF)
-      ? addNode(
-g,
-createBootstrapNode(
-          SYSTEM_IDS.QUERY_DEFINITION_DEF,
-          SYSTEM_IDS.NODE_TYPE,
-          'Query Definition',
-          'Defines a stored query in the graph.',
-          {
-            properties: text(JSON.stringify([
-                { name: 'name',
-valueKind: 'text',
-required: true,
-description: 'Human-readable query name' },
-                { name: 'description',
-valueKind: 'text',
-required: false,
-description: 'What this query finds' },
-                { name: 'nodeTypes',
-valueKind: 'list',
-required: false,
-description: 'Which node types this query targets' },
-                { name: 'definition',
-valueKind: 'text',
-required: true,
-description: 'The query in stored format (JSON)' },
-                { name: 'parameters',
-valueKind: 'list',
-required: false,
-description: 'Declared parameter names this query accepts' },
-            ] satisfies readonly PropertyDefinition[])),
-          },
-        ),
-)
-      : ok(g),
+    (g) =>
+      !g.nodes.has(SYSTEM_IDS.QUERY_DEFINITION_DEF)
+        ? addNode(
+            g,
+            createBootstrapNode(
+              SYSTEM_IDS.QUERY_DEFINITION_DEF,
+              SYSTEM_IDS.NODE_TYPE,
+              'Query Definition',
+              'Defines a stored query in the graph.',
+              {
+                properties: text(
+                  JSON.stringify([
+                    {
+                      name: 'name',
+                      valueKind: 'text',
+                      required: true,
+                      description: 'Human-readable query name',
+                    },
+                    {
+                      name: 'description',
+                      valueKind: 'text',
+                      required: false,
+                      description: 'What this query finds',
+                    },
+                    {
+                      name: 'nodeTypes',
+                      valueKind: 'list',
+                      required: false,
+                      description: 'Which node types this query targets',
+                    },
+                    {
+                      name: 'definition',
+                      valueKind: 'text',
+                      required: true,
+                      description: 'The query in stored format (JSON)',
+                    },
+                    {
+                      name: 'parameters',
+                      valueKind: 'list',
+                      required: false,
+                      description: 'Declared parameter names this query accepts',
+                    },
+                  ] satisfies readonly PropertyDefinition[]),
+                ),
+              },
+            ),
+          )
+        : ok(g),
 
-    (g) => !g.nodes.has(SYSTEM_IDS.VIEW_DEFINITION_DEF)
-      ? addNode(
-g,
-createBootstrapNode(
-          SYSTEM_IDS.VIEW_DEFINITION_DEF,
-          SYSTEM_IDS.NODE_TYPE,
-          'View Definition',
-          'Defines a view of data in the graph.',
-          {
-            properties: text(JSON.stringify([
-                { name: 'name',
-valueKind: 'text',
-required: true,
-description: 'Human-readable view name' },
-                { name: 'description',
-valueKind: 'text',
-required: false,
-description: 'What this view shows' },
-                { name: 'queryRef',
-valueKind: 'reference',
-required: true,
-description: 'Reference to a QueryDefinition node' },
-                { name: 'layout',
-valueKind: 'text',
-required: true,
-description: 'list | table | cards | graph | document' },
-                { name: 'sort',
-valueKind: 'text',
-required: false,
-description: 'JSON string of sort criteria' },
-                { name: 'groupBy',
-valueKind: 'text',
-required: false,
-description: 'Property name to group results' },
-                { name: 'displayProperties',
-valueKind: 'list',
-required: false,
-description: 'Properties to show' },
-                { name: 'pageSize',
-valueKind: 'number',
-required: false,
-description: 'Number of items per page' },
-            ] satisfies readonly PropertyDefinition[])),
-          },
-        ),
-)
-      : ok(g),
+    (g) =>
+      !g.nodes.has(SYSTEM_IDS.VIEW_DEFINITION_DEF)
+        ? addNode(
+            g,
+            createBootstrapNode(
+              SYSTEM_IDS.VIEW_DEFINITION_DEF,
+              SYSTEM_IDS.NODE_TYPE,
+              'View Definition',
+              'Defines a view of data in the graph.',
+              {
+                properties: text(
+                  JSON.stringify([
+                    {
+                      name: 'name',
+                      valueKind: 'text',
+                      required: true,
+                      description: 'Human-readable view name',
+                    },
+                    {
+                      name: 'description',
+                      valueKind: 'text',
+                      required: false,
+                      description: 'What this view shows',
+                    },
+                    {
+                      name: 'queryRef',
+                      valueKind: 'reference',
+                      required: true,
+                      description: 'Reference to a QueryDefinition node',
+                    },
+                    {
+                      name: 'layout',
+                      valueKind: 'text',
+                      required: true,
+                      description: 'list | table | cards | graph | document',
+                    },
+                    {
+                      name: 'sort',
+                      valueKind: 'text',
+                      required: false,
+                      description: 'JSON string of sort criteria',
+                    },
+                    {
+                      name: 'groupBy',
+                      valueKind: 'text',
+                      required: false,
+                      description: 'Property name to group results',
+                    },
+                    {
+                      name: 'displayProperties',
+                      valueKind: 'list',
+                      required: false,
+                      description: 'Properties to show',
+                    },
+                    {
+                      name: 'pageSize',
+                      valueKind: 'number',
+                      required: false,
+                      description: 'Number of items per page',
+                    },
+                  ] satisfies readonly PropertyDefinition[]),
+                ),
+              },
+            ),
+          )
+        : ok(g),
 
-    (g) => !g.nodes.has(SYSTEM_IDS.TEMPLATE_DEF)
-      ? addNode(
-g,
-createBootstrapNode(
-          SYSTEM_IDS.TEMPLATE_DEF,
-          SYSTEM_IDS.NODE_TYPE,
-          'Template',
-          'Defines a UI template.',
-          {
-            properties: text(JSON.stringify([
-                { name: 'name',
-valueKind: 'text',
-required: true,
-description: 'Template name' },
-                { name: 'layout',
-valueKind: 'text',
-required: true,
-description: 'Layout handled by this template' },
-                { name: 'component',
-valueKind: 'text',
-required: false,
-description: 'Component name' },
-            ] satisfies readonly PropertyDefinition[])),
-          },
-        ),
-)
-      : ok(g),
-  ]
+    (g) =>
+      !g.nodes.has(SYSTEM_IDS.TEMPLATE_DEF)
+        ? addNode(
+            g,
+            createBootstrapNode(
+              SYSTEM_IDS.TEMPLATE_DEF,
+              SYSTEM_IDS.NODE_TYPE,
+              'Template',
+              'Defines a UI template.',
+              {
+                properties: text(
+                  JSON.stringify([
+                    {
+                      name: 'name',
+                      valueKind: 'text',
+                      required: true,
+                      description: 'Template name',
+                    },
+                    {
+                      name: 'layout',
+                      valueKind: 'text',
+                      required: true,
+                      description: 'Layout handled by this template',
+                    },
+                    {
+                      name: 'component',
+                      valueKind: 'text',
+                      required: false,
+                      description: 'Component name',
+                    },
+                  ] satisfies readonly PropertyDefinition[]),
+                ),
+              },
+            ),
+          )
+        : ok(g),
+  ];
 
   // 4. Core Edge Types
   const coreEdgeTypes = [
@@ -242,7 +285,7 @@ description: 'Component name' },
       name: 'Prerequisite',
       description: 'Indicates that the target is a prerequisite for the source.',
     },
-  ] as const
+  ] as const;
 
   // 5. System Queries
   const systemQueries = [
@@ -256,21 +299,25 @@ description: 'Component name' },
       id: SYSTEM_IDS.QUERY_BY_TYPE,
       name: 'By Type',
       description: 'Finds all nodes, intended for grouping by type.',
-      definition: { steps: [{ kind: 'node-scan' },
-{ kind: 'sort',
-sort: { property: 'type',
-direction: 'asc' } }] },
+      definition: {
+        steps: [
+          { kind: 'node-scan' },
+          { kind: 'sort', sort: { property: 'type', direction: 'asc' } },
+        ],
+      },
     },
     {
       id: SYSTEM_IDS.QUERY_RECENT,
       name: 'Recent',
       description: 'Finds all nodes sorted by modification time.',
-      definition: { steps: [{ kind: 'node-scan' },
-{ kind: 'sort',
-sort: { property: 'metadata.modified',
-direction: 'desc' } }] },
+      definition: {
+        steps: [
+          { kind: 'node-scan' },
+          { kind: 'sort', sort: { property: 'metadata.modified', direction: 'desc' } },
+        ],
+      },
     },
-  ]
+  ];
 
   // 6. System Views
   const systemViews = [
@@ -296,71 +343,67 @@ direction: 'desc' } }] },
       layout: 'cards',
       queryRef: SYSTEM_IDS.QUERY_RECENT,
     },
-  ]
+  ];
 
   // Chain everything
   const allSteps: readonly ((g: Graph) => Result<Graph, Error>)[] = [
-      ...steps,
-      (g) => reduceResult(
-coreEdgeTypes,
-(cg, def) => !cg.nodes.has(def.id)
-          ? addNode(
-cg,
-createBootstrapNode(
-def.id,
-SYSTEM_IDS.EDGE_TYPE,
-def.name,
-def.description,
-),
-)
-          : ok(cg),
-g,
-),
-      (g) => reduceResult(
-systemQueries,
-(cg, def) => !cg.nodes.has(def.id)
-          ? addNode(
-cg,
-createBootstrapNode(
-def.id,
-SYSTEM_IDS.QUERY_DEFINITION,
-def.name,
-def.description,
-{ definition: text(JSON.stringify(def.definition)) },
-),
-)
-          : ok(cg),
-g,
-),
-      (g) => reduceResult(
-systemViews,
-(cg, def) => {
+    ...steps,
+    (g) =>
+      reduceResult(
+        coreEdgeTypes,
+        (cg, def) =>
+          !cg.nodes.has(def.id)
+            ? addNode(
+                cg,
+                createBootstrapNode(def.id, SYSTEM_IDS.EDGE_TYPE, def.name, def.description),
+              )
+            : ok(cg),
+        g,
+      ),
+    (g) =>
+      reduceResult(
+        systemQueries,
+        (cg, def) =>
+          !cg.nodes.has(def.id)
+            ? addNode(
+                cg,
+                createBootstrapNode(
+                  def.id,
+                  SYSTEM_IDS.QUERY_DEFINITION,
+                  def.name,
+                  def.description,
+                  { definition: text(JSON.stringify(def.definition)) },
+                ),
+              )
+            : ok(cg),
+        g,
+      ),
+    (g) =>
+      reduceResult(
+        systemViews,
+        (cg, def) => {
           if (!cg.nodes.has(def.id)) {
-             const extraProps = {
-                layout: text(def.layout),
-                queryRef: reference(def.queryRef),
-                ...(def.groupBy ? { groupBy: text(def.groupBy) } : {}),
-             }
-             return addNode(
-cg,
-createBootstrapNode(
-def.id,
-SYSTEM_IDS.VIEW_DEFINITION,
-def.name,
-def.description,
-extraProps,
-),
-)
+            const extraProps = {
+              layout: text(def.layout),
+              queryRef: reference(def.queryRef),
+              ...(def.groupBy ? { groupBy: text(def.groupBy) } : {}),
+            };
+            return addNode(
+              cg,
+              createBootstrapNode(
+                def.id,
+                SYSTEM_IDS.VIEW_DEFINITION,
+                def.name,
+                def.description,
+                extraProps,
+              ),
+            );
           }
-          return ok(cg)
-      },
-g,
-),
-  ]
+          return ok(cg);
+        },
+        g,
+      ),
+  ];
 
-  return reduceResult(
-allSteps,
-(g, step) => step(g),
-graph,
-)
+  return reduceResult(allSteps, (g, step) => step(g), graph);
 }

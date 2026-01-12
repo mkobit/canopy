@@ -28,6 +28,7 @@ It provides a backend-agnostic interface and implementations for SQLite and Inde
 ## Backend Interface
 
 The `StorageAdapter` interface requires:
+
 - `init()`: Initialize connection/resources.
 - `close()`: Cleanup.
 - `save(graphId, snapshot, metadata)`: Persist graph data.

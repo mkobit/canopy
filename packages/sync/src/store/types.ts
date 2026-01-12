@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { Node, Edge, PropertyValue} from '@canopy/types';
+import type { Node, Edge, PropertyValue } from '@canopy/types';
 import { asNodeId, asEdgeId, asTypeId } from '@canopy/types';
 import { PropertyValueSchema, TemporalMetadataSchema } from '@canopy/schema';
 
@@ -15,10 +15,7 @@ export interface StorableEdge extends Omit<Edge, 'properties'> {
 }
 
 // Zod schemas for Storable types
-export const StorablePropertiesSchema = z.record(
-z.string(),
-PropertyValueSchema,
-);
+export const StorablePropertiesSchema = z.record(z.string(), PropertyValueSchema);
 
 export const StorableNodeSchema: z.ZodType<StorableNode, unknown> = z.object({
   id: z.string().transform((val) => asNodeId(val)),

@@ -1,4 +1,4 @@
-import { asNodeId, asTypeId } from '@canopy/types'
+import { asNodeId, asTypeId } from '@canopy/types';
 
 export const SYSTEM_IDS = {
   // Types
@@ -30,7 +30,7 @@ export const SYSTEM_IDS = {
   EDGE_DEFINES: asNodeId('edge:type:defines'),
   EDGE_REFERENCES: asNodeId('edge:type:references'),
   EDGE_PREREQUISITE: asNodeId('edge:type:prerequisite'),
-}
+};
 
 // Corresponding TypeIds for the Edge Types
 export const SYSTEM_EDGE_TYPES = {
@@ -38,4 +38,4 @@ export const SYSTEM_EDGE_TYPES = {
   DEFINES: asTypeId('edge:type:defines'),
   REFERENCES: asTypeId('edge:type:references'),
   PREREQUISITE: asTypeId('edge:type:prerequisite'),
-}
+};

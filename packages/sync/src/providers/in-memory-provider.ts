@@ -2,7 +2,7 @@ import * as Y from 'yjs';
 import type { Awareness } from 'y-protocols/awareness';
 import * as AwarenessProtocol from 'y-protocols/awareness';
 import type { SyncProvider } from '../types';
-import type { Result} from '@canopy/types';
+import type { Result } from '@canopy/types';
 import { ok, err } from '@canopy/types';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -30,14 +30,8 @@ export class InMemoryProvider implements SyncProvider {
     this.roomName = roomName;
 
     // Listen to local updates and broadcast
-    this.doc.on(
-'update',
-this.handleDocUpdate,
-);
-    this.awareness.on(
-'update',
-this.handleAwarenessUpdate,
-);
+    this.doc.on('update', this.handleDocUpdate);
+    this.awareness.on('update', this.handleAwarenessUpdate);
   }
 
   private readonly handleDocUpdate = (update: Uint8Array, origin: unknown) => {
@@ -61,10 +55,7 @@ this.handleAwarenessUpdate,
   ) => {
     if (origin !== 'remote' && this.connected) {
       const changedClients = added.concat(updated).concat(removed);
-      const update = AwarenessProtocol.encodeAwarenessUpdate(
-this.awareness,
-changedClients,
-);
+      const update = AwarenessProtocol.encodeAwarenessUpdate(this.awareness, changedClients);
       this.broadcastAwarenessUpdate(update);
     }
     return undefined;
@@ -75,11 +66,7 @@ changedClients,
     if (network) {
       network.forEach((peer) => {
         if (peer !== this && peer.connected) {
-          Y.applyUpdate(
-peer.doc,
-update,
-this,
-);
+          Y.applyUpdate(peer.doc, update, this);
         }
         return undefined;
       });
@@ -92,11 +79,7 @@ this,
     if (network) {
       network.forEach((peer) => {
         if (peer !== this && peer.connected) {
-          AwarenessProtocol.applyAwarenessUpdate(
-peer.awareness,
-update,
-'remote',
-);
+          AwarenessProtocol.applyAwarenessUpdate(peer.awareness, update, 'remote');
         }
         return undefined;
       });
@@ -107,10 +90,7 @@ update,
   connect(): Result<void, Error> {
     try {
       if (!InMemoryProvider.networks.has(this.roomName)) {
-        InMemoryProvider.networks.set(
-this.roomName,
-new Set(),
-);
+        InMemoryProvider.networks.set(this.roomName, new Set());
       }
       InMemoryProvider.networks.get(this.roomName)!.add(this);
       this.connected = true;
@@ -126,41 +106,20 @@ new Set(),
           if (peer !== this && peer.connected) {
             // Sync step 1
             const stateVector = Y.encodeStateVector(this.doc);
-            const diff = Y.encodeStateAsUpdate(
-peer.doc,
-stateVector,
-);
-            Y.applyUpdate(
-this.doc,
-diff,
-this,
-);
+            const diff = Y.encodeStateAsUpdate(peer.doc, stateVector);
+            Y.applyUpdate(this.doc, diff, this);
 
             // Sync step 2 (peer needs my updates)
             const peerStateVector = Y.encodeStateVector(peer.doc);
-            const myDiff = Y.encodeStateAsUpdate(
-this.doc,
-peerStateVector,
-);
-            Y.applyUpdate(
-peer.doc,
-myDiff,
-this,
-);
+            const myDiff = Y.encodeStateAsUpdate(this.doc, peerStateVector);
+            Y.applyUpdate(peer.doc, myDiff, this);
 
             // Sync Awareness
             // Send my state to peer
-            const myAwarenessUpdate = AwarenessProtocol.encodeAwarenessUpdate(
-this.awareness,
-[
+            const myAwarenessUpdate = AwarenessProtocol.encodeAwarenessUpdate(this.awareness, [
               this.doc.clientID,
-            ],
-);
-            AwarenessProtocol.applyAwarenessUpdate(
-peer.awareness,
-myAwarenessUpdate,
-'remote',
-);
+            ]);
+            AwarenessProtocol.applyAwarenessUpdate(peer.awareness, myAwarenessUpdate, 'remote');
 
             // Get peer state
             // Note: encodeAwarenessUpdate with [clientId] gets that client's state.
@@ -172,20 +131,13 @@ myAwarenessUpdate,
               peer.awareness,
               Array.from(peer.awareness.getStates().keys()),
             );
-            AwarenessProtocol.applyAwarenessUpdate(
-this.awareness,
-peerAwarenessUpdate,
-'remote',
-);
+            AwarenessProtocol.applyAwarenessUpdate(this.awareness, peerAwarenessUpdate, 'remote');
           }
           return undefined;
         });
       }
 
-      this.emit(
-'status',
-{ status: 'connected' },
-);
+      this.emit('status', { status: 'connected' });
       return ok(undefined);
     } catch (e) {
       return err(e instanceof Error ? e : new Error(String(e)));
@@ -202,10 +154,7 @@ peerAwarenessUpdate,
         }
       }
       this.connected = false;
-      this.emit(
-'status',
-{ status: 'disconnected' },
-);
+      this.emit('status', { status: 'disconnected' });
       return ok(undefined);
     } catch (e) {
       return err(e instanceof Error ? e : new Error(String(e)));
@@ -217,10 +166,7 @@ peerAwarenessUpdate,
     handler: (event: Readonly<{ status: 'connected' | 'disconnected' | 'connecting' }>) => unknown,
   ) {
     if (!this.handlers.has(event)) {
-      this.handlers.set(
-event,
-[],
-);
+      this.handlers.set(event, []);
     }
     this.handlers.get(event)?.push(handler);
     return undefined;
