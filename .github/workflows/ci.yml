@@ -5,10 +5,10 @@ on:
 
 jobs:
   build:
-    name: Build, Lint, and Test
+    name: Build, lint, and test
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: true
+      fail-fast: false
       max-parallel: 1
       matrix:
         os: [ubuntu-24.04, macos-14]
@@ -43,19 +43,25 @@ jobs:
             ${{ runner.os }}-pnpm-store-
 
       - name: Install dependencies
+        id: install
         run: pnpm install
 
       - name: Lint
+        if: !cancelled() && steps.install.outcome == 'success'
         run: pnpm lint
 
       - name: Typecheck
+        if: !cancelled() && steps.install.outcome == 'success'
         run: pnpm typecheck
 
       - name: Build
+        if: !cancelled() && steps.install.outcome == 'success'
         run: pnpm build
 
       - name: Test
+        if: !cancelled() && steps.install.outcome == 'success'
         run: pnpm test -- run --coverage
 
       - name: Upload coverage
+        if: !cancelled() && steps.install.outcome == 'success'
         uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v3
