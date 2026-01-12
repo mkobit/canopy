@@ -31,16 +31,12 @@ const updateScalar = (original: ScalarValue, newValue: string | number | boolean
       return { ...original, value: Number(newValue) };
     case 'boolean':
       return { ...original, value: Boolean(newValue) };
-    // For specialized types, we cast for now but should validate in real usage
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     case 'instant':
-      return { ...original, value: String(newValue) as any };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return { ...original, value: asInstant(String(newValue)) };
     case 'plain-date':
-      return { ...original, value: String(newValue) as any };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return { ...original, value: asPlainDate(String(newValue)) };
     case 'reference':
-      return { ...original, target: String(newValue) as any };
+      return { ...original, target: asNodeId(String(newValue)) };
     case 'external-reference':
       return original;
     default:
