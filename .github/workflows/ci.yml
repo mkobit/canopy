@@ -8,7 +8,7 @@ jobs:
     name: Build, lint, and test
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false
+      fail-fast: true
       max-parallel: 1
       matrix:
         os: [ubuntu-24.04, macos-14]
