@@ -1,15 +1,16 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { SyncEngine } from '@canopy/sync';
-import {
+import type {
   Graph,
   GraphId,
   NodeId,
   EdgeId,
-  asInstant,
   PropertyValue,
   Node,
   Edge,
-  Result,
+  Result} from '@canopy/types';
+import {
+  asInstant,
   ok,
   err,
   fromThrowable,
@@ -18,7 +19,7 @@ import {
 import { useStorage } from './StorageContext';
 import { z } from 'zod';
 import { TypeIdSchema } from '@canopy/schema';
-import { TypeId } from '@canopy/types';
+import type { TypeId } from '@canopy/types';
 
 interface GraphContextState {
   readonly graph: Graph | null;
@@ -52,13 +53,18 @@ const GraphContext = createContext<GraphContextType>({
 
 export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = ({ children }) => {
   const { storage } = useStorage();
-  const [syncEngine, setSyncEngine] = useState<SyncEngine | null>(null);
+  const [syncEngine,
+setSyncEngine] = useState<SyncEngine | null>(null);
   const syncEngineRef = useRef<SyncEngine | null>(null); // Ref to avoid dependency cycles
 
-  const [graph, setGraph] = useState<Graph | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-  const [currentGraphId, setCurrentGraphId] = useState<GraphId | null>(null);
+  const [graph,
+setGraph] = useState<Graph | null>(null);
+  const [isLoading,
+setIsLoading] = useState(false);
+  const [error,
+setError] = useState<Error | null>(null);
+  const [currentGraphId,
+setCurrentGraphId] = useState<GraphId | null>(null);
 
   const loadGraph = useCallback(
     async (graphId: GraphId): Promise<Result<void, Error>> => {
@@ -88,19 +94,31 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
         setCurrentGraphId(graphId);
 
         // Initial graph state
-        updateGraphFromStore(engine, graphId);
+        updateGraphFromStore(
+engine,
+graphId,
+);
 
         // Subscribe to updates
-        engine.doc.on('update', () => {
-          updateGraphFromStore(engine, graphId);
+        engine.doc.on(
+'update',
+() => {
+          updateGraphFromStore(
+engine,
+graphId,
+);
           return undefined;
-        });
+        },
+);
 
         return undefined;
       });
 
       if (!result.ok) {
-        console.error('Failed to load graph:', result.error);
+        console.error(
+'Failed to load graph:',
+result.error,
+);
         setError(result.error);
       }
 
@@ -112,24 +130,28 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
 
   const updateGraphFromStore = (engine: SyncEngine, graphId: GraphId) => {
     const nodes = new Map<NodeId, Node>(
-      Array.from(engine.store.getAllNodes()).map((node) => [node.id, node]),
+      Array.from(engine.store.getAllNodes()).map((node) => [node.id,
+node]),
     );
     const edges = new Map<EdgeId, Edge>(
-      Array.from(engine.store.getAllEdges()).map((edge) => [edge.id, edge]),
+      Array.from(engine.store.getAllEdges()).map((edge) => [edge.id,
+edge]),
     );
 
     const now = asInstant(new Date().toISOString());
     setGraph({
       id: graphId,
       name: 'Graph', // We should load this
-      metadata: { created: now, modified: now }, // Placeholder
+      metadata: { created: now,
+modified: now }, // Placeholder
       nodes,
       edges,
     });
     return undefined;
   };
 
-  const closeGraph = useCallback((): Result<void, Error> => {
+  const closeGraph = useCallback(
+(): Result<void, Error> => {
     return fromThrowable(() => {
       if (syncEngineRef.current) {
         syncEngineRef.current.disconnectProvider();
@@ -140,19 +162,26 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
       setCurrentGraphId(null);
       return undefined;
     });
-  }, []);
+  },
+[],
+);
 
-  const saveGraph = useCallback(async (): Promise<Result<void, Error>> => {
+  const saveGraph = useCallback(
+async (): Promise<Result<void, Error>> => {
     if (syncEngineRef.current && storage && currentGraphId && graph) {
       return fromAsyncThrowable(async () => {
         const snapshot = syncEngineRef.current!.getSnapshot();
         const createdAt = graph.metadata.created || new Date().toISOString();
-        const result = await storage.save(currentGraphId, snapshot, {
+        const result = await storage.save(
+currentGraphId,
+snapshot,
+{
           id: currentGraphId,
           name: graph.name,
           createdAt,
           updatedAt: new Date().toISOString(),
-        });
+        },
+);
         // eslint-disable-next-line functional/no-throw-statements -- Re-throwing error to be caught by fromAsyncThrowable
         if (!result.ok) throw result.error;
         return undefined;
@@ -164,7 +193,11 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
     if (!storage) return err(new Error('Storage not available'));
 
     return ok(undefined);
-  }, [storage, currentGraphId, graph]);
+  },
+[storage,
+currentGraphId,
+graph],
+);
 
   // Schema for validating inputs to createNode
   // Note: We need to specify the output type explicitly because Zod's inference sometimes
@@ -172,7 +205,10 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
   // should already return TypeId.
   const CreateNodeInputSchema = z.object({
     type: TypeIdSchema,
-    properties: z.record(z.string(), z.unknown()).optional(),
+    properties: z.record(
+z.string(),
+z.unknown(),
+).optional(),
   });
 
   const createNode = useCallback(
@@ -184,7 +220,8 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
 
       return fromAsyncThrowable(async () => {
         // Validate inputs
-        const input = CreateNodeInputSchema.parse({ type, properties });
+        const input = CreateNodeInputSchema.parse({ type,
+properties });
 
         // Force cast because Zod schema is separate from type definition
         const typeId = input.type as unknown as TypeId;
@@ -194,8 +231,12 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
 
         const entries = input.properties
           ? Object.entries(input.properties)
-              .filter(([_, value]) => typeof value === 'string')
-              .map(([key, value]) => [key, { kind: 'text', value: value }] as const)
+              .filter(([_,
+value]) => typeof value === 'string')
+              .map(([key,
+value]) => [key,
+{ kind: 'text',
+value: value }] as const)
           : [];
 
         const propsMap = new Map<string, PropertyValue>(
@@ -222,18 +263,28 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
   );
 
   // Cleanup on unmount
-  useEffect(() => {
+  useEffect(
+() => {
     return () => {
       if (syncEngineRef.current) {
         syncEngineRef.current.disconnectProvider();
       }
       return undefined;
     };
-  }, []);
+  },
+[],
+);
 
   return (
     <GraphContext.Provider
-      value={{ graph, syncEngine, isLoading, error, loadGraph, closeGraph, saveGraph, createNode }}
+      value={{ graph,
+syncEngine,
+isLoading,
+error,
+loadGraph,
+closeGraph,
+saveGraph,
+createNode }}
     >
       {children}
     </GraphContext.Provider>

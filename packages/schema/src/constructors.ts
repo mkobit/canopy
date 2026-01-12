@@ -1,3 +1,5 @@
+import type {
+  Result} from '@canopy/types';
 import {
   type NodeId,
   type EdgeId,
@@ -14,9 +16,8 @@ import {
   createNodeId as generateNodeId,
   createEdgeId as generateEdgeId,
   createGraphId as generateGraphId,
-  Result,
   ok,
-  err
+  err,
 } from '@canopy/types';
 
 // UUID regex (generic)
@@ -40,7 +41,10 @@ export function createNodeId(id?: string): Result<NodeId, Error> {
   if (id === undefined) {
     return ok(generateNodeId());
   }
-  const validation = validateUuid(id, 'NodeId');
+  const validation = validateUuid(
+id,
+'NodeId',
+);
   if (!validation.ok) return err(validation.error);
   return ok(asNodeId(id));
 }
@@ -53,7 +57,10 @@ export function createEdgeId(id?: string): Result<EdgeId, Error> {
   if (id === undefined) {
     return ok(generateEdgeId());
   }
-  const validation = validateUuid(id, 'EdgeId');
+  const validation = validateUuid(
+id,
+'EdgeId',
+);
   if (!validation.ok) return err(validation.error);
   return ok(asEdgeId(id));
 }
@@ -66,7 +73,10 @@ export function createGraphId(id?: string): Result<GraphId, Error> {
   if (id === undefined) {
     return ok(generateGraphId());
   }
-  const validation = validateUuid(id, 'GraphId');
+  const validation = validateUuid(
+id,
+'GraphId',
+);
   if (!validation.ok) return err(validation.error);
   return ok(asGraphId(id));
 }
@@ -116,7 +126,9 @@ export function createPlainDate(dateString: string): Result<PlainDate, Error> {
      return err(new Error(`Invalid PlainDate: '${dateString}' is not a valid date.`));
   }
   // Check if date components match input to avoid rollover (e.g. Feb 31 -> Mar 3)
-  const [year, month, day] = dateString.split('-').map(Number);
+  const [year,
+month,
+day] = dateString.split('-').map(Number);
   if (date.getUTCFullYear() !== year || date.getUTCMonth() + 1 !== month || date.getUTCDate() !== day) {
        // Note: Date parses YYYY-MM-DD as UTC.
        // But to be safe, let's just trust the regex + basic Date validity for "plain date".

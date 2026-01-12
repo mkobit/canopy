@@ -1,5 +1,5 @@
 import React from 'react';
-import { Node } from '@canopy/types';
+import type { Node } from '@canopy/types';
 import { cn } from '../../utils/cn';
 import { PropertyDisplay } from '../properties/PropertyDisplay';
 
@@ -22,7 +22,7 @@ export const NodeView: React.FC<NodeViewProps> = ({ node, className, selected, o
       className={cn(
         "bg-white border rounded shadow-sm p-4 w-64 cursor-pointer hover:shadow-md transition-shadow select-none",
         selected && "ring-2 ring-blue-500",
-        className
+        className,
       )}
       onClick={() => { onClick?.(node); return undefined; }}
       style={style}
@@ -33,12 +33,16 @@ export const NodeView: React.FC<NodeViewProps> = ({ node, className, selected, o
           {node.type}
         </span>
         <span className="text-gray-300 text-[10px] font-mono" title={node.id}>
-          {node.id.substring(0, 6)}
+          {node.id.substring(
+0,
+6,
+)}
         </span>
       </div>
 
       <div className="space-y-2">
-        {Array.from(node.properties.entries()).map(([key, value]) => (
+        {Array.from(node.properties.entries()).map(([key,
+value]) => (
           <div key={key} className="text-sm">
             <div className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-0.5">{key}</div>
             <PropertyDisplay value={value} />

@@ -23,14 +23,19 @@ export function addEdge(graph: Graph, edge: Edge, options: EdgeOperationOptions 
   }
 
   if (options.validate) {
-    const result = validateEdge(graph, edge)
+    const result = validateEdge(
+graph,
+edge,
+)
     if (!result.valid) {
        const msgs = result.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')
        return err(new Error(`Edge validation failed: ${msgs}`))
     }
   }
 
-  const newEdges = new Map([...graph.edges, [edge.id, edge]])
+  const newEdges = new Map([...graph.edges,
+[edge.id,
+edge]])
 
   return ok({
     ...graph,
@@ -90,24 +95,30 @@ export function updateEdge(graph: Graph, edgeId: EdgeId, updater: (edge: Edge) =
   }
 
   if (options.validate) {
-    const result = validateEdge(graph, updatedEdge)
+    const result = validateEdge(
+graph,
+updatedEdge,
+)
     if (!result.valid) {
        const msgs = result.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')
        return err(new Error(`Edge validation failed: ${msgs}`))
     }
   }
 
-  const newEdges = new Map(Array.from(graph.edges).map(([id, edge]) => {
+  const newEdges = new Map(Array.from(graph.edges).map(([id,
+edge]) => {
     if (id === edgeId) {
-      return [id, {
+      return [id,
+{
         ...updatedEdge,
         metadata: {
           ...updatedEdge.metadata,
-          modified: createInstant()
-        }
+          modified: createInstant(),
+        },
       }]
     }
-    return [id, edge]
+    return [id,
+edge]
   }))
 
   return ok({

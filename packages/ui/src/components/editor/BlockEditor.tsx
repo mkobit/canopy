@@ -22,12 +22,15 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({ value, onChange, class
 
   const editorRef = React.useRef<HTMLDivElement>(null);
 
-  React.useEffect(() => {
+  React.useEffect(
+() => {
     if (editorRef.current && editorRef.current.innerHTML !== value) {
         editorRef.current.innerHTML = value;
     }
     return undefined;
-  }, [value]);
+  },
+[value],
+);
 
   const handleInput = () => {
     if (editorRef.current) {
@@ -37,20 +40,30 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({ value, onChange, class
   };
 
   const exec = (command: string, value?: string) => {
-    document.execCommand(command, false, value);
+    document.execCommand(
+command,
+false,
+value,
+);
     editorRef.current?.focus();
     return undefined;
   };
 
   return (
-    <div className={cn("border rounded bg-white", className)}>
+    <div className={cn(
+"border rounded bg-white",
+className,
+)}>
       <div className="flex border-b p-1 gap-1 bg-gray-50">
         <button className="px-2 py-1 hover:bg-gray-200 rounded font-bold text-sm" onClick={() => { exec('bold'); return undefined; }}>B</button>
         <button className="px-2 py-1 hover:bg-gray-200 rounded italic text-sm" onClick={() => { exec('italic'); return undefined; }}>I</button>
         <button className="px-2 py-1 hover:bg-gray-200 rounded text-sm underline" onClick={() => { exec('underline'); return undefined; }}>U</button>
         <button className="px-2 py-1 hover:bg-gray-200 rounded text-sm text-blue-600" onClick={() => {
             const url = prompt('Enter URL');
-            if(url) exec('createLink', url);
+            if(url) exec(
+'createLink',
+url,
+);
             return undefined;
         }}>Link</button>
       </div>

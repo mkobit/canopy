@@ -2,16 +2,19 @@ import React, { useState } from 'react';
 import { useGraph } from '../context/GraphContext';
 import { Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { PropertyValue, Node } from '@canopy/types';
+import type { PropertyValue, Node } from '@canopy/types';
 import { filter, map } from 'remeda';
 
 export const SearchPage = () => {
   const { graph } = useGraph();
-  const [query, setQuery] = useState('');
+  const [query,
+setQuery] = useState('');
 
   if (!graph) return <div>Loading...</div>;
 
-  const results = filter(Array.from(graph.nodes.values()), (node: Node) => {
+  const results = filter(
+Array.from(graph.nodes.values()),
+(node: Node) => {
       if (!query) return false;
       const q = query.toLowerCase();
 
@@ -22,7 +25,8 @@ export const SearchPage = () => {
           }
           return false;
       });
-  });
+  },
+);
 
   return (
     <div className="max-w-3xl mx-auto p-8">
@@ -38,7 +42,9 @@ export const SearchPage = () => {
       </div>
 
       <div className="space-y-4">
-        {map(results, (node: Node) => {
+        {map(
+results,
+(node: Node) => {
            const name = node.properties.get('name');
            const desc = node.properties.get('description');
 
@@ -57,7 +63,8 @@ export const SearchPage = () => {
                 )}
              </Link>
            );
-        })}
+        },
+)}
         {query && results.length === 0 && (
             <div className="text-center text-gray-500 py-12">
                 No results found for "{query}"

@@ -1,18 +1,19 @@
-import {
+import type {
   Graph,
   Node,
   NodeId,
-  createNodeId,
-  createInstant,
   PropertyValue,
   ScalarValue,
-  Result,
+  Result} from '@canopy/types';
+import {
+  createNodeId,
+  createInstant,
   ok,
   err,
-  fromThrowable
+  fromThrowable,
 } from '@canopy/types';
 import { SYSTEM_IDS, addNode } from '@canopy/core';
-import { Query, Sort } from './model';
+import type { Query, Sort } from './model';
 import { getQueryDefinition } from './stored';
 
 export interface ViewDefinition {
@@ -33,25 +34,31 @@ export interface ResolvedView {
 
 // Helper to wrap a scalar value
 function scalar(val: string | number | boolean): Result<ScalarValue, Error> {
-  if (typeof val === 'string') return ok({ kind: 'text', value: val });
-  if (typeof val === 'number') return ok({ kind: 'number', value: val });
-  if (typeof val === 'boolean') return ok({ kind: 'boolean', value: val });
+  if (typeof val === 'string') return ok({ kind: 'text',
+value: val });
+  if (typeof val === 'number') return ok({ kind: 'number',
+value: val });
+  if (typeof val === 'boolean') return ok({ kind: 'boolean',
+value: val });
   return err(new Error(`Unsupported scalar type: ${typeof val}`));
 }
 
 // Helper to create a reference value
 function reference(target: NodeId): PropertyValue {
-  return { kind: 'reference', target };
+  return { kind: 'reference',
+target };
 }
 
 // Helper to create a list property
 function list(items: readonly string[]): PropertyValue {
-  return { kind: 'list', items: items.map(i => ({ kind: 'text', value: i })) };
+  return { kind: 'list',
+items: items.map(i => ({ kind: 'text',
+value: i })) };
 }
 
 export function saveViewDefinition(
   graph: Graph,
-  view: ViewDefinition
+  view: ViewDefinition,
 ): Result<{ graph: Graph; nodeId: NodeId }, Error> {
   const nodeId = createNodeId();
 
@@ -65,38 +72,46 @@ export function saveViewDefinition(
 
   // eslint-disable-next-line functional/prefer-readonly-type
   const baseProperties: [string, PropertyValue][] = [
-    ['name', nameVal.value],
-    ['queryRef', reference(view.queryRef)],
-    ['layout', layoutVal.value],
+    ['name',
+nameVal.value],
+    ['queryRef',
+reference(view.queryRef)],
+    ['layout',
+layoutVal.value],
   ];
 
   if (view.description) {
       const v = scalar(view.description);
       if (!v.ok) return err(v.error);
       // eslint-disable-next-line functional/immutable-data
-      baseProperties.push(['description', v.value]);
+      baseProperties.push(['description',
+v.value]);
   }
   if (view.sort && view.sort.length > 0) {
       const v = scalar(JSON.stringify(view.sort));
       if (!v.ok) return err(v.error);
       // eslint-disable-next-line functional/immutable-data
-      baseProperties.push(['sort', v.value]);
+      baseProperties.push(['sort',
+v.value]);
   }
   if (view.groupBy) {
       const v = scalar(view.groupBy);
       if (!v.ok) return err(v.error);
       // eslint-disable-next-line functional/immutable-data
-      baseProperties.push(['groupBy', v.value]);
+      baseProperties.push(['groupBy',
+v.value]);
   }
   if (view.displayProperties && view.displayProperties.length > 0) {
       // eslint-disable-next-line functional/immutable-data
-      baseProperties.push(['displayProperties', list(view.displayProperties)]);
+      baseProperties.push(['displayProperties',
+list(view.displayProperties)]);
   }
   if (view.pageSize) {
       const v = scalar(view.pageSize);
       if (!v.ok) return err(v.error);
       // eslint-disable-next-line functional/immutable-data
-      baseProperties.push(['pageSize', v.value]);
+      baseProperties.push(['pageSize',
+v.value]);
   }
 
   const properties = new Map(baseProperties);
@@ -111,10 +126,14 @@ export function saveViewDefinition(
     },
   };
 
-  const newGraphResult = addNode(graph, node);
+  const newGraphResult = addNode(
+graph,
+node,
+);
   if (!newGraphResult.ok) return err(newGraphResult.error);
 
-  return ok({ graph: newGraphResult.value, nodeId });
+  return ok({ graph: newGraphResult.value,
+nodeId });
 }
 
 export function getViewDefinition(graph: Graph, nodeId: NodeId): Result<ViewDefinition, Error> {
@@ -171,19 +190,25 @@ export function getViewDefinition(graph: Graph, nodeId: NodeId): Result<ViewDefi
 
 export function listViewDefinitions(graph: Graph): readonly Node[] {
   return Array.from(graph.nodes.values()).filter(
-    (node) => node.type === SYSTEM_IDS.VIEW_DEFINITION
+    (node) => node.type === SYSTEM_IDS.VIEW_DEFINITION,
   );
 }
 
 export function resolveView(graph: Graph, viewNodeId: NodeId): Result<ResolvedView, Error> {
-  const viewDef = getViewDefinition(graph, viewNodeId);
+  const viewDef = getViewDefinition(
+graph,
+viewNodeId,
+);
   if (!viewDef.ok) return err(viewDef.error);
 
-  const queryDef = getQueryDefinition(graph, viewDef.value.queryRef);
+  const queryDef = getQueryDefinition(
+graph,
+viewDef.value.queryRef,
+);
   if (!queryDef.ok) return err(queryDef.error);
 
   return ok({
     definition: viewDef.value,
-    query: queryDef.value
+    query: queryDef.value,
   });
 }

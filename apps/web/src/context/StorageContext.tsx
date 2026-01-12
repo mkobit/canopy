@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { StorageAdapter, IndexedDBAdapter } from '@canopy/storage';
+import type { StorageAdapter} from '@canopy/storage';
+import { IndexedDBAdapter } from '@canopy/storage';
 import { fromAsyncThrowable } from '@canopy/types';
 
 interface StorageContextType {
@@ -15,11 +16,15 @@ const StorageContext = createContext<StorageContextType>({
 });
 
 export const StorageProvider: React.FC<Readonly<{ children: React.ReactNode }>> = ({ children }) => {
-  const [storage, setStorage] = useState<StorageAdapter | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  const [storage,
+setStorage] = useState<StorageAdapter | null>(null);
+  const [isLoading,
+setIsLoading] = useState(true);
+  const [error,
+setError] = useState<Error | null>(null);
 
-  useEffect(() => {
+  useEffect(
+() => {
     const initStorage = async () => {
       const result = await fromAsyncThrowable(async () => {
           // Use IndexedDBAdapter for browser environment
@@ -32,7 +37,10 @@ export const StorageProvider: React.FC<Readonly<{ children: React.ReactNode }>> 
       });
 
       if (!result.ok) {
-          console.error("Failed to initialize storage:", result.error);
+          console.error(
+"Failed to initialize storage:",
+result.error,
+);
           setError(result.error);
       }
       setIsLoading(false);
@@ -41,10 +49,14 @@ export const StorageProvider: React.FC<Readonly<{ children: React.ReactNode }>> 
 
     initStorage();
     return undefined;
-  }, []);
+  },
+[],
+);
 
   return (
-    <StorageContext.Provider value={{ storage, isLoading, error }}>
+    <StorageContext.Provider value={{ storage,
+isLoading,
+error }}>
       {children}
     </StorageContext.Provider>
   );

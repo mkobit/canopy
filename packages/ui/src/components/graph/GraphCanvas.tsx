@@ -1,7 +1,8 @@
 import React from 'react';
-import { Edge } from '@canopy/types';
+import type { Edge } from '@canopy/types';
 import { NodeView } from './NodeView';
-import { EdgeView, GraphNode } from './EdgeView';
+import type { GraphNode } from './EdgeView';
+import { EdgeView } from './EdgeView';
 import { cn } from '../../utils/cn';
 
 interface GraphCanvasData {
@@ -37,12 +38,17 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
   height = '600px',
 }) => {
   // Map for easy lookup
-  const nodeMap = new Map(nodes.map(n => [n.id, n]));
+  const nodeMap = new Map(nodes.map(n => [n.id,
+n]));
 
   return (
     <div
-      className={cn("relative overflow-hidden bg-slate-50 border", className)}
-      style={{ width, height }}
+      className={cn(
+"relative overflow-hidden bg-slate-50 border",
+className,
+)}
+      style={{ width,
+height }}
       onClick={onBackgroundClick}
     >
       <svg className="absolute inset-0 pointer-events-none w-full h-full">

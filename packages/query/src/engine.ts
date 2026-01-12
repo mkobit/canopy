@@ -1,5 +1,6 @@
-import { Graph, Node, Edge, QueryResult, PropertyValue, Result, ok, err } from '@canopy/types';
-import { Query, Filter, Sort, QueryStep } from './model';
+import type { Graph, Node, Edge, QueryResult, PropertyValue, Result} from '@canopy/types';
+import { ok, err } from '@canopy/types';
+import type { Query, Filter, Sort, QueryStep } from './model';
 import { reduce, filter, unique, flatMap } from 'remeda';
 
 type GraphItem = Node | Edge;
@@ -17,7 +18,8 @@ export class QueryEngine {
   execute(query: Query): Result<QueryResult, Error> {
     // We need to keep track of isNodeContext which changes based on steps.
     // reduce is suitable here.
-    const initial: Accumulator = { items: [], isNodeContext: false };
+    const initial: Accumulator = { items: [],
+isNodeContext: false };
 
     const result = reduce(
       query.steps,
@@ -28,41 +30,55 @@ export class QueryEngine {
           case 'node-scan':
             return {
               items: this.scanNodes(step.type),
-              isNodeContext: true
+              isNodeContext: true,
             };
           case 'edge-scan':
             return {
               items: this.scanEdges(step.type),
-              isNodeContext: false
+              isNodeContext: false,
             };
           case 'filter':
             return {
               ...acc,
-              items: this.applyFilter(acc.items, step.predicate)
+              items: this.applyFilter(
+acc.items,
+step.predicate,
+),
             };
           case 'traversal':
             if (!acc.isNodeContext) {
-              return { ...acc, error: new Error('Traversal can only be performed on nodes.') };
+              return { ...acc,
+error: new Error('Traversal can only be performed on nodes.') };
             }
             return {
-              items: this.traverse(acc.items as readonly Node[], step.edgeType, step.direction),
-              isNodeContext: true // Traversal returns nodes
+              items: this.traverse(
+acc.items as readonly Node[],
+step.edgeType,
+step.direction,
+),
+              isNodeContext: true, // Traversal returns nodes
             };
           case 'sort':
             return {
               ...acc,
-              items: this.applySort(acc.items, step.sort)
+              items: this.applySort(
+acc.items,
+step.sort,
+),
             };
           case 'limit':
             return {
               ...acc,
-              items: acc.items.slice(0, step.limit)
+              items: acc.items.slice(
+0,
+step.limit,
+),
             };
           default:
             return acc;
         }
       },
-      initial
+      initial,
     );
 
     if (result.error) {
@@ -70,26 +86,36 @@ export class QueryEngine {
     }
 
     if (result.isNodeContext) {
-      return ok({ nodes: result.items as readonly Node[], edges: [] });
+      return ok({ nodes: result.items as readonly Node[],
+edges: [] });
     } else {
-      return ok({ nodes: [], edges: result.items as readonly Edge[] });
+      return ok({ nodes: [],
+edges: result.items as readonly Edge[] });
     }
   }
 
   private scanNodes(type?: string): readonly Node[] {
     const nodes = Array.from(this.graph.nodes.values());
     if (!type) return nodes;
-    return filter(nodes, node => node.type === type);
+    return filter(
+nodes,
+node => node.type === type,
+);
   }
 
   private scanEdges(type?: string): readonly Edge[] {
     const edges = Array.from(this.graph.edges.values());
     if (!type) return edges;
-    return filter(edges, edge => edge.type === type);
+    return filter(
+edges,
+edge => edge.type === type,
+);
   }
 
   private applyFilter(items: readonly GraphItem[], predicate: Filter): readonly GraphItem[] {
-    return filter(items, item => {
+    return filter(
+items,
+item => {
       // Let's try a different approach to avoid `let`.
       // We can use a helper function to extract value.
       const getPropValue = (): unknown => {
@@ -118,10 +144,22 @@ export class QueryEngine {
       switch (predicate.operator) {
         case 'eq': return pVal === value;
         case 'neq': return pVal !== value;
-        case 'gt': return this.compare(pVal, value) > 0;
-        case 'gte': return this.compare(pVal, value) >= 0;
-        case 'lt': return this.compare(pVal, value) < 0;
-        case 'lte': return this.compare(pVal, value) <= 0;
+        case 'gt': return this.compare(
+pVal,
+value,
+) > 0;
+        case 'gte': return this.compare(
+pVal,
+value,
+) >= 0;
+        case 'lt': return this.compare(
+pVal,
+value,
+) < 0;
+        case 'lte': return this.compare(
+pVal,
+value,
+) <= 0;
         case 'contains':
           if (Array.isArray(pVal)) {
             return pVal.includes(value);
@@ -132,7 +170,8 @@ export class QueryEngine {
         case 'exists': return pVal !== undefined && pVal !== null;
         default: return false;
       }
-    });
+    },
+);
   }
 
   private traverse(nodes: readonly Node[], edgeType: string | undefined, direction: 'out' | 'in' | 'both'): readonly Node[] {
@@ -142,7 +181,9 @@ export class QueryEngine {
     const edges = Array.from(this.graph.edges.values());
 
     return unique(
-      flatMap(edges, (edge: Edge) => {
+      flatMap(
+edges,
+(edge: Edge) => {
           if (edgeType && edge.type !== edgeType) return [];
 
           const sourceMatches = nodeIds.has(edge.source);
@@ -168,7 +209,8 @@ export class QueryEngine {
           }
 
           return [];
-      })
+      },
+),
     );
   }
 
@@ -181,7 +223,10 @@ export class QueryEngine {
       if (valA === undefined) return 1; // undefined last
       if (valB === undefined) return -1;
 
-      const comparison = this.compare(valA, valB);
+      const comparison = this.compare(
+valA,
+valB,
+);
       return sort.direction === 'asc' ? comparison : -comparison;
     });
   }

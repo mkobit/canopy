@@ -1,5 +1,5 @@
-import * as Y from 'yjs';
-import {
+import type * as Y from 'yjs';
+import type {
   Node,
   Edge,
   Result,
@@ -21,13 +21,19 @@ export class GraphStore {
   addNode(
     data: Omit<Node, 'id' | 'metadata'> & Readonly<{
       id?: string;
-    }>
+    }>,
   ): Result<Node, Error> {
-    return NodeOps.addNode(this.nodes, data);
+    return NodeOps.addNode(
+this.nodes,
+data,
+);
   }
 
   getNode(id: string): Node | undefined {
-    const result = NodeOps.getNode(this.nodes, id);
+    const result = NodeOps.getNode(
+this.nodes,
+id,
+);
     return result.ok ? result.value : undefined;
   }
 
@@ -41,23 +47,37 @@ export class GraphStore {
   }
 
   updateNode(id: string, partial: Partial<Omit<Node, 'id' | 'metadata'>>): Result<Node, Error> {
-    return NodeOps.updateNode(this.nodes, id, partial);
+    return NodeOps.updateNode(
+this.nodes,
+id,
+partial,
+);
   }
 
   deleteNode(id: string): Result<void, Error> {
-    return NodeOps.deleteNode(this.nodes, id);
+    return NodeOps.deleteNode(
+this.nodes,
+id,
+);
   }
 
   addEdge(
     data: Omit<Edge, 'id' | 'metadata'> & Readonly<{
       id?: string;
-    }>
+    }>,
   ): Result<Edge, Error> {
-    return EdgeOps.addEdge(this.edges, this.nodes, data);
+    return EdgeOps.addEdge(
+this.edges,
+this.nodes,
+data,
+);
   }
 
   getEdge(id: string): Edge | undefined {
-      const result = EdgeOps.getEdge(this.edges, id);
+      const result = EdgeOps.getEdge(
+this.edges,
+id,
+);
       return result.ok ? result.value : undefined;
   }
 
@@ -70,10 +90,18 @@ export class GraphStore {
   }
 
   updateEdge(id: string, partial: Partial<Omit<Edge, 'id' | 'metadata'>>): Result<Edge, Error> {
-      return EdgeOps.updateEdge(this.edges, this.nodes, id, partial);
+      return EdgeOps.updateEdge(
+this.edges,
+this.nodes,
+id,
+partial,
+);
   }
 
   deleteEdge(id: string): Result<void, Error> {
-      return EdgeOps.deleteEdge(this.edges, id);
+      return EdgeOps.deleteEdge(
+this.edges,
+id,
+);
   }
 }

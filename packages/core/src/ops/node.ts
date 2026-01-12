@@ -17,14 +17,19 @@ export function addNode(graph: Graph, node: Node, options: NodeOperationOptions 
   }
 
   if (options.validate) {
-    const result = validateNode(graph, node)
+    const result = validateNode(
+graph,
+node,
+)
     if (!result.valid) {
       const msgs = result.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')
       return err(new Error(`Node validation failed: ${msgs}`))
     }
   }
 
-  const newNodes = new Map([...graph.nodes, [node.id, node]])
+  const newNodes = new Map([...graph.nodes,
+[node.id,
+node]])
 
   return ok({
     ...graph,
@@ -50,7 +55,8 @@ export function removeNode(graph: Graph, nodeId: NodeId): Result<Graph, Error> {
 
   // Remove connected edges
   const newEdges = new Map(
-    [...graph.edges].filter(([_id, edge]) => edge.source !== nodeId && edge.target !== nodeId),
+    [...graph.edges].filter(([_id,
+edge]) => edge.source !== nodeId && edge.target !== nodeId),
   )
 
   return ok({
@@ -83,24 +89,30 @@ export function updateNode(graph: Graph, nodeId: NodeId, updater: (node: Node) =
   }
 
   if (options.validate) {
-    const result = validateNode(graph, updatedNode)
+    const result = validateNode(
+graph,
+updatedNode,
+)
     if (!result.valid) {
       const msgs = result.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')
       return err(new Error(`Node validation failed: ${msgs}`))
     }
   }
 
-  const newNodes = new Map(Array.from(graph.nodes).map(([id, node]) => {
+  const newNodes = new Map(Array.from(graph.nodes).map(([id,
+node]) => {
     if (id === nodeId) {
-      return [id, {
+      return [id,
+{
         ...updatedNode,
         metadata: {
           ...updatedNode.metadata,
-          modified: createInstant()
-        }
+          modified: createInstant(),
+        },
       }]
     }
-    return [id, node]
+    return [id,
+node]
   }))
 
   return ok({

@@ -1,6 +1,8 @@
-import { openDB, DBSchema, IDBPDatabase } from 'idb';
-import { StorageAdapter, GraphStorageMetadata } from './types';
-import { Result, ok, err, fromAsyncThrowable } from '@canopy/types';
+import type { DBSchema, IDBPDatabase } from 'idb';
+import { openDB } from 'idb';
+import type { StorageAdapter, GraphStorageMetadata } from './types';
+import type { Result} from '@canopy/types';
+import { ok, err, fromAsyncThrowable } from '@canopy/types';
 
 interface CanopyDB extends DBSchema {
   readonly graphs: Readonly<{
@@ -25,14 +27,21 @@ export class IndexedDBAdapter implements StorageAdapter {
   async init(): Promise<Result<void, Error>> {
     if (this.db) return ok(undefined);
     return fromAsyncThrowable(async () => {
-      this.db = await openDB<CanopyDB>(this.dbName, 1, {
+      this.db = await openDB<CanopyDB>(
+this.dbName,
+1,
+{
         upgrade(db) {
           if (!db.objectStoreNames.contains('graphs')) {
-            db.createObjectStore('graphs', { keyPath: 'id' });
+            db.createObjectStore(
+'graphs',
+{ keyPath: 'id' },
+);
           }
           return undefined;
         },
-      });
+      },
+);
       return undefined;
     });
   }
@@ -51,11 +60,14 @@ export class IndexedDBAdapter implements StorageAdapter {
     if (!this.db) return err(new Error('Database not initialized'));
     return fromAsyncThrowable(async () => {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      await this.db!.put('graphs', {
+      await this.db!.put(
+'graphs',
+{
         id: graphId,
         snapshot,
         metadata,
-      });
+      },
+);
       return undefined;
     });
   }
@@ -64,7 +76,10 @@ export class IndexedDBAdapter implements StorageAdapter {
     if (!this.db) return err(new Error('Database not initialized'));
     return fromAsyncThrowable(async () => {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const result = await this.db!.get('graphs', graphId);
+      const result = await this.db!.get(
+'graphs',
+graphId,
+);
       return result ? result.snapshot : null;
     });
   }
@@ -73,7 +88,10 @@ export class IndexedDBAdapter implements StorageAdapter {
     if (!this.db) return err(new Error('Database not initialized'));
     return fromAsyncThrowable(async () => {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      await this.db!.delete('graphs', graphId);
+      await this.db!.delete(
+'graphs',
+graphId,
+);
       return undefined;
     });
   }

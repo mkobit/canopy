@@ -32,17 +32,25 @@ export const InstantSchema: z.ZodType<Instant, unknown> = z
 
 export const PlainDateSchema: z.ZodType<PlainDate, unknown> = z
   .string()
-  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid PlainDate format (YYYY-MM-DD)')
+  .regex(
+/^\d{4}-\d{2}-\d{2}$/,
+'Invalid PlainDate format (YYYY-MM-DD)',
+)
   .transform(asPlainDate);
 
 export const TimestampSchema = InstantSchema;
 
 // Scalar Values
-const TextValueSchema = z.object({ kind: z.literal('text'), value: z.string() });
-const NumberValueSchema = z.object({ kind: z.literal('number'), value: z.number() });
-const BooleanValueSchema = z.object({ kind: z.literal('boolean'), value: z.boolean() });
-const InstantValueSchema = z.object({ kind: z.literal('instant'), value: InstantSchema });
-const PlainDateValueSchema = z.object({ kind: z.literal('plain-date'), value: PlainDateSchema });
+const TextValueSchema = z.object({ kind: z.literal('text'),
+value: z.string() });
+const NumberValueSchema = z.object({ kind: z.literal('number'),
+value: z.number() });
+const BooleanValueSchema = z.object({ kind: z.literal('boolean'),
+value: z.boolean() });
+const InstantValueSchema = z.object({ kind: z.literal('instant'),
+value: InstantSchema });
+const PlainDateValueSchema = z.object({ kind: z.literal('plain-date'),
+value: PlainDateSchema });
 const ReferenceValueSchema = z.object({
   kind: z.literal('reference'),
   target: NodeIdSchema,
@@ -53,7 +61,9 @@ const ExternalReferenceValueSchema = z.object({
   target: NodeIdSchema,
 });
 
-const ScalarValueSchema: z.ZodType<ScalarValue, unknown> = z.discriminatedUnion('kind', [
+const ScalarValueSchema: z.ZodType<ScalarValue, unknown> = z.discriminatedUnion(
+'kind',
+[
   TextValueSchema,
   NumberValueSchema,
   BooleanValueSchema,
@@ -61,7 +71,8 @@ const ScalarValueSchema: z.ZodType<ScalarValue, unknown> = z.discriminatedUnion(
   PlainDateValueSchema,
   ReferenceValueSchema,
   ExternalReferenceValueSchema,
-]);
+],
+);
 
 // List Value - array of scalars
 const ListValueSchema = z.object({
@@ -70,7 +81,9 @@ const ListValueSchema = z.object({
 });
 
 // Property Value
-export const PropertyValueSchema: z.ZodType<PropertyValue, unknown> = z.discriminatedUnion('kind', [
+export const PropertyValueSchema: z.ZodType<PropertyValue, unknown> = z.discriminatedUnion(
+'kind',
+[
   TextValueSchema,
   NumberValueSchema,
   BooleanValueSchema,
@@ -79,7 +92,8 @@ export const PropertyValueSchema: z.ZodType<PropertyValue, unknown> = z.discrimi
   ReferenceValueSchema,
   ExternalReferenceValueSchema,
   ListValueSchema,
-]);
+],
+);
 
 export const PropertyDefinitionSchema: z.ZodType<PropertyDefinition, unknown> = z
   .object({
@@ -110,8 +124,14 @@ export const TemporalMetadataSchema: z.ZodType<TemporalMetadata, unknown> = z.ob
 // Property Map: Map<string, PropertyValue>
 // Allows parsing from a Map or a plain object (JSON record).
 export const PropertyMapSchema = z.union([
-  z.map(z.string(), PropertyValueSchema),
-  z.record(z.string(), PropertyValueSchema).transform((record) => new Map(Object.entries(record))),
+  z.map(
+z.string(),
+PropertyValueSchema,
+),
+  z.record(
+z.string(),
+PropertyValueSchema,
+).transform((record) => new Map(Object.entries(record))),
 ]);
 
 export const NodeSchema: z.ZodType<Node, unknown> = z.object({
@@ -135,18 +155,34 @@ export const GraphSchema: z.ZodType<Graph, unknown> = z.object({
   name: z.string(),
   metadata: TemporalMetadataSchema,
   nodes: z.union([
-    z.map(NodeIdSchema, NodeSchema),
-    z.record(z.string().uuid(), NodeSchema).transform((record) => {
+    z.map(
+NodeIdSchema,
+NodeSchema,
+),
+    z.record(
+z.string().uuid(),
+NodeSchema,
+).transform((record) => {
       return new Map<NodeId, Node>(
-        Object.entries(record).map(([key, value]) => [asNodeId(key), value]),
+        Object.entries(record).map(([key,
+value]) => [asNodeId(key),
+value]),
       );
     }),
   ]),
   edges: z.union([
-    z.map(EdgeIdSchema, EdgeSchema),
-    z.record(z.string().uuid(), EdgeSchema).transform((record) => {
+    z.map(
+EdgeIdSchema,
+EdgeSchema,
+),
+    z.record(
+z.string().uuid(),
+EdgeSchema,
+).transform((record) => {
       return new Map<EdgeId, Edge>(
-        Object.entries(record).map(([key, value]) => [asEdgeId(key), value]),
+        Object.entries(record).map(([key,
+value]) => [asEdgeId(key),
+value]),
       );
     }),
   ]),

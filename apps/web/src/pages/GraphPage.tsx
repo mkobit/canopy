@@ -9,12 +9,15 @@ export const GraphPage = () => {
   const { loadGraph, graph, isLoading, error } = useGraph();
   const navigate = useNavigate();
 
-  useEffect(() => {
+  useEffect(
+() => {
     if (graphId) {
       loadGraph(asGraphId(graphId));
     }
     return undefined;
-  }, [graphId]);
+  },
+[graphId],
+);
 
   if (isLoading) {
     return <div className="flex items-center justify-center h-full">Loading graph...</div>;

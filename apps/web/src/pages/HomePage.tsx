@@ -3,20 +3,25 @@ import { useStorage } from '../context/StorageContext';
 import { useNavigate } from 'react-router-dom';
 import { createGraphId } from '@canopy/types';
 import { Plus, Trash2, FolderOpen } from 'lucide-react';
-import { GraphStorageMetadata } from '@canopy/storage';
+import type { GraphStorageMetadata } from '@canopy/storage';
 
 export const HomePage = () => {
   const { storage, isLoading: storageLoading } = useStorage();
   const navigate = useNavigate();
-  const [graphs, setGraphs] = useState<readonly GraphStorageMetadata[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [graphs,
+setGraphs] = useState<readonly GraphStorageMetadata[]>([]);
+  const [loading,
+setLoading] = useState(false);
 
-  useEffect(() => {
+  useEffect(
+() => {
     if (storage) {
       loadGraphs();
     }
     return undefined;
-  }, [storage]);
+  },
+[storage],
+);
 
   const loadGraphs = async () => {
     if (!storage) return undefined;
@@ -26,7 +31,10 @@ export const HomePage = () => {
     if (listResult.ok) {
         setGraphs(listResult.value);
     } else {
-        console.error("Failed to list graphs", listResult.error);
+        console.error(
+"Failed to list graphs",
+listResult.error,
+);
     }
 
     setLoading(false);
@@ -41,17 +49,24 @@ export const HomePage = () => {
     const id = createGraphId();
     const now = new Date().toISOString();
 
-    const result = await storage.save(id, new Uint8Array(), {
+    const result = await storage.save(
+id,
+new Uint8Array(),
+{
         id,
         name,
         createdAt: now,
-        updatedAt: now
-    });
+        updatedAt: now,
+    },
+);
 
     if (result.ok) {
         await loadGraphs();
     } else {
-        console.error("Failed to create graph", result.error);
+        console.error(
+"Failed to create graph",
+result.error,
+);
     }
     return undefined;
   };
@@ -65,7 +80,10 @@ export const HomePage = () => {
       if (result.ok) {
           await loadGraphs();
       } else {
-          console.error("Failed to delete graph", result.error);
+          console.error(
+"Failed to delete graph",
+result.error,
+);
       }
       return undefined;
   };
@@ -110,11 +128,17 @@ export const HomePage = () => {
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900">{g.name}</h3>
-                    <p className="text-sm text-gray-500 font-mono mt-1">{g.id.slice(0, 8)}...</p>
+                    <p className="text-sm text-gray-500 font-mono mt-1">{g.id.slice(
+0,
+8,
+)}...</p>
                   </div>
                 </div>
                 <button
-                  onClick={(e) => handleDeleteGraph(g.id, e)}
+                  onClick={(e) => handleDeleteGraph(
+g.id,
+e,
+)}
                   className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full opacity-0 group-hover:opacity-100 transition-all"
                 >
                   <Trash2 size={18} />
