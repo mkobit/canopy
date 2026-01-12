@@ -9,15 +9,12 @@ export const GraphPage = () => {
   const { loadGraph, graph, isLoading, error } = useGraph();
   const navigate = useNavigate();
 
-  useEffect(
-() => {
+  useEffect(() => {
     if (graphId) {
       loadGraph(asGraphId(graphId));
     }
     return undefined;
-  },
-[graphId],
-);
+  }, [graphId]);
 
   if (isLoading) {
     return <div className="flex items-center justify-center h-full">Loading graph...</div>;
@@ -44,19 +41,19 @@ export const GraphPage = () => {
 
   return (
     <div className="h-full flex flex-col">
-       {/* Graph Header / Toolbar could go here */}
-       <div className="flex-1 overflow-auto p-4 relative">
-          {/* If we are at the root of the graph, maybe show a dashboard or node list?
+      {/* Graph Header / Toolbar could go here */}
+      <div className="flex-1 overflow-auto p-4 relative">
+        {/* If we are at the root of the graph, maybe show a dashboard or node list?
               For now, we render the Outlet which will likely handle specific node views.
               If no Outlet matches, we should probably redirect to a default node or show a list.
            */}
-           <Outlet />
+        <Outlet />
 
-           {/* If we are exactly at /graph/:id, show the graph overview */}
-           <div className="absolute inset-0 -z-10">
-               {/* Background graph visualization could go here */}
-           </div>
-       </div>
+        {/* If we are exactly at /graph/:id, show the graph overview */}
+        <div className="absolute inset-0 -z-10">
+          {/* Background graph visualization could go here */}
+        </div>
+      </div>
     </div>
   );
 };

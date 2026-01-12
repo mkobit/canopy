@@ -5,11 +5,11 @@ import * as Y from 'yjs';
 
 // Helpers
 function getPropertyValue(val: PropertyValue | undefined): unknown {
-    if (!val) return undefined;
-    if (val.kind === 'text' || val.kind === 'number' || val.kind === 'boolean') {
-        return val.value;
-    }
-    return undefined;
+  if (!val) return undefined;
+  if (val.kind === 'text' || val.kind === 'number' || val.kind === 'boolean') {
+    return val.value;
+  }
+  return undefined;
 }
 
 describe('SyncEngine', () => {
@@ -25,11 +25,13 @@ describe('SyncEngine', () => {
     const nodeId = createNodeId();
     const typeId = asTypeId('test-node');
 
-    unwrap(engine.store.addNode({
-      id: nodeId,
-      type: typeId,
-      properties: new Map([['name', { kind: 'text', value: 'Test Node' }]])
-    }));
+    unwrap(
+      engine.store.addNode({
+        id: nodeId,
+        type: typeId,
+        properties: new Map([['name', { kind: 'text', value: 'Test Node' }]]),
+      }),
+    );
 
     const storedNode = engine.store.getNode(nodeId);
     expect(storedNode).toBeDefined();
@@ -41,12 +43,14 @@ describe('SyncEngine', () => {
     const n1 = unwrap(engine.store.addNode({ type: asTypeId('n1'), properties: new Map() }));
     const n2 = unwrap(engine.store.addNode({ type: asTypeId('n2'), properties: new Map() }));
 
-    const edge = unwrap(engine.store.addEdge({
-      source: n1.id,
-      target: n2.id,
-      type: asTypeId('e1'),
-      properties: new Map()
-    }));
+    const edge = unwrap(
+      engine.store.addEdge({
+        source: n1.id,
+        target: n2.id,
+        type: asTypeId('e1'),
+        properties: new Map(),
+      }),
+    );
 
     const storedEdge = engine.store.getEdge(edge.id);
     expect(storedEdge).toBeDefined();
@@ -56,7 +60,12 @@ describe('SyncEngine', () => {
 
   it('should support snapshot export and import', () => {
     const engine1 = new SyncEngine();
-    const n1 = unwrap(engine1.store.addNode({ type: asTypeId('n1'), properties: new Map([['key', { kind: 'text', value: 'val' }]]) }));
+    const n1 = unwrap(
+      engine1.store.addNode({
+        type: asTypeId('n1'),
+        properties: new Map([['key', { kind: 'text', value: 'val' }]]),
+      }),
+    );
 
     const snapshot = engine1.getSnapshot();
 
@@ -71,7 +80,12 @@ describe('SyncEngine', () => {
 
   it('should support initial snapshot in constructor', () => {
     const engine1 = new SyncEngine();
-    const n1 = unwrap(engine1.store.addNode({ type: asTypeId('n1'), properties: new Map([['key', { kind: 'text', value: 'val' }]]) }));
+    const n1 = unwrap(
+      engine1.store.addNode({
+        type: asTypeId('n1'),
+        properties: new Map([['key', { kind: 'text', value: 'val' }]]),
+      }),
+    );
     const snapshot = engine1.getSnapshot();
 
     const engine2 = new SyncEngine({ initialSnapshot: snapshot });
@@ -93,22 +107,27 @@ describe('SyncEngine', () => {
   });
 
   it('should sync changes between two engines via update events', () => {
-      const engine1 = new SyncEngine();
-      const engine2 = new SyncEngine();
+    const engine1 = new SyncEngine();
+    const engine2 = new SyncEngine();
 
-      // Simulate sync
-      engine1.onDocUpdate((update) => {
-          Y.applyUpdate(engine2.doc, update);
-      });
+    // Simulate sync
+    engine1.onDocUpdate((update) => {
+      Y.applyUpdate(engine2.doc, update);
+    });
 
-      engine2.onDocUpdate((update) => {
-          Y.applyUpdate(engine1.doc, update);
-      });
+    engine2.onDocUpdate((update) => {
+      Y.applyUpdate(engine1.doc, update);
+    });
 
-      const n1 = unwrap(engine1.store.addNode({ type: asTypeId('n1'), properties: new Map([['synced', { kind: 'boolean', value: true }]]) }));
+    const n1 = unwrap(
+      engine1.store.addNode({
+        type: asTypeId('n1'),
+        properties: new Map([['synced', { kind: 'boolean', value: true }]]),
+      }),
+    );
 
-      const n1_on_2 = engine2.store.getNode(n1.id);
-      expect(n1_on_2).toBeDefined();
-      expect(getPropertyValue(n1_on_2?.properties.get('synced'))).toBe(true);
+    const n1_on_2 = engine2.store.getNode(n1.id);
+    expect(n1_on_2).toBeDefined();
+    expect(getPropertyValue(n1_on_2?.properties.get('synced'))).toBe(true);
   });
 });

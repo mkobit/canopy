@@ -1,7 +1,7 @@
 import type { Database, SqlJsStatic } from 'sql.js';
 import initSqlJs from 'sql.js';
 import type { StorageAdapter, GraphStorageMetadata } from './types';
-import type { Result} from '@canopy/types';
+import type { Result } from '@canopy/types';
 import { ok, err, fromAsyncThrowable } from '@canopy/types';
 
 export interface SQLitePersistence {
@@ -54,11 +54,11 @@ export class SQLiteAdapter implements StorageAdapter {
 
   async close(): Promise<Result<void, Error>> {
     return fromAsyncThrowable(async () => {
-        if (this.db) {
-            this.db.close();
-            this.db = null;
-        }
-        return undefined;
+      if (this.db) {
+        this.db.close();
+        this.db = null;
+      }
+      return undefined;
     });
   }
 
@@ -69,7 +69,11 @@ export class SQLiteAdapter implements StorageAdapter {
     }
   }
 
-  async save(graphId: string, snapshot: Uint8Array, metadata: GraphStorageMetadata): Promise<Result<void, Error>> {
+  async save(
+    graphId: string,
+    snapshot: Uint8Array,
+    metadata: GraphStorageMetadata,
+  ): Promise<Result<void, Error>> {
     if (!this.db) return err(new Error('Database not initialized'));
 
     return fromAsyncThrowable(async () => {
@@ -80,13 +84,7 @@ export class SQLiteAdapter implements StorageAdapter {
         VALUES (?, ?, ?, ?, ?)
       `);
 
-      stmt.run([
-        graphId,
-        metadata.name,
-        snapshot,
-        metadata.createdAt,
-        metadata.updatedAt,
-      ]);
+      stmt.run([graphId, metadata.name, snapshot, metadata.createdAt, metadata.updatedAt]);
       stmt.free();
 
       await this.persist();
@@ -118,10 +116,7 @@ export class SQLiteAdapter implements StorageAdapter {
 
     return fromAsyncThrowable(async () => {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      this.db!.run(
-'DELETE FROM graphs WHERE id = ?',
-[graphId],
-);
+      this.db!.run('DELETE FROM graphs WHERE id = ?', [graphId]);
       await this.persist();
       return undefined;
     });

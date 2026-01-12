@@ -7,58 +7,42 @@ export function query(): Query {
 export function nodes(type?: string) {
   return (q: Query): Query => ({
     ...q,
-    steps: [...q.steps,
-{ kind: 'node-scan',
-type }],
+    steps: [...q.steps, { kind: 'node-scan', type }],
   });
 }
 
 export function edges(type?: string) {
   return (q: Query): Query => ({
     ...q,
-    steps: [...q.steps,
-{ kind: 'edge-scan',
-type }],
+    steps: [...q.steps, { kind: 'edge-scan', type }],
   });
 }
 
 export function where(property: string, operator: Operator, value?: unknown) {
   return (q: Query): Query => ({
     ...q,
-    steps: [...q.steps,
-{ kind: 'filter',
-predicate: { property,
-operator,
-value } }],
+    steps: [...q.steps, { kind: 'filter', predicate: { property, operator, value } }],
   });
 }
 
 export function orderBy(property: string, direction: 'asc' | 'desc' = 'asc') {
   return (q: Query): Query => ({
     ...q,
-    steps: [...q.steps,
-{ kind: 'sort',
-sort: { property,
-direction } }],
+    steps: [...q.steps, { kind: 'sort', sort: { property, direction } }],
   });
 }
 
 export function limit(limit: number) {
   return (q: Query): Query => ({
     ...q,
-    steps: [...q.steps,
-{ kind: 'limit',
-limit }],
+    steps: [...q.steps, { kind: 'limit', limit }],
   });
 }
 
 export function traverse(edgeType?: string, direction: 'out' | 'in' | 'both' = 'out') {
   return (q: Query): Query => ({
     ...q,
-    steps: [...q.steps,
-{ kind: 'traversal',
-edgeType,
-direction }],
+    steps: [...q.steps, { kind: 'traversal', edgeType, direction }],
   });
 }
 
@@ -67,10 +51,7 @@ export function from(nodeId: string) {
     ...q,
     steps: [
       ...q.steps,
-      { kind: 'filter',
-predicate: { property: 'source',
-operator: 'eq',
-value: nodeId } },
+      { kind: 'filter', predicate: { property: 'source', operator: 'eq', value: nodeId } },
     ],
   });
 }
@@ -80,10 +61,7 @@ export function to(nodeId: string) {
     ...q,
     steps: [
       ...q.steps,
-      { kind: 'filter',
-predicate: { property: 'target',
-operator: 'eq',
-value: nodeId } },
+      { kind: 'filter', predicate: { property: 'target', operator: 'eq', value: nodeId } },
     ],
   });
 }

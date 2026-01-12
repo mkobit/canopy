@@ -23,7 +23,9 @@ interface GraphCanvasEvents {
 
 type GraphCanvasProps = GraphCanvasData & GraphCanvasEvents;
 
-const noop = () => { /* noop */ return undefined; };
+const noop = () => {
+  /* noop */ return undefined;
+};
 
 export const GraphCanvas: React.FC<GraphCanvasProps> = ({
   nodes,
@@ -38,21 +40,16 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
   height = '600px',
 }) => {
   // Map for easy lookup
-  const nodeMap = new Map(nodes.map(n => [n.id,
-n]));
+  const nodeMap = new Map(nodes.map((n) => [n.id, n]));
 
   return (
     <div
-      className={cn(
-"relative overflow-hidden bg-slate-50 border",
-className,
-)}
-      style={{ width,
-height }}
+      className={cn('relative overflow-hidden bg-slate-50 border', className)}
+      style={{ width, height }}
       onClick={onBackgroundClick}
     >
       <svg className="absolute inset-0 pointer-events-none w-full h-full">
-        {edges.map(edge => {
+        {edges.map((edge) => {
           const source = nodeMap.get(edge.source);
           const target = nodeMap.get(edge.target);
           if (!source || !target) return null;
@@ -75,12 +72,15 @@ height }}
         svg g { pointer-events: all; }
       `}</style>
 
-      {nodes.map(node => (
+      {nodes.map((node) => (
         <NodeView
           key={node.id}
           node={node}
           selected={selectedNodeIds.has(node.id)}
-          onClick={() => { onNodeClick(node); return undefined; }}
+          onClick={() => {
+            onNodeClick(node);
+            return undefined;
+          }}
           style={{
             position: 'absolute',
             left: node.position.x,

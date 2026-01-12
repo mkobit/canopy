@@ -3,23 +3,14 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const packageJsonPath = path.join(
-__dirname,
-'../package.json',
-);
-const miseTomlPath = path.join(
-__dirname,
-'../mise.toml',
-);
+const packageJsonPath = path.join(__dirname, '../package.json');
+const miseTomlPath = path.join(__dirname, '../mise.toml');
 
 // eslint-disable-next-line no-console
 console.log('Verifying version consistency...');
 
 // Read package.json
-const packageJson = JSON.parse(fs.readFileSync(
-packageJsonPath,
-'utf8',
-));
+const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
 const packageNodeVersion = packageJson.engines?.node;
 
 if (!packageNodeVersion) {
@@ -29,10 +20,7 @@ if (!packageNodeVersion) {
 
 // Read mise.toml
 // Simple parsing for now, assuming [tools] section and node = "version" format
-const miseToml = fs.readFileSync(
-miseTomlPath,
-'utf8',
-);
+const miseToml = fs.readFileSync(miseTomlPath, 'utf8');
 const miseNodeMatch = miseToml.match(/node\s*=\s*["']?([^"']+)["']?/);
 
 if (!miseNodeMatch) {

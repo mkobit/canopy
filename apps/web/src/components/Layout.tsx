@@ -16,9 +16,9 @@ const Sidebar = ({ onQuickCapture }: Readonly<{ onQuickCapture: () => unknown }>
           to="/"
           className={({ isActive }) =>
             clsx(
-"flex items-center gap-2 p-2 rounded-md hover:bg-gray-100 text-gray-700",
-isActive && "bg-gray-200 font-medium",
-)
+              'flex items-center gap-2 p-2 rounded-md hover:bg-gray-100 text-gray-700',
+              isActive && 'bg-gray-200 font-medium',
+            )
           }
         >
           <Home size={20} />
@@ -29,9 +29,9 @@ isActive && "bg-gray-200 font-medium",
           to="/search"
           className={({ isActive }) =>
             clsx(
-"flex items-center gap-2 p-2 rounded-md hover:bg-gray-100 text-gray-700",
-isActive && "bg-gray-200 font-medium",
-)
+              'flex items-center gap-2 p-2 rounded-md hover:bg-gray-100 text-gray-700',
+              isActive && 'bg-gray-200 font-medium',
+            )
           }
         >
           <Search size={20} />
@@ -63,36 +63,27 @@ export const Layout = () => {
   const navigate = useNavigate();
 
   const handleQuickCapture = async () => {
-      if (!graph) {
-          alert("Open a graph first.");
-          return undefined;
-      }
-
-      const text = prompt("Quick Note:");
-      if (!text) return undefined;
-
-      try {
-          const result = await createNode(
-'Note',
-{ name: text },
-);
-          if (result.ok) {
-              navigate(`/graph/${graph.id}/node/${result.value}`);
-          } else {
-              console.error(
-"Failed to create node",
-result.error,
-);
-              alert("Failed to create node: " + result.error.message);
-          }
-      } catch (e) {
-          console.error(
-"Failed to create node",
-e,
-);
-          alert("Failed to create node.");
-      }
+    if (!graph) {
+      alert('Open a graph first.');
       return undefined;
+    }
+
+    const text = prompt('Quick Note:');
+    if (!text) return undefined;
+
+    try {
+      const result = await createNode('Note', { name: text });
+      if (result.ok) {
+        navigate(`/graph/${graph.id}/node/${result.value}`);
+      } else {
+        console.error('Failed to create node', result.error);
+        alert('Failed to create node: ' + result.error.message);
+      }
+    } catch (e) {
+      console.error('Failed to create node', e);
+      alert('Failed to create node.');
+    }
+    return undefined;
   };
 
   return (
