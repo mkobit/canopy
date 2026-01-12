@@ -5,6 +5,7 @@ import prettier from 'eslint-config-prettier';
 import globals from 'globals';
 import functional from 'eslint-plugin-functional';
 import importPlugin from 'eslint-plugin-import';
+import unicorn from 'eslint-plugin-unicorn';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 
@@ -84,6 +85,7 @@ export default tseslint.config(
     plugins: {
       functional,
       import: importPlugin,
+      unicorn,
     },
     // We only apply these rules to TS files that are part of the project
     files: ['**/*.ts', '**/*.tsx'],
@@ -131,6 +133,9 @@ export default tseslint.config(
       // Import plugin rules
       'import/extensions': ['error', 'never', { json: 'always' }],
       'import/no-unresolved': 'off', // TypeScript handles this
+
+      // Unicorn plugin rules
+      'unicorn/numeric-separators-style': 'error',
 
       // Functional plugin overrides
       // Enforce immutability
