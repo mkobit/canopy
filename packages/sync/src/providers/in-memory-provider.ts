@@ -4,17 +4,23 @@ import * as AwarenessProtocol from 'y-protocols/awareness';
 import { SyncProvider } from '../types';
 import { Result, ok, err } from '@canopy/types';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type EventHandler = (...args: any[]) => unknown;
+
 export class InMemoryProvider implements SyncProvider {
   readonly doc: Y.Doc;
   readonly awareness: Awareness;
   // eslint-disable-next-line functional/prefer-readonly-type
   connected = false;
-  // eslint-disable-next-line @typescript-eslint/ban-types, functional/prefer-readonly-type
-  readonly handlers: Map<string, Function[]> = new Map<string, Function[]>();
+  // eslint-disable-next-line functional/prefer-readonly-type
+  readonly handlers: Map<string, EventHandler[]> = new Map<string, EventHandler[]>();
 
   // Shared state for all instances to simulate network
   // eslint-disable-next-line functional/prefer-readonly-type
-  static readonly networks: Map<string, Set<InMemoryProvider>> = new Map<string, Set<InMemoryProvider>>();
+  static readonly networks: Map<string, Set<InMemoryProvider>> = new Map<
+    string,
+    Set<InMemoryProvider>
+  >();
   readonly roomName: string;
 
   constructor(roomName: string, doc: Y.Doc, awareness: Awareness) {
@@ -34,7 +40,18 @@ export class InMemoryProvider implements SyncProvider {
     return undefined;
   };
 
-  private readonly handleAwarenessUpdate = ({ added, updated, removed }: Readonly<{ added: readonly number[], updated: readonly number[], removed: readonly number[] }>, origin: unknown) => {
+  private readonly handleAwarenessUpdate = (
+    {
+      added,
+      updated,
+      removed,
+    }: Readonly<{
+      added: readonly number[];
+      updated: readonly number[];
+      removed: readonly number[];
+    }>,
+    origin: unknown,
+  ) => {
     if (origin !== 'remote' && this.connected) {
       const changedClients = added.concat(updated).concat(removed);
       const update = AwarenessProtocol.encodeAwarenessUpdate(this.awareness, changedClients);
@@ -46,7 +63,7 @@ export class InMemoryProvider implements SyncProvider {
   broadcastDocUpdate(update: Uint8Array) {
     const network = InMemoryProvider.networks.get(this.roomName);
     if (network) {
-      network.forEach(peer => {
+      network.forEach((peer) => {
         if (peer !== this && peer.connected) {
           Y.applyUpdate(peer.doc, update, this);
         }
@@ -59,7 +76,7 @@ export class InMemoryProvider implements SyncProvider {
   broadcastAwarenessUpdate(update: Uint8Array) {
     const network = InMemoryProvider.networks.get(this.roomName);
     if (network) {
-      network.forEach(peer => {
+      network.forEach((peer) => {
         if (peer !== this && peer.connected) {
           AwarenessProtocol.applyAwarenessUpdate(peer.awareness, update, 'remote');
         }
@@ -84,7 +101,7 @@ export class InMemoryProvider implements SyncProvider {
       // Let's iterate peers and apply their state.
       const network = InMemoryProvider.networks.get(this.roomName);
       if (network) {
-        network.forEach(peer => {
+        network.forEach((peer) => {
           if (peer !== this && peer.connected) {
             // Sync step 1
             const stateVector = Y.encodeStateVector(this.doc);
@@ -98,7 +115,9 @@ export class InMemoryProvider implements SyncProvider {
 
             // Sync Awareness
             // Send my state to peer
-            const myAwarenessUpdate = AwarenessProtocol.encodeAwarenessUpdate(this.awareness, [this.doc.clientID]);
+            const myAwarenessUpdate = AwarenessProtocol.encodeAwarenessUpdate(this.awareness, [
+              this.doc.clientID,
+            ]);
             AwarenessProtocol.applyAwarenessUpdate(peer.awareness, myAwarenessUpdate, 'remote');
 
             // Get peer state
@@ -107,7 +126,10 @@ export class InMemoryProvider implements SyncProvider {
             // Awareness protocol usually syncs everything.
             // For now let's just push ours. The peer should push theirs back if we had a full handshake.
             // Let's cheat and push peer's state to us.
-            const peerAwarenessUpdate = AwarenessProtocol.encodeAwarenessUpdate(peer.awareness, Array.from(peer.awareness.getStates().keys()));
+            const peerAwarenessUpdate = AwarenessProtocol.encodeAwarenessUpdate(
+              peer.awareness,
+              Array.from(peer.awareness.getStates().keys()),
+            );
             AwarenessProtocol.applyAwarenessUpdate(this.awareness, peerAwarenessUpdate, 'remote');
           }
           return undefined;
@@ -125,10 +147,10 @@ export class InMemoryProvider implements SyncProvider {
     try {
       const network = InMemoryProvider.networks.get(this.roomName);
       if (network) {
-          network.delete(this);
-          if (network.size === 0) {
-              InMemoryProvider.networks.delete(this.roomName);
-          }
+        network.delete(this);
+        if (network.size === 0) {
+          InMemoryProvider.networks.delete(this.roomName);
+        }
       }
       this.connected = false;
       this.emit('status', { status: 'disconnected' });
@@ -138,7 +160,10 @@ export class InMemoryProvider implements SyncProvider {
     }
   }
 
-  on(event: 'status', handler: (event: Readonly<{ status: 'connected' | 'disconnected' | 'connecting' }>) => unknown) {
+  on(
+    event: 'status',
+    handler: (event: Readonly<{ status: 'connected' | 'disconnected' | 'connecting' }>) => unknown,
+  ) {
     if (!this.handlers.has(event)) {
       this.handlers.set(event, []);
     }
@@ -146,17 +171,22 @@ export class InMemoryProvider implements SyncProvider {
     return undefined;
   }
 
-  off(event: 'status', handler: (event: Readonly<{ status: 'connected' | 'disconnected' | 'connecting' }>) => unknown) {
+  off(
+    event: 'status',
+    handler: (event: Readonly<{ status: 'connected' | 'disconnected' | 'connecting' }>) => unknown,
+  ) {
     const handlers = this.handlers.get(event);
     if (handlers) {
-      this.handlers.set(event, handlers.filter(h => h !== handler));
+      this.handlers.set(
+        event,
+        handlers.filter((h) => h !== handler),
+      );
     }
     return undefined;
   }
 
   emit(event: string, data: unknown) {
-    // eslint-disable-next-line @typescript-eslint/ban-types
-    this.handlers.get(event)?.forEach((h: Function) => h(data));
+    this.handlers.get(event)?.forEach((h) => h(data));
     return undefined;
   }
 }

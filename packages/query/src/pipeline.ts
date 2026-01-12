@@ -49,13 +49,19 @@ export function traverse(edgeType?: string, direction: 'out' | 'in' | 'both' = '
 export function from(nodeId: string) {
   return (q: Query): Query => ({
     ...q,
-    steps: [...q.steps, { kind: 'filter', predicate: { property: 'source', operator: 'eq', value: nodeId } }],
+    steps: [
+      ...q.steps,
+      { kind: 'filter', predicate: { property: 'source', operator: 'eq', value: nodeId } },
+    ],
   });
 }
 
 export function to(nodeId: string) {
   return (q: Query): Query => ({
     ...q,
-    steps: [...q.steps, { kind: 'filter', predicate: { property: 'target', operator: 'eq', value: nodeId } }],
+    steps: [
+      ...q.steps,
+      { kind: 'filter', predicate: { property: 'target', operator: 'eq', value: nodeId } },
+    ],
   });
 }

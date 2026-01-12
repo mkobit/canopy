@@ -29,19 +29,50 @@ export default tseslint.config(
   {
     ...functional.configs.externalTypeScriptRecommended,
     files: ['**/*.ts', '**/*.tsx'],
-    ignores: ['**/*.test.ts', '**/*.spec.ts', '**/tests/**/*.ts', '**/__tests__/**/*.ts', '**/*.test.tsx', '**/*.spec.tsx', '**/tests/**/*.tsx', '**/__tests__/**/*.tsx', 'apps/web/src/test/setup.ts'],
+    ignores: [
+      '**/*.test.ts',
+      '**/*.spec.ts',
+      '**/tests/**/*.ts',
+      '**/__tests__/**/*.ts',
+      '**/*.test.tsx',
+      '**/*.spec.tsx',
+      '**/tests/**/*.tsx',
+      '**/__tests__/**/*.tsx',
+      'apps/web/src/test/setup.ts',
+    ],
   },
   {
     ...functional.configs.recommended,
     files: ['**/*.ts', '**/*.tsx'],
-    ignores: ['**/*.test.ts', '**/*.spec.ts', '**/tests/**/*.ts', '**/__tests__/**/*.ts', '**/*.test.tsx', '**/*.spec.tsx', '**/tests/**/*.tsx', '**/__tests__/**/*.tsx', 'apps/web/src/test/setup.ts'],
+    ignores: [
+      '**/*.test.ts',
+      '**/*.spec.ts',
+      '**/tests/**/*.ts',
+      '**/__tests__/**/*.ts',
+      '**/*.test.tsx',
+      '**/*.spec.tsx',
+      '**/tests/**/*.tsx',
+      '**/__tests__/**/*.tsx',
+      'apps/web/src/test/setup.ts',
+    ],
   },
   {
     ...functional.configs.stylistic,
     files: ['**/*.ts', '**/*.tsx'],
-    ignores: ['**/*.test.ts', '**/*.spec.ts', '**/tests/**/*.ts', '**/__tests__/**/*.ts', '**/*.test.tsx', '**/*.spec.tsx', '**/tests/**/*.tsx', '**/__tests__/**/*.tsx', 'apps/web/src/test/setup.ts'],
+    ignores: [
+      '**/*.test.ts',
+      '**/*.spec.ts',
+      '**/tests/**/*.ts',
+      '**/__tests__/**/*.ts',
+      '**/*.test.tsx',
+      '**/*.spec.tsx',
+      '**/tests/**/*.tsx',
+      '**/__tests__/**/*.tsx',
+      'apps/web/src/test/setup.ts',
+    ],
   },
   {
+    files: ['**/*.ts', '**/*.tsx'],
     languageOptions: {
       parserOptions: {
         project: ['./tsconfig.base.json', 'packages/*/tsconfig.json', 'apps/*/tsconfig.json'],
@@ -56,7 +87,17 @@ export default tseslint.config(
     },
     // We only apply these rules to TS files that are part of the project
     files: ['**/*.ts', '**/*.tsx'],
-    ignores: ['**/*.test.ts', '**/*.spec.ts', '**/tests/**/*.ts', '**/__tests__/**/*.ts', '**/*.test.tsx', '**/*.spec.tsx', '**/tests/**/*.tsx', '**/__tests__/**/*.tsx', 'apps/web/src/test/setup.ts'],
+    ignores: [
+      '**/*.test.ts',
+      '**/*.spec.ts',
+      '**/tests/**/*.ts',
+      '**/__tests__/**/*.ts',
+      '**/*.test.tsx',
+      '**/*.spec.tsx',
+      '**/tests/**/*.tsx',
+      '**/__tests__/**/*.tsx',
+      'apps/web/src/test/setup.ts',
+    ],
     languageOptions: {
       globals: {
         ...globals.browser,
@@ -80,29 +121,37 @@ export default tseslint.config(
 
       // Functional plugin overrides
       // Enforce immutability
-      'functional/immutable-data': ['error', {
+      'functional/immutable-data': [
+        'error',
+        {
           ignoreClasses: true,
           ignoreImmediateMutation: true,
           // Allow mutations of refs in React (common pattern)
           ignoreAccessorPattern: ['**.current', '**.value'],
-      }],
+        },
+      ],
 
       // Adjust rules for practicality (as suggested by user documentation/examples)
       'functional/no-return-void': 'error',
       'functional/no-throw-statements': 'error',
       'functional/no-expression-statements': 'off',
-      'functional/functional-parameters': ['error', {
-        enforceParameterCount: false,
-      }],
+      'functional/functional-parameters': [
+        'error',
+        {
+          enforceParameterCount: false,
+        },
+      ],
       'functional/no-conditional-statements': 'off',
       'functional/no-classes': 'off',
 
-      'functional/prefer-immutable-types': ['error', {
-        enforcement: 'ReadonlyShallow',
-        ignoreClasses: false,
-        ignoreInferredTypes: true,
-        // Explicitly allow ReadonlyMap and similar standard types that might be considered "Unknown" or mutable by default if not wrapped
-        ignoreTypePattern: [
+      'functional/prefer-immutable-types': [
+        'error',
+        {
+          enforcement: 'ReadonlyShallow',
+          ignoreClasses: false,
+          ignoreInferredTypes: true,
+          // Explicitly allow ReadonlyMap and similar standard types that might be considered "Unknown" or mutable by default if not wrapped
+          ignoreTypePattern: [
             'ReadonlyMap',
             'ReadonlySet',
             'ReadonlyArray',
@@ -115,12 +164,13 @@ export default tseslint.config(
             '^Graph',
             '^Node',
             '^Edge',
-            '.*'
-        ],
-        // If "Unknown" types are encountered, assume they are immutable if they match these patterns or if they are just interfaces that we control.
-        // But for now, let's just make sure the rule doesn't fail on valid Readonly types.
-        // ignoreAccessorPattern: ['**.current', '**.value', '**.valid', '**.errors']
-      }],
+            '.*',
+          ],
+          // If "Unknown" types are encountered, assume they are immutable if they match these patterns or if they are just interfaces that we control.
+          // But for now, let's just make sure the rule doesn't fail on valid Readonly types.
+          // ignoreAccessorPattern: ['**.current', '**.value', '**.valid', '**.errors']
+        },
+      ],
     },
   },
   {
