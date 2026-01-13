@@ -16,8 +16,8 @@ importers:
         version: 19.2.3(react@19.2.3)
     devDependencies:
       '@beads/bd':
-        specifier: ^0.46.0
-        version: 0.46.0
+        specifier: ^0.47.1
+        version: 0.47.1
       '@types/node':
         specifier: ^25.0.7
         version: 25.0.7
@@ -499,8 +499,8 @@ packages:
   '@bcoe/v8-coverage@0.2.3':
     resolution: {integrity: sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==}
 
-  '@beads/bd@0.46.0':
-    resolution: {integrity: sha512-WMFoahEXiMOIPoEiY3L8qtiha94XIuW0s/cHwmkTq5NuvpwCYn1Y2w4eiWdZJK7BpDhOV+R5VxZ8wDrEDjgI3g==}
+  '@beads/bd@0.47.1':
+    resolution: {integrity: sha512-O9z7pBjEqpYfv975Z77+m1KPng1wk3E0zhRvp9WMgr+ry0+PeqO78tnh72HLOuIsx/gDmkpDa0QNWBj/+2S0wQ==}
     engines: {node: '>=14.0.0'}
     cpu: [x64, arm64]
     os: [darwin, linux, win32, android]
@@ -3671,7 +3671,7 @@ snapshots:
 
   '@bcoe/v8-coverage@0.2.3': {}
 
-  '@beads/bd@0.46.0': {}
+  '@beads/bd@0.47.1': {}
 
   '@csstools/color-helpers@5.1.0': {}
 
