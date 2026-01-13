@@ -30,6 +30,7 @@ export function fromThrowable<T>(
   fn: () => T,
   errorHandler?: (e: unknown) => Error,
 ): Result<T, Error> {
+  // eslint-disable-next-line functional/no-try-statements
   try {
     return ok(fn());
   } catch (e) {
@@ -39,6 +40,7 @@ export function fromThrowable<T>(
 }
 
 export async function fromAsyncThrowable<T>(fn: () => Promise<T>): Promise<Result<T, Error>> {
+  // eslint-disable-next-line functional/no-try-statements
   try {
     return ok(await fn());
   } catch (e) {

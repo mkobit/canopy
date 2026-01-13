@@ -46,6 +46,7 @@ export function getNode(nodes: Y.Map<unknown>, id: string): Result<Node, Error> 
   if (!n) {
     return err(new Error(`Node ${id} not found`));
   }
+  // eslint-disable-next-line functional/no-try-statements
   try {
     return ok(storableToNode(n));
   } catch (e) {
@@ -54,6 +55,7 @@ export function getNode(nodes: Y.Map<unknown>, id: string): Result<Node, Error> 
 }
 
 export function getAllNodes(nodes: Y.Map<unknown>): Result<IterableIterator<Node>, Error> {
+  // eslint-disable-next-line functional/no-try-statements
   try {
     const iterator = map(Array.from(nodes.values()), storableToNode)[Symbol.iterator]();
     return ok(iterator);

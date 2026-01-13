@@ -71,6 +71,7 @@ export const Layout = () => {
     const text = prompt('Quick Note:');
     if (!text) return undefined;
 
+    // eslint-disable-next-line functional/no-try-statements
     try {
       const result = await createNode('Note', { name: text });
       if (result.ok) {

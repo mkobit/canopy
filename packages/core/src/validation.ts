@@ -30,6 +30,7 @@ function extractProperties(node: Node): readonly PropertyDefinition[] {
   if (!prop || prop.kind !== 'text') {
     return [];
   }
+  // eslint-disable-next-line functional/no-try-statements
   try {
     const raw = JSON.parse(prop.value);
     if (Array.isArray(raw)) {
@@ -61,6 +62,7 @@ function extractEdgeTypeDefinition(node: Node): EdgeTypeDefinition | undefined {
       );
     }
     if (sourceTypesVal?.kind === 'text') {
+      // eslint-disable-next-line functional/no-try-statements
       try {
         return (JSON.parse(sourceTypesVal.value) as readonly string[]).map(asTypeId);
       } catch {
@@ -77,6 +79,7 @@ function extractEdgeTypeDefinition(node: Node): EdgeTypeDefinition | undefined {
       );
     }
     if (targetTypesVal?.kind === 'text') {
+      // eslint-disable-next-line functional/no-try-statements
       try {
         return (JSON.parse(targetTypesVal.value) as readonly string[]).map(asTypeId);
       } catch {
