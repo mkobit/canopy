@@ -165,6 +165,7 @@ export default tseslint.config(
         },
       ],
       'functional/no-conditional-statements': 'off',
+      'functional/no-this-expressions': 'error',
 
       'functional/prefer-immutable-types': [
         'error',
@@ -223,7 +224,6 @@ export default tseslint.config(
       'apps/web/**/*.tsx',
       'apps/web/**/*.ts',
       'packages/query/src/legacy.ts',
-      'packages/query/src/builder.ts',
       'packages/query/src/engine.ts',
       'packages/query/src/stored.ts',
       'packages/query/src/views.ts',
@@ -231,6 +231,17 @@ export default tseslint.config(
     rules: {
       'functional/prefer-immutable-types': 'off',
       'functional/type-declaration-immutability': 'off',
+    },
+  },
+  {
+    files: [
+      'packages/sync/**/*.ts',
+      'packages/storage/**/*.ts',
+      'packages/query/src/legacy.ts',
+      'packages/query/src/engine.ts',
+    ],
+    rules: {
+      'functional/no-this-expressions': 'off',
     },
   },
 );
