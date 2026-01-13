@@ -156,6 +156,7 @@ export default tseslint.config(
       // Adjust rules for practicality (as suggested by user documentation/examples)
       'functional/no-return-void': 'error',
       'functional/no-throw-statements': 'error',
+      'functional/no-try-statements': 'error',
       'functional/no-expression-statements': 'off',
       'functional/functional-parameters': [
         'error',

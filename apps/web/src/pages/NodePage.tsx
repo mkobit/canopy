@@ -40,6 +40,7 @@ export const NodePage = () => {
   const handleSave = async () => {
     if (!syncEngine || !currentNode) return undefined;
 
+    // eslint-disable-next-line functional/no-try-statements
     try {
       syncEngine.store.updateNode(currentNode.id, {
         properties: new Map(editedProps),
@@ -68,6 +69,7 @@ export const NodePage = () => {
     if (!syncEngine || !currentNode) return undefined;
     if (!confirm('Delete this node?')) return undefined;
 
+    // eslint-disable-next-line functional/no-try-statements
     try {
       syncEngine.store.deleteNode(currentNode.id);
       await saveGraph();

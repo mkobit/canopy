@@ -37,6 +37,7 @@ export function createInstant(instant: Temporal.Instant = Temporal.Now.instant()
 // Helper to cast existing string to Instant if format is correct
 // Returns Result instead of throwing
 export function parseInstant(isoString: string): Result<Instant, Error> {
+  // eslint-disable-next-line functional/no-try-statements
   try {
     Temporal.Instant.from(isoString);
     return ok(isoString as Instant);
@@ -67,6 +68,7 @@ export function parsePlainDate(dateString: string): Result<PlainDate, Error> {
     return err(new Error(`Invalid PlainDate string: ${dateString}`));
   }
   // Validate with Temporal
+  // eslint-disable-next-line functional/no-try-statements
   try {
     Temporal.PlainDate.from(dateString);
     return ok(dateString as PlainDate);

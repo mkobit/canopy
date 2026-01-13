@@ -54,6 +54,7 @@ export function getEdge(edges: Y.Map<unknown>, id: string): Result<Edge, Error> 
   if (!e) {
     return err(new Error(`Edge ${id} not found`));
   }
+  // eslint-disable-next-line functional/no-try-statements
   try {
     return ok(storableToEdge(e));
   } catch (e) {
@@ -62,6 +63,7 @@ export function getEdge(edges: Y.Map<unknown>, id: string): Result<Edge, Error> 
 }
 
 export function getAllEdges(edges: Y.Map<unknown>): Result<IterableIterator<Edge>, Error> {
+  // eslint-disable-next-line functional/no-try-statements
   try {
     const iterator = map(Array.from(edges.values()), storableToEdge)[Symbol.iterator]();
     return ok(iterator);

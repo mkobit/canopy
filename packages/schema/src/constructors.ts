@@ -89,6 +89,7 @@ export function createTypeId(id: string): Result<TypeId, Error> {
  * Validates that the string is a valid date-time.
  */
 export function createInstant(isoString: string): Result<Instant, Error> {
+  // eslint-disable-next-line functional/no-try-statements
   try {
     const instant = Temporal.Instant.from(isoString);
     return ok(asInstant(instant.toString()));
@@ -101,6 +102,7 @@ export function createInstant(isoString: string): Result<Instant, Error> {
  * Creates a branded PlainDate from an ISO 8601 date string (YYYY-MM-DD).
  */
 export function createPlainDate(dateString: string): Result<PlainDate, Error> {
+  // eslint-disable-next-line functional/no-try-statements
   try {
     const date = Temporal.PlainDate.from(dateString);
     return ok(asPlainDate(date.toString()));

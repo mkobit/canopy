@@ -89,6 +89,7 @@ export class InMemoryProvider implements SyncProvider {
   }
 
   connect(): Result<void, Error> {
+    // eslint-disable-next-line functional/no-try-statements
     try {
       if (!InMemoryProvider.networks.has(this.roomName)) {
         InMemoryProvider.networks.set(this.roomName, new Set());
@@ -146,6 +147,7 @@ export class InMemoryProvider implements SyncProvider {
   }
 
   disconnect(): Result<void, Error> {
+    // eslint-disable-next-line functional/no-try-statements
     try {
       const network = InMemoryProvider.networks.get(this.roomName);
       if (network) {
