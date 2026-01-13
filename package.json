@@ -18,7 +18,7 @@
     "postinstall": "bd hooks install || true"
   },
   "devDependencies": {
-    "@beads/bd": "^0.46.0",
+    "@beads/bd": "^0.47.1",
     "@types/node": "^25.0.7",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
