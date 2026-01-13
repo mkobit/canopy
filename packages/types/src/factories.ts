@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
+import { Temporal } from 'temporal-polyfill';
 import type { NodeId, EdgeId, TypeId, GraphId } from './identifiers';
 import type { Instant, PlainDate } from './temporal';
 import type { Result } from './result';
@@ -29,18 +30,19 @@ export function asGraphId(id: string): GraphId {
   return id as GraphId;
 }
 
-export function createInstant(date: Date = new Date()): Instant {
-  return date.toISOString() as Instant;
+export function createInstant(instant: Temporal.Instant = Temporal.Now.instant()): Instant {
+  return instant.toString() as Instant;
 }
 
 // Helper to cast existing string to Instant if format is correct
 // Returns Result instead of throwing
 export function parseInstant(isoString: string): Result<Instant, Error> {
-  // Basic validation
-  if (isNaN(Date.parse(isoString))) {
-    return err(new Error(`Invalid ISO string: ${isoString}`));
+  try {
+    Temporal.Instant.from(isoString);
+    return ok(isoString as Instant);
+  } catch (error) {
+    return err(error instanceof Error ? error : new Error(String(error)));
   }
-  return ok(isoString as Instant);
 }
 
 // Deprecated throwing version (kept for compatibility with 'createInstant' usage if needed, but we should remove it)
@@ -64,7 +66,13 @@ export function parsePlainDate(dateString: string): Result<PlainDate, Error> {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
     return err(new Error(`Invalid PlainDate string: ${dateString}`));
   }
-  return ok(dateString as PlainDate);
+  // Validate with Temporal
+  try {
+    Temporal.PlainDate.from(dateString);
+    return ok(dateString as PlainDate);
+  } catch (error) {
+    return err(error instanceof Error ? error : new Error(String(error)));
+  }
 }
 
 export function asPlainDate(dateString: string): PlainDate {

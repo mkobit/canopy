@@ -1,6 +1,7 @@
 import React from 'react';
 import type { PropertyValue, PropertyValueKind, ScalarValue } from '@canopy/types';
 import { cn } from '../../utils/cn';
+import { Temporal } from 'temporal-polyfill';
 
 interface PropertyDisplayProps {
   readonly value: PropertyValue;
@@ -48,7 +49,7 @@ const ScalarDisplay: React.FC<Readonly<{ value: ScalarValue }>> = ({ value }) =>
     case 'instant':
       return (
         <span className="text-sm text-gray-500" title={value.value}>
-          {new Date(value.value).toLocaleString()}
+          {Temporal.Instant.from(value.value).toLocaleString()}
         </span>
       );
     case 'plain-date':

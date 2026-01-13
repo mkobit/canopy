@@ -1,6 +1,7 @@
 import React from 'react';
 import type { PropertyValue, PropertyValueKind, ScalarValue } from '@canopy/types';
 import { asInstant, asPlainDate, asNodeId, asGraphId } from '@canopy/types';
+import { Temporal } from 'temporal-polyfill';
 import { cn } from '../../utils/cn';
 
 interface PropertyInputData {
@@ -82,11 +83,11 @@ export const PropertyInput: React.FC<PropertyInputProps> = ({ value, onChange, c
                 case 'boolean':
                   return { kind: 'boolean', value: false };
                 case 'instant':
-                  return { kind: 'instant', value: asInstant(new Date().toISOString()) };
+                  return { kind: 'instant', value: asInstant(Temporal.Now.instant().toString()) };
                 case 'plain-date':
                   return {
                     kind: 'plain-date',
-                    value: asPlainDate(new Date().toISOString().split('T')[0]!),
+                    value: asPlainDate(Temporal.Now.plainDateISO().toString()),
                   };
                 case 'reference':
                   return { kind: 'reference', target: asNodeId('') };
@@ -138,7 +139,7 @@ const ScalarInput: React.FC<
           type="number"
           value={value.value}
           onChange={(e) => {
-            onChange(updateScalar(value, e.target.valueAsNumber));
+            onChange(updateScalar(value, e.target.value));
             return undefined;
           }}
           className={baseInputClass}

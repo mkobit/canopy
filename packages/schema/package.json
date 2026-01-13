@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@canopy/types": "workspace:*",
+    "temporal-polyfill": "^0.3.0",
     "zod": "^4.3.5"
   },
   "devDependencies": {

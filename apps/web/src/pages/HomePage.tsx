@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { createGraphId } from '@canopy/types';
 import { Plus, Trash2, FolderOpen } from 'lucide-react';
 import type { GraphStorageMetadata } from '@canopy/storage';
+import { Temporal } from 'temporal-polyfill';
 
 export const HomePage = () => {
   const { storage, isLoading: storageLoading } = useStorage();
@@ -39,7 +40,7 @@ export const HomePage = () => {
     if (!name) return undefined;
 
     const id = createGraphId();
-    const now = new Date().toISOString();
+    const now = Temporal.Now.instant().toString();
 
     const result = await storage.save(id, new Uint8Array(), {
       id,

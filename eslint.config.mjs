@@ -193,6 +193,26 @@ export default tseslint.config(
           // ignoreAccessorPattern: ['**.current', '**.value', '**.valid', '**.errors']
         },
       ],
+
+      // Ban Date and enforce Temporal
+      'no-restricted-globals': [
+        'error',
+        {
+          name: 'Date',
+          message: 'Use Temporal instead of Date.',
+        },
+      ],
+      '@typescript-eslint/no-restricted-types': [
+        'error',
+        {
+          types: {
+            Date: {
+              message: 'Use Temporal instead of Date.',
+              fixWith: 'Temporal.PlainDate', // Suggestion only, specific fix depends on usage
+            },
+          },
+        },
+      ],
     },
   },
   {

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createNodeId, createTypeId, createInstant, createPlainDate } from '../src/constructors';
 import { unwrap, isErr } from '@canopy/types';
+import { Temporal } from 'temporal-polyfill';
 
 describe('Constructors', () => {
   it('should create valid NodeId from valid UUID', () => {
@@ -30,7 +31,10 @@ describe('Constructors', () => {
 
   it('should create valid Instant', () => {
     const iso = '2023-10-27T10:00:00.000Z';
-    expect(unwrap(createInstant(iso))).toBe(iso);
+    // Temporal might drop milliseconds if zero, or format it differently.
+    // We expect the canonical format returned by Temporal.
+    const expected = Temporal.Instant.from(iso).toString();
+    expect(unwrap(createInstant(iso))).toBe(expected);
   });
 
   it('should return Error for invalid Instant', () => {
