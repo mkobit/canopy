@@ -12,6 +12,7 @@ interface Accumulator {
   readonly error?: Error;
 }
 
+// eslint-disable-next-line functional/no-classes
 export class QueryEngine {
   constructor(private readonly graph: Graph) {}
 

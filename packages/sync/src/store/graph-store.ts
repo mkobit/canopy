@@ -3,6 +3,7 @@ import type { Node, Edge, Result } from '@canopy/types';
 import * as NodeOps from './ops/node';
 import * as EdgeOps from './ops/edge';
 
+// eslint-disable-next-line functional/no-classes
 export class GraphStore {
   readonly doc: Y.Doc;
   readonly nodes: Y.Map<unknown>; // Stored as plain JSON object

@@ -9,6 +9,7 @@ export interface SQLitePersistence {
   readonly write: (data: Uint8Array) => Promise<void>;
 }
 
+// eslint-disable-next-line functional/no-classes
 export class SQLiteAdapter implements StorageAdapter {
   // eslint-disable-next-line functional/prefer-readonly-type, functional/immutable-data, functional/prefer-immutable-types
   private db: Database | null = null;
