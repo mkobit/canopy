@@ -1,6 +1,7 @@
 import type { Graph, Node, Edge, PropertyValue } from '@canopy/types';
 import { filter } from 'remeda';
 
+// eslint-disable-next-line functional/no-classes
 export class GraphQuery {
   private readonly graph: Graph;
 

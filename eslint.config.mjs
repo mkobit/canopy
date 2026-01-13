@@ -164,7 +164,6 @@ export default tseslint.config(
         },
       ],
       'functional/no-conditional-statements': 'off',
-      'functional/no-classes': 'off',
 
       'functional/prefer-immutable-types': [
         'error',

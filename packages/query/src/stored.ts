@@ -51,13 +51,12 @@ export function saveQueryDefinition(
     ['definition', defVal.value],
   ];
 
-  // eslint-disable-next-line functional/no-let
-  let descriptionProp: readonly (readonly [string, PropertyValue])[] = [];
-  if (options.description) {
-    const descVal = scalar(options.description);
-    if (!descVal.ok) return err(descVal.error);
-    descriptionProp = [['description', descVal.value]];
-  }
+  const descVal = options.description ? scalar(options.description) : undefined;
+  if (descVal && !descVal.ok) return err(descVal.error);
+
+  const descriptionProp: readonly (readonly [string, PropertyValue])[] = descVal
+    ? [['description', descVal.value]]
+    : [];
 
   const nodeTypesProp: readonly (readonly [string, PropertyValue])[] =
     options.nodeTypes && options.nodeTypes.length > 0

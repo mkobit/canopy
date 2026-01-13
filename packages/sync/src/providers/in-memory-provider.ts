@@ -8,6 +8,7 @@ import { ok, err } from '@canopy/types';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type EventHandler = (...args: any[]) => unknown;
 
+// eslint-disable-next-line functional/no-classes
 export class InMemoryProvider implements SyncProvider {
   readonly doc: Y.Doc;
   readonly awareness: Awareness;

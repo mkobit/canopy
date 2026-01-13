@@ -5,6 +5,7 @@ import type { SyncProvider, SyncEngineOptions } from './types';
 import type { Result } from '@canopy/types';
 import { fromThrowable } from '@canopy/types';
 
+// eslint-disable-next-line functional/no-classes
 export class SyncEngine {
   readonly doc: Y.Doc;
   readonly store: GraphStore;

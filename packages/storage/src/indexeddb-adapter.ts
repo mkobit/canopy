@@ -15,6 +15,7 @@ interface CanopyDB extends DBSchema {
   }>;
 }
 
+// eslint-disable-next-line functional/no-classes
 export class IndexedDBAdapter implements StorageAdapter {
   // eslint-disable-next-line functional/prefer-readonly-type, functional/immutable-data, functional/prefer-immutable-types
   private db: IDBPDatabase<CanopyDB> | null = null;
