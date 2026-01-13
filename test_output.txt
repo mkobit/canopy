@@ -1,0 +1,58 @@
+
+> canopy-graph@0.0.0 test /app
+> vitest "packages/schema" "run"
+
+
+ DEV  v1.6.0 /app
+
+ ❯ |node| packages/schema/tests/constructors.test.ts  (9 tests | 1 failed) 19ms
+   ❯ packages/schema/tests/constructors.test.ts > Constructors > should create valid Instant
+     → expected '2023-10-27T10:00:00Z' to be '2023-10-27T10:00:00.000Z' // Object.is equality
+ ✓ |node| packages/schema/tests/schemas.test.ts  (7 tests) 22ms
+ ✓ |node| packages/schema/tests/guards.test.ts  (3 tests) 4ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |node| packages/schema/tests/constructors.test.ts > Constructors > should create valid Instant
+AssertionError: expected '2023-10-27T10:00:00Z' to be '2023-10-27T10:00:00.000Z' // Object.is equality
+
+- Expected
++ Received
+
+- 2023-10-27T10:00:00.000Z
++ 2023-10-27T10:00:00Z
+
+ ❯ packages/schema/tests/constructors.test.ts:33:40
+     31|   it('should create valid Instant', () => {
+     32|     const iso = '2023-10-27T10:00:00.000Z';
+     33|     expect(unwrap(createInstant(iso))).toBe(iso);
+       |                                        ^
+     34|   });
+     35|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+ Test Files  1 failed | 2 passed (3)
+      Tests  1 failed | 18 passed (19)
+   Start at  01:13:02
+   Duration  974ms (transform 134ms, setup 1ms, collect 363ms, tests 45ms, environment 1ms, prepare 336ms)
+
+
+ FAIL  Tests failed. Watching for file changes...
+       press h to show help, press q to quit
+ ELIFECYCLE  Test failed. See above for more details.
+[3Jc
+ RERUN  packages/schema/tests/constructors.test.ts x1
+
+ ✓ |node| packages/schema/tests/constructors.test.ts  (9 tests) 12ms
+
+ Test Files  1 passed (1)
+      Tests  9 passed (9)
+   Start at  01:14:05
+   Duration  67ms
+
+
+ PASS  Waiting for file changes...
+       press h to show help, press q to quit
+       rerun x1
+[2K[1A[2K[G

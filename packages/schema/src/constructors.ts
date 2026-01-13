@@ -18,12 +18,10 @@ import {
   ok,
   err,
 } from '@canopy/types';
+import { Temporal } from 'temporal-polyfill';
 
 // UUID regex (generic)
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-// ISO 8601 Date regex (YYYY-MM-DD)
-const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
 function validateUuid(id: string, label: string): Result<void, Error> {
   if (!UUID_REGEX.test(id)) {
@@ -91,47 +89,22 @@ export function createTypeId(id: string): Result<TypeId, Error> {
  * Validates that the string is a valid date-time.
  */
 export function createInstant(isoString: string): Result<Instant, Error> {
-  const timestamp = Date.parse(isoString);
-  if (isNaN(timestamp)) {
+  try {
+    const instant = Temporal.Instant.from(isoString);
+    return ok(asInstant(instant.toString()));
+  } catch {
     return err(new Error(`Invalid Instant: '${isoString}' is not a valid ISO 8601 date string.`));
   }
-  // Re-serialize to ensure canonical format if needed, or just return strict input if valid?
-  // asInstant in types just casts if valid.
-  // We prefer the input string if valid, or we could normalize.
-  // Let's normalize to ensure consistency? No, input might be better to keep if valid.
-  // But strictly, Instant is an ISO string.
-  return ok(asInstant(new Date(timestamp).toISOString()));
 }
 
 /**
  * Creates a branded PlainDate from an ISO 8601 date string (YYYY-MM-DD).
  */
 export function createPlainDate(dateString: string): Result<PlainDate, Error> {
-  if (!ISO_DATE_REGEX.test(dateString)) {
+  try {
+    const date = Temporal.PlainDate.from(dateString);
+    return ok(asPlainDate(date.toString()));
+  } catch {
     return err(new Error(`Invalid PlainDate: '${dateString}' must be in YYYY-MM-DD format.`));
   }
-  // Validate logical date (e.g. not 2023-02-30)
-  const date = new Date(dateString);
-  if (isNaN(date.getTime())) {
-    return err(new Error(`Invalid PlainDate: '${dateString}' is not a valid date.`));
-  }
-  // Check if date components match input to avoid rollover (e.g. Feb 31 -> Mar 3)
-  const [year, month, day] = dateString.split('-').map(Number);
-  if (
-    date.getUTCFullYear() !== year ||
-    date.getUTCMonth() + 1 !== month ||
-    date.getUTCDate() !== day
-  ) {
-    // Note: Date parses YYYY-MM-DD as UTC.
-    // But to be safe, let's just trust the regex + basic Date validity for "plain date".
-    // Actually, Date.parse("2023-02-31") returns a valid timestamp (rollover).
-    // We should check stricter.
-    // Re-format to check rollover.
-    const isoDate = date.toISOString().split('T')[0];
-    if (isoDate !== dateString) {
-      return err(new Error(`Invalid PlainDate: '${dateString}' does not exist.`));
-    }
-  }
-
-  return ok(asPlainDate(dateString));
 }

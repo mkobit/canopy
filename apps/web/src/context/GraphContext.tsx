@@ -15,6 +15,7 @@ import { useStorage } from './StorageContext';
 import { z } from 'zod';
 import { TypeIdSchema } from '@canopy/schema';
 import type { TypeId } from '@canopy/types';
+import { Temporal } from 'temporal-polyfill';
 
 interface GraphContextState {
   readonly graph: Graph | null;
@@ -114,7 +115,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
       Array.from(engine.store.getAllEdges()).map((edge) => [edge.id, edge]),
     );
 
-    const now = asInstant(new Date().toISOString());
+    const now = asInstant(Temporal.Now.instant().toString());
     setGraph({
       id: graphId,
       name: 'Graph', // We should load this
@@ -142,12 +143,12 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
     if (syncEngineRef.current && storage && currentGraphId && graph) {
       return fromAsyncThrowable(async () => {
         const snapshot = syncEngineRef.current!.getSnapshot();
-        const createdAt = graph.metadata.created || new Date().toISOString();
+        const createdAt = graph.metadata.created || Temporal.Now.instant().toString();
         const result = await storage.save(currentGraphId, snapshot, {
           id: currentGraphId,
           name: graph.name,
           createdAt,
-          updatedAt: new Date().toISOString(),
+          updatedAt: Temporal.Now.instant().toString(),
         });
         // eslint-disable-next-line functional/no-throw-statements -- Re-throwing error to be caught by fromAsyncThrowable
         if (!result.ok) throw result.error;

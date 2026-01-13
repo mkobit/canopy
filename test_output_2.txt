@@ -1,0 +1,20 @@
+
+> canopy-graph@0.0.0 test /app
+> vitest "packages/schema" "run"
+
+
+ DEV  v1.6.0 /app
+
+ ✓ |node| packages/schema/tests/constructors.test.ts  (9 tests) 12ms
+ ✓ |node| packages/schema/tests/schemas.test.ts  (7 tests) 18ms
+ ✓ |node| packages/schema/tests/guards.test.ts  (3 tests) 4ms
+
+ Test Files  3 passed (3)
+      Tests  19 passed (19)
+   Start at  01:14:10
+   Duration  1.04s (transform 148ms, setup 0ms, collect 409ms, tests 34ms, environment 1ms, prepare 374ms)
+
+
+ PASS  Waiting for file changes...
+       press h to show help, press q to quit
+ ELIFECYCLE  Test failed. See above for more details.
