@@ -216,6 +216,7 @@ export default tseslint.config(
       ],
     },
   },
+  // TODO(canopy-q8x): Refactor legacy classes to functional patterns
   {
     files: [
       'packages/sync/**/*.ts',
