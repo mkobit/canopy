@@ -100,5 +100,5 @@ export function deleteNode(nodes: Y.Map<unknown>, id: string): Result<void, Erro
     return err(new Error(`Node ${id} not found`));
   }
   nodes.delete(id);
-  return ok();
+  return ok(undefined);
 }

@@ -27,7 +27,7 @@ function validateUuid(id: string, label: string): Result<void, Error> {
   if (!UUID_REGEX.test(id)) {
     return err(new Error(`Invalid ${label}: '${id}' is not a valid UUID.`));
   }
-  return ok();
+  return ok(undefined);
 }
 
 /**

@@ -40,7 +40,7 @@ export class InMemoryProvider implements SyncProvider {
     if (origin !== this && this.connected) {
       this.broadcastDocUpdate(update);
     }
-    return;
+    return undefined;
   };
 
   private readonly handleAwarenessUpdate = (
@@ -60,7 +60,7 @@ export class InMemoryProvider implements SyncProvider {
       const update = AwarenessProtocol.encodeAwarenessUpdate(this.awareness, changedClients);
       this.broadcastAwarenessUpdate(update);
     }
-    return;
+    return undefined;
   };
 
   broadcastDocUpdate(update: Uint8Array) {
@@ -72,7 +72,7 @@ export class InMemoryProvider implements SyncProvider {
         }
       }
     }
-    return;
+    return undefined;
   }
 
   broadcastAwarenessUpdate(update: Uint8Array) {
@@ -84,7 +84,7 @@ export class InMemoryProvider implements SyncProvider {
         }
       }
     }
-    return;
+    return undefined;
   }
 
   connect(): Result<void, Error> {
@@ -137,7 +137,7 @@ export class InMemoryProvider implements SyncProvider {
       }
 
       this.emit('status', { status: 'connected' });
-      return ok();
+      return ok(undefined);
     } catch (error) {
       return err(error instanceof Error ? error : new Error(String(error)));
     }
@@ -155,7 +155,7 @@ export class InMemoryProvider implements SyncProvider {
       }
       this.connected = false;
       this.emit('status', { status: 'disconnected' });
-      return ok();
+      return ok(undefined);
     } catch (error) {
       return err(error instanceof Error ? error : new Error(String(error)));
     }
@@ -169,7 +169,7 @@ export class InMemoryProvider implements SyncProvider {
       this.handlers.set(event, []);
     }
     this.handlers.get(event)?.push(handler);
-    return;
+    return undefined;
   }
 
   off(
@@ -183,7 +183,7 @@ export class InMemoryProvider implements SyncProvider {
         handlers.filter((h) => h !== handler),
       );
     }
-    return;
+    return undefined;
   }
 
   emit(event: string, data: unknown) {
@@ -193,6 +193,6 @@ export class InMemoryProvider implements SyncProvider {
         h(data);
       }
     }
-    return;
+    return undefined;
   }
 }
