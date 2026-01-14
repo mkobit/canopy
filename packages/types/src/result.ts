@@ -33,8 +33,12 @@ export function fromThrowable<T>(
   // eslint-disable-next-line functional/no-try-statements
   try {
     return ok(fn());
-  } catch (e) {
-    const error = errorHandler ? errorHandler(e) : e instanceof Error ? e : new Error(String(e));
+  } catch (error_) {
+    const error = errorHandler
+      ? errorHandler(error_)
+      : error_ instanceof Error
+        ? error_
+        : new Error(String(error_));
     return err(error);
   }
 }
@@ -43,7 +47,7 @@ export async function fromAsyncThrowable<T>(fn: () => Promise<T>): Promise<Resul
   // eslint-disable-next-line functional/no-try-statements
   try {
     return ok(await fn());
-  } catch (e) {
-    return err(e instanceof Error ? e : new Error(String(e)));
+  } catch (error) {
+    return err(error instanceof Error ? error : new Error(String(error)));
   }
 }

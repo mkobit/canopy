@@ -27,22 +27,25 @@ export class QueryEngine {
         if (acc.error) return acc; // Propagate error
 
         switch (step.kind) {
-          case 'node-scan':
+          case 'node-scan': {
             return {
               items: this.scanNodes(step.type),
               isNodeContext: true,
             };
-          case 'edge-scan':
+          }
+          case 'edge-scan': {
             return {
               items: this.scanEdges(step.type),
               isNodeContext: false,
             };
-          case 'filter':
+          }
+          case 'filter': {
             return {
               ...acc,
               items: this.applyFilter(acc.items, step.predicate),
             };
-          case 'traversal':
+          }
+          case 'traversal': {
             if (!acc.isNodeContext) {
               return { ...acc, error: new Error('Traversal can only be performed on nodes.') };
             }
@@ -50,18 +53,22 @@ export class QueryEngine {
               items: this.traverse(acc.items as readonly Node[], step.edgeType, step.direction),
               isNodeContext: true, // Traversal returns nodes
             };
-          case 'sort':
+          }
+          case 'sort': {
             return {
               ...acc,
               items: this.applySort(acc.items, step.sort),
             };
-          case 'limit':
+          }
+          case 'limit': {
             return {
               ...acc,
               items: acc.items.slice(0, step.limit),
             };
-          default:
+          }
+          default: {
             return acc;
+          }
         }
       },
       initial,
@@ -71,21 +78,19 @@ export class QueryEngine {
       return err(result.error);
     }
 
-    if (result.isNodeContext) {
-      return ok({ nodes: result.items as readonly Node[], edges: [] });
-    } else {
-      return ok({ nodes: [], edges: result.items as readonly Edge[] });
-    }
+    return result.isNodeContext
+      ? ok({ nodes: result.items as readonly Node[], edges: [] })
+      : ok({ nodes: [], edges: result.items as readonly Edge[] });
   }
 
   private scanNodes(type?: string): readonly Node[] {
-    const nodes = Array.from(this.graph.nodes.values());
+    const nodes = [...this.graph.nodes.values()];
     if (!type) return nodes;
     return filter(nodes, (node) => node.type === type);
   }
 
   private scanEdges(type?: string): readonly Edge[] {
-    const edges = Array.from(this.graph.edges.values());
+    const edges = [...this.graph.edges.values()];
     if (!type) return edges;
     return filter(edges, (edge) => edge.type === type);
   }
@@ -118,29 +123,38 @@ export class QueryEngine {
       const value = predicate.value;
 
       switch (predicate.operator) {
-        case 'eq':
+        case 'eq': {
           return pVal === value;
-        case 'neq':
+        }
+        case 'neq': {
           return pVal !== value;
-        case 'gt':
+        }
+        case 'gt': {
           return this.compare(pVal, value) > 0;
-        case 'gte':
+        }
+        case 'gte': {
           return this.compare(pVal, value) >= 0;
-        case 'lt':
+        }
+        case 'lt': {
           return this.compare(pVal, value) < 0;
-        case 'lte':
+        }
+        case 'lte': {
           return this.compare(pVal, value) <= 0;
-        case 'contains':
+        }
+        case 'contains': {
           if (Array.isArray(pVal)) {
             return pVal.includes(value);
           } else if (typeof pVal === 'string') {
             return pVal.includes(value as string);
           }
           return false;
-        case 'exists':
+        }
+        case 'exists': {
           return pVal !== undefined && pVal !== null;
-        default:
+        }
+        default: {
           return false;
+        }
       }
     });
   }
@@ -153,7 +167,7 @@ export class QueryEngine {
     const nodeIds = new Set(nodes.map((n) => n.id));
 
     // Get all edges that match the criteria
-    const edges = Array.from(this.graph.edges.values());
+    const edges = [...this.graph.edges.values()];
 
     return unique(
       flatMap(edges, (edge: Edge) => {

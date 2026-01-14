@@ -57,18 +57,18 @@ export function getEdge(edges: Y.Map<unknown>, id: string): Result<Edge, Error> 
   // eslint-disable-next-line functional/no-try-statements
   try {
     return ok(storableToEdge(e));
-  } catch (e) {
-    return err(e instanceof Error ? e : new Error(String(e)));
+  } catch (error) {
+    return err(error instanceof Error ? error : new Error(String(error)));
   }
 }
 
 export function getAllEdges(edges: Y.Map<unknown>): Result<IterableIterator<Edge>, Error> {
   // eslint-disable-next-line functional/no-try-statements
   try {
-    const iterator = map(Array.from(edges.values()), storableToEdge)[Symbol.iterator]();
+    const iterator = map([...edges.values()], storableToEdge)[Symbol.iterator]();
     return ok(iterator);
-  } catch (e) {
-    return err(e instanceof Error ? e : new Error(String(e)));
+  } catch (error) {
+    return err(error instanceof Error ? error : new Error(String(error)));
   }
 }
 
@@ -117,5 +117,5 @@ export function deleteEdge(edges: Y.Map<unknown>, id: string): Result<void, Erro
     return err(new Error(`Edge ${id} not found`));
   }
   edges.delete(id);
-  return ok(undefined);
+  return ok();
 }

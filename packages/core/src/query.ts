@@ -19,19 +19,19 @@ export function getEdge(graph: Graph, id: EdgeId): Edge | undefined {
  * Retrieves all nodes of a given type.
  */
 export function getNodesByType(graph: Graph, type: TypeId): readonly Node[] {
-  return filter(Array.from(graph.nodes.values()), (node) => node.type === type);
+  return filter([...graph.nodes.values()], (node) => node.type === type);
 }
 
 /**
  * Retrieves all edges outgoing from a node.
  */
 export function getEdgesFrom(graph: Graph, nodeId: NodeId): readonly Edge[] {
-  return filter(Array.from(graph.edges.values()), (edge) => edge.source === nodeId);
+  return filter([...graph.edges.values()], (edge) => edge.source === nodeId);
 }
 
 /**
  * Retrieves all edges incoming to a node.
  */
 export function getEdgesTo(graph: Graph, nodeId: NodeId): readonly Edge[] {
-  return filter(Array.from(graph.edges.values()), (edge) => edge.target === nodeId);
+  return filter([...graph.edges.values()], (edge) => edge.target === nodeId);
 }

@@ -107,7 +107,7 @@ export function updateEdge(
   }
 
   const newEdges = new Map(
-    Array.from(graph.edges).map(([id, edge]) => {
+    [...graph.edges].map(([id, edge]) => {
       if (id === edgeId) {
         return [
           id,

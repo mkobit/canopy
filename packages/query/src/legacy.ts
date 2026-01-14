@@ -10,7 +10,7 @@ export class GraphQuery {
   }
 
   findNodes(type: string, properties?: Record<string, PropertyValue>): readonly Node[] {
-    return filter(Array.from(this.graph.nodes.values()), (node) => {
+    return filter([...this.graph.nodes.values()], (node) => {
       if (node.type !== type) return false;
 
       if (!properties) return true;

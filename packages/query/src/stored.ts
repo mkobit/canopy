@@ -115,9 +115,7 @@ export function getQueryDefinition(graph: Graph, nodeId: NodeId): Result<Query, 
 }
 
 export function listQueryDefinitions(graph: Graph): readonly Node[] {
-  return Array.from(graph.nodes.values()).filter(
-    (node) => node.type === SYSTEM_IDS.QUERY_DEFINITION,
-  );
+  return [...graph.nodes.values()].filter((node) => node.type === SYSTEM_IDS.QUERY_DEFINITION);
 }
 
 // Helper to substitute parameters in the query structure
@@ -129,7 +127,7 @@ function substituteParams(obj: any, params: Record<string, unknown>): any {
   } else if (isPlainObject(obj)) {
     return mapValues(obj, (value) => {
       if (isString(value) && value.startsWith('$')) {
-        const paramName = value.substring(1);
+        const paramName = value.slice(1);
         if (paramName in params) {
           return params[paramName];
         }

@@ -11,11 +11,11 @@ export const SearchPage = () => {
 
   if (!graph) return <div>Loading...</div>;
 
-  const results = filter(Array.from(graph.nodes.values()), (node: Node) => {
+  const results = filter([...graph.nodes.values()], (node: Node) => {
     if (!query) return false;
     const q = query.toLowerCase();
 
-    const properties = Array.from(node.properties.values());
+    const properties = [...node.properties.values()];
     return properties.some((val: PropertyValue) => {
       if (val.kind === 'text') {
         return val.value.toLowerCase().includes(q);

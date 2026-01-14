@@ -21,13 +21,13 @@ import {
 import { Temporal } from 'temporal-polyfill';
 
 // UUID regex (generic)
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID_REGEX = /^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i;
 
 function validateUuid(id: string, label: string): Result<void, Error> {
   if (!UUID_REGEX.test(id)) {
     return err(new Error(`Invalid ${label}: '${id}' is not a valid UUID.`));
   }
-  return ok(undefined);
+  return ok();
 }
 
 /**
@@ -78,7 +78,7 @@ export function createTypeId(id: string): Result<TypeId, Error> {
     return err(new Error(`Invalid TypeId: must be a non-empty string.`));
   }
   // Allow alphanumeric, dashes, underscores, dots, colons.
-  if (!/^[a-zA-Z0-9_\-.:]+$/.test(id)) {
+  if (!/^[\w.:-]+$/.test(id)) {
     return err(new Error(`Invalid TypeId: '${id}' contains invalid characters.`));
   }
   return ok(asTypeId(id));

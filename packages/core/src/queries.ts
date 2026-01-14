@@ -8,14 +8,14 @@ import { findNode } from './utils';
  * Returns all nodes that define node types.
  */
 export function getNodeTypes(graph: Readonly<Graph>): readonly Node[] {
-  return filter(Array.from(graph.nodes.values()), (node) => node.type === SYSTEM_IDS.NODE_TYPE);
+  return filter([...graph.nodes.values()], (node) => node.type === SYSTEM_IDS.NODE_TYPE);
 }
 
 /**
  * Returns all nodes that define edge types.
  */
 export function getEdgeTypes(graph: Readonly<Graph>): readonly Node[] {
-  return filter(Array.from(graph.nodes.values()), (node) => node.type === SYSTEM_IDS.EDGE_TYPE);
+  return filter([...graph.nodes.values()], (node) => node.type === SYSTEM_IDS.EDGE_TYPE);
 }
 
 /**

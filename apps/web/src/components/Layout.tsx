@@ -80,8 +80,8 @@ export const Layout = () => {
         console.error('Failed to create node', result.error);
         alert('Failed to create node: ' + result.error.message);
       }
-    } catch (e) {
-      console.error('Failed to create node', e);
+    } catch (error) {
+      console.error('Failed to create node', error);
       alert('Failed to create node.');
     }
     return undefined;

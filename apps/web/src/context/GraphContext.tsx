@@ -41,9 +41,9 @@ const GraphContext = createContext<GraphContextType>({
   syncEngine: null,
   isLoading: false,
   error: null,
-  loadGraph: async () => ok(undefined),
-  closeGraph: () => ok(undefined),
-  saveGraph: async () => ok(undefined),
+  loadGraph: async () => ok(),
+  closeGraph: () => ok(),
+  saveGraph: async () => ok(),
   createNode: async () => err(new Error('Not initialized')),
 });
 
@@ -109,10 +109,10 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
 
   const updateGraphFromStore = (engine: SyncEngine, graphId: GraphId) => {
     const nodes = new Map<NodeId, Node>(
-      Array.from(engine.store.getAllNodes()).map((node) => [node.id, node]),
+      [...engine.store.getAllNodes()].map((node) => [node.id, node]),
     );
     const edges = new Map<EdgeId, Edge>(
-      Array.from(engine.store.getAllEdges()).map((edge) => [edge.id, edge]),
+      [...engine.store.getAllEdges()].map((edge) => [edge.id, edge]),
     );
 
     const now = asInstant(Temporal.Now.instant().toString());
@@ -160,7 +160,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
     if (!syncEngineRef.current || !currentGraphId) return err(new Error('No graph loaded'));
     if (!storage) return err(new Error('Storage not available'));
 
-    return ok(undefined);
+    return ok();
   }, [storage, currentGraphId, graph]);
 
   // Schema for validating inputs to createNode

@@ -42,12 +42,12 @@ export const NodeView: React.FC<NodeViewProps> = ({
           {node.type}
         </span>
         <span className="text-gray-300 text-[10px] font-mono" title={node.id}>
-          {node.id.substring(0, 6)}
+          {node.id.slice(0, 6)}
         </span>
       </div>
 
       <div className="space-y-2">
-        {Array.from(node.properties.entries()).map(([key, value]) => (
+        {[...node.properties.entries()].map(([key, value]) => (
           <div key={key} className="text-sm">
             <div className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-0.5">
               {key}

@@ -21,19 +21,19 @@ describe('Zod Schemas', () => {
   });
 
   it('should validate PropertyValue (Text)', () => {
-    const val = { kind: 'text', value: 'hello' };
-    expect(PropertyValueSchema.parse(val)).toEqual(val);
+    const value = { kind: 'text', value: 'hello' };
+    expect(PropertyValueSchema.parse(value)).toEqual(value);
   });
 
   it('should validate PropertyValue (List)', () => {
-    const val = {
+    const value = {
       kind: 'list',
       items: [
         { kind: 'text', value: 'a' },
         { kind: 'text', value: 'b' },
       ],
     };
-    expect(PropertyValueSchema.parse(val)).toEqual(val);
+    expect(PropertyValueSchema.parse(value)).toEqual(value);
   });
 
   it('should validate Node', () => {

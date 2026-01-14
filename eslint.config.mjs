@@ -7,8 +7,9 @@ import globals from 'globals';
 import functional from 'eslint-plugin-functional';
 import importPlugin from 'eslint-plugin-import';
 import unicorn from 'eslint-plugin-unicorn';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
+import stylistic from '@stylistic/eslint-plugin';
+import { fileURLToPath } from 'node:url';
+import { dirname } from 'node:path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -23,9 +24,15 @@ export default tseslint.config(
       'apps/*/dist/**/*',
     ],
   },
+  // Base configurations
   eslint.configs.recommended,
   ...tseslint.configs.strict,
   ...tseslint.configs.stylistic,
+  unicorn.configs['flat/recommended'],
+  stylistic.configs.customize({
+    flat: true,
+  }),
+  // Prettier config must come after other configs to disable conflicting rules
   prettier,
   {
     plugins: {
@@ -35,7 +42,8 @@ export default tseslint.config(
       'prettier/prettier': 'error',
     },
   },
-  // Functional Plugin Configuration
+
+  // Functional Plugin Presets
   {
     ...functional.configs.externalTypeScriptRecommended,
     files: ['**/*.ts', '**/*.tsx'],
@@ -81,6 +89,8 @@ export default tseslint.config(
       'apps/web/src/test/setup.ts',
     ],
   },
+
+  // General Setup & Main Overrides
   {
     files: ['**/*.ts', '**/*.tsx'],
     languageOptions: {
@@ -94,7 +104,6 @@ export default tseslint.config(
     plugins: {
       functional,
       import: importPlugin,
-      unicorn,
     },
     // We only apply these rules to TS files that are part of the project
     files: ['**/*.ts', '**/*.tsx'],
@@ -189,9 +198,6 @@ export default tseslint.config(
             '^Edge',
             '.*',
           ],
-          // If "Unknown" types are encountered, assume they are immutable if they match these patterns or if they are just interfaces that we control.
-          // But for now, let's just make sure the rule doesn't fail on valid Readonly types.
-          // ignoreAccessorPattern: ['**.current', '**.value', '**.valid', '**.errors']
         },
       ],
 
@@ -216,6 +222,53 @@ export default tseslint.config(
       ],
     },
   },
+
+  // === Specific Overrides (Must come last to win) ===
+
+  // Unicorn Overrides (Global)
+  {
+    rules: {
+      'unicorn/filename-case': 'off',
+      'unicorn/prevent-abbreviations': 'off',
+      'unicorn/no-null': 'off',
+      'unicorn/prefer-top-level-await': 'off',
+      'unicorn/no-array-callback-reference': 'off', // Conflicts with functional/prefer-tacit
+      'unicorn/import-style': 'off',
+      'unicorn/no-useless-undefined': 'off', // Conflicts with functional/no-return-void
+    },
+  },
+
+  // Specific file overrides
+  {
+    files: ['tools/verify-versions.ts'],
+    rules: {
+      'unicorn/no-process-exit': 'off',
+    },
+  },
+  {
+    files: ['vitest.workspace.ts', 'packages/*/vitest.config.ts', 'eslint.config.mjs'],
+    rules: {
+      'unicorn/prefer-module': 'off', // Allow CommonJS-ish patterns or __dirname in config files if needed, though usually they are modules.
+    },
+  },
+  // Override for Zod schemas using .map() which confuses Unicorn
+  {
+    files: ['packages/schema/src/schemas.ts'],
+    rules: {
+      'unicorn/no-array-callback-reference': 'off',
+      'unicorn/no-array-method-this-argument': 'off',
+    },
+  },
+  // Legacy/Imperative Packages (Sync, Storage)
+  {
+    files: ['packages/sync/**/*.ts', 'packages/storage/**/*.ts'],
+    rules: {
+      'functional/no-return-void': 'off',
+      'functional/no-loop-statements': 'off',
+    },
+  },
+
+  // Existing Legacy Overrides
   // TODO(canopy-q8x): Refactor legacy classes to functional patterns
   {
     files: [
