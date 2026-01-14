@@ -137,7 +137,7 @@ export function getViewDefinition(graph: Graph, nodeId: NodeId): Result<ViewDefi
       const parsed = fromThrowable(() => JSON.parse(sortProp.value) as readonly Sort[]);
       if (parsed.ok) return parsed.value;
     }
-    return undefined;
+    return;
   })();
 
   const displayPropertiesList =
@@ -161,9 +161,7 @@ export function getViewDefinition(graph: Graph, nodeId: NodeId): Result<ViewDefi
 }
 
 export function listViewDefinitions(graph: Graph): readonly Node[] {
-  return Array.from(graph.nodes.values()).filter(
-    (node) => node.type === SYSTEM_IDS.VIEW_DEFINITION,
-  );
+  return [...graph.nodes.values()].filter((node) => node.type === SYSTEM_IDS.VIEW_DEFINITION);
 }
 
 export function resolveView(graph: Graph, viewNodeId: NodeId): Result<ResolvedView, Error> {

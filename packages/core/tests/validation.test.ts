@@ -16,21 +16,21 @@ import {
 } from '@canopy/types';
 
 // Test helpers to replace missing factories
-function createNode(props: Record<string, unknown>) {
+function createNode(properties: Record<string, unknown>) {
   return {
     id: createNodeId(),
     type: asTypeId('test'),
     properties: new Map<string, PropertyValue>(),
     metadata: { created: createInstant(), modified: createInstant() },
-    ...props,
+    ...properties,
     properties:
-      props.properties && !(props.properties instanceof Map)
-        ? new Map(Object.entries(props.properties as Record<string, PropertyValue>))
-        : props.properties || new Map(),
+      properties.properties && !(properties.properties instanceof Map)
+        ? new Map(Object.entries(properties.properties as Record<string, PropertyValue>))
+        : properties.properties || new Map(),
   };
 }
 
-function createEdge(props: Record<string, unknown>) {
+function createEdge(properties: Record<string, unknown>) {
   return {
     id: createEdgeId(),
     type: asTypeId('test'),
@@ -38,65 +38,65 @@ function createEdge(props: Record<string, unknown>) {
     target: createNodeId(),
     properties: new Map<string, PropertyValue>(),
     metadata: { created: createInstant(), modified: createInstant() },
-    ...props,
+    ...properties,
     properties:
-      props.properties && !(props.properties instanceof Map)
-        ? new Map(Object.entries(props.properties as Record<string, PropertyValue>))
-        : props.properties || new Map(),
+      properties.properties && !(properties.properties instanceof Map)
+        ? new Map(Object.entries(properties.properties as Record<string, PropertyValue>))
+        : properties.properties || new Map(),
   };
 }
 
+// Setup helper to create a graph with a type definition
+function createGraphWithTypes() {
+  let g = unwrap(createGraph(createGraphId(), 'Test Graph'));
+
+  // Define a "Person" node type
+  const personProperties: readonly PropertyDefinition[] = [
+    { name: 'name', valueKind: 'text', required: true, description: 'Full Name' },
+    { name: 'age', valueKind: 'number', required: false, description: 'Age' },
+  ];
+
+  const personTypeNode = createNode({
+    id: asNodeId('type-person'),
+    type: SYSTEM_IDS.NODE_TYPE,
+    properties: {
+      name: { kind: 'text', value: 'Person' },
+      properties: { kind: 'text', value: JSON.stringify(personProperties) },
+    },
+  });
+
+  g = unwrap(addNode(g, personTypeNode));
+
+  // Define a "Task" node type
+  const taskTypeNode = createNode({
+    id: asNodeId('type-task'),
+    type: SYSTEM_IDS.NODE_TYPE,
+    properties: {
+      name: { kind: 'text', value: 'Task' },
+    },
+  });
+  g = unwrap(addNode(g, taskTypeNode));
+
+  // Define "AssignedTo" edge type
+  const assignedToProperties: readonly PropertyDefinition[] = [
+    { name: 'role', valueKind: 'text', required: true, description: 'Role' },
+  ];
+  const assignedToTypeNode = createNode({
+    id: asNodeId('edge-assigned-to'),
+    type: SYSTEM_IDS.EDGE_TYPE,
+    properties: {
+      name: { kind: 'text', value: 'Assigned To' },
+      properties: { kind: 'text', value: JSON.stringify(assignedToProperties) },
+      sourceTypes: { kind: 'list', items: [{ kind: 'text', value: 'type-task' }] },
+      targetTypes: { kind: 'list', items: [{ kind: 'text', value: 'type-person' }] },
+    },
+  });
+  g = unwrap(addNode(g, assignedToTypeNode));
+
+  return g;
+}
+
 describe('validation', () => {
-  // Setup helper to create a graph with a type definition
-  function createGraphWithTypes() {
-    let g = unwrap(createGraph(createGraphId(), 'Test Graph'));
-
-    // Define a "Person" node type
-    const personProps: readonly PropertyDefinition[] = [
-      { name: 'name', valueKind: 'text', required: true, description: 'Full Name' },
-      { name: 'age', valueKind: 'number', required: false, description: 'Age' },
-    ];
-
-    const personTypeNode = createNode({
-      id: asNodeId('type-person'),
-      type: SYSTEM_IDS.NODE_TYPE,
-      properties: {
-        name: { kind: 'text', value: 'Person' },
-        properties: { kind: 'text', value: JSON.stringify(personProps) },
-      },
-    });
-
-    g = unwrap(addNode(g, personTypeNode));
-
-    // Define a "Task" node type
-    const taskTypeNode = createNode({
-      id: asNodeId('type-task'),
-      type: SYSTEM_IDS.NODE_TYPE,
-      properties: {
-        name: { kind: 'text', value: 'Task' },
-      },
-    });
-    g = unwrap(addNode(g, taskTypeNode));
-
-    // Define "AssignedTo" edge type
-    const assignedToProps: readonly PropertyDefinition[] = [
-      { name: 'role', valueKind: 'text', required: true, description: 'Role' },
-    ];
-    const assignedToTypeNode = createNode({
-      id: asNodeId('edge-assigned-to'),
-      type: SYSTEM_IDS.EDGE_TYPE,
-      properties: {
-        name: { kind: 'text', value: 'Assigned To' },
-        properties: { kind: 'text', value: JSON.stringify(assignedToProps) },
-        sourceTypes: { kind: 'list', items: [{ kind: 'text', value: 'type-task' }] },
-        targetTypes: { kind: 'list', items: [{ kind: 'text', value: 'type-person' }] },
-      },
-    });
-    g = unwrap(addNode(g, assignedToTypeNode));
-
-    return g;
-  }
-
   it('validates a valid node', () => {
     const g = createGraphWithTypes();
     const node = createNode({

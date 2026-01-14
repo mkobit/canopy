@@ -4,10 +4,10 @@ import { createNodeId, asTypeId, PropertyValue, unwrap } from '@canopy/types';
 import * as Y from 'yjs';
 
 // Helpers
-function getPropertyValue(val: PropertyValue | undefined): unknown {
-  if (!val) return undefined;
-  if (val.kind === 'text' || val.kind === 'number' || val.kind === 'boolean') {
-    return val.value;
+function getPropertyValue(value: PropertyValue | undefined): unknown {
+  if (!value) return undefined;
+  if (value.kind === 'text' || value.kind === 'number' || value.kind === 'boolean') {
+    return value.value;
   }
   return undefined;
 }

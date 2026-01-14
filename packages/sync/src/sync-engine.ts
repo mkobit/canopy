@@ -39,7 +39,7 @@ export class SyncEngine {
       const connectResult = provider.connect();
       // eslint-disable-next-line functional/no-throw-statements -- Re-throwing error to be caught by fromThrowable
       if (!connectResult.ok) throw connectResult.error;
-      return undefined;
+      return;
     });
   }
 
@@ -52,7 +52,7 @@ export class SyncEngine {
         if (!result.ok) throw result.error;
         // Return is void, so we just return undefined on success
       }
-      return undefined;
+      return;
     });
   }
 
@@ -63,21 +63,21 @@ export class SyncEngine {
   applySnapshot(snapshot: Uint8Array): Result<void, Error> {
     return fromThrowable(() => {
       Y.applyUpdate(this.doc, snapshot);
-      return undefined;
+      return;
     });
   }
 
   onDocUpdate(handler: (update: Uint8Array, origin: unknown) => unknown): Result<void, Error> {
     return fromThrowable(() => {
       this.doc.on('update', handler);
-      return undefined;
+      return;
     });
   }
 
   offDocUpdate(handler: (update: Uint8Array, origin: unknown) => unknown): Result<void, Error> {
     return fromThrowable(() => {
       this.doc.off('update', handler);
-      return undefined;
+      return;
     });
   }
 
@@ -87,7 +87,7 @@ export class SyncEngine {
   setLocalState(state: Record<string, unknown>): Result<void, Error> {
     return fromThrowable(() => {
       this.awareness.setLocalState(state);
-      return undefined;
+      return;
     });
   }
 
@@ -110,7 +110,7 @@ export class SyncEngine {
   ): Result<void, Error> {
     return fromThrowable(() => {
       this.awareness.on('change', handler);
-      return undefined;
+      return;
     });
   }
 
@@ -126,7 +126,7 @@ export class SyncEngine {
   ): Result<void, Error> {
     return fromThrowable(() => {
       this.awareness.off('change', handler);
-      return undefined;
+      return;
     });
   }
 }

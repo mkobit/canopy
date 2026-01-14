@@ -79,8 +79,9 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
   const steps: readonly ((g: Graph) => Result<Graph, Error>)[] = [
     // 1. Ensure NodeType definition exists
     (g) =>
-      !g.nodes.has(SYSTEM_IDS.NODE_TYPE_DEF)
-        ? addNode(
+      g.nodes.has(SYSTEM_IDS.NODE_TYPE_DEF)
+        ? ok(g)
+        : addNode(
             g,
             createBootstrapNode(
               SYSTEM_IDS.NODE_TYPE_DEF,
@@ -88,13 +89,13 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
               'Node Type',
               'Defines a type of node in the graph.',
             ),
-          )
-        : ok(g),
+          ),
 
     // 2. Ensure EdgeType definition exists
     (g) =>
-      !g.nodes.has(SYSTEM_IDS.EDGE_TYPE_DEF)
-        ? addNode(
+      g.nodes.has(SYSTEM_IDS.EDGE_TYPE_DEF)
+        ? ok(g)
+        : addNode(
             g,
             createBootstrapNode(
               SYSTEM_IDS.EDGE_TYPE_DEF,
@@ -102,12 +103,12 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
               'Edge Type',
               'Defines a type of edge in the graph.',
             ),
-          )
-        : ok(g),
+          ),
 
     (g) =>
-      !g.nodes.has(SYSTEM_IDS.QUERY_DEFINITION_DEF)
-        ? addNode(
+      g.nodes.has(SYSTEM_IDS.QUERY_DEFINITION_DEF)
+        ? ok(g)
+        : addNode(
             g,
             createBootstrapNode(
               SYSTEM_IDS.QUERY_DEFINITION_DEF,
@@ -151,12 +152,12 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
                 ),
               },
             ),
-          )
-        : ok(g),
+          ),
 
     (g) =>
-      !g.nodes.has(SYSTEM_IDS.VIEW_DEFINITION_DEF)
-        ? addNode(
+      g.nodes.has(SYSTEM_IDS.VIEW_DEFINITION_DEF)
+        ? ok(g)
+        : addNode(
             g,
             createBootstrapNode(
               SYSTEM_IDS.VIEW_DEFINITION_DEF,
@@ -218,12 +219,12 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
                 ),
               },
             ),
-          )
-        : ok(g),
+          ),
 
     (g) =>
-      !g.nodes.has(SYSTEM_IDS.TEMPLATE_DEF)
-        ? addNode(
+      g.nodes.has(SYSTEM_IDS.TEMPLATE_DEF)
+        ? ok(g)
+        : addNode(
             g,
             createBootstrapNode(
               SYSTEM_IDS.TEMPLATE_DEF,
@@ -255,8 +256,7 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
                 ),
               },
             ),
-          )
-        : ok(g),
+          ),
   ];
 
   // 4. Core Edge Types
@@ -352,20 +352,21 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
       reduceResult(
         coreEdgeTypes,
         (cg, def) =>
-          !cg.nodes.has(def.id)
-            ? addNode(
+          cg.nodes.has(def.id)
+            ? ok(cg)
+            : addNode(
                 cg,
                 createBootstrapNode(def.id, SYSTEM_IDS.EDGE_TYPE, def.name, def.description),
-              )
-            : ok(cg),
+              ),
         g,
       ),
     (g) =>
       reduceResult(
         systemQueries,
         (cg, def) =>
-          !cg.nodes.has(def.id)
-            ? addNode(
+          cg.nodes.has(def.id)
+            ? ok(cg)
+            : addNode(
                 cg,
                 createBootstrapNode(
                   def.id,
@@ -374,8 +375,7 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
                   def.description,
                   { definition: text(JSON.stringify(def.definition)) },
                 ),
-              )
-            : ok(cg),
+              ),
         g,
       ),
     (g) =>

@@ -33,10 +33,10 @@ export class IndexedDBAdapter implements StorageAdapter {
           if (!db.objectStoreNames.contains('graphs')) {
             db.createObjectStore('graphs', { keyPath: 'id' });
           }
-          return undefined;
+          return;
         },
       });
-      return undefined;
+      return;
     });
   }
 
@@ -46,7 +46,7 @@ export class IndexedDBAdapter implements StorageAdapter {
         this.db.close();
         this.db = null;
       }
-      return undefined;
+      return;
     });
   }
 
@@ -63,7 +63,7 @@ export class IndexedDBAdapter implements StorageAdapter {
         snapshot,
         metadata,
       });
-      return undefined;
+      return;
     });
   }
 
@@ -81,7 +81,7 @@ export class IndexedDBAdapter implements StorageAdapter {
     return fromAsyncThrowable(async () => {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       await this.db!.delete('graphs', graphId);
-      return undefined;
+      return;
     });
   }
 

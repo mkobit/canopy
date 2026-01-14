@@ -109,10 +109,10 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
 
   const updateGraphFromStore = (engine: SyncEngine, graphId: GraphId) => {
     const nodes = new Map<NodeId, Node>(
-      Array.from(engine.store.getAllNodes()).map((node) => [node.id, node]),
+      [...engine.store.getAllNodes()].map((node) => [node.id, node]),
     );
     const edges = new Map<EdgeId, Edge>(
-      Array.from(engine.store.getAllEdges()).map((edge) => [edge.id, edge]),
+      [...engine.store.getAllEdges()].map((edge) => [edge.id, edge]),
     );
 
     const now = asInstant(Temporal.Now.instant().toString());

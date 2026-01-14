@@ -1,5 +1,5 @@
 import { defineWorkspace } from 'vitest/config';
-import path from 'path';
+import path from 'node:path';
 
 export const alias = {
   '@canopy/core': path.resolve(__dirname, 'packages/core/src/index.ts'),

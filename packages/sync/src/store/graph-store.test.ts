@@ -4,12 +4,12 @@ import { GraphStore } from './graph-store';
 import { asTypeId, asNodeId, unwrap, isErr } from '@canopy/types';
 
 describe('GraphStore', () => {
-  let doc: Y.Doc;
+  let document: Y.Doc;
   let store: GraphStore;
 
   beforeEach(() => {
-    doc = new Y.Doc();
-    store = new GraphStore(doc);
+    document = new Y.Doc();
+    store = new GraphStore(document);
   });
 
   describe('Nodes', () => {
@@ -34,7 +34,7 @@ describe('GraphStore', () => {
       const node1 = unwrap(store.addNode({ type: asTypeId('a'), properties: new Map() }));
       const node2 = unwrap(store.addNode({ type: asTypeId('b'), properties: new Map() }));
 
-      const nodes = Array.from(store.getAllNodes());
+      const nodes = [...store.getAllNodes()];
       expect(nodes).toHaveLength(2);
       expect(nodes.find((n) => n.id === node1.id)).toBeDefined();
       expect(nodes.find((n) => n.id === node2.id)).toBeDefined();

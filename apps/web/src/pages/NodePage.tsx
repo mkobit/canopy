@@ -10,7 +10,7 @@ export const NodePage = () => {
   const { nodeId } = useParams<Readonly<{ nodeId: string }>>();
   const { graph, syncEngine, saveGraph } = useGraph();
   const navigate = useNavigate();
-  const [currentNode, setCurrentNode] = useState<Node | undefined>(undefined);
+  const [currentNode, setCurrentNode] = useState<Node | undefined>();
   const [isEditing, setIsEditing] = useState(false);
   const [editedProps, setEditedProps] = useState<ReadonlyMap<string, PropertyValue>>(new Map());
 
@@ -48,8 +48,8 @@ export const NodePage = () => {
 
       await saveGraph(); // Persist changes
       setIsEditing(false);
-    } catch (e) {
-      console.error('Failed to save node', e);
+    } catch (error) {
+      console.error('Failed to save node', error);
       alert('Failed to save changes');
     }
     return undefined;
@@ -74,8 +74,8 @@ export const NodePage = () => {
       syncEngine.store.deleteNode(currentNode.id);
       await saveGraph();
       navigate('../'); // Go up to graph view
-    } catch (e) {
-      console.error('Delete failed', e);
+    } catch (error) {
+      console.error('Delete failed', error);
     }
     return undefined;
   };
@@ -85,7 +85,7 @@ export const NodePage = () => {
     if (!graph || !currentNode) return [];
 
     return filter(
-      Array.from(graph.edges.values()),
+      [...graph.edges.values()],
       (edge) => edge.source === currentNode.id || edge.target === currentNode.id,
     );
   }, [graph, currentNode]);
@@ -153,30 +153,27 @@ export const NodePage = () => {
 
             <div className="space-y-4">
               <h3 className="font-semibold text-gray-900">Properties</h3>
-              {map(
-                Array.from(editedProps.entries()),
-                ([key, val]: readonly [string, PropertyValue]) => (
-                  <div key={key} className="space-y-1">
-                    <label className="text-sm text-gray-600">{key}</label>
-                    {/* Rudimentary property editor */}
-                    {val.kind === 'text' && (
-                      <textarea
-                        className="w-full p-2 border rounded-md"
-                        value={val.value}
-                        onChange={(e) => {
-                          handlePropertyChange(key, { ...val, value: e.target.value });
-                          return undefined;
-                        }}
-                      />
-                    )}
-                    {val.kind !== 'text' && (
-                      <div className="p-2 bg-yellow-50 text-yellow-700 text-sm border border-yellow-100 rounded">
-                        Editing for {val.kind} not implemented yet.
-                      </div>
-                    )}
-                  </div>
-                ),
-              )}
+              {map([...editedProps.entries()], ([key, val]: readonly [string, PropertyValue]) => (
+                <div key={key} className="space-y-1">
+                  <label className="text-sm text-gray-600">{key}</label>
+                  {/* Rudimentary property editor */}
+                  {val.kind === 'text' && (
+                    <textarea
+                      className="w-full p-2 border rounded-md"
+                      value={val.value}
+                      onChange={(e) => {
+                        handlePropertyChange(key, { ...val, value: e.target.value });
+                        return undefined;
+                      }}
+                    />
+                  )}
+                  {val.kind !== 'text' && (
+                    <div className="p-2 bg-yellow-50 text-yellow-700 text-sm border border-yellow-100 rounded">
+                      Editing for {val.kind} not implemented yet.
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
         ) : (

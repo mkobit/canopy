@@ -100,7 +100,7 @@ export function updateNode(
   }
 
   const newNodes = new Map(
-    Array.from(graph.nodes).map(([id, node]) => {
+    [...graph.nodes].map(([id, node]) => {
       if (id === nodeId) {
         return [
           id,

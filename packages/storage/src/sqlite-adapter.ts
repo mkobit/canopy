@@ -35,12 +35,12 @@ export class SQLiteAdapter implements StorageAdapter {
         this.db = new this.SQL.Database();
         this.initSchema();
       }
-      return undefined;
+      return;
     });
   }
 
   private initSchema() {
-    if (!this.db) return undefined; // Should not happen if called from init
+    if (!this.db) return; // Should not happen if called from init
     this.db.run(`
       CREATE TABLE IF NOT EXISTS graphs (
         id TEXT PRIMARY KEY,
@@ -50,7 +50,7 @@ export class SQLiteAdapter implements StorageAdapter {
         updated_at TEXT
       );
     `);
-    return undefined;
+    return;
   }
 
   async close(): Promise<Result<void, Error>> {
@@ -59,7 +59,7 @@ export class SQLiteAdapter implements StorageAdapter {
         this.db.close();
         this.db = null;
       }
-      return undefined;
+      return;
     });
   }
 
@@ -89,7 +89,7 @@ export class SQLiteAdapter implements StorageAdapter {
       stmt.free();
 
       await this.persist();
-      return undefined;
+      return;
     });
   }
 
@@ -119,7 +119,7 @@ export class SQLiteAdapter implements StorageAdapter {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       this.db!.run('DELETE FROM graphs WHERE id = ?', [graphId]);
       await this.persist();
-      return undefined;
+      return;
     });
   }
 

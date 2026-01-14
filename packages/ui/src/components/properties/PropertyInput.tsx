@@ -19,22 +19,60 @@ type PropertyInputProps = PropertyInputData & PropertyInputEvents;
 // Helper to update a scalar value while preserving its kind
 const updateScalar = (original: ScalarValue, newValue: string | number | boolean): ScalarValue => {
   switch (original.kind) {
-    case 'text':
+    case 'text': {
       return { ...original, value: String(newValue) };
-    case 'number':
+    }
+    case 'number': {
       return { ...original, value: Number(newValue) };
-    case 'boolean':
+    }
+    case 'boolean': {
       return { ...original, value: Boolean(newValue) };
-    case 'instant':
+    }
+    case 'instant': {
       return { ...original, value: asInstant(String(newValue)) };
-    case 'plain-date':
+    }
+    case 'plain-date': {
       return { ...original, value: asPlainDate(String(newValue)) };
-    case 'reference':
+    }
+    case 'reference': {
       return { ...original, target: asNodeId(String(newValue)) };
-    case 'external-reference':
+    }
+    case 'external-reference': {
       return original;
-    default:
+    }
+    default: {
       return original;
+    }
+  }
+};
+
+const getDefaultItem = (firstItem?: ScalarValue): ScalarValue => {
+  if (!firstItem) return { kind: 'text', value: '' };
+  switch (firstItem.kind) {
+    case 'text': {
+      return { kind: 'text', value: '' };
+    }
+    case 'number': {
+      return { kind: 'number', value: 0 };
+    }
+    case 'boolean': {
+      return { kind: 'boolean', value: false };
+    }
+    case 'instant': {
+      return { kind: 'instant', value: asInstant(Temporal.Now.instant().toString()) };
+    }
+    case 'plain-date': {
+      return {
+        kind: 'plain-date',
+        value: asPlainDate(Temporal.Now.plainDateISO().toString()),
+      };
+    }
+    case 'reference': {
+      return { kind: 'reference', target: asNodeId('') };
+    }
+    case 'external-reference': {
+      return { kind: 'external-reference', graph: asGraphId(''), target: asNodeId('') };
+    }
   }
 };
 
@@ -73,28 +111,6 @@ export const PropertyInput: React.FC<PropertyInputProps> = ({ value, onChange, c
             // However, the `value` prop has `kind: 'list'` but `items` might be empty.
             // If items is empty, we need the `kind` prop to know what to add, or default to text.
             // For now, let's default to text if empty, or copy the kind of the first item.
-            const getDefaultItem = (firstItem?: ScalarValue): ScalarValue => {
-              if (!firstItem) return { kind: 'text', value: '' };
-              switch (firstItem.kind) {
-                case 'text':
-                  return { kind: 'text', value: '' };
-                case 'number':
-                  return { kind: 'number', value: 0 };
-                case 'boolean':
-                  return { kind: 'boolean', value: false };
-                case 'instant':
-                  return { kind: 'instant', value: asInstant(Temporal.Now.instant().toString()) };
-                case 'plain-date':
-                  return {
-                    kind: 'plain-date',
-                    value: asPlainDate(Temporal.Now.plainDateISO().toString()),
-                  };
-                case 'reference':
-                  return { kind: 'reference', target: asNodeId('') };
-                case 'external-reference':
-                  return { kind: 'external-reference', graph: asGraphId(''), target: asNodeId('') };
-              }
-            };
 
             const newItem = getDefaultItem(value.items.length > 0 ? value.items[0] : undefined);
             onChange({ ...value, items: [...value.items, newItem] });
@@ -121,7 +137,7 @@ const ScalarInput: React.FC<
   const baseInputClass = cn('border rounded px-2 py-1 w-full text-sm', className);
 
   switch (value.kind) {
-    case 'text':
+    case 'text': {
       return (
         <input
           type="text"
@@ -133,7 +149,8 @@ const ScalarInput: React.FC<
           className={baseInputClass}
         />
       );
-    case 'number':
+    }
+    case 'number': {
       return (
         <input
           type="number"
@@ -145,7 +162,8 @@ const ScalarInput: React.FC<
           className={baseInputClass}
         />
       );
-    case 'boolean':
+    }
+    case 'boolean': {
       return (
         <input
           type="checkbox"
@@ -157,7 +175,8 @@ const ScalarInput: React.FC<
           className={cn('h-4 w-4', className)}
         />
       );
-    case 'instant':
+    }
+    case 'instant': {
       // Basic text input for now, ideally a datetime picker
       return (
         <input
@@ -171,7 +190,8 @@ const ScalarInput: React.FC<
           placeholder="ISO 8601 Timestamp"
         />
       );
-    case 'plain-date':
+    }
+    case 'plain-date': {
       return (
         <input
           type="date"
@@ -183,7 +203,8 @@ const ScalarInput: React.FC<
           className={baseInputClass}
         />
       );
-    case 'reference':
+    }
+    case 'reference': {
       return (
         <input
           type="text"
@@ -196,7 +217,8 @@ const ScalarInput: React.FC<
           placeholder="Node ID"
         />
       );
-    case 'external-reference':
+    }
+    case 'external-reference': {
       return (
         <div className={cn('space-y-1', className)}>
           <input
@@ -221,5 +243,6 @@ const ScalarInput: React.FC<
           />
         </div>
       );
+    }
   }
 };

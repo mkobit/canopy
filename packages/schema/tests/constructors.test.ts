@@ -16,7 +16,7 @@ describe('Constructors', () => {
 
   it('should generate new NodeId if no argument', () => {
     const nodeId = unwrap(createNodeId());
-    expect(nodeId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+    expect(nodeId).toMatch(/^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i);
   });
 
   it('should create valid TypeId', () => {

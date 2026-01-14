@@ -23,6 +23,7 @@ export class InMemoryProvider implements SyncProvider {
     string,
     Set<InMemoryProvider>
   >();
+
   readonly roomName: string;
 
   constructor(roomName: string, doc: Y.Doc, awareness: Awareness) {
@@ -55,7 +56,7 @@ export class InMemoryProvider implements SyncProvider {
     origin: unknown,
   ) => {
     if (origin !== 'remote' && this.connected) {
-      const changedClients = added.concat(updated).concat(removed);
+      const changedClients = [...added, ...updated, ...removed];
       const update = AwarenessProtocol.encodeAwarenessUpdate(this.awareness, changedClients);
       this.broadcastAwarenessUpdate(update);
     }
@@ -65,12 +66,11 @@ export class InMemoryProvider implements SyncProvider {
   broadcastDocUpdate(update: Uint8Array) {
     const network = InMemoryProvider.networks.get(this.roomName);
     if (network) {
-      network.forEach((peer) => {
+      for (const peer of network) {
         if (peer !== this && peer.connected) {
           Y.applyUpdate(peer.doc, update, this);
         }
-        return undefined;
-      });
+      }
     }
     return undefined;
   }
@@ -78,12 +78,11 @@ export class InMemoryProvider implements SyncProvider {
   broadcastAwarenessUpdate(update: Uint8Array) {
     const network = InMemoryProvider.networks.get(this.roomName);
     if (network) {
-      network.forEach((peer) => {
+      for (const peer of network) {
         if (peer !== this && peer.connected) {
           AwarenessProtocol.applyAwarenessUpdate(peer.awareness, update, 'remote');
         }
-        return undefined;
-      });
+      }
     }
     return undefined;
   }
@@ -104,7 +103,7 @@ export class InMemoryProvider implements SyncProvider {
       // Let's iterate peers and apply their state.
       const network = InMemoryProvider.networks.get(this.roomName);
       if (network) {
-        network.forEach((peer) => {
+        for (const peer of network) {
           if (peer !== this && peer.connected) {
             // Sync step 1
             const stateVector = Y.encodeStateVector(this.doc);
@@ -129,20 +128,18 @@ export class InMemoryProvider implements SyncProvider {
             // Awareness protocol usually syncs everything.
             // For now let's just push ours. The peer should push theirs back if we had a full handshake.
             // Let's cheat and push peer's state to us.
-            const peerAwarenessUpdate = AwarenessProtocol.encodeAwarenessUpdate(
-              peer.awareness,
-              Array.from(peer.awareness.getStates().keys()),
-            );
+            const peerAwarenessUpdate = AwarenessProtocol.encodeAwarenessUpdate(peer.awareness, [
+              ...peer.awareness.getStates().keys(),
+            ]);
             AwarenessProtocol.applyAwarenessUpdate(this.awareness, peerAwarenessUpdate, 'remote');
           }
-          return undefined;
-        });
+        }
       }
 
       this.emit('status', { status: 'connected' });
       return ok(undefined);
-    } catch (e) {
-      return err(e instanceof Error ? e : new Error(String(e)));
+    } catch (error) {
+      return err(error instanceof Error ? error : new Error(String(error)));
     }
   }
 
@@ -159,8 +156,8 @@ export class InMemoryProvider implements SyncProvider {
       this.connected = false;
       this.emit('status', { status: 'disconnected' });
       return ok(undefined);
-    } catch (e) {
-      return err(e instanceof Error ? e : new Error(String(e)));
+    } catch (error) {
+      return err(error instanceof Error ? error : new Error(String(error)));
     }
   }
 
@@ -190,7 +187,12 @@ export class InMemoryProvider implements SyncProvider {
   }
 
   emit(event: string, data: unknown) {
-    this.handlers.get(event)?.forEach((h) => h(data));
+    const handlers = this.handlers.get(event);
+    if (handlers) {
+      for (const h of handlers) {
+        h(data);
+      }
+    }
     return undefined;
   }
 }

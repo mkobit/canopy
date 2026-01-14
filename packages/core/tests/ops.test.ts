@@ -16,40 +16,40 @@ import {
 } from '@canopy/types';
 
 // Test helpers
-function createNode(props: Record<string, unknown>) {
+function createNode(properties: Record<string, unknown>) {
   return {
     id: createNodeId(),
     type: asTypeId('test'),
     properties: new Map<string, PropertyValue>(),
     metadata: { created: createInstant(), modified: createInstant() },
-    ...props,
+    ...properties,
     properties:
-      props.properties && !(props.properties instanceof Map)
-        ? new Map(Object.entries(props.properties as Record<string, PropertyValue>))
-        : props.properties || new Map(),
+      properties.properties && !(properties.properties instanceof Map)
+        ? new Map(Object.entries(properties.properties as Record<string, PropertyValue>))
+        : properties.properties || new Map(),
   };
 }
 
+function createGraphWithTypes() {
+  // Mock ID and Name as they are required by new createGraph signature
+  let g = unwrap(createGraph(createGraphId(), 'Test Graph'));
+
+  const personProperties: readonly PropertyDefinition[] = [
+    { name: 'age', valueKind: 'number', required: true, description: 'Age' },
+  ];
+  const personTypeNode = createNode({
+    id: asNodeId('type-person'),
+    type: SYSTEM_IDS.NODE_TYPE,
+    properties: {
+      name: { kind: 'text', value: 'Person' },
+      properties: { kind: 'text', value: JSON.stringify(personProperties) },
+    },
+  });
+  g = unwrap(addNode(g, personTypeNode));
+  return g;
+}
+
 describe('ops with validation', () => {
-  function createGraphWithTypes() {
-    // Mock ID and Name as they are required by new createGraph signature
-    let g = unwrap(createGraph(createGraphId(), 'Test Graph'));
-
-    const personProps: readonly PropertyDefinition[] = [
-      { name: 'age', valueKind: 'number', required: true, description: 'Age' },
-    ];
-    const personTypeNode = createNode({
-      id: asNodeId('type-person'),
-      type: SYSTEM_IDS.NODE_TYPE,
-      properties: {
-        name: { kind: 'text', value: 'Person' },
-        properties: { kind: 'text', value: JSON.stringify(personProps) },
-      },
-    });
-    g = unwrap(addNode(g, personTypeNode));
-    return g;
-  }
-
   it('addNode returns Error if validation fails and validation is enabled', () => {
     const g = createGraphWithTypes();
     const node = createNode({

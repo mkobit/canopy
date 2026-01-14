@@ -24,10 +24,10 @@ function createMockGraph(): Graph {
   const nodes = new Map<NodeId, Node>();
   const edges = new Map<EdgeId, Edge>();
 
-  const createNode = (id: string, type: string, props: Record<string, unknown> = {}) => {
+  const createNode = (id: string, type: string, properties_: Record<string, unknown> = {}) => {
     // Functional property creation
     const properties = new Map<string, PropertyValue>(
-      Object.entries(props).map(([k, v]) => {
+      Object.entries(properties_).map(([k, v]) => {
         if (typeof v === 'string') return [k, { kind: 'text', value: v }];
         if (typeof v === 'number') return [k, { kind: 'number', value: v }];
         if (typeof v === 'boolean') return [k, { kind: 'boolean', value: v }];
@@ -48,10 +48,10 @@ function createMockGraph(): Graph {
     type: string,
     source: string,
     target: string,
-    props: Record<string, unknown> = {},
+    properties_: Record<string, unknown> = {},
   ) => {
     const properties = new Map<string, PropertyValue>(
-      Object.entries(props).map(([k, v]) => {
+      Object.entries(properties_).map(([k, v]) => {
         if (typeof v === 'string') return [k, { kind: 'text', value: v }];
         if (typeof v === 'number') return [k, { kind: 'number', value: v }];
         return [k, { kind: 'text', value: String(v) }];

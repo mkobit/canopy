@@ -31,11 +31,13 @@ export const PropertyDisplay: React.FC<PropertyDisplayProps> = ({ value, classNa
 
 const ScalarDisplay: React.FC<Readonly<{ value: ScalarValue }>> = ({ value }) => {
   switch (value.kind) {
-    case 'text':
+    case 'text': {
       return <span className="text-gray-900">{value.value}</span>;
-    case 'number':
+    }
+    case 'number': {
       return <span className="font-mono text-blue-600">{value.value}</span>;
-    case 'boolean':
+    }
+    case 'boolean': {
       return (
         <span
           className={cn(
@@ -46,27 +48,33 @@ const ScalarDisplay: React.FC<Readonly<{ value: ScalarValue }>> = ({ value }) =>
           {value.value ? 'TRUE' : 'FALSE'}
         </span>
       );
-    case 'instant':
+    }
+    case 'instant': {
       return (
         <span className="text-sm text-gray-500" title={value.value}>
           {Temporal.Instant.from(value.value).toLocaleString()}
         </span>
       );
-    case 'plain-date':
+    }
+    case 'plain-date': {
       return <span className="text-sm text-gray-500">{value.value}</span>;
-    case 'reference':
+    }
+    case 'reference': {
       return (
         <span className="text-blue-500 hover:underline cursor-pointer">
-          @{value.target.substring(0, 8)}...
+          @{value.target.slice(0, 8)}...
         </span>
       );
-    case 'external-reference':
+    }
+    case 'external-reference': {
       return (
         <span className="text-indigo-500 hover:underline cursor-pointer">
-          @{value.graph.substring(0, 8)}:{value.target.substring(0, 8)}...
+          @{value.graph.slice(0, 8)}:{value.target.slice(0, 8)}...
         </span>
       );
-    default:
+    }
+    default: {
       return <span className="text-gray-400 italic">Unknown value</span>;
+    }
   }
 };

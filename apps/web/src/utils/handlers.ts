@@ -6,6 +6,6 @@ export const toHandler = <A extends unknown[]>(
   return (...args: A) => {
     // eslint-disable-next-line functional/functional-parameters
     fn(...args);
-    return undefined;
+    return;
   };
 };

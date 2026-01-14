@@ -49,18 +49,18 @@ export function getNode(nodes: Y.Map<unknown>, id: string): Result<Node, Error> 
   // eslint-disable-next-line functional/no-try-statements
   try {
     return ok(storableToNode(n));
-  } catch (e) {
-    return err(e instanceof Error ? e : new Error(String(e)));
+  } catch (error) {
+    return err(error instanceof Error ? error : new Error(String(error)));
   }
 }
 
 export function getAllNodes(nodes: Y.Map<unknown>): Result<IterableIterator<Node>, Error> {
   // eslint-disable-next-line functional/no-try-statements
   try {
-    const iterator = map(Array.from(nodes.values()), storableToNode)[Symbol.iterator]();
+    const iterator = map([...nodes.values()], storableToNode)[Symbol.iterator]();
     return ok(iterator);
-  } catch (e) {
-    return err(e instanceof Error ? e : new Error(String(e)));
+  } catch (error) {
+    return err(error instanceof Error ? error : new Error(String(error)));
   }
 }
 
