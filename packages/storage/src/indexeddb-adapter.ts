@@ -26,7 +26,7 @@ export class IndexedDBAdapter implements StorageAdapter {
   }
 
   async init(): Promise<Result<void, Error>> {
-    if (this.db) return ok();
+    if (this.db) return ok(undefined);
     return fromAsyncThrowable(async () => {
       this.db = await openDB<CanopyDB>(this.dbName, 1, {
         upgrade(db) {

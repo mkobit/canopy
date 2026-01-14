@@ -41,9 +41,9 @@ const GraphContext = createContext<GraphContextType>({
   syncEngine: null,
   isLoading: false,
   error: null,
-  loadGraph: async () => ok(),
-  closeGraph: () => ok(),
-  saveGraph: async () => ok(),
+  loadGraph: async () => ok(undefined),
+  closeGraph: () => ok(undefined),
+  saveGraph: async () => ok(undefined),
   createNode: async () => err(new Error('Not initialized')),
 });
 
@@ -160,7 +160,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
     if (!syncEngineRef.current || !currentGraphId) return err(new Error('No graph loaded'));
     if (!storage) return err(new Error('Storage not available'));
 
-    return ok();
+    return ok(undefined);
   }, [storage, currentGraphId, graph]);
 
   // Schema for validating inputs to createNode

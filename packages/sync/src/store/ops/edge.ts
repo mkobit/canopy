@@ -117,5 +117,5 @@ export function deleteEdge(edges: Y.Map<unknown>, id: string): Result<void, Erro
     return err(new Error(`Edge ${id} not found`));
   }
   edges.delete(id);
-  return ok();
+  return ok(undefined);
 }

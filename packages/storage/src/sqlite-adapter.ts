@@ -22,7 +22,7 @@ export class SQLiteAdapter implements StorageAdapter {
   }
 
   async init(): Promise<Result<void, Error>> {
-    if (this.db) return ok();
+    if (this.db) return ok(undefined);
 
     return fromAsyncThrowable(async () => {
       this.SQL = await initSqlJs();
