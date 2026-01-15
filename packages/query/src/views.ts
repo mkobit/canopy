@@ -44,51 +44,37 @@ export function saveViewDefinition(
 ): Result<{ graph: Graph; nodeId: NodeId }, Error> {
   const nodeId = createNodeId();
 
-  // We need to unwrap or check scalars. Since these come from ViewDefinition which is typed,
-  // we can expect them to work, but strict checking requires it.
   const nameVal = scalar(view.name);
   if (!nameVal.ok) return err(nameVal.error);
 
   const layoutVal = scalar(view.layout);
   if (!layoutVal.ok) return err(layoutVal.error);
 
-  // eslint-disable-next-line functional/prefer-readonly-type
-  const baseProperties: [string, PropertyValue][] = [
+  const descriptionVal = view.description ? scalar(view.description) : ok(undefined);
+  if (!descriptionVal.ok) return err(descriptionVal.error);
+
+  const sortVal =
+    view.sort && view.sort.length > 0 ? scalar(JSON.stringify(view.sort)) : ok(undefined);
+  if (!sortVal.ok) return err(sortVal.error);
+
+  const groupByVal = view.groupBy ? scalar(view.groupBy) : ok(undefined);
+  if (!groupByVal.ok) return err(groupByVal.error);
+
+  const pageSizeVal = view.pageSize ? scalar(view.pageSize) : ok(undefined);
+  if (!pageSizeVal.ok) return err(pageSizeVal.error);
+
+  const properties = new Map([
     ['name', nameVal.value],
     ['queryRef', reference(view.queryRef)],
     ['layout', layoutVal.value],
-  ];
-
-  if (view.description) {
-    const v = scalar(view.description);
-    if (!v.ok) return err(v.error);
-    // eslint-disable-next-line functional/immutable-data
-    baseProperties.push(['description', v.value]);
-  }
-  if (view.sort && view.sort.length > 0) {
-    const v = scalar(JSON.stringify(view.sort));
-    if (!v.ok) return err(v.error);
-    // eslint-disable-next-line functional/immutable-data
-    baseProperties.push(['sort', v.value]);
-  }
-  if (view.groupBy) {
-    const v = scalar(view.groupBy);
-    if (!v.ok) return err(v.error);
-    // eslint-disable-next-line functional/immutable-data
-    baseProperties.push(['groupBy', v.value]);
-  }
-  if (view.displayProperties && view.displayProperties.length > 0) {
-    // eslint-disable-next-line functional/immutable-data
-    baseProperties.push(['displayProperties', list(view.displayProperties)]);
-  }
-  if (view.pageSize) {
-    const v = scalar(view.pageSize);
-    if (!v.ok) return err(v.error);
-    // eslint-disable-next-line functional/immutable-data
-    baseProperties.push(['pageSize', v.value]);
-  }
-
-  const properties = new Map(baseProperties);
+    ...(descriptionVal.value ? [['description', descriptionVal.value] as const] : []),
+    ...(sortVal.value ? [['sort', sortVal.value] as const] : []),
+    ...(groupByVal.value ? [['groupBy', groupByVal.value] as const] : []),
+    ...(view.displayProperties && view.displayProperties.length > 0
+      ? [['displayProperties', list(view.displayProperties)] as const]
+      : []),
+    ...(pageSizeVal.value ? [['pageSize', pageSizeVal.value] as const] : []),
+  ]);
 
   const node: Node = {
     id: nodeId,

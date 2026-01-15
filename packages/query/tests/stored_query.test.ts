@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createGraph } from '@canopy/core';
 import { addNode } from '@canopy/core';
-import { QueryEngine } from '../src/engine';
 import {
   saveQueryDefinition,
   getQueryDefinition,
@@ -92,17 +91,12 @@ describe('Stored Queries', () => {
     );
     graph = saveResult.graph;
 
-    const engine = new QueryEngine(graph);
-    const result = unwrap(
-      executeStoredQuery(engine, graph, saveResult.nodeId, { priority: 'high' }),
-    );
+    const result = unwrap(executeStoredQuery(graph, saveResult.nodeId, { priority: 'high' }));
 
     expect(result.nodes.length).toBe(1);
     expect(result.nodes[0].id).toBe(task1);
 
-    const resultLow = unwrap(
-      executeStoredQuery(engine, graph, saveResult.nodeId, { priority: 'low' }),
-    );
+    const resultLow = unwrap(executeStoredQuery(graph, saveResult.nodeId, { priority: 'low' }));
     expect(resultLow.nodes.length).toBe(1);
     expect(resultLow.nodes[0].id).toBe(task2);
   });
