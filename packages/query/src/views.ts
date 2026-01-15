@@ -50,50 +50,30 @@ export function saveViewDefinition(
   const layoutVal = scalar(view.layout);
   if (!layoutVal.ok) return err(layoutVal.error);
 
-  // Functional construction of properties
-  const descriptionProp: readonly (readonly [string, PropertyValue])[] = view.description
-    ? ((): readonly (readonly [string, PropertyValue])[] => {
-        const v = scalar(view.description!);
-        return v.ok ? [['description', v.value]] : [];
-      })()
-    : [];
+  const descriptionVal = view.description ? scalar(view.description) : ok(undefined);
+  if (!descriptionVal.ok) return err(descriptionVal.error);
 
-  const sortProp: readonly (readonly [string, PropertyValue])[] =
-    view.sort && view.sort.length > 0
-      ? ((): readonly (readonly [string, PropertyValue])[] => {
-          const v = scalar(JSON.stringify(view.sort));
-          return v.ok ? [['sort', v.value]] : [];
-        })()
-      : [];
+  const sortVal =
+    view.sort && view.sort.length > 0 ? scalar(JSON.stringify(view.sort)) : ok(undefined);
+  if (!sortVal.ok) return err(sortVal.error);
 
-  const groupByProp: readonly (readonly [string, PropertyValue])[] = view.groupBy
-    ? ((): readonly (readonly [string, PropertyValue])[] => {
-        const v = scalar(view.groupBy!);
-        return v.ok ? [['groupBy', v.value]] : [];
-      })()
-    : [];
+  const groupByVal = view.groupBy ? scalar(view.groupBy) : ok(undefined);
+  if (!groupByVal.ok) return err(groupByVal.error);
 
-  const displayPropertiesProp: readonly (readonly [string, PropertyValue])[] =
-    view.displayProperties && view.displayProperties.length > 0
-      ? [['displayProperties', list(view.displayProperties)]]
-      : [];
-
-  const pageSizeProp: readonly (readonly [string, PropertyValue])[] = view.pageSize
-    ? ((): readonly (readonly [string, PropertyValue])[] => {
-        const v = scalar(view.pageSize!);
-        return v.ok ? [['pageSize', v.value]] : [];
-      })()
-    : [];
+  const pageSizeVal = view.pageSize ? scalar(view.pageSize) : ok(undefined);
+  if (!pageSizeVal.ok) return err(pageSizeVal.error);
 
   const properties = new Map([
     ['name', nameVal.value],
     ['queryRef', reference(view.queryRef)],
     ['layout', layoutVal.value],
-    ...descriptionProp,
-    ...sortProp,
-    ...groupByProp,
-    ...displayPropertiesProp,
-    ...pageSizeProp,
+    ...(descriptionVal.value ? [['description', descriptionVal.value] as const] : []),
+    ...(sortVal.value ? [['sort', sortVal.value] as const] : []),
+    ...(groupByVal.value ? [['groupBy', groupByVal.value] as const] : []),
+    ...(view.displayProperties && view.displayProperties.length > 0
+      ? [['displayProperties', list(view.displayProperties)] as const]
+      : []),
+    ...(pageSizeVal.value ? [['pageSize', pageSizeVal.value] as const] : []),
   ]);
 
   const node: Node = {
