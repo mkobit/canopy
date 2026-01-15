@@ -10,7 +10,7 @@ import type {
 import { createNodeId, createInstant, ok, err, fromThrowable } from '@canopy/types';
 import { SYSTEM_IDS, addNode } from '@canopy/core';
 import type { Query } from './model';
-import type { QueryEngine } from './engine';
+import { executeQuery } from './engine';
 import { mapValues, isPlainObject, isString } from 'remeda';
 
 // Helper to wrap a scalar value
@@ -46,7 +46,7 @@ export function saveQueryDefinition(
   const defVal = scalar(JSON.stringify(query));
   if (!defVal.ok) return err(defVal.error);
 
-  const baseProperties: (readonly [string, PropertyValue])[] = [
+  const baseProperties: readonly (readonly [string, PropertyValue])[] = [
     ['name', nameVal.value],
     ['definition', defVal.value],
   ];
@@ -139,7 +139,6 @@ function substituteParams(obj: any, params: Record<string, unknown>): any {
 }
 
 export function executeStoredQuery(
-  engine: QueryEngine,
   graph: Graph,
   queryNodeId: NodeId,
   params: Record<string, unknown> = {},
@@ -149,5 +148,5 @@ export function executeStoredQuery(
 
   const query = queryResult.value;
   const substitutedQuery = substituteParams(query, params) as Query;
-  return engine.execute(substitutedQuery);
+  return executeQuery(graph, substitutedQuery);
 }

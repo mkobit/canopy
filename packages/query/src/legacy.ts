@@ -1,42 +1,38 @@
 import type { Graph, Node, Edge, PropertyValue } from '@canopy/types';
 import { filter } from 'remeda';
 
-// eslint-disable-next-line functional/no-classes
-export class GraphQuery {
-  private readonly graph: Graph;
+export function findNodes(
+  graph: Graph,
+  type: string,
+  properties?: Record<string, PropertyValue>,
+): readonly Node[] {
+  return filter([...graph.nodes.values()], (node) => {
+    if (node.type !== type) return false;
 
-  constructor(graph: Graph) {
-    this.graph = graph;
-  }
+    if (!properties) return true;
 
-  findNodes(type: string, properties?: Record<string, PropertyValue>): readonly Node[] {
-    return filter([...this.graph.nodes.values()], (node) => {
-      if (node.type !== type) return false;
+    return Object.entries(properties).every(([key, value]) => {
+      const prop = node.properties.get(key);
+      if (!prop) return false;
 
-      if (!properties) return true;
+      if (prop.kind !== value.kind) return false;
 
-      return Object.entries(properties).every(([key, value]) => {
-        const prop = node.properties.get(key);
-        if (!prop) return false;
-
-        if (prop.kind !== value.kind) return false;
-
-        // Simplified check
-        if ('value' in prop && 'value' in value) {
-          return prop.value === value.value;
-        }
-        return true;
-      });
+      // Simplified check
+      if ('value' in prop && 'value' in value) {
+        return prop.value === value.value;
+      }
+      return true;
     });
-  }
+  });
+}
 
-  findEdges(
-    _type: string,
-    _source?: string,
-    _target?: string,
-    _properties?: Record<string, PropertyValue>,
-  ): readonly Edge[] {
-    // simplified legacy implementation
-    return [];
-  }
+export function findEdges(
+  _graph: Graph,
+  _type: string,
+  _source?: string,
+  _target?: string,
+  _properties?: Record<string, PropertyValue>,
+): readonly Edge[] {
+  // simplified legacy implementation
+  return [];
 }

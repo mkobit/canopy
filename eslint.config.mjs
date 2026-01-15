@@ -277,10 +277,6 @@ export default tseslint.config(
       'packages/ui/**/*.ts',
       'apps/web/**/*.tsx',
       'apps/web/**/*.ts',
-      'packages/query/src/legacy.ts',
-      'packages/query/src/engine.ts',
-      'packages/query/src/stored.ts',
-      'packages/query/src/views.ts',
     ],
     rules: {
       'functional/prefer-immutable-types': 'off',
@@ -288,12 +284,7 @@ export default tseslint.config(
     },
   },
   {
-    files: [
-      'packages/sync/**/*.ts',
-      'packages/storage/**/*.ts',
-      'packages/query/src/legacy.ts',
-      'packages/query/src/engine.ts',
-    ],
+    files: ['packages/sync/**/*.ts', 'packages/storage/**/*.ts'],
     rules: {
       'functional/no-this-expressions': 'off',
     },

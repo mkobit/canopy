@@ -44,51 +44,57 @@ export function saveViewDefinition(
 ): Result<{ graph: Graph; nodeId: NodeId }, Error> {
   const nodeId = createNodeId();
 
-  // We need to unwrap or check scalars. Since these come from ViewDefinition which is typed,
-  // we can expect them to work, but strict checking requires it.
   const nameVal = scalar(view.name);
   if (!nameVal.ok) return err(nameVal.error);
 
   const layoutVal = scalar(view.layout);
   if (!layoutVal.ok) return err(layoutVal.error);
 
-  // eslint-disable-next-line functional/prefer-readonly-type
-  const baseProperties: [string, PropertyValue][] = [
+  // Functional construction of properties
+  const descriptionProp: readonly (readonly [string, PropertyValue])[] = view.description
+    ? ((): readonly (readonly [string, PropertyValue])[] => {
+        const v = scalar(view.description!);
+        return v.ok ? [['description', v.value]] : [];
+      })()
+    : [];
+
+  const sortProp: readonly (readonly [string, PropertyValue])[] =
+    view.sort && view.sort.length > 0
+      ? ((): readonly (readonly [string, PropertyValue])[] => {
+          const v = scalar(JSON.stringify(view.sort));
+          return v.ok ? [['sort', v.value]] : [];
+        })()
+      : [];
+
+  const groupByProp: readonly (readonly [string, PropertyValue])[] = view.groupBy
+    ? ((): readonly (readonly [string, PropertyValue])[] => {
+        const v = scalar(view.groupBy!);
+        return v.ok ? [['groupBy', v.value]] : [];
+      })()
+    : [];
+
+  const displayPropertiesProp: readonly (readonly [string, PropertyValue])[] =
+    view.displayProperties && view.displayProperties.length > 0
+      ? [['displayProperties', list(view.displayProperties)]]
+      : [];
+
+  const pageSizeProp: readonly (readonly [string, PropertyValue])[] = view.pageSize
+    ? ((): readonly (readonly [string, PropertyValue])[] => {
+        const v = scalar(view.pageSize!);
+        return v.ok ? [['pageSize', v.value]] : [];
+      })()
+    : [];
+
+  const properties = new Map([
     ['name', nameVal.value],
     ['queryRef', reference(view.queryRef)],
     ['layout', layoutVal.value],
-  ];
-
-  if (view.description) {
-    const v = scalar(view.description);
-    if (!v.ok) return err(v.error);
-    // eslint-disable-next-line functional/immutable-data
-    baseProperties.push(['description', v.value]);
-  }
-  if (view.sort && view.sort.length > 0) {
-    const v = scalar(JSON.stringify(view.sort));
-    if (!v.ok) return err(v.error);
-    // eslint-disable-next-line functional/immutable-data
-    baseProperties.push(['sort', v.value]);
-  }
-  if (view.groupBy) {
-    const v = scalar(view.groupBy);
-    if (!v.ok) return err(v.error);
-    // eslint-disable-next-line functional/immutable-data
-    baseProperties.push(['groupBy', v.value]);
-  }
-  if (view.displayProperties && view.displayProperties.length > 0) {
-    // eslint-disable-next-line functional/immutable-data
-    baseProperties.push(['displayProperties', list(view.displayProperties)]);
-  }
-  if (view.pageSize) {
-    const v = scalar(view.pageSize);
-    if (!v.ok) return err(v.error);
-    // eslint-disable-next-line functional/immutable-data
-    baseProperties.push(['pageSize', v.value]);
-  }
-
-  const properties = new Map(baseProperties);
+    ...descriptionProp,
+    ...sortProp,
+    ...groupByProp,
+    ...displayPropertiesProp,
+    ...pageSizeProp,
+  ]);
 
   const node: Node = {
     id: nodeId,
