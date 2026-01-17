@@ -1,9 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { BlockEditor } from '../BlockEditor';
 
-const noop = () => {}; // eslint-disable-line @typescript-eslint/no-empty-function
+const noop = vi.fn();
 
 describe('BlockEditor', () => {
   // Note: contentEditable is hard to test in JSDOM environment fully, but we can test rendering and basic interactions.
