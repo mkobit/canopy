@@ -3,7 +3,7 @@ import { Temporal } from 'temporal-polyfill';
 import type { NodeId, EdgeId, TypeId, GraphId } from './identifiers';
 import type { Instant, PlainDate } from './temporal';
 import type { Result } from './result';
-import { ok, err } from './result';
+import { err, fromThrowable } from './result';
 
 // Safe Generators for Branded Types
 
@@ -37,13 +37,10 @@ export function createInstant(instant: Temporal.Instant = Temporal.Now.instant()
 // Helper to cast existing string to Instant if format is correct
 // Returns Result instead of throwing
 export function parseInstant(isoString: string): Result<Instant, Error> {
-  // eslint-disable-next-line functional/no-try-statements
-  try {
+  return fromThrowable(() => {
     Temporal.Instant.from(isoString);
-    return ok(isoString as Instant);
-  } catch (error) {
-    return err(error instanceof Error ? error : new Error(String(error)));
-  }
+    return isoString as Instant;
+  });
 }
 
 // Deprecated throwing version (kept for compatibility with 'createInstant' usage if needed, but we should remove it)
@@ -68,13 +65,10 @@ export function parsePlainDate(dateString: string): Result<PlainDate, Error> {
     return err(new Error(`Invalid PlainDate string: ${dateString}`));
   }
   // Validate with Temporal
-  // eslint-disable-next-line functional/no-try-statements
-  try {
+  return fromThrowable(() => {
     Temporal.PlainDate.from(dateString);
-    return ok(dateString as PlainDate);
-  } catch (error) {
-    return err(error instanceof Error ? error : new Error(String(error)));
-  }
+    return dateString as PlainDate;
+  });
 }
 
 export function asPlainDate(dateString: string): PlainDate {

@@ -10,7 +10,7 @@ import type {
   PropertyValue,
   TypeId,
 } from '@canopy/types';
-import { asTypeId, asNodeId } from '@canopy/types';
+import { asTypeId, asNodeId, fromThrowable } from '@canopy/types';
 import { PropertyDefinitionSchema } from '@canopy/schema';
 import { getNodeType } from './queries';
 import { SYSTEM_IDS } from './system';
@@ -30,18 +30,14 @@ function extractProperties(node: Node): readonly PropertyDefinition[] {
   if (!prop || prop.kind !== 'text') {
     return [];
   }
-  // eslint-disable-next-line functional/no-try-statements
-  try {
-    const raw = JSON.parse(prop.value);
-    if (Array.isArray(raw)) {
-      // Validate against schema using Zod safely
-      const result = PropertyDefinitionSchema.array().safeParse(raw);
-      if (result.success) {
-        return result.data;
-      }
+
+  const raw = fromThrowable(() => JSON.parse(prop.value));
+  if (raw.ok && Array.isArray(raw.value)) {
+    // Validate against schema using Zod safely
+    const result = PropertyDefinitionSchema.array().safeParse(raw.value);
+    if (result.success) {
+      return result.data;
     }
-  } catch {
-    // ignore parse error, return empty
   }
   return [];
 }
@@ -62,12 +58,11 @@ function extractEdgeTypeDefinition(node: Node): EdgeTypeDefinition | undefined {
       );
     }
     if (sourceTypesVal?.kind === 'text') {
-      // eslint-disable-next-line functional/no-try-statements
-      try {
-        return (JSON.parse(sourceTypesVal.value) as readonly string[]).map(asTypeId);
-      } catch {
-        return [];
+      const result = fromThrowable(() => JSON.parse(sourceTypesVal.value) as readonly string[]);
+      if (result.ok) {
+        return result.value.map(asTypeId);
       }
+      return [];
     }
     return [];
   })();
@@ -79,12 +74,11 @@ function extractEdgeTypeDefinition(node: Node): EdgeTypeDefinition | undefined {
       );
     }
     if (targetTypesVal?.kind === 'text') {
-      // eslint-disable-next-line functional/no-try-statements
-      try {
-        return (JSON.parse(targetTypesVal.value) as readonly string[]).map(asTypeId);
-      } catch {
-        return [];
+      const result = fromThrowable(() => JSON.parse(targetTypesVal.value) as readonly string[]);
+      if (result.ok) {
+        return result.value.map(asTypeId);
       }
+      return [];
     }
     return [];
   })();
