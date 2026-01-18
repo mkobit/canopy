@@ -320,8 +320,8 @@ importers:
         version: 4.3.5
     devDependencies:
       '@types/uuid':
-        specifier: ^10.0.0
-        version: 10.0.0
+        specifier: ^11.0.0
+        version: 11.0.0
       typescript:
         specifier: 5.9.3
         version: 5.9.3
@@ -1148,9 +1148,6 @@ packages:
 
   '@types/sql.js@1.4.9':
     resolution: {integrity: sha512-ep8b36RKHlgWPqjNG9ToUrPiwkhwh0AEzy883mO5Xnd+cL6VBH1EvSjBAAuxLUFF2Vn/moE3Me6v9E1Lo+48GQ==}
-
-  '@types/uuid@10.0.0':
-    resolution: {integrity: sha512-7gqG38EyHgyP1S+7+xomFtL+ZNHcKv6DwNaCZmJmo1vgMugyF3TCnXVg4t1uk89mLNwnLtnY3TpOpCOyp1/xHQ==}
 
   '@types/uuid@11.0.0':
     resolution: {integrity: sha512-HVyk8nj2m+jcFRNazzqyVKiZezyhDKrGUA3jlEcg/nZ6Ms+qHwocba1Y/AaVaznJTAM9xpdFSh+ptbNrhOGvZA==}
@@ -4153,8 +4150,6 @@ snapshots:
     dependencies:
       '@types/emscripten': 1.41.5
       '@types/node': 22.19.3
-
-  '@types/uuid@10.0.0': {}
 
   '@types/uuid@11.0.0':
     dependencies:
