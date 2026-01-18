@@ -28,7 +28,7 @@
     "@typescript-eslint/parser": "7.18.0",
     "@vitejs/plugin-react": "^4.7.0",
     "@vitest/coverage-v8": "1.6.0",
-    "electron": "^39.2.7",
+    "electron": "^40.0.0",
     "eslint": "8.57.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-functional": "^9.0.2",
