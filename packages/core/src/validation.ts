@@ -16,6 +16,10 @@ import { getNodeType } from './queries';
 import { SYSTEM_IDS } from './system';
 import { pipe, map, flatMap, filter } from 'remeda';
 
+export function getNodeTypeDefinition(graph: Graph, typeId: TypeId): Node | undefined {
+  return getNodeType(graph, typeId);
+}
+
 // Helper to create a success result
 const SUCCESS: ValidationResult = { valid: true, errors: [] };
 
@@ -162,7 +166,7 @@ function validateProperties(
 
 export function validateNode(graph: Graph, node: Node): ValidationResult {
   // 1. Lookup NodeType
-  const defNode = getNodeType(graph, node.type);
+  const defNode = getNodeTypeDefinition(graph, node.type);
   if (!defNode) {
     return SUCCESS;
   }

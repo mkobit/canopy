@@ -49,6 +49,72 @@ function createBootstrapNode(
   };
 }
 
+const nodeTypeProperties: readonly PropertyDefinition[] = [
+  {
+    name: 'name',
+    valueKind: 'text',
+    required: true,
+    description: 'The name of the node type.',
+  },
+  {
+    name: 'description',
+    valueKind: 'text',
+    required: false,
+    description: 'A description of the node type.',
+  },
+  {
+    name: 'properties',
+    valueKind: 'text',
+    required: false,
+    description: 'JSON definition of properties for this node type.',
+  },
+  {
+    name: 'validOutgoingEdges',
+    valueKind: 'list',
+    required: false,
+    description: 'List of valid outgoing edge types.',
+  },
+  {
+    name: 'validIncomingEdges',
+    valueKind: 'list',
+    required: false,
+    description: 'List of valid incoming edge types.',
+  },
+];
+
+const edgeTypeProperties: readonly PropertyDefinition[] = [
+  {
+    name: 'name',
+    valueKind: 'text',
+    required: true,
+    description: 'The name of the edge type.',
+  },
+  {
+    name: 'description',
+    valueKind: 'text',
+    required: false,
+    description: 'A description of the edge type.',
+  },
+  {
+    name: 'sourceTypes',
+    valueKind: 'list',
+    required: false,
+    description: 'List of valid source node types.',
+  },
+  {
+    name: 'targetTypes',
+    valueKind: 'list',
+    required: false,
+    description: 'List of valid target node types.',
+  },
+  {
+    name: 'properties',
+    valueKind: 'text',
+    required: false,
+    description: 'JSON definition of properties for this edge type.',
+  },
+];
+
 // Helper to reduce results safely using recursion to avoid loops
 function reduceResult<T, R>(
   items: readonly T[],
@@ -88,6 +154,9 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
               SYSTEM_IDS.NODE_TYPE,
               'Node Type',
               'Defines a type of node in the graph.',
+              {
+                properties: text(JSON.stringify(nodeTypeProperties)),
+              },
             ),
           ),
 
@@ -102,6 +171,9 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
               SYSTEM_IDS.NODE_TYPE,
               'Edge Type',
               'Defines a type of edge in the graph.',
+              {
+                properties: text(JSON.stringify(edgeTypeProperties)),
+              },
             ),
           ),
 

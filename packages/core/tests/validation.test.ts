@@ -214,4 +214,64 @@ describe('validation', () => {
     expect(result.valid).toBe(false);
     expect(result.errors[0].message).toContain('Missing required property');
   });
+
+  it('validates a malformed NODE_TYPE node against the system definition', () => {
+    const g = unwrap(createGraph(createGraphId(), 'System Graph'));
+    // Graph is already bootstrapped with system types.
+
+    const malformedNode = createNode({
+      type: SYSTEM_IDS.NODE_TYPE,
+      properties: {}, // Missing 'name', etc.
+    });
+
+    const result = validateNode(g, malformedNode);
+    expect(result.valid).toBe(false);
+    expect(result.errors.length).toBeGreaterThan(0);
+    expect(result.errors.some((e) => e.message.includes("Missing required property 'name'"))).toBe(
+      true,
+    );
+  });
+
+  it('validates a valid NODE_TYPE node against the system definition', () => {
+    const g = unwrap(createGraph(createGraphId(), 'System Graph'));
+
+    const validNode = createNode({
+      type: SYSTEM_IDS.NODE_TYPE,
+      properties: {
+        name: { kind: 'text', value: 'New Type' },
+        description: { kind: 'text', value: 'Description' },
+        // 'properties' is optional
+      },
+    });
+
+    const result = validateNode(g, validNode);
+    expect(result.valid).toBe(true);
+  });
+
+  it('validates a NODE_TYPE node with wrong property type', () => {
+    const g = unwrap(createGraph(createGraphId(), 'System Graph'));
+
+    const invalidNode = createNode({
+      type: SYSTEM_IDS.NODE_TYPE,
+      properties: {
+        name: { kind: 'number', value: 123 }, // Should be text
+      },
+    });
+
+    const result = validateNode(g, invalidNode);
+    expect(result.valid).toBe(false);
+    expect(result.errors.some((e) => e.message.includes("expected type 'text'"))).toBe(true);
+  });
+
+  it('validates a malformed EDGE_TYPE node against the system definition', () => {
+    const g = unwrap(createGraph(createGraphId(), 'System Graph'));
+
+    const malformedNode = createNode({
+      type: SYSTEM_IDS.EDGE_TYPE,
+      properties: {}, // Missing 'name'
+    });
+
+    const result = validateNode(g, malformedNode);
+    expect(result.valid).toBe(false);
+  });
 });
