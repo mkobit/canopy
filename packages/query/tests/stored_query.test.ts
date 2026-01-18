@@ -65,7 +65,7 @@ describe('Stored Queries', () => {
           modified: createInstant(new Date('2023-01-01T00:00:00Z')),
         },
       }),
-    );
+    ).graph;
 
     graph = unwrap(
       addNode(graph, {
@@ -80,7 +80,7 @@ describe('Stored Queries', () => {
           modified: createInstant(new Date('2023-01-01T00:00:00Z')),
         },
       }),
-    );
+    ).graph;
 
     const q = pipe(query(), nodes('node:type:task'), where('priority', 'eq', '$priority'));
 

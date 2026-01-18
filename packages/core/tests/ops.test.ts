@@ -45,7 +45,7 @@ function createGraphWithTypes() {
       properties: { kind: 'text', value: JSON.stringify(personProperties) },
     },
   });
-  g = unwrap(addNode(g, personTypeNode));
+  g = unwrap(addNode(g, personTypeNode)).graph;
   return g;
 }
 
@@ -93,7 +93,7 @@ describe('ops with validation', () => {
       type: asTypeId('type-person'),
       properties: { age: { kind: 'number', value: 20 } },
     });
-    g = unwrap(addNode(g, node));
+    g = unwrap(addNode(g, node)).graph;
 
     const result = updateNode(
       g,
