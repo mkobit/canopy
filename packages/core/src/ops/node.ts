@@ -1,4 +1,4 @@
-import type { Graph, Node, NodeId, Result } from '@canopy/types';
+import type { Graph, Node, NodeId, Result, GraphResult, GraphEvent } from '@canopy/types';
 import { createInstant, ok, err } from '@canopy/types';
 import { validateNode } from '../validation';
 
@@ -15,7 +15,7 @@ export function addNode(
   graph: Graph,
   node: Node,
   options: NodeOperationOptions = {},
-): Result<Graph, Error> {
+): Result<GraphResult<Graph>, Error> {
   if (graph.nodes.has(node.id)) {
     return err(new Error(`Node with ID ${node.id} already exists`));
   }
@@ -30,13 +30,19 @@ export function addNode(
 
   const newNodes = new Map([...graph.nodes, [node.id, node]]);
 
-  return ok({
+  const newGraph = {
     ...graph,
     nodes: newNodes,
     metadata: {
       ...graph.metadata,
       modified: createInstant(),
     },
+  };
+
+  return ok({
+    graph: newGraph,
+    events: [{ type: 'NODE_CREATED', node }],
+    value: newGraph,
   });
 }
 
@@ -45,19 +51,32 @@ export function addNode(
  * Also removes any edges connected to the node.
  * Returns a new graph.
  */
-export function removeNode(graph: Graph, nodeId: NodeId): Result<Graph, Error> {
+export function removeNode(graph: Graph, nodeId: NodeId): Result<GraphResult<Graph>, Error> {
   if (!graph.nodes.has(nodeId)) {
-    return ok(graph);
+    return ok({
+      graph,
+      events: [],
+      value: graph,
+    });
   }
 
   const newNodes = new Map([...graph.nodes].filter(([id]) => id !== nodeId));
 
-  // Remove connected edges
+  // Remove connected edges and track events
+  const edgesToRemove = [...graph.edges]
+    .map(([, edge]) => edge)
+    .filter((edge) => edge.source === nodeId || edge.target === nodeId);
+
+  const edgeEvents: readonly GraphEvent[] = edgesToRemove.map((edge) => ({
+    type: 'EDGE_DELETED',
+    edgeId: edge.id,
+  }));
+
   const newEdges = new Map(
     [...graph.edges].filter(([_id, edge]) => edge.source !== nodeId && edge.target !== nodeId),
   );
 
-  return ok({
+  const newGraph = {
     ...graph,
     nodes: newNodes,
     edges: newEdges,
@@ -65,6 +84,12 @@ export function removeNode(graph: Graph, nodeId: NodeId): Result<Graph, Error> {
       ...graph.metadata,
       modified: createInstant(),
     },
+  };
+
+  return ok({
+    graph: newGraph,
+    events: [{ type: 'NODE_DELETED', nodeId }, ...edgeEvents],
+    value: newGraph,
   });
 }
 
@@ -78,7 +103,7 @@ export function updateNode(
   nodeId: NodeId,
   updater: (node: Node) => Node,
   options: NodeOperationOptions = {},
-): Result<Graph, Error> {
+): Result<GraphResult<Graph>, Error> {
   const existingNode = graph.nodes.get(nodeId);
   if (!existingNode) {
     return err(new Error(`Node with ID ${nodeId} not found`));
@@ -99,30 +124,35 @@ export function updateNode(
     }
   }
 
+  const finalNode = {
+    ...updatedNode,
+    metadata: {
+      ...updatedNode.metadata,
+      modified: createInstant(),
+    },
+  };
+
   const newNodes = new Map(
     [...graph.nodes].map(([id, node]) => {
       if (id === nodeId) {
-        return [
-          id,
-          {
-            ...updatedNode,
-            metadata: {
-              ...updatedNode.metadata,
-              modified: createInstant(),
-            },
-          },
-        ];
+        return [id, finalNode];
       }
       return [id, node];
     }),
   );
 
-  return ok({
+  const newGraph = {
     ...graph,
     nodes: newNodes,
     metadata: {
       ...graph.metadata,
       modified: createInstant(),
     },
+  };
+
+  return ok({
+    graph: newGraph,
+    events: [{ type: 'NODE_UPDATED', nodeId, changes: finalNode }],
+    value: newGraph,
   });
 }
