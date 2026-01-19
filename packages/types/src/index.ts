@@ -32,6 +32,8 @@ export type { NodeTypeDefinition, EdgeTypeDefinition } from './meta';
 
 export type { Graph, QueryResult } from './graph';
 
+export type { GraphEvent, GraphResult } from './events';
+
 export type { ValidationResult, ValidationError } from './validation';
 
 export type { Result } from './result';

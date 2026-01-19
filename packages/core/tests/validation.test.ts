@@ -65,7 +65,7 @@ function createGraphWithTypes() {
     },
   });
 
-  g = unwrap(addNode(g, personTypeNode));
+  g = unwrap(addNode(g, personTypeNode)).graph;
 
   // Define a "Task" node type
   const taskTypeNode = createNode({
@@ -75,7 +75,7 @@ function createGraphWithTypes() {
       name: { kind: 'text', value: 'Task' },
     },
   });
-  g = unwrap(addNode(g, taskTypeNode));
+  g = unwrap(addNode(g, taskTypeNode)).graph;
 
   // Define "AssignedTo" edge type
   const assignedToProperties: readonly PropertyDefinition[] = [
@@ -91,7 +91,7 @@ function createGraphWithTypes() {
       targetTypes: { kind: 'list', items: [{ kind: 'text', value: 'type-person' }] },
     },
   });
-  g = unwrap(addNode(g, assignedToTypeNode));
+  g = unwrap(addNode(g, assignedToTypeNode)).graph;
 
   return g;
 }
@@ -158,8 +158,8 @@ describe('validation', () => {
     let g = createGraphWithTypes();
     const task = createNode({ id: asNodeId('task1'), type: asTypeId('type-task') });
     const person = createNode({ id: asNodeId('person1'), type: asTypeId('type-person') });
-    g = unwrap(addNode(g, task));
-    g = unwrap(addNode(g, person));
+    g = unwrap(addNode(g, task)).graph;
+    g = unwrap(addNode(g, person)).graph;
 
     const edge = createEdge({
       type: asTypeId('edge-assigned-to'),
@@ -178,8 +178,8 @@ describe('validation', () => {
     let g = createGraphWithTypes();
     const person1 = createNode({ id: asNodeId('person1'), type: asTypeId('type-person') });
     const person2 = createNode({ id: asNodeId('person2'), type: asTypeId('type-person') });
-    g = unwrap(addNode(g, person1));
-    g = unwrap(addNode(g, person2));
+    g = unwrap(addNode(g, person1)).graph;
+    g = unwrap(addNode(g, person2)).graph;
 
     // AssignedTo expects Source=Task, Target=Person. Here Source=Person.
     const edge = createEdge({
@@ -200,8 +200,8 @@ describe('validation', () => {
     let g = createGraphWithTypes();
     const task = createNode({ id: asNodeId('task1'), type: asTypeId('type-task') });
     const person = createNode({ id: asNodeId('person1'), type: asTypeId('type-person') });
-    g = unwrap(addNode(g, task));
-    g = unwrap(addNode(g, person));
+    g = unwrap(addNode(g, task)).graph;
+    g = unwrap(addNode(g, person)).graph;
 
     const edge = createEdge({
       type: asTypeId('edge-assigned-to'),

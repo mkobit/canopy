@@ -88,7 +88,7 @@ export function saveQueryDefinition(
   const newGraphResult = addNode(graph, node);
   if (!newGraphResult.ok) return err(newGraphResult.error);
 
-  return ok({ graph: newGraphResult.value, nodeId });
+  return ok({ graph: newGraphResult.value.graph, nodeId });
 }
 
 export function getQueryDefinition(graph: Graph, nodeId: NodeId): Result<Query, Error> {

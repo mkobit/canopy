@@ -1,4 +1,4 @@
-import type { Graph, Edge, EdgeId, Result } from '@canopy/types';
+import type { Graph, Edge, EdgeId, Result, GraphResult } from '@canopy/types';
 import { createInstant, ok, err } from '@canopy/types';
 import { validateEdge } from '../validation';
 
@@ -15,7 +15,7 @@ export function addEdge(
   graph: Graph,
   edge: Edge,
   options: EdgeOperationOptions = {},
-): Result<Graph, Error> {
+): Result<GraphResult<Graph>, Error> {
   if (graph.edges.has(edge.id)) {
     return err(new Error(`Edge with ID ${edge.id} already exists`));
   }
@@ -36,13 +36,19 @@ export function addEdge(
 
   const newEdges = new Map([...graph.edges, [edge.id, edge]]);
 
-  return ok({
+  const newGraph = {
     ...graph,
     edges: newEdges,
     metadata: {
       ...graph.metadata,
       modified: createInstant(),
     },
+  };
+
+  return ok({
+    graph: newGraph,
+    events: [{ type: 'EDGE_CREATED', edge }],
+    value: newGraph,
   });
 }
 
@@ -50,20 +56,30 @@ export function addEdge(
  * Removes an edge from the graph.
  * Returns a new graph.
  */
-export function removeEdge(graph: Graph, edgeId: EdgeId): Result<Graph, Error> {
+export function removeEdge(graph: Graph, edgeId: EdgeId): Result<GraphResult<Graph>, Error> {
   if (!graph.edges.has(edgeId)) {
-    return ok(graph);
+    return ok({
+      graph,
+      events: [],
+      value: graph,
+    });
   }
 
   const newEdges = new Map([...graph.edges].filter(([id]) => id !== edgeId));
 
-  return ok({
+  const newGraph = {
     ...graph,
     edges: newEdges,
     metadata: {
       ...graph.metadata,
       modified: createInstant(),
     },
+  };
+
+  return ok({
+    graph: newGraph,
+    events: [{ type: 'EDGE_DELETED', edgeId }],
+    value: newGraph,
   });
 }
 
@@ -77,7 +93,7 @@ export function updateEdge(
   edgeId: EdgeId,
   updater: (edge: Edge) => Edge,
   options: EdgeOperationOptions = {},
-): Result<Graph, Error> {
+): Result<GraphResult<Graph>, Error> {
   const existingEdge = graph.edges.get(edgeId);
   if (!existingEdge) {
     return err(new Error(`Edge with ID ${edgeId} not found`));
@@ -106,30 +122,35 @@ export function updateEdge(
     }
   }
 
+  const finalEdge = {
+    ...updatedEdge,
+    metadata: {
+      ...updatedEdge.metadata,
+      modified: createInstant(),
+    },
+  };
+
   const newEdges = new Map(
     [...graph.edges].map(([id, edge]) => {
       if (id === edgeId) {
-        return [
-          id,
-          {
-            ...updatedEdge,
-            metadata: {
-              ...updatedEdge.metadata,
-              modified: createInstant(),
-            },
-          },
-        ];
+        return [id, finalEdge];
       }
       return [id, edge];
     }),
   );
 
-  return ok({
+  const newGraph = {
     ...graph,
     edges: newEdges,
     metadata: {
       ...graph.metadata,
       modified: createInstant(),
     },
+  };
+
+  return ok({
+    graph: newGraph,
+    events: [{ type: 'EDGE_UPDATED', edgeId, changes: finalEdge }],
+    value: newGraph,
   });
 }

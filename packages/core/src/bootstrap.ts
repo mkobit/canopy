@@ -12,6 +12,14 @@ import { createInstant, ok } from '@canopy/types';
 import { addNode } from './ops';
 import { SYSTEM_IDS, SYSTEM_EDGE_TYPES } from './system';
 
+function addNodeGraph(graph: Graph, node: Node): Result<Graph, Error> {
+  const result = addNode(graph, node);
+  if (result.ok) {
+    return ok(result.value.graph);
+  }
+  return result;
+}
+
 // Helper to create a property map
 function createProperties(props: Record<string, PropertyValue>): PropertyMap {
   return new Map(Object.entries(props));
@@ -147,7 +155,7 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
     (g) =>
       g.nodes.has(SYSTEM_IDS.NODE_TYPE_DEF)
         ? ok(g)
-        : addNode(
+        : addNodeGraph(
             g,
             createBootstrapNode(
               SYSTEM_IDS.NODE_TYPE_DEF,
@@ -164,7 +172,7 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
     (g) =>
       g.nodes.has(SYSTEM_IDS.EDGE_TYPE_DEF)
         ? ok(g)
-        : addNode(
+        : addNodeGraph(
             g,
             createBootstrapNode(
               SYSTEM_IDS.EDGE_TYPE_DEF,
@@ -180,7 +188,7 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
     (g) =>
       g.nodes.has(SYSTEM_IDS.QUERY_DEFINITION_DEF)
         ? ok(g)
-        : addNode(
+        : addNodeGraph(
             g,
             createBootstrapNode(
               SYSTEM_IDS.QUERY_DEFINITION_DEF,
@@ -229,7 +237,7 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
     (g) =>
       g.nodes.has(SYSTEM_IDS.VIEW_DEFINITION_DEF)
         ? ok(g)
-        : addNode(
+        : addNodeGraph(
             g,
             createBootstrapNode(
               SYSTEM_IDS.VIEW_DEFINITION_DEF,
@@ -296,7 +304,7 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
     (g) =>
       g.nodes.has(SYSTEM_IDS.TEMPLATE_DEF)
         ? ok(g)
-        : addNode(
+        : addNodeGraph(
             g,
             createBootstrapNode(
               SYSTEM_IDS.TEMPLATE_DEF,
@@ -426,7 +434,7 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
         (cg, def) =>
           cg.nodes.has(def.id)
             ? ok(cg)
-            : addNode(
+            : addNodeGraph(
                 cg,
                 createBootstrapNode(def.id, SYSTEM_IDS.EDGE_TYPE, def.name, def.description),
               ),
@@ -438,7 +446,7 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
         (cg, def) =>
           cg.nodes.has(def.id)
             ? ok(cg)
-            : addNode(
+            : addNodeGraph(
                 cg,
                 createBootstrapNode(
                   def.id,
@@ -460,7 +468,7 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
               queryRef: reference(def.queryRef),
               ...(def.groupBy ? { groupBy: text(def.groupBy) } : {}),
             };
-            return addNode(
+            return addNodeGraph(
               cg,
               createBootstrapNode(
                 def.id,
