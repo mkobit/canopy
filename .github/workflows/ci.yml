@@ -2,6 +2,11 @@ name: CI
 
 on:
   push:
+    paths-ignore:
+      - 'docs/design/**'
+  pull_request:
+    paths-ignore:
+      - 'docs/design/**'
 
 jobs:
   build:
