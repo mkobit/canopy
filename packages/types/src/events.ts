@@ -1,18 +1,62 @@
-import type { Node } from './node';
-import type { Edge } from './edge';
-import type { NodeId, EdgeId } from './identifiers';
+import type { NodeId, EdgeId, TypeId } from './identifiers';
+import type { PropertyMap } from './properties';
+import type { Instant } from './temporal';
 import type { Graph } from './graph';
 
 export type GraphEvent =
-  | { type: 'NODE_CREATED'; node: Node }
-  | { type: 'NODE_UPDATED'; nodeId: NodeId; changes: Partial<Node> }
-  | { type: 'NODE_DELETED'; nodeId: NodeId }
-  | { type: 'EDGE_CREATED'; edge: Edge }
-  | { type: 'EDGE_UPDATED'; edgeId: EdgeId; changes: Partial<Edge> }
-  | { type: 'EDGE_DELETED'; edgeId: EdgeId };
+  | NodeCreated
+  | NodePropertiesUpdated
+  | NodeDeleted
+  | EdgeCreated
+  | EdgePropertiesUpdated
+  | EdgeDeleted;
+
+export interface NodeCreated {
+  readonly type: 'NodeCreated';
+  readonly id: NodeId;
+  readonly nodeType: TypeId;
+  readonly properties: PropertyMap;
+  readonly timestamp: Instant;
+}
+
+export interface NodePropertiesUpdated {
+  readonly type: 'NodePropertiesUpdated';
+  readonly id: NodeId;
+  readonly changes: PropertyMap; // Contains only the changed properties
+  readonly timestamp: Instant;
+}
+
+export interface NodeDeleted {
+  readonly type: 'NodeDeleted';
+  readonly id: NodeId;
+  readonly timestamp: Instant;
+}
+
+export interface EdgeCreated {
+  readonly type: 'EdgeCreated';
+  readonly id: EdgeId;
+  readonly edgeType: TypeId;
+  readonly source: NodeId;
+  readonly target: NodeId;
+  readonly properties: PropertyMap;
+  readonly timestamp: Instant;
+}
+
+export interface EdgePropertiesUpdated {
+  readonly type: 'EdgePropertiesUpdated';
+  readonly id: EdgeId;
+  readonly changes: PropertyMap; // Contains only the changed properties
+  readonly timestamp: Instant;
+}
+
+export interface EdgeDeleted {
+  readonly type: 'EdgeDeleted';
+  readonly id: EdgeId;
+  readonly timestamp: Instant;
+}
 
 export interface GraphResult<T> {
-  graph: Graph;
-  events: readonly GraphEvent[];
-  value: T;
+  readonly graph: Graph;
+  readonly events: readonly GraphEvent[];
+  readonly value: T;
 }

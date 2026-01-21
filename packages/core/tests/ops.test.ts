@@ -41,8 +41,8 @@ function createGraphWithTypes() {
     id: asNodeId('type-person'),
     type: SYSTEM_IDS.NODE_TYPE,
     properties: {
-      name: { kind: 'text', value: 'Person' },
-      properties: { kind: 'text', value: JSON.stringify(personProperties) },
+      name: 'Person',
+      properties: JSON.stringify(personProperties),
     },
   });
   g = unwrap(addNode(g, personTypeNode)).graph;
@@ -79,7 +79,7 @@ describe('ops with validation', () => {
     const g = createGraphWithTypes();
     const node = createNode({
       type: asTypeId('type-person'),
-      properties: { age: { kind: 'number', value: 20 } },
+      properties: { age: 20 },
     });
 
     const result = addNode(g, node, { validate: true });
@@ -91,7 +91,7 @@ describe('ops with validation', () => {
     const node = createNode({
       id: asNodeId('p1'),
       type: asTypeId('type-person'),
-      properties: { age: { kind: 'number', value: 20 } },
+      properties: { age: 20 },
     });
     g = unwrap(addNode(g, node)).graph;
 

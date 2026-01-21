@@ -37,48 +37,28 @@ export const PlainDateSchema: z.ZodType<PlainDate, unknown> = z
 
 export const TimestampSchema = InstantSchema;
 
-// Scalar Values
-const TextValueSchema = z.object({ kind: z.literal('text'), value: z.string() });
-const NumberValueSchema = z.object({ kind: z.literal('number'), value: z.number() });
-const BooleanValueSchema = z.object({ kind: z.literal('boolean'), value: z.boolean() });
-const InstantValueSchema = z.object({ kind: z.literal('instant'), value: InstantSchema });
-const PlainDateValueSchema = z.object({ kind: z.literal('plain-date'), value: PlainDateSchema });
-const ReferenceValueSchema = z.object({
-  kind: z.literal('reference'),
-  target: NodeIdSchema,
-});
+// External Reference Value (the only complex scalar object)
 const ExternalReferenceValueSchema = z.object({
-  kind: z.literal('external-reference'),
   graph: GraphIdSchema,
   target: NodeIdSchema,
 });
 
-const ScalarValueSchema: z.ZodType<ScalarValue, unknown> = z.discriminatedUnion('kind', [
-  TextValueSchema,
-  NumberValueSchema,
-  BooleanValueSchema,
-  InstantValueSchema,
-  PlainDateValueSchema,
-  ReferenceValueSchema,
+// Scalar Values
+// Since we removed tagged unions, we map based on runtime types.
+// Note: string covers NodeId, Instant, PlainDate.
+const ScalarValueSchema: z.ZodType<ScalarValue, unknown> = z.union([
+  z.string(),
+  z.number(),
+  z.boolean(),
+  z.null(),
   ExternalReferenceValueSchema,
 ]);
 
-// List Value - array of scalars
-const ListValueSchema = z.object({
-  kind: z.literal('list'),
-  items: z.array(ScalarValueSchema),
-});
-
 // Property Value
-export const PropertyValueSchema: z.ZodType<PropertyValue, unknown> = z.discriminatedUnion('kind', [
-  TextValueSchema,
-  NumberValueSchema,
-  BooleanValueSchema,
-  InstantValueSchema,
-  PlainDateValueSchema,
-  ReferenceValueSchema,
-  ExternalReferenceValueSchema,
-  ListValueSchema,
+// Either a scalar or an array of scalars
+export const PropertyValueSchema: z.ZodType<PropertyValue, unknown> = z.union([
+  ScalarValueSchema,
+  z.array(ScalarValueSchema),
 ]);
 
 export const PropertyDefinitionSchema: z.ZodType<PropertyDefinition, unknown> = z
@@ -99,7 +79,7 @@ export const PropertyDefinitionSchema: z.ZodType<PropertyDefinition, unknown> = 
   })
   .transform((val) => ({
     ...val,
-    description: val.description ?? undefined, // ensure explicit undefined if missing (though optional usually means | undefined)
+    description: val.description ?? undefined,
   }));
 
 export const TemporalMetadataSchema: z.ZodType<TemporalMetadata, unknown> = z.object({

@@ -1,52 +1,53 @@
 import type {
   ScalarValue,
-  TextValue,
-  NumberValue,
-  BooleanValue,
-  InstantValue,
-  PlainDateValue,
-  ReferenceValue,
-  ExternalReferenceValue,
   PropertyValue,
-  ListValue,
   Node,
   Edge,
+  ExternalReferenceValue,
 } from '@canopy/types';
 
-export function isTextValue(value: ScalarValue): value is TextValue {
-  return value.kind === 'text';
+export function isTextValue(value: ScalarValue): value is string {
+  return typeof value === 'string';
 }
 
-export function isNumberValue(value: ScalarValue): value is NumberValue {
-  return value.kind === 'number';
+export function isNumberValue(value: ScalarValue): value is number {
+  return typeof value === 'number';
 }
 
-export function isBooleanValue(value: ScalarValue): value is BooleanValue {
-  return value.kind === 'boolean';
+export function isBooleanValue(value: ScalarValue): value is boolean {
+  return typeof value === 'boolean';
 }
 
-export function isInstantValue(value: ScalarValue): value is InstantValue {
-  return value.kind === 'instant';
+// Instant is string at runtime
+export function isInstantValue(value: ScalarValue): value is string {
+  return typeof value === 'string';
 }
 
-export function isPlainDateValue(value: ScalarValue): value is PlainDateValue {
-  return value.kind === 'plain-date';
+// PlainDate is string at runtime
+export function isPlainDateValue(value: ScalarValue): value is string {
+  return typeof value === 'string';
 }
 
-export function isReferenceValue(value: ScalarValue): value is ReferenceValue {
-  return value.kind === 'reference';
+// Reference is string (NodeId) at runtime
+export function isReferenceValue(value: ScalarValue): value is string {
+  return typeof value === 'string';
 }
 
 export function isExternalReferenceValue(value: ScalarValue): value is ExternalReferenceValue {
-  return value.kind === 'external-reference';
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'graph' in value &&
+    'target' in value
+  );
 }
 
-export function isListValue(value: PropertyValue): value is ListValue {
-  return value.kind === 'list';
+export function isListValue(value: PropertyValue): value is ScalarValue[] {
+  return Array.isArray(value);
 }
 
 export function isScalarValue(value: PropertyValue): value is ScalarValue {
-  return value.kind !== 'list';
+  return !Array.isArray(value);
 }
 
 export function isNode(value: unknown): value is Node {

@@ -27,12 +27,12 @@ function createProperties(props: Record<string, PropertyValue>): PropertyMap {
 
 // Helper to create a text value
 function text(value: string): PropertyValue {
-  return { kind: 'text', value };
+  return value;
 }
 
 // Helper to create a reference value
 function reference(target: NodeId): PropertyValue {
-  return { kind: 'reference', target };
+  return target;
 }
 
 function createBootstrapNode(

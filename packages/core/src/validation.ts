@@ -9,6 +9,7 @@ import type {
   PropertyDefinition,
   PropertyValue,
   TypeId,
+  PropertyValueKind,
 } from '@canopy/types';
 import { asTypeId, asNodeId, fromThrowable } from '@canopy/types';
 import { PropertyDefinitionSchema } from '@canopy/schema';
@@ -31,11 +32,11 @@ function failure(errors: readonly ValidationError[]): ValidationResult {
 // Extract properties from a definition node
 function extractProperties(node: Node): readonly PropertyDefinition[] {
   const prop = node.properties.get('properties');
-  if (!prop || prop.kind !== 'text') {
+  if (typeof prop !== 'string') {
     return [];
   }
 
-  const raw = fromThrowable(() => JSON.parse(prop.value));
+  const raw = fromThrowable(() => JSON.parse(prop));
   if (raw.ok && Array.isArray(raw.value)) {
     // Validate against schema using Zod safely
     const result = PropertyDefinitionSchema.array().safeParse(raw.value);
@@ -56,13 +57,13 @@ function extractEdgeTypeDefinition(node: Node): EdgeTypeDefinition | undefined {
   const targetTypesVal = node.properties.get('targetTypes');
 
   const sourceTypes: readonly TypeId[] = (() => {
-    if (sourceTypesVal?.kind === 'list') {
-      return sourceTypesVal.items.map((i) =>
-        i.kind === 'text' ? asTypeId(i.value) : asTypeId('unknown'),
+    if (Array.isArray(sourceTypesVal)) {
+      return sourceTypesVal.map((i) =>
+        typeof i === 'string' ? asTypeId(i) : asTypeId('unknown'),
       );
     }
-    if (sourceTypesVal?.kind === 'text') {
-      const result = fromThrowable(() => JSON.parse(sourceTypesVal.value) as readonly string[]);
+    if (typeof sourceTypesVal === 'string') {
+      const result = fromThrowable(() => JSON.parse(sourceTypesVal) as readonly string[]);
       if (result.ok) {
         return result.value.map(asTypeId);
       }
@@ -72,13 +73,13 @@ function extractEdgeTypeDefinition(node: Node): EdgeTypeDefinition | undefined {
   })();
 
   const targetTypes: readonly TypeId[] = (() => {
-    if (targetTypesVal?.kind === 'list') {
-      return targetTypesVal.items.map((i) =>
-        i.kind === 'text' ? asTypeId(i.value) : asTypeId('unknown'),
+    if (Array.isArray(targetTypesVal)) {
+      return targetTypesVal.map((i) =>
+        typeof i === 'string' ? asTypeId(i) : asTypeId('unknown'),
       );
     }
-    if (targetTypesVal?.kind === 'text') {
-      const result = fromThrowable(() => JSON.parse(targetTypesVal.value) as readonly string[]);
+    if (typeof targetTypesVal === 'string') {
+      const result = fromThrowable(() => JSON.parse(targetTypesVal) as readonly string[]);
       if (result.ok) {
         return result.value.map(asTypeId);
       }
@@ -89,8 +90,8 @@ function extractEdgeTypeDefinition(node: Node): EdgeTypeDefinition | undefined {
 
   return {
     id: asTypeId(node.id),
-    name: name?.kind === 'text' ? name.value : 'Unknown',
-    description: description?.kind === 'text' ? description.value : undefined,
+    name: typeof name === 'string' ? name : 'Unknown',
+    description: typeof description === 'string' ? description : undefined,
     properties,
     sourceTypes,
     targetTypes,
@@ -107,8 +108,8 @@ function extractNodeTypeDefinition(node: Node): NodeTypeDefinition {
 
   return {
     id: asTypeId(node.id),
-    name: name?.kind === 'text' ? name.value : 'Unknown',
-    description: description?.kind === 'text' ? description.value : undefined,
+    name: typeof name === 'string' ? name : 'Unknown',
+    description: typeof description === 'string' ? description : undefined,
     properties,
     validOutgoingEdges: [], // TODO
     validIncomingEdges: [], // TODO
@@ -116,21 +117,53 @@ function extractNodeTypeDefinition(node: Node): NodeTypeDefinition {
 }
 
 function validateValue(val: PropertyValue, def: PropertyDefinition): readonly ValidationError[] {
-  // Check kind
-  if (val.kind !== def.valueKind) {
+  let valid = false;
+  // TODO: Add more robust validation for Instant/PlainDate formats if needed.
+  // Currently checking basic types.
+
+  if (def.valueKind === 'list') {
+    valid = Array.isArray(val);
+    // TODO: Validate items in the list match a specific type?
+    // PropertyDefinition doesn't specify item type for list currently, implies generic scalars?
+    // Design doc says "Homogeneous arrays".
+    // But PropertyDefinitionSchema has just `valueKind: 'list'`. It doesn't say "list of text".
+    // We assume list of any scalars for now, or maybe the definition should be richer.
+  } else {
+    // Expect scalar
+    if (Array.isArray(val)) {
+      valid = false;
+    } else {
+      switch (def.valueKind) {
+        case 'text':
+        case 'instant':
+        case 'plain-date':
+        case 'reference':
+          valid = typeof val === 'string';
+          break;
+        case 'number':
+          valid = typeof val === 'number';
+          break;
+        case 'boolean':
+          valid = typeof val === 'boolean';
+          break;
+        case 'external-reference':
+          valid = typeof val === 'object' && val !== null && 'graph' in val;
+          break;
+        default:
+          valid = false;
+      }
+    }
+  }
+
+  if (!valid) {
     return [
       {
         path: [def.name],
-        message: `Property '${def.name}' expected type '${def.valueKind}' but got '${val.kind}'`,
+        message: `Property '${def.name}' expected type '${def.valueKind}' but got incompatible value`,
         expected: def.valueKind,
-        actual: val.kind,
+        actual: Array.isArray(val) ? 'list' : typeof val,
       },
     ];
-  }
-
-  // Additional checks per kind?
-  if (def.valueKind === 'reference' && val.kind === 'reference') {
-    // "value must be valid NodeId, optionally check targetType exists"
   }
 
   return [];

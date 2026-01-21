@@ -39,9 +39,17 @@ export function addNode(
     },
   };
 
+  const event: GraphEvent = {
+    type: 'NodeCreated',
+    id: node.id,
+    nodeType: node.type,
+    properties: node.properties,
+    timestamp: createInstant(),
+  };
+
   return ok({
     graph: newGraph,
-    events: [{ type: 'NODE_CREATED', node }],
+    events: [event],
     value: newGraph,
   });
 }
@@ -68,8 +76,9 @@ export function removeNode(graph: Graph, nodeId: NodeId): Result<GraphResult<Gra
     .filter((edge) => edge.source === nodeId || edge.target === nodeId);
 
   const edgeEvents: readonly GraphEvent[] = edgesToRemove.map((edge) => ({
-    type: 'EDGE_DELETED',
-    edgeId: edge.id,
+    type: 'EdgeDeleted',
+    id: edge.id,
+    timestamp: createInstant(),
   }));
 
   const newEdges = new Map(
@@ -86,9 +95,15 @@ export function removeNode(graph: Graph, nodeId: NodeId): Result<GraphResult<Gra
     },
   };
 
+  const nodeEvent: GraphEvent = {
+    type: 'NodeDeleted',
+    id: nodeId,
+    timestamp: createInstant(),
+  };
+
   return ok({
     graph: newGraph,
-    events: [{ type: 'NODE_DELETED', nodeId }, ...edgeEvents],
+    events: [nodeEvent, ...edgeEvents],
     value: newGraph,
   });
 }
@@ -150,9 +165,16 @@ export function updateNode(
     },
   };
 
+  const event: GraphEvent = {
+    type: 'NodePropertiesUpdated',
+    id: nodeId,
+    changes: finalNode.properties,
+    timestamp: createInstant(),
+  };
+
   return ok({
     graph: newGraph,
-    events: [{ type: 'NODE_UPDATED', nodeId, changes: finalNode }],
+    events: [event],
     value: newGraph,
   });
 }

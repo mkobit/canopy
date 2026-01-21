@@ -1,4 +1,4 @@
-import type { Graph, Node, Edge, QueryResult, PropertyValue, Result } from '@canopy/types';
+import type { Graph, Node, Edge, QueryResult, PropertyValue, Result, ScalarValue } from '@canopy/types';
 import { ok, err } from '@canopy/types';
 import type { Query, Filter, Sort, QueryStep } from './model';
 import { reduce, filter, unique, flatMap } from 'remeda';
@@ -100,7 +100,7 @@ function applyFilter(items: readonly GraphItem[], predicate: Filter): readonly G
       if ('target' in item && predicate.property === 'target') return item.target;
 
       const prop = item.properties.get(predicate.property);
-      if (prop) return unwrapValue(prop);
+      if (prop !== undefined) return unwrapValue(prop);
       return undefined;
     };
 
@@ -226,22 +226,23 @@ function compare(a: unknown, b: unknown): number {
 }
 
 function unwrapValue(prop: PropertyValue | undefined): unknown {
-  if (!prop) return undefined;
-  if (prop.kind === 'list') {
-    return prop.items.map(unwrapScalar);
+  if (prop === undefined) return undefined;
+  if (Array.isArray(prop)) {
+    return prop.map(unwrapScalar);
   }
-  return unwrapScalar(prop);
+  // Explicitly tell TS that prop is ScalarValue here
+  return unwrapScalar(prop as ScalarValue);
 }
 
-function unwrapScalar(scalar: import('@canopy/types').ScalarValue): unknown {
-  if ('value' in scalar) {
-    return scalar.value;
+function unwrapScalar(scalar: ScalarValue): unknown {
+  if (scalar === null) return undefined;
+  if (typeof scalar === 'object') {
+     // ExternalReferenceValue check
+     if ('graph' in scalar && 'target' in scalar) {
+       return `${scalar.graph}://${scalar.target}`;
+     }
+     // Any other object? No other objects in ScalarValue union.
+     return scalar;
   }
-  if (scalar.kind === 'reference') {
-    return scalar.target;
-  }
-  if (scalar.kind === 'external-reference') {
-    return `${scalar.graph}://${scalar.target}`;
-  }
-  return undefined;
+  return scalar;
 }
