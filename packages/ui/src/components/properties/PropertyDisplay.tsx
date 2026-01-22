@@ -15,10 +15,7 @@ export const PropertyDisplay: React.FC<PropertyDisplayProps> = ({ value, classNa
       <ul className={cn('list-disc pl-4', className)}>
         {value.map((item, index) => (
           <li key={index}>
-            <ScalarDisplay
-              value={item}
-              {...(kind && kind !== 'list' ? { kind } : {})}
-            />
+            <ScalarDisplay value={item} {...(kind && kind !== 'list' ? { kind } : {})} />
           </li>
         ))}
       </ul>
@@ -90,6 +87,9 @@ const ScalarDisplay: React.FC<Readonly<{ value: ScalarValue; kind?: PropertyValu
       }
       return <span className="text-red-500">Invalid ExtRef</span>;
     }
+    case 'list': {
+      return null;
+    }
     default: {
       return <span className="text-gray-900">{String(value)}</span>;
     }
@@ -105,6 +105,7 @@ function inferKind(value: ScalarValue): PropertyValueKind {
 }
 
 function tryFormatInstant(val: string): string {
+  // eslint-disable-next-line functional/no-try-statements
   try {
     return Temporal.Instant.from(val).toLocaleString();
   } catch {

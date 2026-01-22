@@ -36,9 +36,7 @@ describe('Stored Queries', () => {
     // 1 new query + 3 system queries = 4
     expect(nodesList.length).toBe(4);
 
-    const myQuery = nodesList.find(
-      (n) => n.properties.get('name') === 'High Priority Tasks',
-    );
+    const myQuery = nodesList.find((n) => n.properties.get('name') === 'High Priority Tasks');
     expect(myQuery).toBeDefined();
   });
 

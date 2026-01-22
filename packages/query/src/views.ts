@@ -122,13 +122,12 @@ export function getViewDefinition(graph: Graph, nodeId: NodeId): Result<ViewDefi
     return;
   })();
 
-  const displayPropertiesList =
-    Array.isArray(displayProperties)
-      ? displayProperties
-          .filter((i) => typeof i === 'string')
-          .map((i) => i as string)
-          .filter((s) => s !== '')
-      : undefined;
+  const displayPropertiesList = Array.isArray(displayProperties)
+    ? displayProperties
+        .filter((i) => typeof i === 'string')
+        .map((i) => i as string)
+        .filter((s) => s !== '')
+    : undefined;
 
   return ok({
     name: nameProp,

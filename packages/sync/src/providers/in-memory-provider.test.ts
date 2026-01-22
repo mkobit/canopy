@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { SyncEngine } from '../sync-engine';
 import { InMemoryProvider } from './in-memory-provider';
-import { asTypeId, unwrap, ScalarValue } from '@canopy/types';
+import { asTypeId, unwrap } from '@canopy/types';
 
 describe('InMemoryProvider', () => {
   it('should sync changes between two engines using InMemoryProvider', () => {

@@ -195,9 +195,7 @@ export const NodePage = () => {
                           <span className="font-medium">
                             {(() => {
                               const nameProp = otherNode?.properties.get('name');
-                              return typeof nameProp === 'string'
-                                ? nameProp
-                                : otherId;
+                              return typeof nameProp === 'string' ? nameProp : otherId;
                             })()}
                           </span>
                         </div>

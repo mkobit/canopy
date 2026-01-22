@@ -33,7 +33,10 @@ function createMockGraph(): Graph {
       id: nodeId,
       type: asTypeId(type),
       properties,
-      metadata: { created: asInstant('2023-01-01T00:00:00Z'), modified: asInstant('2023-01-01T00:00:00Z') },
+      metadata: {
+        created: asInstant('2023-01-01T00:00:00Z'),
+        modified: asInstant('2023-01-01T00:00:00Z'),
+      },
     });
   };
 
@@ -53,7 +56,10 @@ function createMockGraph(): Graph {
       source: asNodeId(source),
       target: asNodeId(target),
       properties,
-      metadata: { created: asInstant('2023-01-01T00:00:00Z'), modified: asInstant('2023-01-01T00:00:00Z') },
+      metadata: {
+        created: asInstant('2023-01-01T00:00:00Z'),
+        modified: asInstant('2023-01-01T00:00:00Z'),
+      },
     });
   };
 

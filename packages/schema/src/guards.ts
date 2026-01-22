@@ -1,10 +1,4 @@
-import type {
-  ScalarValue,
-  PropertyValue,
-  Node,
-  Edge,
-  ExternalReferenceValue,
-} from '@canopy/types';
+import type { ScalarValue, PropertyValue, Node, Edge, ExternalReferenceValue } from '@canopy/types';
 
 export function isTextValue(value: ScalarValue): value is string {
   return typeof value === 'string';
@@ -34,12 +28,7 @@ export function isReferenceValue(value: ScalarValue): value is string {
 }
 
 export function isExternalReferenceValue(value: ScalarValue): value is ExternalReferenceValue {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'graph' in value &&
-    'target' in value
-  );
+  return typeof value === 'object' && value !== null && 'graph' in value && 'target' in value;
 }
 
 export function isListValue(value: PropertyValue): value is ScalarValue[] {

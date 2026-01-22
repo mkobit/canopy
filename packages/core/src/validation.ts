@@ -9,7 +9,6 @@ import type {
   PropertyDefinition,
   PropertyValue,
   TypeId,
-  PropertyValueKind,
 } from '@canopy/types';
 import { asTypeId, asNodeId, fromThrowable } from '@canopy/types';
 import { PropertyDefinitionSchema } from '@canopy/schema';
@@ -58,9 +57,7 @@ function extractEdgeTypeDefinition(node: Node): EdgeTypeDefinition | undefined {
 
   const sourceTypes: readonly TypeId[] = (() => {
     if (Array.isArray(sourceTypesVal)) {
-      return sourceTypesVal.map((i) =>
-        typeof i === 'string' ? asTypeId(i) : asTypeId('unknown'),
-      );
+      return sourceTypesVal.map((i) => (typeof i === 'string' ? asTypeId(i) : asTypeId('unknown')));
     }
     if (typeof sourceTypesVal === 'string') {
       const result = fromThrowable(() => JSON.parse(sourceTypesVal) as readonly string[]);
@@ -74,9 +71,7 @@ function extractEdgeTypeDefinition(node: Node): EdgeTypeDefinition | undefined {
 
   const targetTypes: readonly TypeId[] = (() => {
     if (Array.isArray(targetTypesVal)) {
-      return targetTypesVal.map((i) =>
-        typeof i === 'string' ? asTypeId(i) : asTypeId('unknown'),
-      );
+      return targetTypesVal.map((i) => (typeof i === 'string' ? asTypeId(i) : asTypeId('unknown')));
     }
     if (typeof targetTypesVal === 'string') {
       const result = fromThrowable(() => JSON.parse(targetTypesVal) as readonly string[]);
@@ -117,45 +112,38 @@ function extractNodeTypeDefinition(node: Node): NodeTypeDefinition {
 }
 
 function validateValue(val: PropertyValue, def: PropertyDefinition): readonly ValidationError[] {
-  let valid = false;
-  // TODO: Add more robust validation for Instant/PlainDate formats if needed.
-  // Currently checking basic types.
+  const isValid = (): boolean => {
+    if (def.valueKind === 'list') {
+      return Array.isArray(val);
+    }
 
-  if (def.valueKind === 'list') {
-    valid = Array.isArray(val);
-    // TODO: Validate items in the list match a specific type?
-    // PropertyDefinition doesn't specify item type for list currently, implies generic scalars?
-    // Design doc says "Homogeneous arrays".
-    // But PropertyDefinitionSchema has just `valueKind: 'list'`. It doesn't say "list of text".
-    // We assume list of any scalars for now, or maybe the definition should be richer.
-  } else {
-    // Expect scalar
     if (Array.isArray(val)) {
-      valid = false;
-    } else {
-      switch (def.valueKind) {
-        case 'text':
-        case 'instant':
-        case 'plain-date':
-        case 'reference':
-          valid = typeof val === 'string';
-          break;
-        case 'number':
-          valid = typeof val === 'number';
-          break;
-        case 'boolean':
-          valid = typeof val === 'boolean';
-          break;
-        case 'external-reference':
-          valid = typeof val === 'object' && val !== null && 'graph' in val;
-          break;
-        default:
-          valid = false;
+      return false;
+    }
+
+    switch (def.valueKind) {
+      case 'text':
+      case 'instant':
+      case 'plain-date':
+      case 'reference': {
+        return typeof val === 'string';
+      }
+      case 'number': {
+        return typeof val === 'number';
+      }
+      case 'boolean': {
+        return typeof val === 'boolean';
+      }
+      case 'external-reference': {
+        return typeof val === 'object' && val !== null && 'graph' in val;
+      }
+      default: {
+        return false;
       }
     }
-  }
+  };
 
-  if (!valid) {
+  if (!isValid()) {
     return [
       {
         path: [def.name],

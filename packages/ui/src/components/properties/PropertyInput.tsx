@@ -18,22 +18,36 @@ type PropertyInputProps = PropertyInputData & PropertyInputEvents;
 
 const getDefaultItem = (kind?: PropertyValueKind): ScalarValue => {
   switch (kind) {
-    case 'text':
+    case 'text': {
       return '';
-    case 'number':
+    }
+    case 'number': {
       return 0;
-    case 'boolean':
+    }
+    case 'boolean': {
       return false;
-    case 'instant':
+    }
+    case 'instant': {
       return asInstant(Temporal.Now.instant().toString());
-    case 'plain-date':
+    }
+    case 'plain-date': {
       return asPlainDate(Temporal.Now.plainDateISO().toString());
-    case 'reference':
+    }
+    case 'reference': {
       return asNodeId('');
-    case 'external-reference':
+    }
+    case 'external-reference': {
       return { graph: asGraphId(''), target: asNodeId('') };
-    default:
+    }
+    case undefined: {
       return '';
+    }
+    case 'list': {
+      return '';
+    }
+    default: {
+      return '';
+    }
   }
 };
 
@@ -75,11 +89,7 @@ export const PropertyInput: React.FC<PropertyInputProps> = ({
           onClick={() => {
             // Infer item kind from existing items or default to text
             const itemKind =
-              kind && kind !== 'list'
-                ? kind
-                : value.length > 0
-                  ? inferKind(value[0])
-                  : 'text';
+              kind && kind !== 'list' ? kind : value.length > 0 ? inferKind(value[0]) : 'text';
             const newItem = getDefaultItem(itemKind);
             onChange([...value, newItem]);
             return undefined;
@@ -225,6 +235,9 @@ const ScalarInput: React.FC<
           />
         </div>
       );
+    }
+    case 'list': {
+      return null;
     }
     default: {
       return (

@@ -1,4 +1,12 @@
-import type { Graph, Node, Edge, QueryResult, PropertyValue, Result, ScalarValue } from '@canopy/types';
+import type {
+  Graph,
+  Node,
+  Edge,
+  QueryResult,
+  PropertyValue,
+  Result,
+  ScalarValue,
+} from '@canopy/types';
 import { ok, err } from '@canopy/types';
 import type { Query, Filter, Sort, QueryStep } from './model';
 import { reduce, filter, unique, flatMap } from 'remeda';
@@ -237,12 +245,12 @@ function unwrapValue(prop: PropertyValue | undefined): unknown {
 function unwrapScalar(scalar: ScalarValue): unknown {
   if (scalar === null) return undefined;
   if (typeof scalar === 'object') {
-     // ExternalReferenceValue check
-     if ('graph' in scalar && 'target' in scalar) {
-       return `${scalar.graph}://${scalar.target}`;
-     }
-     // Any other object? No other objects in ScalarValue union.
-     return scalar;
+    // ExternalReferenceValue check
+    if ('graph' in scalar && 'target' in scalar) {
+      return `${scalar.graph}://${scalar.target}`;
+    }
+    // Any other object? No other objects in ScalarValue union.
+    return scalar;
   }
   return scalar;
 }
