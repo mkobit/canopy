@@ -17,8 +17,8 @@ export const SearchPage = () => {
 
     const properties = [...node.properties.values()];
     return properties.some((val: PropertyValue) => {
-      if (val.kind === 'text') {
-        return val.value.toLowerCase().includes(q);
+      if (typeof val === 'string') {
+        return val.toLowerCase().includes(q);
       }
       return false;
     });
@@ -54,13 +54,13 @@ export const SearchPage = () => {
               <div className="flex justify-between items-start">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900">
-                    {name?.kind === 'text' ? name.value : 'Untitled Node'}
+                    {typeof name === 'string' ? name : 'Untitled Node'}
                   </h3>
                   <p className="text-sm text-gray-500 font-mono mt-1">{node.type}</p>
                 </div>
               </div>
-              {desc?.kind === 'text' && (
-                <p className="mt-2 text-gray-600 line-clamp-2">{desc.value}</p>
+              {typeof desc === 'string' && (
+                <p className="mt-2 text-gray-600 line-clamp-2">{desc}</p>
               )}
             </Link>
           );

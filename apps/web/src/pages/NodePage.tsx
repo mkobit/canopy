@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useGraph } from '../context/GraphContext';
-import { NodeView } from '@canopy/ui';
+import { NodeView, PropertyInput } from '@canopy/ui';
 import type { Node, NodeId, PropertyValue } from '@canopy/types';
 import { ArrowLeft, Save, Trash, Link as LinkIcon } from 'lucide-react';
 import { filter, map } from 'remeda';
@@ -156,22 +156,13 @@ export const NodePage = () => {
               {map([...editedProps.entries()], ([key, val]: readonly [string, PropertyValue]) => (
                 <div key={key} className="space-y-1">
                   <label className="text-sm text-gray-600">{key}</label>
-                  {/* Rudimentary property editor */}
-                  {val.kind === 'text' && (
-                    <textarea
-                      className="w-full p-2 border rounded-md"
-                      value={val.value}
-                      onChange={(e) => {
-                        handlePropertyChange(key, { ...val, value: e.target.value });
-                        return undefined;
-                      }}
-                    />
-                  )}
-                  {val.kind !== 'text' && (
-                    <div className="p-2 bg-yellow-50 text-yellow-700 text-sm border border-yellow-100 rounded">
-                      Editing for {val.kind} not implemented yet.
-                    </div>
-                  )}
+                  <PropertyInput
+                    value={val}
+                    onChange={(newVal) => {
+                      handlePropertyChange(key, newVal);
+                      return undefined;
+                    }}
+                  />
                 </div>
               ))}
             </div>
@@ -204,8 +195,8 @@ export const NodePage = () => {
                           <span className="font-medium">
                             {(() => {
                               const nameProp = otherNode?.properties.get('name');
-                              return nameProp && nameProp.kind === 'text'
-                                ? nameProp.value
+                              return typeof nameProp === 'string'
+                                ? nameProp
                                 : otherId;
                             })()}
                           </span>

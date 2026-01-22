@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { SyncEngine } from '../sync-engine';
 import { InMemoryProvider } from './in-memory-provider';
-import { asTypeId, unwrap } from '@canopy/types';
+import { asTypeId, unwrap, ScalarValue } from '@canopy/types';
 
 describe('InMemoryProvider', () => {
   it('should sync changes between two engines using InMemoryProvider', () => {
@@ -18,17 +18,14 @@ describe('InMemoryProvider', () => {
     const n1 = unwrap(
       engine1.store.addNode({
         type: asTypeId('n1'),
-        properties: new Map([['synced', { kind: 'boolean', value: true }]]),
+        properties: new Map([['synced', true]]),
       }),
     );
 
     // Expect change in engine2
     const n1_on_2 = engine2.store.getNode(n1.id);
     expect(n1_on_2).toBeDefined();
-    expect(
-      (n1_on_2?.properties.get('synced') as { readonly kind: string; readonly value: boolean })
-        .value,
-    ).toBe(true);
+    expect(n1_on_2?.properties.get('synced')).toBe(true);
 
     // Disconnect
     engine1.disconnectProvider();

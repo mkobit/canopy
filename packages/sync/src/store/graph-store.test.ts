@@ -16,14 +16,14 @@ describe('GraphStore', () => {
     it('should add and retrieve a node', () => {
       const nodeData = {
         type: asTypeId('person'),
-        properties: new Map([['name', { kind: 'text' as const, value: 'Alice' }]]),
+        properties: new Map([['name', 'Alice']]),
       };
 
       const node = unwrap(store.addNode(nodeData));
 
       expect(node.id).toBeDefined();
       expect(node.type).toBe('person');
-      expect(node.properties.get('name')).toEqual({ kind: 'text', value: 'Alice' });
+      expect(node.properties.get('name')).toBe('Alice');
       expect(node.metadata.created).toBeDefined();
 
       const retrieved = store.getNode(node.id);
@@ -45,11 +45,11 @@ describe('GraphStore', () => {
 
       const updated = unwrap(
         store.updateNode(node.id, {
-          properties: new Map([['age', { kind: 'number', value: 30 }]]),
+          properties: new Map([['age', 30]]),
         }),
       );
 
-      expect(updated.properties.get('age')).toEqual({ kind: 'number', value: 30 });
+      expect(updated.properties.get('age')).toBe(30);
       // expect(updated.metadata.modified).not.toEqual(node.metadata.modified); // Flaky on fast execution
 
       const retrieved = store.getNode(node.id);
@@ -121,11 +121,11 @@ describe('GraphStore', () => {
 
       const updated = unwrap(
         store.updateEdge(edge.id, {
-          properties: new Map([['weight', { kind: 'number', value: 1 }]]),
+          properties: new Map([['weight', 1]]),
         }),
       );
 
-      expect(updated.properties.get('weight')).toEqual({ kind: 'number', value: 1 });
+      expect(updated.properties.get('weight')).toBe(1);
 
       const retrieved = store.getEdge(edge.id);
       expect(retrieved).toEqual(updated);
