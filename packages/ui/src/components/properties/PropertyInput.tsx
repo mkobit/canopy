@@ -7,7 +7,7 @@ import { cn } from '../../utils/cn';
 interface PropertyInputData {
   readonly value: PropertyValue;
   readonly className?: string | undefined;
-  readonly kind?: PropertyValueKind | undefined; // In case we're creating a new property and value is undefined (though props say value is required here, handling creation might be separate)
+  readonly kind?: PropertyValueKind | undefined; // Required for unambiguous editing of string-based types
 }
 
 interface PropertyInputEvents {
@@ -16,86 +16,67 @@ interface PropertyInputEvents {
 
 type PropertyInputProps = PropertyInputData & PropertyInputEvents;
 
-// Helper to update a scalar value while preserving its kind
-const updateScalar = (original: ScalarValue, newValue: string | number | boolean): ScalarValue => {
-  switch (original.kind) {
+const getDefaultItem = (kind?: PropertyValueKind): ScalarValue => {
+  switch (kind) {
     case 'text': {
-      return { ...original, value: String(newValue) };
+      return '';
     }
     case 'number': {
-      return { ...original, value: Number(newValue) };
+      return 0;
     }
     case 'boolean': {
-      return { ...original, value: Boolean(newValue) };
+      return false;
     }
     case 'instant': {
-      return { ...original, value: asInstant(String(newValue)) };
+      return asInstant(Temporal.Now.instant().toString());
     }
     case 'plain-date': {
-      return { ...original, value: asPlainDate(String(newValue)) };
+      return asPlainDate(Temporal.Now.plainDateISO().toString());
     }
     case 'reference': {
-      return { ...original, target: asNodeId(String(newValue)) };
+      return asNodeId('');
     }
     case 'external-reference': {
-      return original;
+      return { graph: asGraphId(''), target: asNodeId('') };
+    }
+    case undefined: {
+      return '';
+    }
+    case 'list': {
+      return '';
     }
     default: {
-      return original;
+      return '';
     }
   }
 };
 
-const getDefaultItem = (firstItem?: ScalarValue): ScalarValue => {
-  if (!firstItem) return { kind: 'text', value: '' };
-  switch (firstItem.kind) {
-    case 'text': {
-      return { kind: 'text', value: '' };
-    }
-    case 'number': {
-      return { kind: 'number', value: 0 };
-    }
-    case 'boolean': {
-      return { kind: 'boolean', value: false };
-    }
-    case 'instant': {
-      return { kind: 'instant', value: asInstant(Temporal.Now.instant().toString()) };
-    }
-    case 'plain-date': {
-      return {
-        kind: 'plain-date',
-        value: asPlainDate(Temporal.Now.plainDateISO().toString()),
-      };
-    }
-    case 'reference': {
-      return { kind: 'reference', target: asNodeId('') };
-    }
-    case 'external-reference': {
-      return { kind: 'external-reference', graph: asGraphId(''), target: asNodeId('') };
-    }
-  }
-};
-
-export const PropertyInput: React.FC<PropertyInputProps> = ({ value, onChange, className }) => {
-  if (value.kind === 'list') {
+export const PropertyInput: React.FC<PropertyInputProps> = ({
+  value,
+  onChange,
+  className,
+  kind,
+}) => {
+  if (Array.isArray(value)) {
     return (
       <div className={cn('space-y-2', className)}>
-        {value.items.map((item, index) => (
+        {value.map((item, index) => (
           <div key={index} className="flex gap-2">
             <ScalarInput
               value={item}
+              {...(kind && kind !== 'list' ? { kind } : {})}
               onChange={(newItem) => {
-                const newItems = [...value.items];
+                const newItems = [...value];
                 // eslint-disable-next-line functional/immutable-data
                 newItems[index] = newItem;
-                onChange({ ...value, items: newItems });
+                onChange(newItems);
                 return undefined;
               }}
             />
             <button
               onClick={() => {
-                const newItems = value.items.filter((_, i) => i !== index);
-                onChange({ ...value, items: newItems });
+                const newItems = value.filter((_, i) => i !== index);
+                onChange(newItems);
                 return undefined;
               }}
               className="text-red-500 hover:bg-red-50 px-2 rounded"
@@ -106,14 +87,11 @@ export const PropertyInput: React.FC<PropertyInputProps> = ({ value, onChange, c
         ))}
         <button
           onClick={() => {
-            // Add a default value based on existing items or a generic default
-            // If list is empty, we can't infer kind easily without schema, but we can try to guess or use text.
-            // However, the `value` prop has `kind: 'list'` but `items` might be empty.
-            // If items is empty, we need the `kind` prop to know what to add, or default to text.
-            // For now, let's default to text if empty, or copy the kind of the first item.
-
-            const newItem = getDefaultItem(value.items.length > 0 ? value.items[0] : undefined);
-            onChange({ ...value, items: [...value.items, newItem] });
+            // Infer item kind from existing items or default to text
+            const itemKind =
+              kind && kind !== 'list' ? kind : value.length > 0 ? inferKind(value[0]) : 'text';
+            const newItem = getDefaultItem(itemKind);
+            onChange([...value, newItem]);
             return undefined;
           }}
           className="text-blue-500 hover:bg-blue-50 px-2 py-1 rounded text-sm border border-dashed border-blue-200 w-full"
@@ -124,7 +102,14 @@ export const PropertyInput: React.FC<PropertyInputProps> = ({ value, onChange, c
     );
   }
 
-  return <ScalarInput value={value} onChange={onChange} className={className} />;
+  return (
+    <ScalarInput
+      value={value as ScalarValue}
+      onChange={onChange}
+      className={className}
+      {...(kind ? { kind } : {})}
+    />
+  );
 };
 
 const ScalarInput: React.FC<
@@ -132,18 +117,22 @@ const ScalarInput: React.FC<
     value: ScalarValue;
     onChange: (val: ScalarValue) => unknown;
     className?: string | undefined;
+    kind?: PropertyValueKind;
   }>
-> = ({ value, onChange, className }) => {
+> = ({ value, onChange, className, kind }) => {
   const baseInputClass = cn('border rounded px-2 py-1 w-full text-sm', className);
 
-  switch (value.kind) {
+  // Use provided kind or infer
+  const activeKind = kind || inferKind(value);
+
+  switch (activeKind) {
     case 'text': {
       return (
         <input
           type="text"
-          value={value.value}
+          value={String(value ?? '')}
           onChange={(e) => {
-            onChange(updateScalar(value, e.target.value));
+            onChange(e.target.value);
             return undefined;
           }}
           className={baseInputClass}
@@ -154,9 +143,9 @@ const ScalarInput: React.FC<
       return (
         <input
           type="number"
-          value={value.value}
+          value={Number(value ?? 0)}
           onChange={(e) => {
-            onChange(updateScalar(value, e.target.value));
+            onChange(Number(e.target.value));
             return undefined;
           }}
           className={baseInputClass}
@@ -167,9 +156,9 @@ const ScalarInput: React.FC<
       return (
         <input
           type="checkbox"
-          checked={value.value}
+          checked={Boolean(value)}
           onChange={(e) => {
-            onChange(updateScalar(value, e.target.checked));
+            onChange(e.target.checked);
             return undefined;
           }}
           className={cn('h-4 w-4', className)}
@@ -177,13 +166,12 @@ const ScalarInput: React.FC<
       );
     }
     case 'instant': {
-      // Basic text input for now, ideally a datetime picker
       return (
         <input
           type="text"
-          value={value.value}
+          value={String(value ?? '')}
           onChange={(e) => {
-            onChange(updateScalar(value, e.target.value));
+            onChange(asInstant(e.target.value));
             return undefined;
           }}
           className={baseInputClass}
@@ -195,9 +183,9 @@ const ScalarInput: React.FC<
       return (
         <input
           type="date"
-          value={value.value}
+          value={String(value ?? '')}
           onChange={(e) => {
-            onChange(updateScalar(value, e.target.value));
+            onChange(asPlainDate(e.target.value));
             return undefined;
           }}
           className={baseInputClass}
@@ -208,9 +196,9 @@ const ScalarInput: React.FC<
       return (
         <input
           type="text"
-          value={value.target}
+          value={String(value ?? '')}
           onChange={(e) => {
-            onChange(updateScalar(value, e.target.value));
+            onChange(asNodeId(e.target.value));
             return undefined;
           }}
           className={baseInputClass}
@@ -219,13 +207,17 @@ const ScalarInput: React.FC<
       );
     }
     case 'external-reference': {
+      const extVal =
+        typeof value === 'object' && value !== null && 'graph' in value
+          ? value
+          : { graph: asGraphId(''), target: asNodeId('') };
       return (
         <div className={cn('space-y-1', className)}>
           <input
             type="text"
-            value={value.graph}
+            value={extVal.graph}
             onChange={(e) => {
-              onChange({ ...value, graph: asGraphId(e.target.value) });
+              onChange({ ...extVal, graph: asGraphId(e.target.value) });
               return undefined;
             }}
             className={baseInputClass}
@@ -233,9 +225,9 @@ const ScalarInput: React.FC<
           />
           <input
             type="text"
-            value={value.target}
+            value={extVal.target}
             onChange={(e) => {
-              onChange({ ...value, target: asNodeId(e.target.value) });
+              onChange({ ...extVal, target: asNodeId(e.target.value) });
               return undefined;
             }}
             className={baseInputClass}
@@ -244,5 +236,28 @@ const ScalarInput: React.FC<
         </div>
       );
     }
+    case 'list': {
+      return null;
+    }
+    default: {
+      return (
+        <input
+          type="text"
+          value={String(value ?? '')}
+          onChange={(e) => {
+            onChange(e.target.value);
+            return undefined;
+          }}
+          className={baseInputClass}
+        />
+      );
+    }
   }
 };
+
+function inferKind(value: ScalarValue): PropertyValueKind {
+  if (typeof value === 'boolean') return 'boolean';
+  if (typeof value === 'number') return 'number';
+  if (typeof value === 'object' && value !== null && 'graph' in value) return 'external-reference';
+  return 'text';
+}

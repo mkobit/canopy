@@ -5,11 +5,11 @@ import * as Y from 'yjs';
 
 // Helpers
 function getPropertyValue(value: PropertyValue | undefined): unknown {
-  if (!value) return undefined;
-  if (value.kind === 'text' || value.kind === 'number' || value.kind === 'boolean') {
-    return value.value;
-  }
-  return undefined;
+  if (value === undefined) return undefined;
+  if (Array.isArray(value)) return value;
+  // ExternalReferenceValue is an object but distinct from null/undefined
+  if (typeof value === 'object' && value !== null && 'graph' in value) return value;
+  return value;
 }
 
 describe('SyncEngine', () => {
@@ -29,7 +29,7 @@ describe('SyncEngine', () => {
       engine.store.addNode({
         id: nodeId,
         type: typeId,
-        properties: new Map([['name', { kind: 'text', value: 'Test Node' }]]),
+        properties: new Map([['name', 'Test Node']]),
       }),
     );
 
@@ -63,7 +63,7 @@ describe('SyncEngine', () => {
     const n1 = unwrap(
       engine1.store.addNode({
         type: asTypeId('n1'),
-        properties: new Map([['key', { kind: 'text', value: 'val' }]]),
+        properties: new Map([['key', 'val']]),
       }),
     );
 
@@ -75,7 +75,6 @@ describe('SyncEngine', () => {
     const n1_restored = engine2.store.getNode(n1.id);
     expect(n1_restored).toBeDefined();
     expect(getPropertyValue(n1_restored?.properties.get('key'))).toBe('val');
-    expect(getPropertyValue(n1_restored?.properties.get('key'))).toBe('val');
   });
 
   it('should support initial snapshot in constructor', () => {
@@ -83,7 +82,7 @@ describe('SyncEngine', () => {
     const n1 = unwrap(
       engine1.store.addNode({
         type: asTypeId('n1'),
-        properties: new Map([['key', { kind: 'text', value: 'val' }]]),
+        properties: new Map([['key', 'val']]),
       }),
     );
     const snapshot = engine1.getSnapshot();
@@ -122,7 +121,7 @@ describe('SyncEngine', () => {
     const n1 = unwrap(
       engine1.store.addNode({
         type: asTypeId('n1'),
-        properties: new Map([['synced', { kind: 'boolean', value: true }]]),
+        properties: new Map([['synced', true]]),
       }),
     );
 

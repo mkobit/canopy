@@ -6,20 +6,10 @@ export type { instantBrand, plainDateBrand } from './temporal';
 
 export type { Instant, PlainDate, TemporalMetadata } from './temporal';
 
-export type {
-  ScalarValue,
-  TextValue,
-  NumberValue,
-  BooleanValue,
-  InstantValue,
-  PlainDateValue,
-  ReferenceValue,
-  ExternalReferenceValue,
-} from './scalars';
+export type { ScalarValue, ExternalReferenceValue } from './scalars';
 
 export type {
   PropertyValue,
-  ListValue,
   PropertyValueKind,
   PropertyDefinition,
   PropertyMap,
@@ -32,7 +22,16 @@ export type { NodeTypeDefinition, EdgeTypeDefinition } from './meta';
 
 export type { Graph, QueryResult } from './graph';
 
-export type { GraphEvent, GraphResult } from './events';
+export type {
+  GraphEvent,
+  GraphResult,
+  NodeCreated,
+  NodePropertiesUpdated,
+  NodeDeleted,
+  EdgeCreated,
+  EdgePropertiesUpdated,
+  EdgeDeleted,
+} from './events';
 
 export type { ValidationResult, ValidationError } from './validation';
 
@@ -53,3 +52,5 @@ export {
   asNodeId,
   asEdgeId,
 } from './factories';
+
+export type { QueryNode } from './query';

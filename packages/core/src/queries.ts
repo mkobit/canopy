@@ -38,6 +38,6 @@ export function getNodeType(graph: Readonly<Graph>, typeNameOrId: string): Node 
   return findNode(graph, (n) => {
     if (n.type !== SYSTEM_IDS.NODE_TYPE) return false;
     const nameProp = n.properties.get('name');
-    return nameProp?.kind === 'text' && nameProp.value === typeNameOrId;
+    return nameProp === typeNameOrId;
   });
 }

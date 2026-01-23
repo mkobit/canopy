@@ -3,17 +3,16 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { PropertyDisplay } from '../PropertyDisplay';
 import { PropertyInput } from '../PropertyInput';
-import { TextValue, NumberValue } from '@canopy/types';
 
 describe('PropertyDisplay', () => {
   it('renders text value', () => {
-    const value: TextValue = { kind: 'text', value: 'Hello World' };
+    const value = 'Hello World';
     render(<PropertyDisplay value={value} />);
     expect(screen.getByText('Hello World')).toBeDefined();
   });
 
   it('renders number value', () => {
-    const value: NumberValue = { kind: 'number', value: 42 };
+    const value = 42;
     render(<PropertyDisplay value={value} />);
     expect(screen.getByText('42')).toBeDefined();
   });
@@ -21,24 +20,24 @@ describe('PropertyDisplay', () => {
 
 describe('PropertyInput', () => {
   it('updates text value', () => {
-    const value: TextValue = { kind: 'text', value: 'Initial' };
+    const value = 'Initial';
     const onChange = vi.fn();
-    render(<PropertyInput value={value} onChange={onChange} />);
+    render(<PropertyInput value={value} onChange={onChange} kind="text" />);
 
     const input = screen.getByDisplayValue('Initial');
     fireEvent.change(input, { target: { value: 'Updated' } });
 
-    expect(onChange).toHaveBeenCalledWith({ kind: 'text', value: 'Updated' });
+    expect(onChange).toHaveBeenCalledWith('Updated');
   });
 
   it('updates number value', () => {
-    const value: NumberValue = { kind: 'number', value: 10 };
+    const value = 10;
     const onChange = vi.fn();
-    render(<PropertyInput value={value} onChange={onChange} />);
+    render(<PropertyInput value={value} onChange={onChange} kind="number" />);
 
     const input = screen.getByDisplayValue('10');
     fireEvent.change(input, { target: { value: '20' } });
 
-    expect(onChange).toHaveBeenCalledWith({ kind: 'number', value: 20 });
+    expect(onChange).toHaveBeenCalledWith(20);
   });
 });

@@ -3,13 +3,13 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { NodeView } from '../NodeView';
 import { GraphCanvas } from '../GraphCanvas';
-import { Node, TextValue } from '@canopy/types';
+import { Node } from '@canopy/types';
 import { asNodeId, asTypeId, createInstant } from '@canopy/types';
 
 // Mocks
 const mockNodeId = asNodeId('node-1');
 const mockTypeId = asTypeId('person');
-const mockTextValue: TextValue = { kind: 'text', value: 'Alice' };
+const mockTextValue = 'Alice';
 
 const mockNode: Node = {
   id: mockNodeId,

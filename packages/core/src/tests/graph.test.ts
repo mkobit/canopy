@@ -61,8 +61,10 @@ describe('Core Graph Engine', () => {
 
     expect(r1.events).toHaveLength(1);
     expect(r1.events[0]).toMatchObject({
-      type: 'NODE_CREATED',
-      node: node1,
+      type: 'NodeCreated',
+      id: node1.id,
+      nodeType: node1.type,
+      properties: node1.properties,
     });
 
     const r2 = unwrap(addNode(g1, node2));
@@ -73,8 +75,10 @@ describe('Core Graph Engine', () => {
 
     expect(r2.events).toHaveLength(1);
     expect(r2.events[0]).toMatchObject({
-      type: 'NODE_CREATED',
-      node: node2,
+      type: 'NodeCreated',
+      id: node2.id,
+      nodeType: node2.type,
+      properties: node2.properties,
     });
   });
 
@@ -84,12 +88,12 @@ describe('Core Graph Engine', () => {
     const r2 = unwrap(
       updateNode(g1, nodeId1, (n) => ({
         ...n,
-        properties: new Map([['name', { kind: 'text', value: 'Alice' }]]),
+        properties: new Map([['name', 'Alice']]),
       })),
     );
     const g2 = r2.graph;
 
-    expect(g2.nodes.get(nodeId1)?.properties.get('name')).toEqual({ kind: 'text', value: 'Alice' });
+    expect(g2.nodes.get(nodeId1)?.properties.get('name')).toEqual('Alice');
     expect(g1.nodes.get(nodeId1)?.properties.size).toBe(0); // Original unmodified
 
     // Metadata modified should be updated
@@ -102,10 +106,10 @@ describe('Core Graph Engine', () => {
     expect(event).toBeDefined();
     if (!event) throw new Error('Event missing');
 
-    expect(event.type).toBe('NODE_UPDATED');
-    if (event.type === 'NODE_UPDATED') {
-      expect(event.nodeId).toBe(nodeId1);
-      expect(event.changes.properties?.get('name')).toEqual({ kind: 'text', value: 'Alice' });
+    expect(event.type).toBe('NodePropertiesUpdated');
+    if (event.type === 'NodePropertiesUpdated') {
+      expect(event.id).toBe(nodeId1);
+      expect(event.changes.get('name')).toEqual('Alice');
     }
   });
 
@@ -140,12 +144,10 @@ describe('Core Graph Engine', () => {
 
     // Verify events: 1 node deleted, 1 edge deleted
     expect(rRemoved.events).toHaveLength(2);
-    expect(rRemoved.events).toEqual(
-      expect.arrayContaining([
-        { type: 'NODE_DELETED', nodeId: nodeId1 },
-        { type: 'EDGE_DELETED', edgeId: edgeId },
-      ]),
-    );
+    // Events might be in any order? node.ts removeNode puts NodeDeleted first, then EdgeDeleted.
+    // wait, ops/node.ts: events: [{ type: 'NodeDeleted', ... }, ...edgeEvents]
+    expect(rRemoved.events[0]).toMatchObject({ type: 'NodeDeleted', id: nodeId1 });
+    expect(rRemoved.events[1]).toMatchObject({ type: 'EdgeDeleted', id: edgeId });
   });
 
   it('should query nodes and edges', () => {
@@ -202,15 +204,12 @@ describe('Core Graph Engine', () => {
     const rUpdated = unwrap(
       updateEdge(g, edgeId, (e) => ({
         ...e,
-        properties: new Map([['since', { kind: 'number', value: 2023 }]]),
+        properties: new Map([['since', 2023]]),
       })),
     );
     const gUpdated = rUpdated.graph;
 
-    expect(gUpdated.edges.get(edgeId)?.properties.get('since')).toEqual({
-      kind: 'number',
-      value: 2023,
-    });
+    expect(gUpdated.edges.get(edgeId)?.properties.get('since')).toEqual(2023);
     expect(g.edges.get(edgeId)?.properties.size).toBe(0); // Original unmodified
 
     expect(rUpdated.events).toHaveLength(1);
@@ -218,10 +217,10 @@ describe('Core Graph Engine', () => {
     expect(event).toBeDefined();
     if (!event) throw new Error('Event missing');
 
-    expect(event.type).toBe('EDGE_UPDATED');
-    if (event.type === 'EDGE_UPDATED') {
-      expect(event.edgeId).toBe(edgeId);
-      expect(event.changes.properties?.get('since')).toEqual({ kind: 'number', value: 2023 });
+    expect(event.type).toBe('EdgePropertiesUpdated');
+    if (event.type === 'EdgePropertiesUpdated') {
+      expect(event.id).toBe(edgeId);
+      expect(event.changes.get('since')).toEqual(2023);
     }
   });
 
@@ -250,8 +249,8 @@ describe('Core Graph Engine', () => {
 
     expect(rRemoved.events).toHaveLength(1);
     expect(rRemoved.events[0]).toMatchObject({
-      type: 'EDGE_DELETED',
-      edgeId,
+      type: 'EdgeDeleted',
+      id: edgeId,
     });
   });
 });

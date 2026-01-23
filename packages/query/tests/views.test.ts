@@ -71,9 +71,7 @@ describe('View Definitions', () => {
     const views = listViewDefinitions(graph);
     expect(views.length).toBeGreaterThanOrEqual(3);
 
-    const names = views.map((v) =>
-      v.properties.get('name')?.kind === 'text' ? v.properties.get('name')?.value : '',
-    );
+    const names = views.map((v) => v.properties.get('name') as string);
     expect(names).toContain('All Nodes');
     expect(names).toContain('By Type');
     expect(names).toContain('Recent');

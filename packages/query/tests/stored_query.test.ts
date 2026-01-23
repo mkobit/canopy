@@ -36,11 +36,7 @@ describe('Stored Queries', () => {
     // 1 new query + 3 system queries = 4
     expect(nodesList.length).toBe(4);
 
-    const myQuery = nodesList.find(
-      (n) =>
-        n.properties.get('name')?.kind === 'text' &&
-        n.properties.get('name')?.value === 'High Priority Tasks',
-    );
+    const myQuery = nodesList.find((n) => n.properties.get('name') === 'High Priority Tasks');
     expect(myQuery).toBeDefined();
   });
 
@@ -57,8 +53,8 @@ describe('Stored Queries', () => {
         id: task1,
         type: taskType,
         properties: new Map([
-          ['name', { kind: 'text', value: 'Task 1' }],
-          ['priority', { kind: 'text', value: 'high' }],
+          ['name', 'Task 1'],
+          ['priority', 'high'],
         ]),
         metadata: {
           created: createInstant(new Date('2023-01-01T00:00:00Z')),
@@ -72,8 +68,8 @@ describe('Stored Queries', () => {
         id: task2,
         type: taskType,
         properties: new Map([
-          ['name', { kind: 'text', value: 'Task 2' }],
-          ['priority', { kind: 'text', value: 'low' }],
+          ['name', 'Task 2'],
+          ['priority', 'low'],
         ]),
         metadata: {
           created: createInstant(new Date('2023-01-01T00:00:00Z')),

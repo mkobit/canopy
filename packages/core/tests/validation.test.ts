@@ -60,8 +60,8 @@ function createGraphWithTypes() {
     id: asNodeId('type-person'),
     type: SYSTEM_IDS.NODE_TYPE,
     properties: {
-      name: { kind: 'text', value: 'Person' },
-      properties: { kind: 'text', value: JSON.stringify(personProperties) },
+      name: 'Person',
+      properties: JSON.stringify(personProperties),
     },
   });
 
@@ -72,7 +72,7 @@ function createGraphWithTypes() {
     id: asNodeId('type-task'),
     type: SYSTEM_IDS.NODE_TYPE,
     properties: {
-      name: { kind: 'text', value: 'Task' },
+      name: 'Task',
     },
   });
   g = unwrap(addNode(g, taskTypeNode)).graph;
@@ -85,10 +85,10 @@ function createGraphWithTypes() {
     id: asNodeId('edge-assigned-to'),
     type: SYSTEM_IDS.EDGE_TYPE,
     properties: {
-      name: { kind: 'text', value: 'Assigned To' },
-      properties: { kind: 'text', value: JSON.stringify(assignedToProperties) },
-      sourceTypes: { kind: 'list', items: [{ kind: 'text', value: 'type-task' }] },
-      targetTypes: { kind: 'list', items: [{ kind: 'text', value: 'type-person' }] },
+      name: 'Assigned To',
+      properties: JSON.stringify(assignedToProperties),
+      sourceTypes: ['type-task'],
+      targetTypes: ['type-person'],
     },
   });
   g = unwrap(addNode(g, assignedToTypeNode)).graph;
@@ -102,8 +102,8 @@ describe('validation', () => {
     const node = createNode({
       type: asTypeId('type-person'),
       properties: {
-        name: { kind: 'text', value: 'Alice' },
-        age: { kind: 'number', value: 30 },
+        name: 'Alice',
+        age: 30,
       },
     });
 
@@ -117,7 +117,7 @@ describe('validation', () => {
     const node = createNode({
       type: asTypeId('type-person'),
       properties: {
-        age: { kind: 'number', value: 30 },
+        age: 30,
       },
     });
 
@@ -132,15 +132,15 @@ describe('validation', () => {
     const node = createNode({
       type: asTypeId('type-person'),
       properties: {
-        name: { kind: 'text', value: 'Alice' },
-        age: { kind: 'text', value: 'Thirty' }, // Should be number
+        name: 'Alice',
+        age: 'Thirty', // Should be number
       },
     });
 
     const result = validateNode(g, node);
     expect(result.valid).toBe(false);
     expect(result.errors[0].message).toContain('expected type');
-    expect(result.errors[0].actual).toBe('text');
+    expect(result.errors[0].actual).toBe('string');
   });
 
   it('passes validation if type definition is missing', () => {
@@ -166,7 +166,7 @@ describe('validation', () => {
       source: task.id,
       target: person.id,
       properties: {
-        role: { kind: 'text', value: 'Owner' },
+        role: 'Owner',
       },
     });
 
@@ -187,7 +187,7 @@ describe('validation', () => {
       source: person1.id,
       target: person2.id,
       properties: {
-        role: { kind: 'text', value: 'Owner' },
+        role: 'Owner',
       },
     });
 
@@ -238,8 +238,8 @@ describe('validation', () => {
     const validNode = createNode({
       type: SYSTEM_IDS.NODE_TYPE,
       properties: {
-        name: { kind: 'text', value: 'New Type' },
-        description: { kind: 'text', value: 'Description' },
+        name: 'New Type',
+        description: 'Description',
         // 'properties' is optional
       },
     });
@@ -254,7 +254,7 @@ describe('validation', () => {
     const invalidNode = createNode({
       type: SYSTEM_IDS.NODE_TYPE,
       properties: {
-        name: { kind: 'number', value: 123 }, // Should be text
+        name: 123, // Should be text
       },
     });
 

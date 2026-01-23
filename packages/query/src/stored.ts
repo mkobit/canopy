@@ -15,15 +15,12 @@ import { mapValues, isPlainObject, isString } from 'remeda';
 
 // Helper to wrap a scalar value
 function scalar(val: string | number | boolean): Result<ScalarValue, Error> {
-  if (typeof val === 'string') return ok({ kind: 'text', value: val });
-  if (typeof val === 'number') return ok({ kind: 'number', value: val });
-  if (typeof val === 'boolean') return ok({ kind: 'boolean', value: val });
-  return err(new Error(`Unsupported scalar type: ${typeof val}`));
+  return ok(val);
 }
 
 // Helper to create a list property
 function list(items: readonly string[]): PropertyValue {
-  return { kind: 'list', items: items.map((i) => ({ kind: 'text', value: i })) };
+  return items;
 }
 
 export interface SaveQueryOptions {
@@ -102,13 +99,13 @@ export function getQueryDefinition(graph: Graph, nodeId: NodeId): Result<Query, 
   }
 
   const definitionProp = node.properties.get('definition');
-  if (!definitionProp || definitionProp.kind !== 'text') {
+  if (typeof definitionProp !== 'string') {
     return err(new Error(`Query definition node ${nodeId} has invalid definition property`));
   }
 
   return fromThrowable(
     () => {
-      return JSON.parse(definitionProp.value) as Query;
+      return JSON.parse(definitionProp) as Query;
     },
     (e) => new Error(`Failed to parse query definition for node ${nodeId}: ${e}`),
   );

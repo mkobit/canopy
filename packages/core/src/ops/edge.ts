@@ -1,4 +1,4 @@
-import type { Graph, Edge, EdgeId, Result, GraphResult } from '@canopy/types';
+import type { Graph, Edge, EdgeId, Result, GraphResult, GraphEvent } from '@canopy/types';
 import { createInstant, ok, err } from '@canopy/types';
 import { validateEdge } from '../validation';
 
@@ -45,9 +45,19 @@ export function addEdge(
     },
   };
 
+  const event: GraphEvent = {
+    type: 'EdgeCreated',
+    id: edge.id,
+    edgeType: edge.type,
+    source: edge.source,
+    target: edge.target,
+    properties: edge.properties,
+    timestamp: createInstant(),
+  };
+
   return ok({
     graph: newGraph,
-    events: [{ type: 'EDGE_CREATED', edge }],
+    events: [event],
     value: newGraph,
   });
 }
@@ -76,9 +86,15 @@ export function removeEdge(graph: Graph, edgeId: EdgeId): Result<GraphResult<Gra
     },
   };
 
+  const event: GraphEvent = {
+    type: 'EdgeDeleted',
+    id: edgeId,
+    timestamp: createInstant(),
+  };
+
   return ok({
     graph: newGraph,
-    events: [{ type: 'EDGE_DELETED', edgeId }],
+    events: [event],
     value: newGraph,
   });
 }
@@ -148,9 +164,16 @@ export function updateEdge(
     },
   };
 
+  const event: GraphEvent = {
+    type: 'EdgePropertiesUpdated',
+    id: edgeId,
+    changes: finalEdge.properties,
+    timestamp: createInstant(),
+  };
+
   return ok({
     graph: newGraph,
-    events: [{ type: 'EDGE_UPDATED', edgeId, changes: finalEdge }],
+    events: [event],
     value: newGraph,
   });
 }

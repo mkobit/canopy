@@ -21,18 +21,12 @@ describe('Zod Schemas', () => {
   });
 
   it('should validate PropertyValue (Text)', () => {
-    const value = { kind: 'text', value: 'hello' };
+    const value = 'hello';
     expect(PropertyValueSchema.parse(value)).toEqual(value);
   });
 
   it('should validate PropertyValue (List)', () => {
-    const value = {
-      kind: 'list',
-      items: [
-        { kind: 'text', value: 'a' },
-        { kind: 'text', value: 'b' },
-      ],
-    };
+    const value = ['a', 'b'];
     expect(PropertyValueSchema.parse(value)).toEqual(value);
   });
 
@@ -57,8 +51,8 @@ describe('Zod Schemas', () => {
       id: '123e4567-e89b-12d3-a456-426614174000',
       type: 'Person',
       properties: {
-        name: { kind: 'text', value: 'Alice' },
-        age: { kind: 'number', value: 30 },
+        name: 'Alice',
+        age: 30,
       },
       metadata: {
         created: '2023-10-27T10:00:00.000Z',
@@ -68,7 +62,7 @@ describe('Zod Schemas', () => {
 
     const parsed = NodeSchema.parse(jsonNode);
     expect(parsed.properties).toBeInstanceOf(Map);
-    expect(parsed.properties.get('name')).toEqual({ kind: 'text', value: 'Alice' });
+    expect(parsed.properties.get('name')).toBe('Alice');
   });
 
   it('should validate Graph from JSON object', () => {
