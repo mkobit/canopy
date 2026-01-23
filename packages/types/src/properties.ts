@@ -1,5 +1,12 @@
 import type { ScalarValue } from './scalars';
 
+export declare const propertyKeyBrand: unique symbol;
+
+/**
+ * A strongly-typed property key.
+ */
+export type PropertyKey = string & Readonly<{ [propertyKeyBrand]: never }>;
+
 /**
  * A property value is either a scalar or a flat list of scalars.
  * No nesting—lists cannot contain other lists.
@@ -19,17 +26,31 @@ export interface PropertyDefinition {
 /**
  * Property value kinds for schema definition.
  */
-export type PropertyValueKind =
-  | 'text'
-  | 'number'
-  | 'boolean'
-  | 'instant'
-  | 'plain-date'
-  | 'reference'
-  | 'external-reference'
-  | 'list';
+export type PropertyValueKind = 'text' | 'number' | 'boolean' | 'instant' | 'reference' | 'list';
 
 /**
  * A collection of property values keyed by property name.
  */
 export type PropertyMap = ReadonlyMap<string, PropertyValue>;
+
+/**
+ * Represents changes to properties in an update event.
+ */
+export type PropertyChanges = Readonly<{
+  /** Properties that were set or updated */
+  set: ReadonlyMap<
+    string,
+    Readonly<{
+      oldValue: PropertyValue | undefined;
+      newValue: PropertyValue;
+    }>
+  >;
+
+  /** Properties that were removed */
+  removed: ReadonlyMap<
+    string,
+    Readonly<{
+      oldValue: PropertyValue;
+    }>
+  >;
+}>;

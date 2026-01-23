@@ -123,19 +123,15 @@ function validateValue(val: PropertyValue, def: PropertyDefinition): readonly Va
 
     switch (def.valueKind) {
       case 'text':
-      case 'instant':
-      case 'plain-date':
       case 'reference': {
         return typeof val === 'string';
       }
-      case 'number': {
+      case 'number':
+      case 'instant': {
         return typeof val === 'number';
       }
       case 'boolean': {
         return typeof val === 'boolean';
-      }
-      case 'external-reference': {
-        return typeof val === 'object' && val !== null && 'graph' in val;
       }
       default: {
         return false;

@@ -1,6 +1,7 @@
 import type { Graph, Node, NodeId, Result, GraphResult, GraphEvent } from '@canopy/types';
 import { createInstant, ok, err } from '@canopy/types';
 import { validateNode } from '../validation';
+import { calculatePropertyChanges } from '../utils';
 
 export type NodeOperationOptions = Readonly<{
   validate?: boolean;
@@ -165,10 +166,12 @@ export function updateNode(
     },
   };
 
+  const changes = calculatePropertyChanges(existingNode.properties, finalNode.properties);
+
   const event: GraphEvent = {
     type: 'NodePropertiesUpdated',
     id: nodeId,
-    changes: finalNode.properties,
+    changes,
     timestamp: createInstant(),
   };
 

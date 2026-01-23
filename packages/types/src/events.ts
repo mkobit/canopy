@@ -1,5 +1,5 @@
 import type { NodeId, EdgeId, TypeId } from './identifiers';
-import type { PropertyMap } from './properties';
+import type { PropertyMap, PropertyChanges } from './properties';
 import type { Instant } from './temporal';
 import type { Graph } from './graph';
 
@@ -22,7 +22,7 @@ export interface NodeCreated {
 export interface NodePropertiesUpdated {
   readonly type: 'NodePropertiesUpdated';
   readonly id: NodeId;
-  readonly changes: PropertyMap; // Contains only the changed properties
+  readonly changes: PropertyChanges;
   readonly timestamp: Instant;
 }
 
@@ -45,7 +45,7 @@ export interface EdgeCreated {
 export interface EdgePropertiesUpdated {
   readonly type: 'EdgePropertiesUpdated';
   readonly id: EdgeId;
-  readonly changes: PropertyMap; // Contains only the changed properties
+  readonly changes: PropertyChanges;
   readonly timestamp: Instant;
 }
 

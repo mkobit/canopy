@@ -109,7 +109,7 @@ describe('Core Graph Engine', () => {
     expect(event.type).toBe('NodePropertiesUpdated');
     if (event.type === 'NodePropertiesUpdated') {
       expect(event.id).toBe(nodeId1);
-      expect(event.changes.get('name')).toEqual('Alice');
+      expect(event.changes.set.get('name')).toEqual({ oldValue: undefined, newValue: 'Alice' });
     }
   });
 
@@ -220,7 +220,7 @@ describe('Core Graph Engine', () => {
     expect(event.type).toBe('EdgePropertiesUpdated');
     if (event.type === 'EdgePropertiesUpdated') {
       expect(event.id).toBe(edgeId);
-      expect(event.changes.get('since')).toEqual(2023);
+      expect(event.changes.set.get('since')).toEqual({ oldValue: undefined, newValue: 2023 });
     }
   });
 

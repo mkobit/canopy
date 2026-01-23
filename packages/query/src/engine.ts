@@ -244,13 +244,5 @@ function unwrapValue(prop: PropertyValue | undefined): unknown {
 
 function unwrapScalar(scalar: ScalarValue): unknown {
   if (scalar === null) return undefined;
-  if (typeof scalar === 'object') {
-    // ExternalReferenceValue check
-    if ('graph' in scalar && 'target' in scalar) {
-      return `${scalar.graph}://${scalar.target}`;
-    }
-    // Any other object? No other objects in ScalarValue union.
-    return scalar;
-  }
   return scalar;
 }

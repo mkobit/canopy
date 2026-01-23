@@ -25,18 +25,6 @@ export function findNodes(
         return prop.every((v, i) => v === value[i]);
       }
 
-      // If object (ExternalReferenceValue)?
-      if (
-        typeof prop === 'object' &&
-        prop !== null &&
-        typeof value === 'object' &&
-        value !== null &&
-        'graph' in prop &&
-        'graph' in value
-      ) {
-        return prop.graph === value.graph && prop.target === value.target;
-      }
-
       return false;
     });
   });

@@ -115,7 +115,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
       [...engine.store.getAllEdges()].map((edge) => [edge.id, edge]),
     );
 
-    const now = asInstant(Temporal.Now.instant().toString());
+    const now = asInstant(Temporal.Now.instant().epochMilliseconds);
     setGraph({
       id: graphId,
       name: 'Graph', // We should load this
@@ -143,7 +143,10 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
     if (syncEngineRef.current && storage && currentGraphId && graph) {
       return fromAsyncThrowable(async () => {
         const snapshot = syncEngineRef.current!.getSnapshot();
-        const createdAt = graph.metadata.created || Temporal.Now.instant().toString();
+        const createdAt = graph.metadata.created
+          ? Temporal.Instant.fromEpochMilliseconds(graph.metadata.created).toString()
+          : Temporal.Now.instant().toString();
+
         const result = await storage.save(currentGraphId, snapshot, {
           id: currentGraphId,
           name: graph.name,
@@ -164,9 +167,6 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
   }, [storage, currentGraphId, graph]);
 
   // Schema for validating inputs to createNode
-  // Note: We need to specify the output type explicitly because Zod's inference sometimes
-  // struggles with branded types across packages if not careful, but here TypeIdSchema
-  // should already return TypeId.
   const CreateNodeInputSchema = z.object({
     type: TypeIdSchema,
     properties: z.record(z.string(), z.unknown()).optional(),
@@ -186,13 +186,16 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
         // Force cast because Zod schema is separate from type definition
         const typeId = input.type as unknown as TypeId;
 
-        // Safer mapping using Type Checking or explicit conversion
-        // We only accept strings as text properties for now, similar to before but explicit
-
+        // Map properties to PropertyValue (strings only for now)
         const entries = input.properties
           ? Object.entries(input.properties)
-              .filter(([_, value]) => typeof value === 'string')
-              .map(([key, value]) => [key, { kind: 'text', value: value }] as const)
+              .filter(
+                ([_, value]) =>
+                  typeof value === 'string' ||
+                  typeof value === 'number' ||
+                  typeof value === 'boolean',
+              )
+              .map(([key, value]) => [key, value] as const)
           : [];
 
         const propsMap = new Map<string, PropertyValue>(

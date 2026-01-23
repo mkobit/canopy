@@ -1,8 +1,8 @@
 import React from 'react';
 import type { PropertyValue, PropertyValueKind, ScalarValue } from '@canopy/types';
-import { asInstant, asPlainDate, asNodeId, asGraphId } from '@canopy/types';
-import { Temporal } from 'temporal-polyfill';
+import { asNodeId, parseInstant, createInstant, fromThrowable } from '@canopy/types';
 import { cn } from '../../utils/cn';
+import { Temporal } from 'temporal-polyfill';
 
 interface PropertyInputData {
   readonly value: PropertyValue;
@@ -28,16 +28,10 @@ const getDefaultItem = (kind?: PropertyValueKind): ScalarValue => {
       return false;
     }
     case 'instant': {
-      return asInstant(Temporal.Now.instant().toString());
-    }
-    case 'plain-date': {
-      return asPlainDate(Temporal.Now.plainDateISO().toString());
+      return createInstant();
     }
     case 'reference': {
       return asNodeId('');
-    }
-    case 'external-reference': {
-      return { graph: asGraphId(''), target: asNodeId('') };
     }
     case undefined: {
       return '';
@@ -49,6 +43,14 @@ const getDefaultItem = (kind?: PropertyValueKind): ScalarValue => {
       return '';
     }
   }
+};
+
+const formatInstantForInput = (val: ScalarValue): string => {
+  if (typeof val !== 'number') return '';
+  const res = fromThrowable(() =>
+    Temporal.Instant.fromEpochMilliseconds(val).toString().slice(0, 16),
+  );
+  return res.ok ? res.value : '';
 };
 
 export const PropertyInput: React.FC<PropertyInputProps> = ({
@@ -166,26 +168,23 @@ const ScalarInput: React.FC<
       );
     }
     case 'instant': {
+      const displayValue = formatInstantForInput(value);
+
       return (
         <input
-          type="text"
-          value={String(value ?? '')}
+          type="datetime-local"
+          value={displayValue}
           onChange={(e) => {
-            onChange(asInstant(e.target.value));
-            return undefined;
-          }}
-          className={baseInputClass}
-          placeholder="ISO 8601 Timestamp"
-        />
-      );
-    }
-    case 'plain-date': {
-      return (
-        <input
-          type="date"
-          value={String(value ?? '')}
-          onChange={(e) => {
-            onChange(asPlainDate(e.target.value));
+            const res = fromThrowable(() => {
+              // datetime-local returns YYYY-MM-DDThh:mm. Append Z for UTC.
+              return Temporal.Instant.from(e.target.value + ':00Z').epochMilliseconds;
+            });
+            if (res.ok) {
+              const instantRes = parseInstant(res.value);
+              if (instantRes.ok) {
+                onChange(instantRes.value);
+              }
+            }
             return undefined;
           }}
           className={baseInputClass}
@@ -204,36 +203,6 @@ const ScalarInput: React.FC<
           className={baseInputClass}
           placeholder="Node ID"
         />
-      );
-    }
-    case 'external-reference': {
-      const extVal =
-        typeof value === 'object' && value !== null && 'graph' in value
-          ? value
-          : { graph: asGraphId(''), target: asNodeId('') };
-      return (
-        <div className={cn('space-y-1', className)}>
-          <input
-            type="text"
-            value={extVal.graph}
-            onChange={(e) => {
-              onChange({ ...extVal, graph: asGraphId(e.target.value) });
-              return undefined;
-            }}
-            className={baseInputClass}
-            placeholder="Graph ID"
-          />
-          <input
-            type="text"
-            value={extVal.target}
-            onChange={(e) => {
-              onChange({ ...extVal, target: asNodeId(e.target.value) });
-              return undefined;
-            }}
-            className={baseInputClass}
-            placeholder="Target Node ID"
-          />
-        </div>
       );
     }
     case 'list': {
@@ -258,6 +227,5 @@ const ScalarInput: React.FC<
 function inferKind(value: ScalarValue): PropertyValueKind {
   if (typeof value === 'boolean') return 'boolean';
   if (typeof value === 'number') return 'number';
-  if (typeof value === 'object' && value !== null && 'graph' in value) return 'external-reference';
   return 'text';
 }

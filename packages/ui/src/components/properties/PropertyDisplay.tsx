@@ -62,13 +62,9 @@ const ScalarDisplay: React.FC<Readonly<{ value: ScalarValue; kind?: PropertyValu
     case 'instant': {
       return (
         <span className="text-sm text-gray-500" title={String(value)}>
-          {/* Attempt to format if possible, otherwise string */}
-          {tryFormatInstant(String(value))}
+          {tryFormatInstant(Number(value))}
         </span>
       );
-    }
-    case 'plain-date': {
-      return <span className="text-sm text-gray-500">{String(value)}</span>;
     }
     case 'reference': {
       return (
@@ -76,16 +72,6 @@ const ScalarDisplay: React.FC<Readonly<{ value: ScalarValue; kind?: PropertyValu
           @{String(value).slice(0, 8)}...
         </span>
       );
-    }
-    case 'external-reference': {
-      if (typeof value === 'object' && 'graph' in value && 'target' in value) {
-        return (
-          <span className="text-indigo-500 hover:underline cursor-pointer">
-            @{value.graph.slice(0, 8)}:{value.target.slice(0, 8)}...
-          </span>
-        );
-      }
-      return <span className="text-red-500">Invalid ExtRef</span>;
     }
     case 'list': {
       return null;
@@ -99,16 +85,15 @@ const ScalarDisplay: React.FC<Readonly<{ value: ScalarValue; kind?: PropertyValu
 function inferKind(value: ScalarValue): PropertyValueKind {
   if (typeof value === 'boolean') return 'boolean';
   if (typeof value === 'number') return 'number';
-  if (typeof value === 'object' && value !== null && 'graph' in value) return 'external-reference';
   // String is ambiguous, default to text
   return 'text';
 }
 
-function tryFormatInstant(val: string): string {
+function tryFormatInstant(val: number): string {
   // eslint-disable-next-line functional/no-try-statements
   try {
-    return Temporal.Instant.from(val).toLocaleString();
+    return Temporal.Instant.fromEpochMilliseconds(val).toLocaleString();
   } catch {
-    return val;
+    return String(val);
   }
 }

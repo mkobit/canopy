@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import type {
   Instant,
-  PlainDate,
   PropertyValue,
   ScalarValue,
   TemporalMetadata,
@@ -15,7 +14,7 @@ import type {
   EdgeId,
 } from '@canopy/types';
 
-import { asNodeId, asEdgeId, asTypeId, asGraphId, asInstant, asPlainDate } from '@canopy/types';
+import { asNodeId, asEdgeId, asTypeId, asGraphId, asInstant } from '@canopy/types';
 
 // Helpers to transform strings to branded types using the "as" casters from types.
 // We rely on Zod's validation (regex/datetime) before casting.
@@ -25,33 +24,18 @@ export const EdgeIdSchema = z.string().uuid().transform(asEdgeId);
 export const TypeIdSchema = z.string().min(1).transform(asTypeId);
 export const GraphIdSchema = z.string().uuid().transform(asGraphId);
 
-export const InstantSchema: z.ZodType<Instant, unknown> = z
-  .string()
-  .datetime({ offset: true }) // ISO 8601 strict
-  .transform(asInstant);
-
-export const PlainDateSchema: z.ZodType<PlainDate, unknown> = z
-  .string()
-  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid PlainDate format (YYYY-MM-DD)')
-  .transform(asPlainDate);
+export const InstantSchema: z.ZodType<Instant, unknown> = z.number().transform(asInstant);
 
 export const TimestampSchema = InstantSchema;
 
-// External Reference Value (the only complex scalar object)
-const ExternalReferenceValueSchema = z.object({
-  graph: GraphIdSchema,
-  target: NodeIdSchema,
-});
-
 // Scalar Values
 // Since we removed tagged unions, we map based on runtime types.
-// Note: string covers NodeId, Instant, PlainDate.
+// Note: string covers NodeId.
 const ScalarValueSchema: z.ZodType<ScalarValue, unknown> = z.union([
   z.string(),
   z.number(),
   z.boolean(),
   z.null(),
-  ExternalReferenceValueSchema,
 ]);
 
 // Property Value
@@ -64,16 +48,7 @@ export const PropertyValueSchema: z.ZodType<PropertyValue, unknown> = z.union([
 export const PropertyDefinitionSchema: z.ZodType<PropertyDefinition, unknown> = z
   .object({
     name: z.string(),
-    valueKind: z.enum([
-      'text',
-      'number',
-      'boolean',
-      'instant',
-      'plain-date',
-      'reference',
-      'external-reference',
-      'list',
-    ]),
+    valueKind: z.enum(['text', 'number', 'boolean', 'instant', 'reference', 'list']),
     required: z.boolean(),
     description: z.string().optional(),
   })

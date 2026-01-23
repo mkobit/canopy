@@ -2,17 +2,19 @@ export type { nodeIdBrand, edgeIdBrand, typeIdBrand, graphIdBrand } from './iden
 
 export type { NodeId, EdgeId, TypeId, GraphId } from './identifiers';
 
-export type { instantBrand, plainDateBrand } from './temporal';
+export type { instantBrand } from './temporal';
 
-export type { Instant, PlainDate, TemporalMetadata } from './temporal';
+export type { Instant, TemporalMetadata } from './temporal';
 
-export type { ScalarValue, ExternalReferenceValue } from './scalars';
+export type { ScalarValue } from './scalars';
 
 export type {
   PropertyValue,
   PropertyValueKind,
   PropertyDefinition,
   PropertyMap,
+  PropertyChanges,
+  PropertyKey,
 } from './properties';
 
 export type { Node } from './node';
@@ -47,8 +49,6 @@ export {
   createInstant,
   asInstant,
   parseInstant,
-  asPlainDate,
-  parsePlainDate,
   asNodeId,
   asEdgeId,
 } from './factories';

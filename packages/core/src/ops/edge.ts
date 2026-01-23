@@ -1,6 +1,7 @@
 import type { Graph, Edge, EdgeId, Result, GraphResult, GraphEvent } from '@canopy/types';
 import { createInstant, ok, err } from '@canopy/types';
 import { validateEdge } from '../validation';
+import { calculatePropertyChanges } from '../utils';
 
 export type EdgeOperationOptions = Readonly<{
   validate?: boolean;
@@ -164,10 +165,12 @@ export function updateEdge(
     },
   };
 
+  const changes = calculatePropertyChanges(existingEdge.properties, finalEdge.properties);
+
   const event: GraphEvent = {
     type: 'EdgePropertiesUpdated',
     id: edgeId,
-    changes: finalEdge.properties,
+    changes,
     timestamp: createInstant(),
   };
 

@@ -5,13 +5,11 @@ import {
   type TypeId,
   type GraphId,
   type Instant,
-  type PlainDate,
   asNodeId,
   asEdgeId,
   asTypeId,
   asGraphId,
   asInstant,
-  asPlainDate,
   createNodeId as generateNodeId,
   createEdgeId as generateEdgeId,
   createGraphId as generateGraphId,
@@ -85,28 +83,17 @@ export function createTypeId(id: string): Result<TypeId, Error> {
 }
 
 /**
- * Creates a branded Instant from an ISO 8601 string.
- * Validates that the string is a valid date-time.
+ * Creates a branded Instant from an ISO 8601 string or number.
  */
-export function createInstant(isoString: string): Result<Instant, Error> {
-  // eslint-disable-next-line functional/no-try-statements
-  try {
-    const instant = Temporal.Instant.from(isoString);
-    return ok(asInstant(instant.toString()));
-  } catch {
-    return err(new Error(`Invalid Instant: '${isoString}' is not a valid ISO 8601 date string.`));
+export function createInstant(value: string | number): Result<Instant, Error> {
+  if (typeof value === 'number') {
+    return ok(asInstant(value));
   }
-}
-
-/**
- * Creates a branded PlainDate from an ISO 8601 date string (YYYY-MM-DD).
- */
-export function createPlainDate(dateString: string): Result<PlainDate, Error> {
   // eslint-disable-next-line functional/no-try-statements
   try {
-    const date = Temporal.PlainDate.from(dateString);
-    return ok(asPlainDate(date.toString()));
+    const instant = Temporal.Instant.from(value);
+    return ok(asInstant(instant.epochMilliseconds));
   } catch {
-    return err(new Error(`Invalid PlainDate: '${dateString}' must be in YYYY-MM-DD format.`));
+    return err(new Error(`Invalid Instant: '${value}' is not a valid ISO 8601 date string.`));
   }
 }
