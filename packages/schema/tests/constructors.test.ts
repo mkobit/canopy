@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { createNodeId, createTypeId, createInstant, createPlainDate } from '../src/constructors';
+import { createNodeId, createTypeId, createInstant } from '../src/constructors';
 import { unwrap, isErr } from '@canopy/types';
-import { Temporal } from 'temporal-polyfill';
 
 describe('Constructors', () => {
   it('should create valid NodeId from valid UUID', () => {
@@ -29,24 +28,18 @@ describe('Constructors', () => {
     expect(isErr(createTypeId(''))).toBe(true);
   });
 
-  it('should create valid Instant', () => {
+  it('should create valid Instant from string', () => {
     const iso = '2023-10-27T10:00:00.000Z';
-    // Temporal might drop milliseconds if zero, or format it differently.
-    // We expect the canonical format returned by Temporal.
-    const expected = Temporal.Instant.from(iso).toString();
+    const expected = 1698400800000;
     expect(unwrap(createInstant(iso))).toBe(expected);
+  });
+
+  it('should create valid Instant from number', () => {
+    const timestamp = 1698400800000;
+    expect(unwrap(createInstant(timestamp))).toBe(timestamp);
   });
 
   it('should return Error for invalid Instant', () => {
     expect(isErr(createInstant('invalid-date'))).toBe(true);
-  });
-
-  it('should create valid PlainDate', () => {
-    expect(unwrap(createPlainDate('2023-10-27'))).toBe('2023-10-27');
-  });
-
-  it('should return Error for invalid PlainDate', () => {
-    expect(isErr(createPlainDate('2023/10/27'))).toBe(true);
-    expect(isErr(createPlainDate('2023-02-30'))).toBe(true); // Invalid date check
   });
 });

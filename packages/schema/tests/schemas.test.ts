@@ -3,21 +3,15 @@ import {
   NodeSchema,
   GraphSchema,
   InstantSchema,
-  PlainDateSchema,
   PropertyValueSchema,
 } from '../src/schemas';
 import type { NodeId } from '@canopy/types';
 
 describe('Zod Schemas', () => {
   it('should validate Instant', () => {
-    const iso = '2023-10-27T10:00:00.000Z';
-    expect(InstantSchema.parse(iso)).toBe(iso);
+    const timestamp = 1698400800000;
+    expect(InstantSchema.parse(timestamp)).toBe(timestamp);
     expect(() => InstantSchema.parse('invalid')).toThrow();
-  });
-
-  it('should validate PlainDate', () => {
-    expect(PlainDateSchema.parse('2023-10-27')).toBe('2023-10-27');
-    expect(() => PlainDateSchema.parse('2023/10/27')).toThrow();
   });
 
   it('should validate PropertyValue (Text)', () => {
@@ -36,8 +30,8 @@ describe('Zod Schemas', () => {
       type: 'Person',
       properties: new Map(),
       metadata: {
-        created: '2023-10-27T10:00:00.000Z',
-        modified: '2023-10-27T10:00:00.000Z',
+        created: 1698400800000,
+        modified: 1698400800000,
       },
     };
 
@@ -55,8 +49,8 @@ describe('Zod Schemas', () => {
         age: 30,
       },
       metadata: {
-        created: '2023-10-27T10:00:00.000Z',
-        modified: '2023-10-27T10:00:00.000Z',
+        created: 1698400800000,
+        modified: 1698400800000,
       },
     };
 
@@ -70,8 +64,8 @@ describe('Zod Schemas', () => {
       id: '00000000-0000-0000-0000-000000000000',
       name: 'Test Graph',
       metadata: {
-        created: '2023-10-27T10:00:00.000Z',
-        modified: '2023-10-27T10:00:00.000Z',
+        created: 1698400800000,
+        modified: 1698400800000,
       },
       nodes: {
         '123e4567-e89b-12d3-a456-426614174000': {
@@ -79,8 +73,8 @@ describe('Zod Schemas', () => {
           type: 'Person',
           properties: {},
           metadata: {
-            created: '2023-10-27T10:00:00.000Z',
-            modified: '2023-10-27T10:00:00.000Z',
+            created: 1698400800000,
+            modified: 1698400800000,
           },
         },
       },
