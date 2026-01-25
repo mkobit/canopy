@@ -11,7 +11,7 @@
     "bun": "1.2.14"
   },
   "scripts": {
-    "build": "bun --filter '*' build",
+    "build": "tsc -b && bun --filter './apps/*' build",
     "check:versions": "bun tools/verify-versions.ts",
     "test": "vitest",
     "lint": "bun run check:versions && eslint .",
