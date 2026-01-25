@@ -21,10 +21,10 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
       - name: Setup Bun
-        uses: oven-sh/setup-bun@4bc047ad259df6fc24a6c9b0f9a0cb08cf17fbe5 # v2
+        uses: oven-sh/setup-bun@4bc047ad259df6fc24a6c9b0f9a0cb08cf17fbe5
         with:
           bun-version: ${{ matrix.bun-version }}
 
@@ -50,4 +50,4 @@ jobs:
 
       - name: Upload coverage
         if: "!cancelled() && steps.install.outcome == 'success'"
-        uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v3
+        uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de
