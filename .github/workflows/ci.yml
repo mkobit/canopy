@@ -17,55 +17,36 @@ jobs:
       max-parallel: 1
       matrix:
         os: [ubuntu-24.04, macos-14]
-        node-version: [22.x]
+        bun-version: [1.2.14]
 
     steps:
       - name: Checkout repo
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 # v2
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@4bc047ad259df6fc24a6c9b0f9a0cb08cf17fbe5 # v2
         with:
-          run_install: false
-
-      - name: Setup Node
-        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v4
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: 'pnpm'
-
-      - name: Get pnpm store directory
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-
-      - name: Setup pnpm cache
-        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v3
-        with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+          bun-version: ${{ matrix.bun-version }}
 
       - name: Install dependencies
         id: install
-        run: pnpm install
+        run: bun install
 
       - name: Lint
         if: "!cancelled() && steps.install.outcome == 'success'"
-        run: pnpm lint
+        run: bun run lint
 
       - name: Typecheck
         if: "!cancelled() && steps.install.outcome == 'success'"
-        run: pnpm typecheck
+        run: bun run typecheck
 
       - name: Build
         if: "!cancelled() && steps.install.outcome == 'success'"
-        run: pnpm build
+        run: bun run build
 
       - name: Test
         if: "!cancelled() && steps.install.outcome == 'success'"
-        run: pnpm test -- run --coverage
+        run: bun run test -- run --coverage
 
       - name: Upload coverage
         if: "!cancelled() && steps.install.outcome == 'success'"
