@@ -1,18 +1,22 @@
 {
   "name": "canopy-graph",
   "version": "0.0.0",
-  "packageManager": "pnpm@9.15.0",
-  "engines": {
-    "node": "22"
-  },
   "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*",
+    "tools"
+  ],
+  "engines": {
+    "bun": "1.2.14"
+  },
   "scripts": {
-    "build": "pnpm -r build",
-    "check:versions": "tsx tools/verify-versions.ts",
+    "build": "tsc -b && bun --filter './apps/*' build",
+    "check:versions": "bun tools/verify-versions.ts",
     "test": "vitest",
-    "lint": "pnpm check:versions && eslint .",
+    "lint": "bun run check:versions && eslint .",
     "format": "prettier --write .",
-    "typecheck": "pnpm -r typecheck",
+    "typecheck": "bun --filter '*' typecheck",
     "prepare": "husky",
     "bd": "bd",
     "postinstall": "bd hooks install || true"

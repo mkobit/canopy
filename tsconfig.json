@@ -1,0 +1,13 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./packages/types" },
+    { "path": "./packages/schema" },
+    { "path": "./packages/core" },
+    { "path": "./packages/api" },
+    { "path": "./packages/sync" },
+    { "path": "./packages/query" },
+    { "path": "./packages/storage" },
+    { "path": "./packages/ui" }
+  ]
+}

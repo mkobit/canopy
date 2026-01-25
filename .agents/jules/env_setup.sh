@@ -7,7 +7,7 @@ set -euo pipefail
 echo "Setting up environment..."
 
 # Check and install tools first
-TOOLS="git curl gpg"
+TOOLS="git curl gpg unzip"
 MISSING=""
 for tool in $TOOLS; do
     if ! command -v "$tool" &> /dev/null; then
@@ -37,32 +37,25 @@ fi
 
 # Activate mise
 eval "$(mise activate bash)"
-echo 'eval "$(mise activate bash)"' >> ~/.bashrc
-
-echo "Importing Node.js release keys..."
-# Fetch and import Node.js release keys to enable GPG verification
-KEYS_URL="https://raw.githubusercontent.com/nodejs/release-keys/main/keys.list"
-curl -s "$KEYS_URL" | while read -r key; do
-    # Skip empty lines or comments
-    [[ -z "$key" || "$key" =~ ^# ]] && continue
-    # Import key if not already present
-    curl -s "https://raw.githubusercontent.com/nodejs/release-keys/main/keys/$key.asc" | gpg --batch --import >/dev/null 2>&1
-done
+# Check if mise activation is already in .bashrc to avoid duplicates
+if ! grep -q "mise activate bash" ~/.bashrc; then
+    echo 'eval "$(mise activate bash)"' >> ~/.bashrc
+fi
 
 echo "Installing tools with mise..."
 mise trust
 mise install
 
-# Enable corepack to use pnpm from packageManager
-echo "Enabling corepack..."
-corepack enable
-
 # Verify Environment
-echo "Node version: $(node --version)"
-echo "PNPM version: $(pnpm --version)"
+if command -v bun &> /dev/null; then
+    echo "Bun version: $(bun --version)"
+else
+    echo "Error: Bun not found after mise install"
+    exit 1
+fi
 
 # Install dependencies
 echo "Installing dependencies..."
-pnpm install
+bun install
 
 echo "Environment ready (dependencies installed)"
