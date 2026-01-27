@@ -168,6 +168,61 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
             ),
           ),
 
+    (g) =>
+      g.nodes.has(SYSTEM_IDS.RENDERER_DEF)
+        ? ok(g)
+        : addNodeGraph(
+            g,
+            createBootstrapNode(
+              SYSTEM_IDS.RENDERER_DEF,
+              SYSTEM_IDS.NODE_TYPE,
+              'Renderer',
+              'Defines how to render nodes of a type',
+              {
+                properties: text(
+                  JSON.stringify([
+                    {
+                      name: 'name',
+                      valueKind: 'text',
+                      required: true,
+                      description: 'Renderer name',
+                    },
+                    {
+                      name: 'description',
+                      valueKind: 'text',
+                      required: false,
+                      description: 'Description',
+                    },
+                    {
+                      name: 'rendererKind',
+                      valueKind: 'text',
+                      required: true,
+                      description: 'system | wasm | component',
+                    },
+                    {
+                      name: 'entryPoint',
+                      valueKind: 'text',
+                      required: true,
+                      description: 'Implementation entry point',
+                    },
+                    {
+                      name: 'permissions',
+                      valueKind: 'list',
+                      required: true,
+                      description: 'List of permissions',
+                    },
+                    {
+                      name: 'configSchema',
+                      valueKind: 'text',
+                      required: false,
+                      description: 'Configuration schema (JSON)',
+                    },
+                  ] satisfies readonly PropertyDefinition[]),
+                ),
+              },
+            ),
+          ),
+
     // 2. Ensure EdgeType definition exists
     (g) =>
       g.nodes.has(SYSTEM_IDS.EDGE_TYPE_DEF)

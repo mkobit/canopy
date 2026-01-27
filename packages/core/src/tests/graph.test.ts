@@ -31,8 +31,8 @@ describe('Core Graph Engine', () => {
     expect(emptyGraph.id).toBe(graphId);
     expect(emptyGraph.name).toBe('Test Graph');
     // Bootstrap adds system nodes (NodeTypes, EdgeTypes, Queries, Views)
-    // 7 original + 8 new (ViewDef, TemplateDef, 3 Queries, 3 Views) = 15
-    expect(emptyGraph.nodes.size).toBe(15);
+    // 7 original + 8 new (ViewDef, TemplateDef, 3 Queries, 3 Views) = 15 + 1 RendererDef = 16
+    expect(emptyGraph.nodes.size).toBe(16);
     expect(emptyGraph.edges.size).toBe(0);
   });
 
@@ -55,9 +55,9 @@ describe('Core Graph Engine', () => {
   it('should add nodes immutably and emit events', () => {
     const r1 = unwrap(addNode(emptyGraph, node1));
     const g1 = r1.graph;
-    expect(g1.nodes.size).toBe(16); // 15 bootstrap + 1 new
+    expect(g1.nodes.size).toBe(17); // 16 bootstrap + 1 new
     expect(g1.nodes.get(nodeId1)).toBe(node1);
-    expect(emptyGraph.nodes.size).toBe(15); // Original unmodified (bootstrap nodes)
+    expect(emptyGraph.nodes.size).toBe(16); // Original unmodified (bootstrap nodes)
 
     expect(r1.events).toHaveLength(1);
     expect(r1.events[0]).toMatchObject({
@@ -69,9 +69,9 @@ describe('Core Graph Engine', () => {
 
     const r2 = unwrap(addNode(g1, node2));
     const g2 = r2.graph;
-    expect(g2.nodes.size).toBe(17); // 15 bootstrap + 2 new
+    expect(g2.nodes.size).toBe(18); // 16 bootstrap + 2 new
     expect(g2.nodes.get(nodeId2)).toBe(node2);
-    expect(g1.nodes.size).toBe(16); // Previous version unmodified
+    expect(g1.nodes.size).toBe(17); // Previous version unmodified
 
     expect(r2.events).toHaveLength(1);
     expect(r2.events[0]).toMatchObject({
@@ -135,11 +135,11 @@ describe('Core Graph Engine', () => {
 
     const rRemoved = unwrap(removeNode(g, nodeId1));
     const gRemoved = rRemoved.graph;
-    expect(gRemoved.nodes.size).toBe(16); // 15 bootstrap + 1 remaining node
+    expect(gRemoved.nodes.size).toBe(17); // 16 bootstrap + 1 remaining node
     expect(gRemoved.nodes.has(nodeId1)).toBe(false);
     expect(gRemoved.edges.size).toBe(0); // Edge should be removed
 
-    expect(g.nodes.size).toBe(17); // 15 bootstrap + 2 nodes
+    expect(g.nodes.size).toBe(18); // 16 bootstrap + 2 nodes
     expect(g.edges.size).toBe(1);
 
     // Verify events: 1 node deleted, 1 edge deleted

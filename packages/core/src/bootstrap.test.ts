@@ -21,6 +21,12 @@ describe('Meta-circular bootstrap', () => {
     expect(edgeTypeDef?.type).toBe(SYSTEM_IDS.NODE_TYPE); // EdgeType definition is a NodeType
     expect(edgeTypeDef?.properties.get('name')).toEqual('Edge Type');
 
+    // Check Renderer definition
+    const rendererDef = graph.nodes.get(SYSTEM_IDS.RENDERER_DEF);
+    expect(rendererDef).toBeDefined();
+    expect(rendererDef?.type).toBe(SYSTEM_IDS.NODE_TYPE);
+    expect(rendererDef?.properties.get('name')).toEqual('Renderer');
+
     // Check Core Edge Types
     const childOf = graph.nodes.get(SYSTEM_IDS.EDGE_CHILD_OF);
     expect(childOf).toBeDefined();

@@ -7,6 +7,7 @@ export const SYSTEM_IDS = {
   QUERY_DEFINITION: asTypeId('node:type:query-definition'),
   VIEW_DEFINITION: asTypeId('node:type:view-definition'),
   TEMPLATE: asTypeId('node:type:template'),
+  RENDERER: asTypeId('meta:renderer'),
 
   // Node Type Definitions (these nodes define the types above)
   NODE_TYPE_DEF: asNodeId('node:type:node-type'),
@@ -14,6 +15,7 @@ export const SYSTEM_IDS = {
   QUERY_DEFINITION_DEF: asNodeId('node:type:query-definition'),
   VIEW_DEFINITION_DEF: asNodeId('node:type:view-definition'),
   TEMPLATE_DEF: asNodeId('node:type:template'),
+  RENDERER_DEF: asNodeId('meta:renderer'),
 
   // System Queries
   QUERY_ALL_NODES: asNodeId('query:system:all-nodes'),
