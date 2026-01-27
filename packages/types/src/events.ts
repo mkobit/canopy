@@ -1,4 +1,4 @@
-import type { NodeId, EdgeId, TypeId } from './identifiers';
+import type { NodeId, EdgeId, TypeId, EventId } from './identifiers';
 import type { PropertyMap } from './properties';
 import type { Instant } from './temporal';
 import type { Graph } from './graph';
@@ -13,6 +13,7 @@ export type GraphEvent =
 
 export interface NodeCreated {
   readonly type: 'NodeCreated';
+  readonly eventId: EventId;
   readonly id: NodeId;
   readonly nodeType: TypeId;
   readonly properties: PropertyMap;
@@ -21,6 +22,7 @@ export interface NodeCreated {
 
 export interface NodePropertiesUpdated {
   readonly type: 'NodePropertiesUpdated';
+  readonly eventId: EventId;
   readonly id: NodeId;
   readonly changes: PropertyMap; // Contains only the changed properties
   readonly timestamp: Instant;
@@ -28,12 +30,14 @@ export interface NodePropertiesUpdated {
 
 export interface NodeDeleted {
   readonly type: 'NodeDeleted';
+  readonly eventId: EventId;
   readonly id: NodeId;
   readonly timestamp: Instant;
 }
 
 export interface EdgeCreated {
   readonly type: 'EdgeCreated';
+  readonly eventId: EventId;
   readonly id: EdgeId;
   readonly edgeType: TypeId;
   readonly source: NodeId;
@@ -44,6 +48,7 @@ export interface EdgeCreated {
 
 export interface EdgePropertiesUpdated {
   readonly type: 'EdgePropertiesUpdated';
+  readonly eventId: EventId;
   readonly id: EdgeId;
   readonly changes: PropertyMap; // Contains only the changed properties
   readonly timestamp: Instant;
@@ -51,6 +56,7 @@ export interface EdgePropertiesUpdated {
 
 export interface EdgeDeleted {
   readonly type: 'EdgeDeleted';
+  readonly eventId: EventId;
   readonly id: EdgeId;
   readonly timestamp: Instant;
 }

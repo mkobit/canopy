@@ -2,6 +2,7 @@ export declare const nodeIdBrand: unique symbol;
 export declare const edgeIdBrand: unique symbol;
 export declare const typeIdBrand: unique symbol;
 export declare const graphIdBrand: unique symbol;
+export declare const eventIdBrand: unique symbol;
 
 /**
  * Unique identifier for a node within a graph.
@@ -22,3 +23,8 @@ export type TypeId = string & Readonly<{ [typeIdBrand]: never }>;
  * Unique identifier for a graph (aggregate root).
  */
 export type GraphId = string & Readonly<{ [graphIdBrand]: never }>;
+
+/**
+ * Unique identifier for a graph event.
+ */
+export type EventId = string & Readonly<{ [eventIdBrand]: never }>;

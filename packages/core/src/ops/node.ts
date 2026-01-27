@@ -1,5 +1,5 @@
 import type { Graph, Node, NodeId, Result, GraphResult, GraphEvent } from '@canopy/types';
-import { createInstant, ok, err } from '@canopy/types';
+import { createInstant, createEventId, ok, err } from '@canopy/types';
 import { validateNode } from '../validation';
 
 export type NodeOperationOptions = Readonly<{
@@ -41,6 +41,7 @@ export function addNode(
 
   const event: GraphEvent = {
     type: 'NodeCreated',
+    eventId: createEventId(),
     id: node.id,
     nodeType: node.type,
     properties: node.properties,
@@ -77,6 +78,7 @@ export function removeNode(graph: Graph, nodeId: NodeId): Result<GraphResult<Gra
 
   const edgeEvents: readonly GraphEvent[] = edgesToRemove.map((edge) => ({
     type: 'EdgeDeleted',
+    eventId: createEventId(),
     id: edge.id,
     timestamp: createInstant(),
   }));
@@ -97,6 +99,7 @@ export function removeNode(graph: Graph, nodeId: NodeId): Result<GraphResult<Gra
 
   const nodeEvent: GraphEvent = {
     type: 'NodeDeleted',
+    eventId: createEventId(),
     id: nodeId,
     timestamp: createInstant(),
   };
@@ -167,6 +170,7 @@ export function updateNode(
 
   const event: GraphEvent = {
     type: 'NodePropertiesUpdated',
+    eventId: createEventId(),
     id: nodeId,
     changes: finalNode.properties,
     timestamp: createInstant(),

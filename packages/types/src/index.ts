@@ -1,6 +1,6 @@
-export type { nodeIdBrand, edgeIdBrand, typeIdBrand, graphIdBrand } from './identifiers';
+export type { nodeIdBrand, edgeIdBrand, typeIdBrand, graphIdBrand, eventIdBrand } from './identifiers';
 
-export type { NodeId, EdgeId, TypeId, GraphId } from './identifiers';
+export type { NodeId, EdgeId, TypeId, GraphId, EventId } from './identifiers';
 
 export type { instantBrand, plainDateBrand } from './temporal';
 
@@ -51,6 +51,8 @@ export {
   parsePlainDate,
   asNodeId,
   asEdgeId,
+  createEventId,
+  asEventId,
 } from './factories';
 
 export type { QueryNode } from './query';
