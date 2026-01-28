@@ -243,7 +243,7 @@ export class SQLiteAdapter implements StorageAdapter, EventLogStore {
     return fromAsyncThrowable(async () => {
       // eslint-disable-next-line functional/no-let
       let query = 'SELECT payload FROM events WHERE graph_id = ?';
-      const params: unknown[] = [graphId];
+      const params: (string | number | null)[] = [graphId];
 
       if (options.after) {
         query += ' AND event_id > ?';

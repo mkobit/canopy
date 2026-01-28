@@ -34,8 +34,10 @@ describe('SQLiteAdapter EventLog', () => {
 
     const result = unwrap(await adapter.getEvents(mockGraphId));
     expect(result).toHaveLength(2);
-    expect(result[0].eventId).toEqual(events[0].eventId);
-    expect(result[1].eventId).toEqual(events[1].eventId);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    expect(result[0]!.eventId).toEqual(events[0]!.eventId);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    expect(result[1]!.eventId).toEqual(events[1]!.eventId);
   });
 
   it('should filter by after (incremental sync)', async () => {
@@ -43,10 +45,13 @@ describe('SQLiteAdapter EventLog', () => {
     await unwrap(await adapter.appendEvents(mockGraphId, events));
 
     // Get events after event 1
-    const result = unwrap(await adapter.getEvents(mockGraphId, { after: events[0].eventId }));
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const result = unwrap(await adapter.getEvents(mockGraphId, { after: events[0]!.eventId }));
     expect(result).toHaveLength(2);
-    expect(result[0].eventId).toEqual(events[1].eventId);
-    expect(result[1].eventId).toEqual(events[2].eventId);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    expect(result[0]!.eventId).toEqual(events[1]!.eventId);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    expect(result[1]!.eventId).toEqual(events[2]!.eventId);
   });
 
   it('should filter by before', async () => {
@@ -54,10 +59,13 @@ describe('SQLiteAdapter EventLog', () => {
     await unwrap(await adapter.appendEvents(mockGraphId, events));
 
     // Get events before event 3
-    const result = unwrap(await adapter.getEvents(mockGraphId, { before: events[2].eventId }));
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const result = unwrap(await adapter.getEvents(mockGraphId, { before: events[2]!.eventId }));
     expect(result).toHaveLength(2);
-    expect(result[0].eventId).toEqual(events[0].eventId);
-    expect(result[1].eventId).toEqual(events[1].eventId);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    expect(result[0]!.eventId).toEqual(events[0]!.eventId);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    expect(result[1]!.eventId).toEqual(events[1]!.eventId);
   });
 
   it('should respect limit', async () => {
@@ -66,8 +74,10 @@ describe('SQLiteAdapter EventLog', () => {
 
     const result = unwrap(await adapter.getEvents(mockGraphId, { limit: 2 }));
     expect(result).toHaveLength(2);
-    expect(result[0].eventId).toEqual(events[0].eventId);
-    expect(result[1].eventId).toEqual(events[1].eventId);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    expect(result[0]!.eventId).toEqual(events[0]!.eventId);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    expect(result[1]!.eventId).toEqual(events[1]!.eventId);
   });
 
   it('should sort reverse', async () => {
@@ -76,9 +86,12 @@ describe('SQLiteAdapter EventLog', () => {
 
     const result = unwrap(await adapter.getEvents(mockGraphId, { reverse: true }));
     expect(result).toHaveLength(3);
-    expect(result[0].eventId).toEqual(events[2].eventId);
-    expect(result[1].eventId).toEqual(events[1].eventId);
-    expect(result[2].eventId).toEqual(events[0].eventId);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    expect(result[0]!.eventId).toEqual(events[2]!.eventId);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    expect(result[1]!.eventId).toEqual(events[1]!.eventId);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    expect(result[2]!.eventId).toEqual(events[0]!.eventId);
   });
 
   it('should ignore duplicate events', async () => {
