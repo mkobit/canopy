@@ -1,5 +1,14 @@
 import { z } from 'zod';
-import type { Node, Edge, PropertyValue, EventId, NodeId, TypeId, EdgeId, Instant } from '@canopy/types';
+import type {
+  Node,
+  Edge,
+  PropertyValue,
+  EventId,
+  NodeId,
+  TypeId,
+  EdgeId,
+  Instant,
+} from '@canopy/types';
 import { asNodeId, asEdgeId, asTypeId, asEventId } from '@canopy/types';
 import { PropertyValueSchema, TemporalMetadataSchema, InstantSchema } from '@canopy/schema';
 
@@ -142,14 +151,12 @@ export const StorableEdgeDeletedSchema = z.object({
   timestamp: InstantSchema,
 });
 
-export const StorableGraphEventSchema: z.ZodType<StorableGraphEvent, unknown> = z.discriminatedUnion(
-  'type',
-  [
+export const StorableGraphEventSchema: z.ZodType<StorableGraphEvent, unknown> =
+  z.discriminatedUnion('type', [
     StorableNodeCreatedSchema,
     StorableNodePropertiesUpdatedSchema,
     StorableNodeDeletedSchema,
     StorableEdgeCreatedSchema,
     StorableEdgePropertiesUpdatedSchema,
     StorableEdgeDeletedSchema,
-  ],
-);
+  ]);

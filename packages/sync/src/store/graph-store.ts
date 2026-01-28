@@ -93,11 +93,11 @@ export class GraphStore {
   getEvents(): IterableIterator<GraphEvent> {
     // eslint-disable-next-line functional/no-try-statements
     try {
-      const events = Array.from(this.events.values()).map(storableToEvent);
+      const events = [...this.events.values()].map(storableToEvent);
       // Sort by eventId (UUIDv7 is time-ordered)
       events.sort((a, b) => a.eventId.localeCompare(b.eventId));
       return events[Symbol.iterator]();
-    } catch (error) {
+    } catch {
       return [][Symbol.iterator]();
     }
   }

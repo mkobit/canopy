@@ -47,59 +47,71 @@ export const storableToEdge = (storable: unknown): Edge => {
 
 export const eventToStorable = (event: GraphEvent): StorableGraphEvent => {
   switch (event.type) {
-    case 'NodeCreated':
+    case 'NodeCreated': {
       return {
         ...event,
         properties: propertiesToStorable(event.properties),
       };
-    case 'NodePropertiesUpdated':
+    }
+    case 'NodePropertiesUpdated': {
       return {
         ...event,
         changes: propertiesToStorable(event.changes),
       };
-    case 'NodeDeleted':
+    }
+    case 'NodeDeleted': {
       return event;
-    case 'EdgeCreated':
+    }
+    case 'EdgeCreated': {
       return {
         ...event,
         properties: propertiesToStorable(event.properties),
       };
-    case 'EdgePropertiesUpdated':
+    }
+    case 'EdgePropertiesUpdated': {
       return {
         ...event,
         changes: propertiesToStorable(event.changes),
       };
-    case 'EdgeDeleted':
+    }
+    case 'EdgeDeleted': {
       return event;
+    }
   }
 };
 
 export const storableToEvent = (storable: unknown): GraphEvent => {
   const e = StorableGraphEventSchema.parse(storable);
   switch (e.type) {
-    case 'NodeCreated':
+    case 'NodeCreated': {
       return {
         ...e,
         properties: storableToProperties(e.properties),
       };
-    case 'NodePropertiesUpdated':
+    }
+    case 'NodePropertiesUpdated': {
       return {
         ...e,
         changes: storableToProperties(e.changes),
       };
-    case 'NodeDeleted':
+    }
+    case 'NodeDeleted': {
       return e;
-    case 'EdgeCreated':
+    }
+    case 'EdgeCreated': {
       return {
         ...e,
         properties: storableToProperties(e.properties),
       };
-    case 'EdgePropertiesUpdated':
+    }
+    case 'EdgePropertiesUpdated': {
       return {
         ...e,
         changes: storableToProperties(e.changes),
       };
-    case 'EdgeDeleted':
+    }
+    case 'EdgeDeleted': {
       return e;
+    }
   }
 };

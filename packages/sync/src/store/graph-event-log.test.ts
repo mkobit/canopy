@@ -7,7 +7,7 @@ import {
   asNodeId,
   asTypeId,
   GraphEvent,
-  unwrap
+  unwrap,
 } from '@canopy/types';
 
 describe('GraphStore Event Log', () => {
@@ -70,7 +70,7 @@ describe('GraphStore Event Log', () => {
 
     let event2Id = createEventId();
     while (event2Id <= event1.eventId) {
-        event2Id = createEventId();
+      event2Id = createEventId();
     }
 
     const event2: GraphEvent = {
@@ -102,10 +102,12 @@ describe('GraphStore Event Log', () => {
     unwrap(store.addEvent(event));
     const retrieved = [...store.getEvents()][0];
 
-    if (retrieved.type === 'NodePropertiesUpdated') {
-         expect(retrieved.changes.get('age')).toBe(30);
+    expect(retrieved).toBeDefined();
+
+    if (retrieved && retrieved.type === 'NodePropertiesUpdated') {
+      expect(retrieved.changes.get('age')).toBe(30);
     } else {
-        throw new Error('Wrong event type');
+      throw new Error('Wrong event type');
     }
   });
 });
