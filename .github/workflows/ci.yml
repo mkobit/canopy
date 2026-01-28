@@ -2,8 +2,6 @@ name: CI
 
 on:
   push:
-    branches:
-      - main
     paths-ignore:
       - 'docs/design/**'
   pull_request:
@@ -17,6 +15,7 @@ concurrency:
 jobs:
   build:
     name: Build, lint, and test
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: true
