@@ -16,7 +16,6 @@ const createEvent = (i: number): NodeCreated => ({
 });
 
 describe('SQLiteAdapter EventLog', () => {
-  // eslint-disable-next-line functional/prefer-readonly-type
   let adapter: SQLiteAdapter;
 
   beforeEach(async () => {

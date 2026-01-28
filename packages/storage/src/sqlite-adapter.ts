@@ -1,6 +1,11 @@
 import type { Database, SqlJsStatic } from 'sql.js';
 import initSqlJs from 'sql.js';
-import type { StorageAdapter, GraphStorageMetadata, EventLogStore, EventLogQueryOptions } from './types';
+import type {
+  StorageAdapter,
+  GraphStorageMetadata,
+  EventLogStore,
+  EventLogQueryOptions,
+} from './types';
 import type { Result, GraphEvent } from '@canopy/types';
 import { ok, err, fromAsyncThrowable } from '@canopy/types';
 
@@ -12,42 +17,52 @@ export interface SQLitePersistence {
 const serializeEvent = (event: GraphEvent): unknown => {
   switch (event.type) {
     case 'NodeCreated':
-    case 'EdgeCreated':
+    case 'EdgeCreated': {
       return {
         ...event,
         properties: Object.fromEntries(event.properties),
       };
+    }
     case 'NodePropertiesUpdated':
-    case 'EdgePropertiesUpdated':
+    case 'EdgePropertiesUpdated': {
       return {
         ...event,
         changes: Object.fromEntries(event.changes),
       };
+    }
     case 'NodeDeleted':
-    case 'EdgeDeleted':
+    case 'EdgeDeleted': {
       return event;
+    }
   }
 };
 
-const deserializeEvent = (storable: any): GraphEvent => {
-  switch (storable.type) {
+const deserializeEvent = (storable: unknown): GraphEvent => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const s = storable as any;
+  switch (s.type) {
     case 'NodeCreated':
-    case 'EdgeCreated':
+    case 'EdgeCreated': {
       return {
-        ...storable,
-        properties: new Map(Object.entries(storable.properties)),
+        ...s,
+        properties: new Map(Object.entries(s.properties)),
       } as GraphEvent;
+    }
     case 'NodePropertiesUpdated':
-    case 'EdgePropertiesUpdated':
+    case 'EdgePropertiesUpdated': {
       return {
-        ...storable,
-        changes: new Map(Object.entries(storable.changes)),
+        ...s,
+        changes: new Map(Object.entries(s.changes)),
       } as GraphEvent;
+    }
     case 'NodeDeleted':
-    case 'EdgeDeleted':
-      return storable as GraphEvent;
-    default:
-      throw new Error(`Unknown event type: ${storable.type}`);
+    case 'EdgeDeleted': {
+      return s as GraphEvent;
+    }
+    default: {
+      // eslint-disable-next-line functional/no-throw-statements
+      throw new Error(`Unknown event type: ${s.type}`);
+    }
   }
 };
 
@@ -208,6 +223,7 @@ export class SQLiteAdapter implements StorageAdapter, EventLogStore {
     return fromAsyncThrowable(async () => {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       this.db!.run('BEGIN TRANSACTION');
+      // eslint-disable-next-line functional/no-try-statements
       try {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const stmt = this.db!.prepare(`
@@ -225,10 +241,10 @@ export class SQLiteAdapter implements StorageAdapter, EventLogStore {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         this.db!.run('COMMIT');
         await this.persist();
-      } catch (e) {
+      } catch (error) {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         this.db!.run('ROLLBACK');
-        throw e;
+        throw error;
       }
       return;
     });
