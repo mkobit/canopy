@@ -62,6 +62,7 @@ describe('Core Graph Engine', () => {
     expect(r1.events).toHaveLength(1);
     expect(r1.events[0]).toMatchObject({
       type: 'NodeCreated',
+      eventId: expect.any(String),
       id: node1.id,
       nodeType: node1.type,
       properties: node1.properties,
@@ -76,6 +77,7 @@ describe('Core Graph Engine', () => {
     expect(r2.events).toHaveLength(1);
     expect(r2.events[0]).toMatchObject({
       type: 'NodeCreated',
+      eventId: expect.any(String),
       id: node2.id,
       nodeType: node2.type,
       properties: node2.properties,
@@ -108,6 +110,7 @@ describe('Core Graph Engine', () => {
 
     expect(event.type).toBe('NodePropertiesUpdated');
     if (event.type === 'NodePropertiesUpdated') {
+      expect(event.eventId).toEqual(expect.any(String));
       expect(event.id).toBe(nodeId1);
       expect(event.changes.get('name')).toEqual('Alice');
     }
@@ -146,8 +149,16 @@ describe('Core Graph Engine', () => {
     expect(rRemoved.events).toHaveLength(2);
     // Events might be in any order? node.ts removeNode puts NodeDeleted first, then EdgeDeleted.
     // wait, ops/node.ts: events: [{ type: 'NodeDeleted', ... }, ...edgeEvents]
-    expect(rRemoved.events[0]).toMatchObject({ type: 'NodeDeleted', id: nodeId1 });
-    expect(rRemoved.events[1]).toMatchObject({ type: 'EdgeDeleted', id: edgeId });
+    expect(rRemoved.events[0]).toMatchObject({
+      type: 'NodeDeleted',
+      eventId: expect.any(String),
+      id: nodeId1,
+    });
+    expect(rRemoved.events[1]).toMatchObject({
+      type: 'EdgeDeleted',
+      eventId: expect.any(String),
+      id: edgeId,
+    });
   });
 
   it('should query nodes and edges', () => {
@@ -219,6 +230,7 @@ describe('Core Graph Engine', () => {
 
     expect(event.type).toBe('EdgePropertiesUpdated');
     if (event.type === 'EdgePropertiesUpdated') {
+      expect(event.eventId).toEqual(expect.any(String));
       expect(event.id).toBe(edgeId);
       expect(event.changes.get('since')).toEqual(2023);
     }
@@ -250,6 +262,7 @@ describe('Core Graph Engine', () => {
     expect(rRemoved.events).toHaveLength(1);
     expect(rRemoved.events[0]).toMatchObject({
       type: 'EdgeDeleted',
+      eventId: expect.any(String),
       id: edgeId,
     });
   });

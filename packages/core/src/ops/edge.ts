@@ -1,5 +1,5 @@
 import type { Graph, Edge, EdgeId, Result, GraphResult, GraphEvent } from '@canopy/types';
-import { createInstant, ok, err } from '@canopy/types';
+import { createInstant, createEventId, ok, err } from '@canopy/types';
 import { validateEdge } from '../validation';
 
 export type EdgeOperationOptions = Readonly<{
@@ -47,6 +47,7 @@ export function addEdge(
 
   const event: GraphEvent = {
     type: 'EdgeCreated',
+    eventId: createEventId(),
     id: edge.id,
     edgeType: edge.type,
     source: edge.source,
@@ -88,6 +89,7 @@ export function removeEdge(graph: Graph, edgeId: EdgeId): Result<GraphResult<Gra
 
   const event: GraphEvent = {
     type: 'EdgeDeleted',
+    eventId: createEventId(),
     id: edgeId,
     timestamp: createInstant(),
   };
@@ -166,6 +168,7 @@ export function updateEdge(
 
   const event: GraphEvent = {
     type: 'EdgePropertiesUpdated',
+    eventId: createEventId(),
     id: edgeId,
     changes: finalEdge.properties,
     timestamp: createInstant(),

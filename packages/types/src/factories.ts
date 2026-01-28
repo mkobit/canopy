@@ -1,6 +1,6 @@
-import { v4 as uuidv4 } from 'uuid';
+import { v7 as uuidv7 } from 'uuid';
 import { Temporal } from 'temporal-polyfill';
-import type { NodeId, EdgeId, TypeId, GraphId } from './identifiers';
+import type { NodeId, EdgeId, TypeId, GraphId, EventId } from './identifiers';
 import type { Instant, PlainDate } from './temporal';
 import type { Result } from './result';
 import { err, fromThrowable } from './result';
@@ -8,11 +8,11 @@ import { err, fromThrowable } from './result';
 // Safe Generators for Branded Types
 
 export function createNodeId(): NodeId {
-  return uuidv4() as NodeId;
+  return uuidv7() as NodeId;
 }
 
 export function createEdgeId(): EdgeId {
-  return uuidv4() as EdgeId;
+  return uuidv7() as EdgeId;
 }
 
 // For TypeId, we generally don't generate random UUIDs, but often user supplied strings.
@@ -23,11 +23,19 @@ export function asTypeId(id: string): TypeId {
 }
 
 export function createGraphId(): GraphId {
-  return uuidv4() as GraphId;
+  return uuidv7() as GraphId;
 }
 
 export function asGraphId(id: string): GraphId {
   return id as GraphId;
+}
+
+export function createEventId(): EventId {
+  return uuidv7() as EventId;
+}
+
+export function asEventId(id: string): EventId {
+  return id as EventId;
 }
 
 export function createInstant(instant: Temporal.Instant = Temporal.Now.instant()): Instant {
