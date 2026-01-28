@@ -1,7 +1,7 @@
 import type { Database, SqlJsStatic } from 'sql.js';
 import initSqlJs from 'sql.js';
-import type { StorageAdapter, GraphStorageMetadata } from './types';
-import type { Result } from '@canopy/types';
+import type { StorageAdapter, GraphStorageMetadata, EventLogStore, EventLogQueryOptions } from './types';
+import type { Result, GraphEvent } from '@canopy/types';
 import { ok, err, fromAsyncThrowable } from '@canopy/types';
 
 export interface SQLitePersistence {
@@ -9,8 +9,50 @@ export interface SQLitePersistence {
   readonly write: (data: Uint8Array) => Promise<void>;
 }
 
+const serializeEvent = (event: GraphEvent): unknown => {
+  switch (event.type) {
+    case 'NodeCreated':
+    case 'EdgeCreated':
+      return {
+        ...event,
+        properties: Object.fromEntries(event.properties),
+      };
+    case 'NodePropertiesUpdated':
+    case 'EdgePropertiesUpdated':
+      return {
+        ...event,
+        changes: Object.fromEntries(event.changes),
+      };
+    case 'NodeDeleted':
+    case 'EdgeDeleted':
+      return event;
+  }
+};
+
+const deserializeEvent = (storable: any): GraphEvent => {
+  switch (storable.type) {
+    case 'NodeCreated':
+    case 'EdgeCreated':
+      return {
+        ...storable,
+        properties: new Map(Object.entries(storable.properties)),
+      } as GraphEvent;
+    case 'NodePropertiesUpdated':
+    case 'EdgePropertiesUpdated':
+      return {
+        ...storable,
+        changes: new Map(Object.entries(storable.changes)),
+      } as GraphEvent;
+    case 'NodeDeleted':
+    case 'EdgeDeleted':
+      return storable as GraphEvent;
+    default:
+      throw new Error(`Unknown event type: ${storable.type}`);
+  }
+};
+
 // eslint-disable-next-line functional/no-classes
-export class SQLiteAdapter implements StorageAdapter {
+export class SQLiteAdapter implements StorageAdapter, EventLogStore {
   // eslint-disable-next-line functional/prefer-readonly-type, functional/immutable-data, functional/prefer-immutable-types
   private db: Database | null = null;
   // eslint-disable-next-line functional/prefer-readonly-type, functional/immutable-data, functional/prefer-immutable-types
@@ -50,6 +92,17 @@ export class SQLiteAdapter implements StorageAdapter {
         updated_at TEXT
       );
     `);
+    this.db.run(`
+      CREATE TABLE IF NOT EXISTS events (
+        graph_id TEXT NOT NULL,
+        event_id TEXT NOT NULL,
+        timestamp TEXT NOT NULL,
+        type TEXT NOT NULL,
+        payload TEXT NOT NULL,
+        PRIMARY KEY (graph_id, event_id)
+      );
+    `);
+    // Redundant index removed
     return;
   }
 
@@ -118,6 +171,7 @@ export class SQLiteAdapter implements StorageAdapter {
     return fromAsyncThrowable(async () => {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       this.db!.run('DELETE FROM graphs WHERE id = ?', [graphId]);
+      this.db!.run('DELETE FROM events WHERE graph_id = ?', [graphId]);
       await this.persist();
       return;
     });
@@ -145,6 +199,83 @@ export class SQLiteAdapter implements StorageAdapter {
 
       stmt.free();
       return result;
+    });
+  }
+
+  async appendEvents(graphId: string, events: readonly GraphEvent[]): Promise<Result<void, Error>> {
+    if (!this.db) return err(new Error('Database not initialized'));
+
+    return fromAsyncThrowable(async () => {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      this.db!.run('BEGIN TRANSACTION');
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const stmt = this.db!.prepare(`
+          INSERT OR IGNORE INTO events (graph_id, event_id, timestamp, type, payload)
+          VALUES (?, ?, ?, ?, ?)
+        `);
+
+        // eslint-disable-next-line functional/no-loop-statements
+        for (const event of events) {
+          const storable = serializeEvent(event);
+          const payload = JSON.stringify(storable);
+          stmt.run([graphId, event.eventId, event.timestamp, event.type, payload]);
+        }
+        stmt.free();
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        this.db!.run('COMMIT');
+        await this.persist();
+      } catch (e) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        this.db!.run('ROLLBACK');
+        throw e;
+      }
+      return;
+    });
+  }
+
+  async getEvents(
+    graphId: string,
+    options: EventLogQueryOptions = {},
+  ): Promise<Result<readonly GraphEvent[], Error>> {
+    if (!this.db) return err(new Error('Database not initialized'));
+
+    return fromAsyncThrowable(async () => {
+      // eslint-disable-next-line functional/no-let
+      let query = 'SELECT payload FROM events WHERE graph_id = ?';
+      const params: unknown[] = [graphId];
+
+      if (options.after) {
+        query += ' AND event_id > ?';
+        params.push(options.after);
+      }
+
+      if (options.before) {
+        query += ' AND event_id < ?';
+        params.push(options.before);
+      }
+
+      query += ` ORDER BY event_id ${options.reverse ? 'DESC' : 'ASC'}`;
+
+      if (options.limit) {
+        query += ' LIMIT ?';
+        params.push(options.limit);
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const stmt = this.db!.prepare(query);
+      stmt.bind(params);
+
+      // eslint-disable-next-line functional/prefer-readonly-type
+      const events: GraphEvent[] = [];
+      // eslint-disable-next-line functional/no-loop-statements
+      while (stmt.step()) {
+        const row = stmt.getAsObject();
+        const storable = JSON.parse(row.payload as string);
+        events.push(deserializeEvent(storable));
+      }
+      stmt.free();
+      return events;
     });
   }
 }
