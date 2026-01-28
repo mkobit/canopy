@@ -1,18 +1,22 @@
 import type * as Y from 'yjs';
-import type { Node, Edge, Result } from '@canopy/types';
+import type { Node, Edge, Result, GraphEvent } from '@canopy/types';
+import { ok, err } from '@canopy/types';
 import * as NodeOps from './ops/node';
 import * as EdgeOps from './ops/edge';
+import { eventToStorable, storableToEvent } from './converters';
 
 // eslint-disable-next-line functional/no-classes
 export class GraphStore {
   readonly doc: Y.Doc;
   readonly nodes: Y.Map<unknown>; // Stored as plain JSON object
   readonly edges: Y.Map<unknown>;
+  readonly events: Y.Map<unknown>;
 
   constructor(doc: Y.Doc) {
     this.doc = doc;
     this.nodes = doc.getMap('nodes');
     this.edges = doc.getMap('edges');
+    this.events = doc.getMap('events');
   }
 
   addNode(
@@ -74,5 +78,27 @@ export class GraphStore {
 
   deleteEdge(id: string): Result<void, Error> {
     return EdgeOps.deleteEdge(this.edges, id);
+  }
+
+  addEvent(event: GraphEvent): Result<void, Error> {
+    // eslint-disable-next-line functional/no-try-statements
+    try {
+      this.events.set(event.eventId, eventToStorable(event));
+      return ok(undefined);
+    } catch (error) {
+      return err(error instanceof Error ? error : new Error(String(error)));
+    }
+  }
+
+  getEvents(): IterableIterator<GraphEvent> {
+    // eslint-disable-next-line functional/no-try-statements
+    try {
+      const events = [...this.events.values()].map(storableToEvent);
+      // Sort by eventId (UUIDv7 is time-ordered)
+      events.sort((a, b) => a.eventId.localeCompare(b.eventId));
+      return events[Symbol.iterator]();
+    } catch {
+      return [][Symbol.iterator]();
+    }
   }
 }
