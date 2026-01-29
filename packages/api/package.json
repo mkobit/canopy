@@ -10,6 +10,8 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@canopy/core": "workspace:*",
+    "@canopy/storage": "workspace:*",
     "@canopy/types": "workspace:*"
   },
   "devDependencies": {
