@@ -37,7 +37,7 @@ export function incrementEventId(eventId: EventId): EventId {
 
   for (let i = hexChars.length - 1; i >= 0; i--) {
     const char = hexChars[i];
-    if (char === '-') continue;
+    if (!char || char === '-') continue;
 
     const val = parseInt(char, 16);
     if (val < 15) {

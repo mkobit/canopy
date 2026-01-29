@@ -213,28 +213,9 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
  */
 export function projectGraph(
   events: readonly GraphEvent[],
-  initialGraph?: Graph,
+  initialGraph: Graph,
 ): Result<Graph, Error> {
-  let currentGraph: Graph;
-
-  if (initialGraph) {
-    currentGraph = initialGraph;
-  } else {
-    // If no initial graph, we can't really start without an ID.
-    // However, usually we start with an empty graph created via createGraph.
-    // But createGraph requires an ID.
-    // If the caller doesn't provide one, we can't assume one.
-    // But typically the first event might establish context? No, events refer to IDs.
-    // The caller should provide the initial empty graph if starting from scratch.
-    // Or we create a dummy one if valid?
-    // Let's require initialGraph to be valid if provided, or fail if not provided?
-    // Actually, `projectGraph` usually implies "folding" events.
-    // If I return Result<Graph>, I need a valid Graph to start.
-    if (!initialGraph) {
-        return err(new Error("Initial graph must be provided to projectGraph"));
-    }
-    currentGraph = initialGraph;
-  }
+  let currentGraph = initialGraph;
 
   for (const event of events) {
     const result = applyEvent(currentGraph, event);
