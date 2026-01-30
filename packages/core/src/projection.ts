@@ -5,18 +5,13 @@ import { ok, err } from '@canopy/types';
  * Applies a single event to the graph, returning a new graph state.
  * This function is pure and does not mutate the input graph.
  */
+
 export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error> {
+  // eslint-disable-next-line functional/no-try-statements
   try {
     switch (event.type) {
       case 'NodeCreated': {
         if (graph.nodes.has(event.id)) {
-          // Idempotency: if node already exists with same state, ignore?
-          // Or strictly error? For time travel, we might encounter history where ID reused?
-          // UUIDs shouldn't collide.
-          // If we are replaying history, we might start from empty.
-          // If the event stream contains duplicates, we should maybe be robust?
-          // But strict event sourcing usually implies unique events.
-          // I'll return error for now to match `ops`.
           return err(new Error(`Node with ID ${event.id} already exists`));
         }
 
@@ -31,6 +26,7 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
         };
 
         const newNodes = new Map(graph.nodes);
+        // eslint-disable-next-line functional/immutable-data
         newNodes.set(node.id, node);
 
         return ok({
@@ -38,8 +34,9 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
           nodes: newNodes,
           metadata: {
             ...graph.metadata,
-            modified: event.timestamp > graph.metadata.modified ? event.timestamp : graph.metadata.modified,
-          }
+            modified:
+              event.timestamp > graph.metadata.modified ? event.timestamp : graph.metadata.modified,
+          },
         });
       }
 
@@ -50,7 +47,9 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
         }
 
         const updatedProperties = new Map(node.properties);
+        // eslint-disable-next-line functional/no-loop-statements
         for (const [key, value] of event.changes) {
+          // eslint-disable-next-line functional/immutable-data
           updatedProperties.set(key, value);
         }
 
@@ -64,6 +63,7 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
         };
 
         const newNodes = new Map(graph.nodes);
+        // eslint-disable-next-line functional/immutable-data
         newNodes.set(node.id, updatedNode);
 
         return ok({
@@ -71,32 +71,34 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
           nodes: newNodes,
           metadata: {
             ...graph.metadata,
-            modified: event.timestamp > graph.metadata.modified ? event.timestamp : graph.metadata.modified,
-          }
+            modified:
+              event.timestamp > graph.metadata.modified ? event.timestamp : graph.metadata.modified,
+          },
         });
       }
 
       case 'NodeDeleted': {
         if (!graph.nodes.has(event.id)) {
-           // Idempotency: if already deleted, fine.
-           // But if we strictly follow ops, it might be error.
-           // Let's just return current graph if not found (idempotent delete).
-           return ok(graph);
+          return ok(graph);
         }
 
         const newNodes = new Map(graph.nodes);
+        // eslint-disable-next-line functional/immutable-data
         newNodes.delete(event.id);
 
-        // Also remove connected edges
-        const edgesToRemove = [];
+        const edgesToRemove: Edge['id'][] = [];
+        // eslint-disable-next-line functional/no-loop-statements
         for (const edge of graph.edges.values()) {
           if (edge.source === event.id || edge.target === event.id) {
+            // eslint-disable-next-line functional/immutable-data
             edgesToRemove.push(edge.id);
           }
         }
 
         const newEdges = new Map(graph.edges);
+        // eslint-disable-next-line functional/no-loop-statements
         for (const edgeId of edgesToRemove) {
+          // eslint-disable-next-line functional/immutable-data
           newEdges.delete(edgeId);
         }
 
@@ -106,8 +108,9 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
           edges: newEdges,
           metadata: {
             ...graph.metadata,
-            modified: event.timestamp > graph.metadata.modified ? event.timestamp : graph.metadata.modified,
-          }
+            modified:
+              event.timestamp > graph.metadata.modified ? event.timestamp : graph.metadata.modified,
+          },
         });
       }
 
@@ -135,6 +138,7 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
         };
 
         const newEdges = new Map(graph.edges);
+        // eslint-disable-next-line functional/immutable-data
         newEdges.set(edge.id, edge);
 
         return ok({
@@ -142,8 +146,9 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
           edges: newEdges,
           metadata: {
             ...graph.metadata,
-            modified: event.timestamp > graph.metadata.modified ? event.timestamp : graph.metadata.modified,
-          }
+            modified:
+              event.timestamp > graph.metadata.modified ? event.timestamp : graph.metadata.modified,
+          },
         });
       }
 
@@ -154,7 +159,9 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
         }
 
         const updatedProperties = new Map(edge.properties);
+        // eslint-disable-next-line functional/no-loop-statements
         for (const [key, value] of event.changes) {
+          // eslint-disable-next-line functional/immutable-data
           updatedProperties.set(key, value);
         }
 
@@ -168,6 +175,7 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
         };
 
         const newEdges = new Map(graph.edges);
+        // eslint-disable-next-line functional/immutable-data
         newEdges.set(edge.id, updatedEdge);
 
         return ok({
@@ -175,8 +183,9 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
           edges: newEdges,
           metadata: {
             ...graph.metadata,
-            modified: event.timestamp > graph.metadata.modified ? event.timestamp : graph.metadata.modified,
-          }
+            modified:
+              event.timestamp > graph.metadata.modified ? event.timestamp : graph.metadata.modified,
+          },
         });
       }
 
@@ -186,6 +195,7 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
         }
 
         const newEdges = new Map(graph.edges);
+        // eslint-disable-next-line functional/immutable-data
         newEdges.delete(event.id);
 
         return ok({
@@ -193,14 +203,16 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
           edges: newEdges,
           metadata: {
             ...graph.metadata,
-            modified: event.timestamp > graph.metadata.modified ? event.timestamp : graph.metadata.modified,
-          }
+            modified:
+              event.timestamp > graph.metadata.modified ? event.timestamp : graph.metadata.modified,
+          },
         });
       }
 
-      default:
+      default: {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return err(new Error(`Unknown event type: ${(event as any).type}`));
+      }
     }
   } catch (error) {
     return err(error instanceof Error ? error : new Error(String(error)));
@@ -215,8 +227,10 @@ export function projectGraph(
   events: readonly GraphEvent[],
   initialGraph: Graph,
 ): Result<Graph, Error> {
+  // eslint-disable-next-line functional/no-let
   let currentGraph = initialGraph;
 
+  // eslint-disable-next-line functional/no-loop-statements
   for (const event of events) {
     const result = applyEvent(currentGraph, event);
     if (!result.ok) {

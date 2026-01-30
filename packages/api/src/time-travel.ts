@@ -4,9 +4,7 @@ import { projectGraph, createGraph } from '@canopy/core';
 import { fromAsyncThrowable, asGraphId } from '@canopy/types';
 import { Temporal } from 'temporal-polyfill';
 
-export type TimeTravelTarget =
-  | { readonly timestamp: Instant }
-  | { readonly eventId: EventId };
+export type TimeTravelTarget = Readonly<{ timestamp: Instant }> | Readonly<{ eventId: EventId }>;
 
 /**
  * Returns the maximum possible UUIDv7 (lexicographically) for a given timestamp (ms precision).
@@ -33,17 +31,22 @@ export function maxEventIdForTimestamp(timestamp: Instant): EventId {
  * Used to transform an inclusive upper bound to an exclusive one.
  */
 export function incrementEventId(eventId: EventId): EventId {
+  // eslint-disable-next-line unicorn/prefer-spread
   const hexChars = eventId.toLowerCase().split('');
 
+  // eslint-disable-next-line functional/no-loop-statements
   for (let i = hexChars.length - 1; i >= 0; i--) {
     const char = hexChars[i];
     if (!char || char === '-') continue;
 
+    // eslint-disable-next-line unicorn/prefer-number-properties
     const val = parseInt(char, 16);
     if (val < 15) {
+      // eslint-disable-next-line functional/immutable-data
       hexChars[i] = (val + 1).toString(16);
       return hexChars.join('') as EventId;
     } else {
+      // eslint-disable-next-line functional/immutable-data
       hexChars[i] = '0';
     }
   }
@@ -63,11 +66,13 @@ export function incrementEventId(eventId: EventId): EventId {
 export async function getGraphAt(
   store: EventLogStore,
   graphId: string,
-  target: TimeTravelTarget
+  target: TimeTravelTarget,
 ): Promise<Result<Graph, Error>> {
   return fromAsyncThrowable(async () => {
+    // eslint-disable-next-line functional/no-let
     let beforeEventId: EventId;
 
+    // eslint-disable-next-line unicorn/prefer-ternary
     if ('eventId' in target) {
       // We want state *after* target.eventId.
       // Store supports 'before' (exclusive).
@@ -99,7 +104,7 @@ export async function getGraphAt(
     const initialGraphResult = createGraph(asGraphId(graphId), 'Reconstructed Graph');
 
     if (!initialGraphResult.ok) {
-       throw initialGraphResult.error;
+      throw initialGraphResult.error;
     }
 
     const initialGraph = initialGraphResult.value;
