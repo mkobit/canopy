@@ -10,7 +10,10 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@canopy/types": "workspace:*"
+    "@canopy/core": "workspace:*",
+    "@canopy/storage": "workspace:*",
+    "@canopy/types": "workspace:*",
+    "temporal-polyfill": "^0.3.0"
   },
   "devDependencies": {
     "typescript": "5.9.3",

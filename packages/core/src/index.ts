@@ -4,3 +4,4 @@ export * from './system';
 export * from './queries';
 export * from './bootstrap';
 export * from './ops/index';
+export * from './projection';
