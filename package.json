@@ -22,7 +22,7 @@
     "postinstall": "bd hooks install || true"
   },
   "devDependencies": {
-    "@beads/bd": "^0.47.1",
+    "@beads/bd": "^0.49.3",
     "@stylistic/eslint-plugin": "^5.7.0",
     "@types/node": "^25.0.7",
     "@types/react": "^19.2.8",
