@@ -7,7 +7,7 @@
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc -p tsconfig.check.json",
-    "test": "vitest run"
+    "test": "bun test ./src"
   },
   "dependencies": {
     "@canopy/schema": "workspace:*",
@@ -20,7 +20,6 @@
   },
   "devDependencies": {
     "@types/uuid": "^11.0.0",
-    "typescript": "5.9.3",
-    "vitest": "1.6.0"
+    "typescript": "5.9.3"
   }
 }

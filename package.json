@@ -13,7 +13,7 @@
   "scripts": {
     "build": "tsc -b && bun --filter './apps/*' build",
     "check:versions": "bun tools/verify-versions.ts",
-    "test": "vitest",
+    "test": "bun --filter '*' test",
     "lint": "bun run check:versions && eslint .",
     "format": "prettier --write .",
     "typecheck": "bun --filter '*' typecheck",
@@ -31,7 +31,7 @@
     "@typescript-eslint/eslint-plugin": "8.54.0",
     "@typescript-eslint/parser": "8.54.0",
     "@vitejs/plugin-react": "^4.7.0",
-    "@vitest/coverage-v8": "1.6.0",
+    "bun-types": "^1.3.8",
     "electron": "^40.0.0",
     "eslint": "8.57.0",
     "eslint-config-prettier": "^10.1.8",
@@ -47,8 +47,7 @@
     "typescript": "5.9.3",
     "typescript-eslint": "8.54.0",
     "uuid": "^13.0.0",
-    "vite": "^7.3.1",
-    "vitest": "1.6.0"
+    "vite": "^7.3.1"
   },
   "dependencies": {
     "react": "^19.2.3",

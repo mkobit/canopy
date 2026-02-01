@@ -1,9 +1,9 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, jest } from 'bun:test';
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { BlockEditor } from '../BlockEditor';
 
-const noop = vi.fn();
+const noop = jest.fn();
 
 describe('BlockEditor', () => {
   // Note: contentEditable is hard to test in JSDOM environment fully, but we can test rendering and basic interactions.

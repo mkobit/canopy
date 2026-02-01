@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc -p tsconfig.check.json",
-    "test": "vitest run"
+    "test": "bun test ./src ./tests"
   },
   "dependencies": {
     "@canopy/core": "workspace:*",
@@ -16,7 +16,6 @@
   },
   "devDependencies": {
     "typescript": "5.9.3",
-    "vitest": "1.6.0",
     "yjs": "^13.6.29"
   }
 }

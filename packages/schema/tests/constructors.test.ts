@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect } from 'bun:test';
 import { createNodeId, createTypeId, createInstant, createPlainDate } from '../src/constructors';
 import { unwrap, isErr } from '@canopy/types';
 import { Temporal } from 'temporal-polyfill';
