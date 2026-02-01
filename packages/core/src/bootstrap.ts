@@ -394,13 +394,70 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
           ),
   ];
 
-  // 4. Core Edge Types
+  // 4. Core Node Types (Content Blocks)
+  const coreNodeTypes = [
+    {
+      id: SYSTEM_IDS.NODE_TYPE_TEXT_BLOCK,
+      name: 'TextBlock',
+      description: 'A block of text content.',
+      properties: [
+        {
+          name: 'content',
+          valueKind: 'list',
+          required: true,
+          description: 'Content segments',
+        },
+      ],
+    },
+    {
+      id: SYSTEM_IDS.NODE_TYPE_CODE_BLOCK,
+      name: 'CodeBlock',
+      description: 'A block of code.',
+      properties: [
+        {
+          name: 'content',
+          valueKind: 'text',
+          required: true,
+          description: 'Code content',
+        },
+        {
+          name: 'language',
+          valueKind: 'text',
+          required: false,
+          description: 'Programming language',
+        },
+      ],
+    },
+    {
+      id: SYSTEM_IDS.NODE_TYPE_MARKDOWN,
+      name: 'MarkdownNode',
+      description: 'A node containing markdown content.',
+      properties: [
+        {
+          name: 'content',
+          valueKind: 'text',
+          required: true,
+          description: 'Markdown content',
+        },
+      ],
+    },
+  ] as const;
+
+  // 5. Core Edge Types
   const coreEdgeTypes = [
     {
       id: SYSTEM_IDS.EDGE_CHILD_OF,
       typeId: SYSTEM_EDGE_TYPES.CHILD_OF,
       name: 'Child Of',
       description: 'Indicates a hierarchical parent-child relationship.',
+      properties: [
+        {
+          name: 'position',
+          valueKind: 'text',
+          required: true,
+          description: 'Fractional index position',
+        },
+      ],
     },
     {
       id: SYSTEM_IDS.EDGE_DEFINES,
@@ -422,7 +479,7 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
     },
   ] as const;
 
-  // 5. System Queries
+  // 6. System Queries
   const systemQueries = [
     {
       id: SYSTEM_IDS.QUERY_ALL_NODES,
@@ -485,14 +542,36 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
     ...steps,
     (g) =>
       reduceResult(
-        coreEdgeTypes,
+        coreNodeTypes,
         (cg, def) =>
           cg.nodes.has(def.id)
             ? ok(cg)
             : addNodeGraph(
                 cg,
-                createBootstrapNode(def.id, SYSTEM_IDS.EDGE_TYPE, def.name, def.description),
+                createBootstrapNode(
+                  def.id,
+                  SYSTEM_IDS.NODE_TYPE,
+                  def.name,
+                  def.description,
+                  { properties: text(JSON.stringify(def.properties)) },
+                ),
               ),
+        g,
+      ),
+    (g) =>
+      reduceResult(
+        coreEdgeTypes,
+        (cg, def) => {
+          if (cg.nodes.has(def.id)) {
+            return ok(cg);
+          }
+          const props = 'properties' in def ? def.properties : undefined;
+          const extraProps = props ? { properties: text(JSON.stringify(props)) } : {};
+          return addNodeGraph(
+            cg,
+            createBootstrapNode(def.id, SYSTEM_IDS.EDGE_TYPE, def.name, def.description, extraProps),
+          );
+        },
         g,
       ),
     (g) =>

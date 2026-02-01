@@ -27,8 +27,13 @@ export const SYSTEM_IDS = {
   VIEW_BY_TYPE: asNodeId('view:system:by-type'),
   VIEW_RECENT: asNodeId('view:system:recent'),
 
+  // Node Type Definitions for Block Content
+  NODE_TYPE_TEXT_BLOCK: asNodeId('system:nodetype:text-block'),
+  NODE_TYPE_CODE_BLOCK: asNodeId('system:nodetype:code-block'),
+  NODE_TYPE_MARKDOWN: asNodeId('system:nodetype:markdown'),
+
   // Edge Type Definitions (nodes that define edge types)
-  EDGE_CHILD_OF: asNodeId('edge:type:child-of'),
+  EDGE_CHILD_OF: asNodeId('system:edgetype:child-of'),
   EDGE_DEFINES: asNodeId('edge:type:defines'),
   EDGE_REFERENCES: asNodeId('edge:type:references'),
   EDGE_PREREQUISITE: asNodeId('edge:type:prerequisite'),
@@ -36,7 +41,7 @@ export const SYSTEM_IDS = {
 
 // Corresponding TypeIds for the Edge Types
 export const SYSTEM_EDGE_TYPES = {
-  CHILD_OF: asTypeId('edge:type:child-of'),
+  CHILD_OF: asTypeId('system:edgetype:child-of'),
   DEFINES: asTypeId('edge:type:defines'),
   REFERENCES: asTypeId('edge:type:references'),
   PREREQUISITE: asTypeId('edge:type:prerequisite'),
