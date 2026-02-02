@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
 import { SQLiteAdapter } from './sqlite-adapter';
 import { IndexedDBAdapter } from './indexeddb-adapter';
 import { GraphStorageMetadata } from './types';

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect } from 'bun:test';
 import { createGraph } from './graph';
 import { asGraphId, unwrap } from '@canopy/types';
 import { SYSTEM_IDS } from './system';

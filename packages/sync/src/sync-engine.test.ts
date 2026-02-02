@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect } from 'bun:test';
 import { SyncEngine } from './sync-engine';
 import { createNodeId, asTypeId, PropertyValue, unwrap } from '@canopy/types';
 import * as Y from 'yjs';

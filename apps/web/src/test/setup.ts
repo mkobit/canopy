@@ -1,17 +1,18 @@
 import 'fake-indexeddb/auto';
-import { vi } from 'vitest';
+import { GlobalRegistrator } from '@happy-dom/global-registrator';
+import { mock } from 'bun:test';
+
+GlobalRegistrator.register();
 
 // Mock matchMedia for testing-library
-vi.stubGlobal(
-  'matchMedia',
-  vi.fn().mockImplementation((query) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: vi.fn(), // deprecated
-    removeListener: vi.fn(), // deprecated
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    dispatchEvent: vi.fn(),
-  })),
-);
+global.matchMedia = mock((query) => ({
+  matches: false,
+  media: query,
+  onchange: null,
+  addListener: mock(), // deprecated
+  removeListener: mock(), // deprecated
+  addEventListener: mock(),
+  removeEventListener: mock(),
+  dispatchEvent: mock(),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+})) as any;

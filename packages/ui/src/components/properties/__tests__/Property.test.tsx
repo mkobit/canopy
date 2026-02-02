@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, jest } from 'bun:test';
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { PropertyDisplay } from '../PropertyDisplay';
@@ -21,7 +21,7 @@ describe('PropertyDisplay', () => {
 describe('PropertyInput', () => {
   it('updates text value', () => {
     const value = 'Initial';
-    const onChange = vi.fn();
+    const onChange = jest.fn();
     render(<PropertyInput value={value} onChange={onChange} kind="text" />);
 
     const input = screen.getByDisplayValue('Initial');
@@ -32,7 +32,7 @@ describe('PropertyInput', () => {
 
   it('updates number value', () => {
     const value = 10;
-    const onChange = vi.fn();
+    const onChange = jest.fn();
     render(<PropertyInput value={value} onChange={onChange} kind="number" />);
 
     const input = screen.getByDisplayValue('10');
