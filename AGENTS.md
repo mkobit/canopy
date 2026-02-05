@@ -13,7 +13,7 @@ Refer to this document for architectural decisions, data model definitions, and 
 Run the following command to verify the current dependency graph:
 
 ```bash
-pnpm list -r --depth 1
+bun pm ls --all
 ```
 
 ## Architectural invariants
@@ -35,16 +35,16 @@ pnpm list -r --depth 1
 
 | Task                 | Command          |
 | :------------------- | :--------------- |
-| Install dependencies | `pnpm install`   |
-| Run tests            | `pnpm test run`  |
-| Build all packages   | `pnpm build`     |
-| Lint codebase        | `pnpm lint`      |
-| Type check           | `pnpm typecheck` |
+| Install dependencies | `bun install`    |
+| Run tests            | `bun test`       |
+| Build all packages   | `bun run build`  |
+| Lint codebase        | `bun run lint`   |
+| Type check           | `bun run typecheck` |
 
 ## Environment setup
 
 We use `mise` to align local tool versions (Node.js) with CI.
-Versions are defined in `mise.toml` and must match `package.json` (verified via `pnpm lint`).
+Versions are defined in `mise.toml` and must match `package.json` (verified via `bun run lint`).
 
 ### Local commands
 
@@ -56,7 +56,7 @@ Versions are defined in `mise.toml` and must match `package.json` (verified via 
 
 We use Beads (`bd`) for distributed task tracking.
 Issues are stored in `.beads/` and versioned with git.
-Use `pnpm bd` to execute commands (e.g., `pnpm bd create "Fix bug" -p 1`).
+Use `bun run bd` to execute commands (e.g., `bun run bd create "Fix bug" -p 1`).
 Refer to the [Beads documentation](https://github.com/steveyegge/beads) for detailed usage.
 
 ## Programming style requirements

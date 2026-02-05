@@ -1,58 +1,384 @@
-
-> canopy-graph@0.0.0 test /app
-> vitest "packages/schema" "run"
-
-
- DEV  v1.6.0 /app
-
- ❯ |node| packages/schema/tests/constructors.test.ts  (9 tests | 1 failed) 19ms
-   ❯ packages/schema/tests/constructors.test.ts > Constructors > should create valid Instant
-     → expected '2023-10-27T10:00:00Z' to be '2023-10-27T10:00:00.000Z' // Object.is equality
- ✓ |node| packages/schema/tests/schemas.test.ts  (7 tests) 22ms
- ✓ |node| packages/schema/tests/guards.test.ts  (3 tests) 4ms
-
-⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
-
- FAIL  |node| packages/schema/tests/constructors.test.ts > Constructors > should create valid Instant
-AssertionError: expected '2023-10-27T10:00:00Z' to be '2023-10-27T10:00:00.000Z' // Object.is equality
-
-- Expected
-+ Received
-
-- 2023-10-27T10:00:00.000Z
-+ 2023-10-27T10:00:00Z
-
- ❯ packages/schema/tests/constructors.test.ts:33:40
-     31|   it('should create valid Instant', () => {
-     32|     const iso = '2023-10-27T10:00:00.000Z';
-     33|     expect(unwrap(createInstant(iso))).toBe(iso);
-       |                                        ^
-     34|   });
-     35|
-
-⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
-
- Test Files  1 failed | 2 passed (3)
-      Tests  1 failed | 18 passed (19)
-   Start at  01:13:02
-   Duration  974ms (transform 134ms, setup 1ms, collect 363ms, tests 45ms, environment 1ms, prepare 336ms)
-
-
- FAIL  Tests failed. Watching for file changes...
-       press h to show help, press q to quit
- ELIFECYCLE  Test failed. See above for more details.
-[3Jc
- RERUN  packages/schema/tests/constructors.test.ts x1
-
- ✓ |node| packages/schema/tests/constructors.test.ts  (9 tests) 12ms
-
- Test Files  1 passed (1)
-      Tests  9 passed (9)
-   Start at  01:14:05
-   Duration  67ms
-
-
- PASS  Waiting for file changes...
-       press h to show help, press q to quit
-       rerun x1
-[2K[1A[2K[G
+$ bun --filter '*' test run --coverage
+@canopy/query test: bun test v1.2.14 (6a363a38)
+@canopy/sync test: bun test v1.2.14 (6a363a38)
+@canopy/storage test: bun test v1.2.14 (6a363a38)
+@canopy/core test: bun test v1.2.14 (6a363a38)
+@canopy/api test: bun test v1.2.14 (6a363a38)
+@canopy/schema test: bun test v1.2.14 (6a363a38)
+@canopy/ui test: bun test v1.2.14 (6a363a38)
+@canopy/storage test:
+@canopy/storage test: src/sqlite-event-log.test.ts:
+@canopy/sync test:
+@canopy/sync test: src/sync-engine.test.ts:
+@canopy/query test:
+@canopy/query test: tests/query.test.ts:
+@canopy/web test: bun test v1.2.14 (6a363a38)
+@canopy/ui test:
+@canopy/ui test: src/components/graph/__tests__/Graph.test.tsx:
+@canopy/core test:
+@canopy/core test: src/bootstrap.test.ts:
+@canopy/api test:
+@canopy/api test: src/index.test.ts:
+@canopy/schema test:
+@canopy/schema test: tests/constructors.test.ts:
+@canopy/web test:
+@canopy/web test: src/App.test.tsx:
+@canopy/schema test: (pass) Constructors > should create valid NodeId from valid UUID [14.16ms]
+@canopy/schema test: (pass) Constructors > should return Error for invalid NodeId [0.25ms]
+@canopy/schema test: (pass) Constructors > should generate new NodeId if no argument [0.63ms]
+@canopy/schema test: (pass) Constructors > should create valid TypeId [0.16ms]
+@canopy/schema test: (pass) Constructors > should return Error for invalid TypeId [0.05ms]
+@canopy/schema test: (pass) Constructors > should create valid Instant [8.11ms]
+@canopy/schema test: (pass) Constructors > should return Error for invalid Instant [0.16ms]
+@canopy/schema test: (pass) Constructors > should create valid PlainDate [0.69ms]
+@canopy/schema test: (pass) Constructors > should return Error for invalid PlainDate [0.24ms]
+@canopy/schema test:
+@canopy/schema test: tests/schemas.test.ts:
+@canopy/query test: (pass) Query Engine > queries all nodes of a given type [22.05ms]
+@canopy/query test: (pass) Query Engine > queries nodes where a property equals a value [0.53ms]
+@canopy/query test: (pass) Query Engine > queries nodes with comparison operators [0.27ms]
+@canopy/query test: (pass) Query Engine > queries edges by type [0.19ms]
+@canopy/query test: (pass) Query Engine > queries edges from a specific node [0.20ms]
+@canopy/query test: (pass) Query Engine > traverses from a node to connected nodes [3.83ms]
+@canopy/query test: (pass) Query Engine > combines multiple predicates [0.17ms]
+@canopy/query test: (pass) Query Engine > sorts results [0.37ms]
+@canopy/query test: (pass) Query Engine > limits results [0.17ms]
+@canopy/query test:
+@canopy/query test: tests/stored_query.test.ts:
+@canopy/storage test: (pass) SQLiteAdapter EventLog > should append and get events [41.26ms]
+@canopy/core test: (pass) Meta-circular bootstrap > creates a graph with system nodes [29.31ms]
+@canopy/core test: (pass) Meta-circular bootstrap > is idempotent [8.97ms]
+@canopy/schema test: (pass) Zod Schemas > should validate Instant [4.19ms]
+@canopy/schema test: (pass) Zod Schemas > should validate PlainDate [0.36ms]
+@canopy/schema test: (pass) Zod Schemas > should validate PropertyValue (Text) [0.18ms]
+@canopy/schema test: (pass) Zod Schemas > should validate PropertyValue (List) [1.06ms]
+@canopy/core test: (pass) Meta-circular bootstrap > provides query helpers [14.84ms]
+@canopy/schema test: (pass) Zod Schemas > should validate Node [5.61ms]
+@canopy/schema test: (pass) Zod Schemas > should validate Node from JSON object [0.76ms]
+@canopy/core test:
+@canopy/core test: src/tests/graph.test.ts:
+@canopy/schema test: (pass) Zod Schemas > should validate Graph from JSON object [2.40ms]
+@canopy/schema test:
+@canopy/schema test: tests/guards.test.ts:
+@canopy/schema test: (pass) Type Guards > should identify TextValue [0.08ms]
+@canopy/schema test: (pass) Type Guards > should identify NumberValue [0.04ms]
+@canopy/schema test: (pass) Type Guards > should identify Node [0.10ms]
+@canopy/schema test: ---------------------------|---------|---------|-------------------
+@canopy/schema test: File                       | % Funcs | % Lines | Uncovered Line #s
+@canopy/schema test: ---------------------------|---------|---------|-------------------
+@canopy/schema test: All files                  |   59.63 |   73.32 |
+@canopy/schema test:  src/constructors.ts       |   71.43 |   76.92 | 50-55,63-68
+@canopy/schema test:  src/guards.ts             |   36.36 |   80.56 | 11,16,21,26,30,34
+@canopy/schema test:  src/schemas.ts            |   50.00 |   94.12 | 80-81,144-145,160-162
+@canopy/schema test:  ../types/src/factories.ts |   42.86 |   55.00 | 14,25,33,37,41,47-50,71-78
+@canopy/schema test:  ../types/src/index.ts     |  100.00 |  100.00 |
+@canopy/schema test:  ../types/src/result.ts    |   57.14 |   33.33 | 8,24,29-41,46-50
+@canopy/schema test: ---------------------------|---------|---------|-------------------
+@canopy/schema test:
+@canopy/schema test:  19 pass
+@canopy/schema test:  0 fail
+@canopy/schema test:  31 expect() calls
+@canopy/schema test: Ran 19 tests across 3 files. [514.00ms]
+@canopy/storage test: (pass) SQLiteAdapter EventLog > should filter by after (incremental sync) [1.77ms]
+@canopy/core test: (pass) Core Graph Engine > should create a graph with bootstrap nodes [0.07ms]
+@canopy/core test: (pass) Core Graph Engine > should add nodes immutably and emit events [0.40ms]
+@canopy/core test: (pass) Core Graph Engine > should update nodes immutably and emit events [0.63ms]
+@canopy/core test: (pass) Core Graph Engine > should remove nodes and connected edges and emit events [1.01ms]
+@canopy/core test: (pass) Core Graph Engine > should query nodes and edges [6.83ms]
+@canopy/core test: (pass) Core Graph Engine > should update edges immutably and emit events [1.02ms]
+@canopy/core test: (pass) Core Graph Engine > should remove edges and emit events [0.63ms]
+@canopy/core test:
+@canopy/core test: tests/validation.test.ts:
+@canopy/storage test: (pass) SQLiteAdapter EventLog > should filter by before [8.37ms]
+@canopy/schema test: Exited with code 0
+@canopy/api test: (pass) API > exports a version [0.07ms]
+@canopy/api test:
+@canopy/api test: tests/time-travel.test.ts:
+@canopy/core test: (pass) validation > validates a valid node [11.56ms]
+@canopy/core test: (pass) validation > validates a node missing required property [7.70ms]
+@canopy/core test: (pass) validation > validates a node with wrong property type [3.92ms]
+@canopy/storage test: (pass) SQLiteAdapter EventLog > should respect limit [9.04ms]
+@canopy/core test: (pass) validation > passes validation if type definition is missing [8.48ms]
+@canopy/core test: (pass) validation > validates a valid edge [6.50ms]
+@canopy/storage test: (pass) SQLiteAdapter EventLog > should sort reverse [1.29ms]
+@canopy/core test: (pass) validation > validates edge with invalid source type [5.11ms]
+@canopy/storage test: (pass) SQLiteAdapter EventLog > should ignore duplicate events [1.16ms]
+@canopy/core test: (pass) validation > validates edge with missing required property [1.63ms]
+@canopy/storage test:
+@canopy/storage test: src/storage.test.ts:
+@canopy/core test: (pass) validation > validates a malformed NODE_TYPE node against the system definition [1.45ms]
+@canopy/core test: (pass) validation > validates a valid NODE_TYPE node against the system definition [1.07ms]
+@canopy/core test: (pass) validation > validates a NODE_TYPE node with wrong property type [1.15ms]
+@canopy/query test: (pass) Stored Queries > should save and retrieve a query definition [18.42ms]
+@canopy/core test: (pass) validation > validates a malformed EDGE_TYPE node against the system definition [15.68ms]
+@canopy/core test:
+@canopy/core test: tests/ops.test.ts:
+@canopy/query test: (pass) Stored Queries > should execute a stored query with parameter substitution [3.24ms]
+@canopy/core test: (pass) ops with validation > addNode returns Error if validation fails and validation is enabled [1.53ms]
+@canopy/core test: (pass) ops with validation > addNode succeeds if validation fails but validation is disabled (default) [5.42ms]
+@canopy/query test: (pass) Stored Queries > should return Error for non-existent or invalid query nodes [11.15ms]
+@canopy/query test:
+@canopy/query test: tests/views.test.ts:
+@canopy/core test: (pass) ops with validation > addNode succeeds if validation passes [3.35ms]
+@canopy/core test: (pass) ops with validation > updateNode returns Error if validation fails [1.21ms]
+@canopy/core test: -------------------------------|---------|---------|-------------------
+@canopy/core test: File                           | % Funcs | % Lines | Uncovered Line #s
+@canopy/core test: -------------------------------|---------|---------|-------------------
+@canopy/sync test: (pass) SyncEngine > should initialize with a new document [32.10ms]
+@canopy/core test: All files                      |   71.13 |   77.30 |
+@canopy/core test:  src/bootstrap.ts              |  100.00 |   99.19 | 19-20,138
+@canopy/core test:  src/graph.ts                  |  100.00 |  100.00 |
+@canopy/core test:  src/index.ts                  |  100.00 |  100.00 |
+@canopy/core test:  src/ops/edge.ts               |   71.43 |   82.48 | 20,23,26,30-34,72-76,117,124,129,132,136-140,155-156
+@canopy/core test:  src/ops/index.ts              |  100.00 |  100.00 |
+@canopy/core test:  src/ops/node.ts               |  100.00 |   93.38 | 20,65-69,127,134
+@canopy/core test:  src/projection.ts             |    0.00 |    0.88 | 9-217,226-241
+@canopy/core test:  src/queries.ts                |  100.00 |  100.00 |
+@canopy/core test:  src/query.ts                  |  100.00 |  100.00 |
+@canopy/core test:  src/system.ts                 |  100.00 |  100.00 |
+@canopy/core test:  src/utils.ts                  |  100.00 |  100.00 |
+@canopy/core test:  src/validation.ts             |   91.67 |   80.10 | 35,44-46,61-68,75-82,117,121,133-141,214,246-253
+@canopy/core test:  ../schema/src/constructors.ts |    0.00 |   22.22 | 26-29,37-42,50-55,63-68,76-83,91-96,104-109
+@canopy/core test:  ../schema/src/guards.ts       |    0.00 |   28.57 | 3,7,11,16,21,26,30,34,38,42-48,53-61
+@canopy/core test:  ../schema/src/index.ts        |  100.00 |  100.00 |
+@canopy/core test:  ../schema/src/properties.ts   |    0.00 |   42.86 | 6,13,20
+@canopy/core test:  ../schema/src/schemas.ts      |   16.67 |   90.68 | 119-121,127-129,144-145,160-162
+@canopy/core test:  ../types/src/factories.ts     |   57.14 |   47.06 | 37,47-50,56-67,71-78,82
+@canopy/core test:  ../types/src/index.ts         |  100.00 |  100.00 |
+@canopy/core test:  ../types/src/result.ts        |   85.71 |   58.62 | 24,36-41,46-50
+@canopy/core test: -------------------------------|---------|---------|-------------------
+@canopy/core test:
+@canopy/core test:  25 pass
+@canopy/core test:  0 fail
+@canopy/core test:  100 expect() calls
+@canopy/core test: Ran 25 tests across 4 files. [644.00ms]
+@canopy/query test: (pass) View Definitions > should save and retrieve a view definition [1.98ms]
+@canopy/query test: (pass) View Definitions > should resolve a view to its query [9.68ms]
+@canopy/query test: (pass) View Definitions > should list all view definitions [1.06ms]
+@canopy/query test: (pass) View Definitions > should have correct default views setup via bootstrap [1.15ms]
+@canopy/query test: -------------------------------|---------|---------|-------------------
+@canopy/query test: File                           | % Funcs | % Lines | Uncovered Line #s
+@canopy/query test: -------------------------------|---------|---------|-------------------
+@canopy/sync test: (pass) SyncEngine > should allow adding nodes via store [25.35ms]
+@canopy/sync test: (pass) SyncEngine > should allow adding edges via store [5.28ms]
+@canopy/core test: Exited with code 0
+@canopy/sync test: (pass) SyncEngine > should support snapshot export and import [8.58ms]
+@canopy/sync test: (pass) SyncEngine > should support initial snapshot in constructor [2.87ms]
+@canopy/sync test: (pass) SyncEngine > should handle awareness updates [0.56ms]
+@canopy/storage test: (pass) SQLiteAdapter > should save and load a graph [3.29ms]
+@canopy/sync test: (pass) SyncEngine > should sync changes between two engines via update events [4.95ms]
+@canopy/query test: All files                      |   50.34 |   60.32 |
+@canopy/query test:  ../core/src/bootstrap.ts      |  100.00 |   98.98 | 19-20,138,143
+@canopy/query test:  ../core/src/graph.ts          |  100.00 |  100.00 |
+@canopy/query test:  ../core/src/index.ts          |  100.00 |  100.00 |
+@canopy/query test:  ../core/src/ops/edge.ts       |    0.00 |    2.56 | 14-62,70-100,109-180
+@canopy/query test:  ../core/src/ops/index.ts      |  100.00 |  100.00 |
+@canopy/query test:  ../core/src/ops/node.ts       |   25.00 |   22.37 | 20,24-28,63-110,119-182
+@canopy/query test:  ../core/src/projection.ts     |    0.00 |    0.88 | 9-217,226-241
+@canopy/query test:  ../core/src/queries.ts        |    0.00 |   27.27 | 10,17,28-41
+@canopy/query test:  ../core/src/query.ts          |    0.00 |   50.00 | 7,14,21,28
+@canopy/query test:  ../core/src/system.ts         |  100.00 |  100.00 |
+@canopy/query test:  ../core/src/utils.ts          |    0.00 |    0.00 | 7-13
+@canopy/query test:  ../core/src/validation.ts     |    0.00 |    3.93 | 19,27,32-45,49-94,98-110,114-156,160-184,188-203,207-267
+@canopy/query test:  src/engine.ts                 |  100.00 |   66.84 | 54,72-74,82,117-118,126-128,132-134,138-155,183-201,224-230,233,239,249-251
+@canopy/query test:  src/pipeline.ts               |   93.75 |   85.11 | 59-65
+@canopy/query test:  src/stored.ts                 |   91.67 |   96.91 | 98,103
+@canopy/query test:  src/views.ts                  |   69.23 |   94.23 | 34,95,99,126-128
+@canopy/query test:  ../schema/src/constructors.ts |    0.00 |   22.22 | 26-29,37-42,50-55,63-68,76-83,91-96,104-109
+@canopy/query test:  ../schema/src/guards.ts       |    0.00 |   28.57 | 3,7,11,16,21,26,30,34,38,42-48,53-61
+@canopy/query test:  ../schema/src/index.ts        |  100.00 |  100.00 |
+@canopy/query test:  ../schema/src/properties.ts   |    0.00 |   42.86 | 6,13,20
+@canopy/query test:  ../schema/src/schemas.ts      |    0.00 |   88.89 | 80-81,119-121,127-129,144-145,160-162
+@canopy/query test:  ../types/src/factories.ts     |   57.14 |   60.98 | 14,29,37,47-50,71-78
+@canopy/query test:  ../types/src/index.ts         |  100.00 |  100.00 |
+@canopy/query test:  ../types/src/result.ts        |   71.43 |   55.17 | 8,24,36-41,46-50
+@canopy/query test: -------------------------------|---------|---------|-------------------
+@canopy/query test:
+@canopy/query test:  16 pass
+@canopy/query test:  0 fail
+@canopy/query test:  42 expect() calls
+@canopy/query test: Ran 16 tests across 3 files. [695.00ms]
+@canopy/sync test:
+@canopy/sync test: src/providers/in-memory-provider.test.ts:
+@canopy/storage test: (pass) SQLiteAdapter > should return null for non-existent graph [1.45ms]
+@canopy/query test: Exited with code 0
+@canopy/storage test: (pass) SQLiteAdapter > should list graphs [3.36ms]
+@canopy/sync test: (pass) InMemoryProvider > should sync changes between two engines using InMemoryProvider [11.33ms]
+@canopy/sync test: (pass) InMemoryProvider > should sync awareness states [0.84ms]
+@canopy/sync test:
+@canopy/sync test: src/store/graph-store.test.ts:
+@canopy/storage test: (pass) SQLiteAdapter > should delete a graph [6.46ms]
+@canopy/sync test: (pass) GraphStore > Nodes > should add and retrieve a node [0.60ms]
+@canopy/sync test: (pass) GraphStore > Nodes > should list all nodes [10.92ms]
+@canopy/sync test: (pass) GraphStore > Nodes > should update a node [1.69ms]
+@canopy/sync test: (pass) GraphStore > Nodes > should delete a node [0.57ms]
+@canopy/sync test: (pass) GraphStore > Nodes > should return Error when updating non-existent node [0.07ms]
+@canopy/sync test: (pass) GraphStore > Edges > should add and retrieve an edge [0.54ms]
+@canopy/sync test: (pass) GraphStore > Edges > should validate source and target existence [0.15ms]
+@canopy/sync test: (pass) GraphStore > Edges > should update an edge [1.11ms]
+@canopy/sync test: (pass) GraphStore > Edges > should delete an edge [0.58ms]
+@canopy/sync test:
+@canopy/sync test: src/store/graph-event-log.test.ts:
+@canopy/storage test: (pass) SQLiteAdapter > should persist data if persistence layer provided [17.09ms]
+@canopy/sync test: (pass) GraphStore Event Log > should add and retrieve an event [7.02ms]
+@canopy/sync test: (pass) GraphStore Event Log > should be idempotent (deduplicate events) [0.89ms]
+@canopy/sync test: (pass) GraphStore Event Log > should return events in time order (based on eventId) [1.96ms]
+@canopy/sync test: (pass) GraphStore Event Log > should handle different event types [1.15ms]
+@canopy/sync test: -------------------------------------|---------|---------|-------------------
+@canopy/sync test: File                                 | % Funcs | % Lines | Uncovered Line #s
+@canopy/sync test: -------------------------------------|---------|---------|-------------------
+@canopy/sync test: All files                            |   61.93 |   72.45 |
+@canopy/sync test:  ../schema/src/constructors.ts       |    0.00 |   22.22 | 26-29,37-42,50-55,63-68,76-83,91-96,104-109
+@canopy/sync test:  ../schema/src/guards.ts             |    0.00 |   28.57 | 3,7,11,16,21,26,30,34,38,42-48,53-61
+@canopy/sync test:  ../schema/src/index.ts              |  100.00 |  100.00 |
+@canopy/sync test:  ../schema/src/properties.ts         |    0.00 |   42.86 | 6,13,20
+@canopy/sync test:  ../schema/src/schemas.ts            |    0.00 |   88.89 | 80-81,119-121,127-129,144-145,160-162
+@canopy/sync test:  src/providers/in-memory-provider.ts |   80.00 |   84.17 | 164-171,175-185
+@canopy/sync test:  src/store/converters.ts             |  100.00 |   68.75 | 64-78,100-114
+@canopy/sync test:  src/store/graph-store.ts            |   92.86 |   91.38 | 67-71
+@canopy/sync test:  src/store/ops/edge.ts               |   80.00 |   83.52 | 20,27,45,60,65-70,83,99,102,108
+@canopy/sync test:  src/store/ops/node.ts               |  100.00 |   91.89 | 21,37,52,62,91
+@canopy/sync test:  src/store/types.ts                  |   59.09 |  100.00 |
+@canopy/sync test:  src/sync-engine.ts                  |   81.25 |   65.91 | 77-80,101-113,117-129
+@canopy/sync test:  ../types/src/factories.ts           |   64.29 |   63.41 | 25,29,47-50,71-78
+@canopy/sync test:  ../types/src/index.ts               |  100.00 |  100.00 |
+@canopy/sync test:  ../types/src/result.ts              |   71.43 |   55.17 | 8,24,36-41,46-50
+@canopy/sync test: -------------------------------------|---------|---------|-------------------
+@canopy/sync test:
+@canopy/sync test:  22 pass
+@canopy/sync test:  0 fail
+@canopy/sync test:  49 expect() calls
+@canopy/sync test: Ran 22 tests across 4 files. [780.00ms]
+@canopy/storage test: (pass) IndexedDBAdapter > should save and load a graph [5.86ms]
+@canopy/storage test: (pass) IndexedDBAdapter > should return null for non-existent graph [0.44ms]
+@canopy/sync test: Exited with code 0
+@canopy/storage test: (pass) IndexedDBAdapter > should list graphs [4.62ms]
+@canopy/storage test: (pass) IndexedDBAdapter > should delete a graph [7.44ms]
+@canopy/storage test: ---------------------------|---------|---------|-------------------
+@canopy/storage test: File                       | % Funcs | % Lines | Uncovered Line #s
+@canopy/storage test: ---------------------------|---------|---------|-------------------
+@canopy/storage test: All files                  |   75.71 |   78.00 |
+@canopy/storage test:  src/indexeddb-adapter.ts  |  100.00 |  100.00 |
+@canopy/storage test:  src/sqlite-adapter.ts     |  100.00 |  100.00 |
+@canopy/storage test:  ../types/src/factories.ts |   28.57 |   50.00 | 10,14,25,29,33,41,47-50,71-78,82
+@canopy/storage test:  ../types/src/index.ts     |  100.00 |  100.00 |
+@canopy/storage test:  ../types/src/result.ts    |   50.00 |   40.00 | 8,12,24,29-41,50-51
+@canopy/storage test: ---------------------------|---------|---------|-------------------
+@canopy/storage test:
+@canopy/storage test:  15 pass
+@canopy/storage test:  0 fail
+@canopy/storage test:  31 expect() calls
+@canopy/storage test: Ran 15 tests across 2 files. [808.00ms]
+@canopy/storage test: Exited with code 0
+@canopy/api test: (pass) Time Travel API > should reconstruct graph at specific timestamps [81.69ms]
+@canopy/api test: (pass) Time Travel API > should reconstruct graph at specific eventId [8.73ms]
+@canopy/api test: -------------------------------------|---------|---------|-------------------
+@canopy/api test: File                                 | % Funcs | % Lines | Uncovered Line #s
+@canopy/api test: -------------------------------------|---------|---------|-------------------
+@canopy/api test: All files                            |   53.94 |   61.16 |
+@canopy/api test:  src/index.ts                        |  100.00 |  100.00 |
+@canopy/api test:  src/time-travel.ts                  |  100.00 |   88.24 | 48,50,52,99,107
+@canopy/api test:  ../core/src/bootstrap.ts            |  100.00 |   98.98 | 19-20,138,143
+@canopy/api test:  ../core/src/graph.ts                |  100.00 |  100.00 |
+@canopy/api test:  ../core/src/index.ts                |  100.00 |  100.00 |
+@canopy/api test:  ../core/src/ops/edge.ts             |    0.00 |    2.56 | 14-62,70-100,109-180
+@canopy/api test:  ../core/src/ops/index.ts            |  100.00 |  100.00 |
+@canopy/api test:  ../core/src/ops/node.ts             |   25.00 |   22.37 | 20,24-28,63-110,119-182
+@canopy/api test:  ../core/src/projection.ts           |  100.00 |   49.72 | 15,46,82,92,94-95,102,115,117-126,128-138,140,142,144-153,155-159,161,163,165-166,168-175,177,179,181-190,192-195,197,199,201-210,212,214-215,217
+@canopy/api test:  ../core/src/queries.ts              |    0.00 |   27.27 | 10,17,28-41
+@canopy/api test:  ../core/src/query.ts                |    0.00 |   50.00 | 7,14,21,28
+@canopy/api test:  ../core/src/system.ts               |  100.00 |  100.00 |
+@canopy/api test:  ../core/src/utils.ts                |    0.00 |    0.00 | 7-13
+@canopy/api test:  ../core/src/validation.ts           |    0.00 |    3.93 | 19,27,32-45,49-94,98-110,114-156,160-184,188-203,207-267
+@canopy/api test:  ../schema/src/constructors.ts       |    0.00 |   22.22 | 26-29,37-42,50-55,63-68,76-83,91-96,104-109
+@canopy/api test:  ../schema/src/guards.ts             |    0.00 |   28.57 | 3,7,11,16,21,26,30,34,38,42-48,53-61
+@canopy/api test:  ../schema/src/index.ts              |  100.00 |  100.00 |
+@canopy/api test:  ../schema/src/properties.ts         |    0.00 |   42.86 | 6,13,20
+@canopy/api test:  ../schema/src/schemas.ts            |    0.00 |   88.89 | 80-81,119-121,127-129,144-145,160-162
+@canopy/api test:  ../storage/src/index.ts             |  100.00 |  100.00 |
+@canopy/api test:  ../storage/src/indexeddb-adapter.ts |    0.00 |    6.67 | 24-93
+@canopy/api test:  ../storage/src/sqlite-adapter.ts    |   84.62 |   62.91 | 138-216
+@canopy/api test:  ../storage/src/types.ts             |  100.00 |  100.00 |
+@canopy/api test:  ../types/src/factories.ts           |   42.86 |   55.00 | 10,14,25,37,47-50,71-78,82
+@canopy/api test:  ../types/src/index.ts               |  100.00 |  100.00 |
+@canopy/api test:  ../types/src/result.ts              |   50.00 |   40.00 | 8,12,24,29-41,50-51
+@canopy/api test: -------------------------------------|---------|---------|-------------------
+@canopy/api test:
+@canopy/api test:  3 pass
+@canopy/api test:  0 fail
+@canopy/api test:  10 expect() calls
+@canopy/api test: Ran 3 tests across 2 files. [858.00ms]
+@canopy/api test: Exited with code 0
+@canopy/ui test: (pass) NodeView > renders node type and id [45.49ms]
+@canopy/ui test: (pass) NodeView > renders properties [8.43ms]
+@canopy/ui test: (pass) NodeView > calls onClick when clicked [7.62ms]
+@canopy/ui test: (pass) GraphCanvas > renders nodes [15.30ms]
+@canopy/ui test: (pass) GraphCanvas > handles background click [2.89ms]
+@canopy/ui test:
+@canopy/ui test: src/components/properties/__tests__/Property.test.tsx:
+@canopy/ui test: (pass) PropertyDisplay > renders text value [11.28ms]
+@canopy/ui test: (pass) PropertyDisplay > renders number value [2.60ms]
+@canopy/ui test: (pass) PropertyInput > updates text value [6.52ms]
+@canopy/ui test: (pass) PropertyInput > updates number value [3.89ms]
+@canopy/ui test:
+@canopy/ui test: src/components/editor/__tests__/BlockEditor.test.tsx:
+@canopy/ui test: (pass) BlockEditor > renders initial value [11.82ms]
+@canopy/ui test: -----------------------------------------------|---------|---------|-------------------
+@canopy/ui test: File                                           | % Funcs | % Lines | Uncovered Line #s
+@canopy/ui test: -----------------------------------------------|---------|---------|-------------------
+@canopy/ui test: All files                                      |   53.01 |   59.79 |
+@canopy/ui test:  ../types/src/factories.ts                     |   21.43 |   37.25 | 10,14,25,29,33,37,47-50,56-67,71-78,82
+@canopy/ui test:  ../types/src/index.ts                         |  100.00 |  100.00 |
+@canopy/ui test:  ../types/src/result.ts                        |    0.00 |   19.35 | 8,12,21-25,29-41,46-50
+@canopy/ui test:  src/components/editor/BlockEditor.tsx         |   25.00 |   70.91 | 32-35,39-41,50-51,59-60,68-69,77-79
+@canopy/ui test:  src/components/graph/EdgeView.tsx             |    0.00 |    1.72 | 17-73
+@canopy/ui test:  src/components/graph/GraphCanvas.tsx          |   50.00 |   71.43 | 26,52-64,80-81
+@canopy/ui test:  src/components/graph/NodeView.tsx             |  100.00 |  100.00 |
+@canopy/ui test:  src/components/properties/PropertyDisplay.tsx |   60.00 |   34.57 | 14-18,20-21,37,49-56,58-59,61-64,66-67,69-77,79-85,87-94,107-111
+@canopy/ui test:  src/components/properties/PropertyInput.tsx   |   26.67 |   22.44 | 19-49,61-85,87-95,97,100-101,154-162,164-165,167-175,177-179,181-189,191-192,194-202,204-206,208-221,223-231,233-236,238-249,251-252,258-261
+@canopy/ui test:  src/test/setup.ts                             |  100.00 |  100.00 |
+@canopy/ui test:  src/utils/cn.ts                               |  100.00 |  100.00 |
+@canopy/ui test: -----------------------------------------------|---------|---------|-------------------
+@canopy/ui test:
+@canopy/ui test:  10 pass
+@canopy/ui test:  0 fail
+@canopy/ui test:  12 expect() calls
+@canopy/ui test: Ran 10 tests across 3 files. [1176.00ms]
+@canopy/ui test: Exited with code 0
+@canopy/web test: (pass) HomePage > renders "Your Graphs" [92.52ms]
+@canopy/web test: ---------------------------------------------------------|---------|---------|-------------------
+@canopy/web test: File                                                     | % Funcs | % Lines | Uncovered Line #s
+@canopy/web test: ---------------------------------------------------------|---------|---------|-------------------
+@canopy/web test: All files                                                |   34.78 |   50.95 |
+@canopy/web test:  src/context/GraphContext.tsx                            |   15.38 |   27.03 | 61-104,110-125,129-138,142-162,176-215,223-226
+@canopy/web test:  src/context/StorageContext.tsx                          |  100.00 |   94.44 | 38-39
+@canopy/web test:  src/pages/HomePage.tsx                                  |   50.00 |   43.40 | 29,37-56,60-70,74-76,100-123
+@canopy/web test:  src/test/setup.ts                                       |    0.00 |   38.46 | 8-15
+@canopy/web test:  ../../packages/schema/src/constructors.ts               |    0.00 |   22.22 | 26-29,37-42,50-55,63-68,76-83,91-96,104-109
+@canopy/web test:  ../../packages/schema/src/guards.ts                     |    0.00 |   28.57 | 3,7,11,16,21,26,30,34,38,42-48,53-61
+@canopy/web test:  ../../packages/schema/src/index.ts                      |  100.00 |  100.00 |
+@canopy/web test:  ../../packages/schema/src/properties.ts                 |    0.00 |   42.86 | 6,13,20
+@canopy/web test:  ../../packages/schema/src/schemas.ts                    |    0.00 |   88.89 | 80-81,119-121,127-129,144-145,160-162
+@canopy/web test:  ../../packages/storage/src/index.ts                     |  100.00 |  100.00 |
+@canopy/web test:  ../../packages/storage/src/indexeddb-adapter.ts         |   66.67 |   34.78 | 40-84
+@canopy/web test:  ../../packages/storage/src/sqlite-adapter.ts            |    0.00 |    3.00 | 17-35,40-64,77-95,99-294
+@canopy/web test:  ../../packages/storage/src/types.ts                     |  100.00 |  100.00 |
+@canopy/web test:  ../../packages/sync/src/index.ts                        |  100.00 |  100.00 |
+@canopy/web test:  ../../packages/sync/src/providers/in-memory-provider.ts |    0.00 |   18.75 | 29-35,66-74,78-86,90-141,146-159,164-171,175-185,189-195
+@canopy/web test:  ../../packages/sync/src/store/converters.ts             |    0.00 |    9.28 | 5-7,11-13,17-20,24-29,33-36,40-44,48-78,83-114
+@canopy/web test:  ../../packages/sync/src/store/graph-store.ts            |    0.00 |   27.94 | 15-18,22-27,31-32,36-41,45,49,53-58,62-63,67-71,75,79,83-88,93-100
+@canopy/web test:  ../../packages/sync/src/store/ops/edge.ts               |    0.00 |    7.55 | 8-48,52-60,65-70,75-111,115-119
+@canopy/web test:  ../../packages/sync/src/store/ops/node.ts               |    0.00 |    8.99 | 8-40,44-52,57-62,67-94,98-102
+@canopy/web test:  ../../packages/sync/src/store/types.ts                  |    0.00 |  100.00 |
+@canopy/web test:  ../../packages/sync/src/sync-engine.ts                  |    0.00 |   17.89 | 16-27,31-42,46-55,59,63-66,70-73,77-80,87-90,97,101-113,117-129
+@canopy/web test:  ../../packages/sync/src/types.ts                        |  100.00 |  100.00 |
+@canopy/web test:  ../../packages/types/src/factories.ts                   |    0.00 |   30.77 | 10,14,20-21,25,29,33,37,41,47-50,56-67,71-78,82,86
+@canopy/web test:  ../../packages/types/src/index.ts                       |  100.00 |  100.00 |
+@canopy/web test:  ../../packages/types/src/result.ts                      |   37.50 |   29.03 | 8,12,21-25,29-41,50-51
+@canopy/web test: ---------------------------------------------------------|---------|---------|-------------------
+@canopy/web test:
+@canopy/web test:  1 pass
+@canopy/web test:  0 fail
+@canopy/web test:  1 expect() calls
+@canopy/web test: Ran 1 tests across 1 files. [1305.00ms]
+@canopy/web test: Exited with code 0
