@@ -1,15 +1,5 @@
-import {
-  Graph,
-  Node,
-  NodeId,
-  Result,
-  GraphResult,
-  Edge,
-  createInstant,
-  ok,
-  err,
-  createEdgeId,
-} from '@canopy/types';
+import type { Graph, Node, NodeId, Result, GraphResult, Edge } from '@canopy/types';
+import { createInstant, ok, err, createEdgeId } from '@canopy/types';
 import { addNode } from './node';
 import { addEdge } from './edge';
 import { SYSTEM_EDGE_TYPES } from '../system';
@@ -19,7 +9,7 @@ export function insertBlock(
   graph: Graph,
   parentId: NodeId,
   block: Node,
-  prevBlockId?: NodeId
+  prevBlockId?: NodeId,
 ): Result<GraphResult<Graph>, Error> {
   // 1. Add the block node
   const nodeResult = addNode(graph, block);
@@ -30,12 +20,8 @@ export function insertBlock(
 
   // 2. Find siblings to determine position
   // Filter edges: target == parentId AND type == CHILD_OF
-  const siblings = Array.from(graphWithNode.edges.values())
-    .filter(
-      (e) =>
-        e.target === parentId &&
-        e.type === SYSTEM_EDGE_TYPES.CHILD_OF
-    )
+  const siblings = [...graphWithNode.edges.values()]
+    .filter((e) => e.target === parentId && e.type === SYSTEM_EDGE_TYPES.CHILD_OF)
     .sort((a, b) => {
       const posA = (a.properties.get('position') as string) || '';
       const posB = (b.properties.get('position') as string) || '';
@@ -44,28 +30,33 @@ export function insertBlock(
       return 0;
     });
 
-  let prevPos: string | null = null;
-  let nextPos: string | null = null;
-
+  // Validate prevBlockId if provided
   if (prevBlockId) {
     const prevEdgeIndex = siblings.findIndex((e) => e.source === prevBlockId);
     if (prevEdgeIndex === -1) {
-       return err(new Error(`prevBlockId ${prevBlockId} is not a child of ${parentId}`));
+      return err(new Error(`prevBlockId ${prevBlockId} is not a child of ${parentId}`));
     }
     const prevEdge = siblings[prevEdgeIndex];
-    prevPos = (prevEdge.properties.get('position') as string) || null;
-
-    const nextEdge = siblings[prevEdgeIndex + 1];
-    if (nextEdge) {
-      nextPos = (nextEdge.properties.get('position') as string) || null;
-    }
-  } else {
-    // Insert at start
-    const firstEdge = siblings[0];
-    if (firstEdge) {
-      nextPos = (firstEdge.properties.get('position') as string) || null;
+    if (!prevEdge) {
+      return err(new Error(`prevEdge not found at index ${prevEdgeIndex}`));
     }
   }
+
+  // Calculate position
+  const { prevPos, nextPos } = prevBlockId
+    ? (() => {
+        const prevEdgeIndex = siblings.findIndex((e) => e.source === prevBlockId);
+        const prevEdge = siblings[prevEdgeIndex]!;
+        const nextEdge = siblings[prevEdgeIndex + 1];
+        return {
+          prevPos: (prevEdge.properties.get('position') as string) || null,
+          nextPos: nextEdge ? ((nextEdge.properties.get('position') as string) || null) : null,
+        };
+      })()
+    : {
+        prevPos: null,
+        nextPos: siblings[0] ? ((siblings[0].properties.get('position') as string) || null) : null,
+      };
 
   const newPos = generateKeyBetween(prevPos, nextPos);
 
@@ -81,7 +72,7 @@ export function insertBlock(
     metadata: {
       created: createInstant(),
       modified: createInstant(),
-    }
+    },
   };
 
   const edgeResult = addEdge(graphWithNode, edge);
@@ -93,6 +84,6 @@ export function insertBlock(
   return ok({
     graph: finalGraph,
     events: [...nodeEvents, ...edgeEvents],
-    value: finalGraph
+    value: finalGraph,
   });
 }

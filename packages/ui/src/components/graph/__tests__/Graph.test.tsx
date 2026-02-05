@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, jest } from 'bun:test';
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { NodeView } from '../NodeView';
@@ -39,7 +39,7 @@ describe('NodeView', () => {
   });
 
   it('calls onClick when clicked', () => {
-    const onClick = vi.fn();
+    const onClick = jest.fn();
     const { container } = render(<NodeView node={mockNode} onClick={onClick} />);
     // Click the main container
     fireEvent.click(container.firstChild as Element);
@@ -55,7 +55,7 @@ describe('GraphCanvas', () => {
   });
 
   it('handles background click', () => {
-    const onBgClick = vi.fn();
+    const onBgClick = jest.fn();
     const { container } = render(
       <GraphCanvas nodes={[]} edges={[]} onBackgroundClick={onBgClick} />,
     );

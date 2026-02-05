@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc -p tsconfig.check.json",
-    "test": "vitest run"
+    "test": "bun test ./src --preload ./src/test/setup.ts"
   },
   "dependencies": {
     "@canopy/types": "workspace:*",
@@ -18,12 +18,12 @@
     "temporal-polyfill": "^0.3.0"
   },
   "devDependencies": {
+    "@happy-dom/global-registrator": "^20.4.0",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/react": "^16.3.1",
     "@types/react": "^19.2.8",
     "@types/react-dom": "^19.2.3",
-    "jsdom": "^27.4.0",
-    "typescript": "5.9.3",
-    "vitest": "1.6.0"
+    "happy-dom": "^20.4.0",
+    "typescript": "5.9.3"
   }
 }

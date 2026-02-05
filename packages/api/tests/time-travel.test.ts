@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
 import { SQLiteAdapter } from '@canopy/storage';
 import { getGraphAt } from '../src/time-travel';
 import {

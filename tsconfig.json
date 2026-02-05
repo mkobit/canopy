@@ -1,13 +1,29 @@
 {
   "files": [],
   "references": [
-    { "path": "./packages/types" },
-    { "path": "./packages/schema" },
-    { "path": "./packages/core" },
-    { "path": "./packages/api" },
-    { "path": "./packages/sync" },
-    { "path": "./packages/query" },
-    { "path": "./packages/storage" },
-    { "path": "./packages/ui" }
+    {
+      "path": "./packages/types/tsconfig.build.json"
+    },
+    {
+      "path": "./packages/schema/tsconfig.build.json"
+    },
+    {
+      "path": "./packages/core/tsconfig.build.json"
+    },
+    {
+      "path": "./packages/api/tsconfig.build.json"
+    },
+    {
+      "path": "./packages/sync/tsconfig.build.json"
+    },
+    {
+      "path": "./packages/query/tsconfig.build.json"
+    },
+    {
+      "path": "./packages/storage/tsconfig.build.json"
+    },
+    {
+      "path": "./packages/ui/tsconfig.build.json"
+    }
   ]
 }

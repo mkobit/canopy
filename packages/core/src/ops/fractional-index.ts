@@ -35,26 +35,28 @@ export function generateKeyBetween(a: string | null, b: string | null): string {
   // If b starts with DIGITS[0] ("0"), we can't.
 
   if (a === null) {
-     if (b === null) return 'a0'; // handled above
-     // b is "..."
-     const bFirst = getIndex(b[0]);
-     if (bFirst > 0) {
-       // Return something starting with (bFirst + 0) / 2
-       const mid = Math.floor((0 + bFirst) / 2);
-       if (mid === 0) {
-           // 0 and 1 -> 0. We avoid 0 if we can, or just append.
-           // If bFirst is 1 ('1'), mid is 0 ('0'). "0" < "1...". OK.
-           return DIGITS[mid];
-       }
-       return DIGITS[mid];
-     }
-     // b starts with '0'. We can't go before it easily without changing alphabet or allowing empty.
-     // Let's assume user doesn't hit this or we just append to '0'? No.
-     // If b="0...", we return "0" something? No "0" < "0...".
-     // We return "0" if b="00"? "0" < "00".
-     // But if b="0", we are stuck.
-     // Fallback: assume 'a0' is the standard start and users don't go to '0'.
-     return '0'; // Risky.
+    if (b === null) return 'a0'; // handled above
+    // b is "..."
+    const bFirst = getIndex(b[0]);
+    if (bFirst > 0) {
+      // Return something starting with (bFirst + 0) / 2
+      const mid = Math.floor((0 + bFirst) / 2);
+      if (mid === 0) {
+        // 0 and 1 -> 0. We avoid 0 if we can, or just append.
+        // If bFirst is 1 ('1'), mid is 0 ('0'). "0" < "1...". OK.
+        const char = DIGITS[mid];
+        return char ?? '0';
+      }
+      const char = DIGITS[mid];
+      return char ?? '0';
+    }
+    // b starts with '0'. We can't go before it easily without changing alphabet or allowing empty.
+    // Let's assume user doesn't hit this or we just append to '0'? No.
+    // If b="0...", we return "0" something? No "0" < "0...".
+    // We return "0" if b="00"? "0" < "00".
+    // But if b="0", we are stuck.
+    // Fallback: assume 'a0' is the standard start and users don't go to '0'.
+    return '0'; // Risky.
   }
 
   if (b === null) {
@@ -62,7 +64,11 @@ export function generateKeyBetween(a: string | null, b: string | null): string {
     // Find something after a.
     const aFirst = getIndex(a[0]);
     if (aFirst < DIGITS.length - 1) {
-      return DIGITS[aFirst + 1];
+      const nextChar = DIGITS[aFirst + 1];
+      if (!nextChar) {
+        return a + DIGITS[Math.floor(DIGITS.length / 2)];
+      }
+      return nextChar;
     }
     // a is "z...". Append.
     return a + DIGITS[Math.floor(DIGITS.length / 2)];
@@ -160,34 +166,38 @@ export function generateKeyBetween(a: string | null, b: string | null): string {
     // Let's use the standard "append mid" approach but be careful.
 
     if (charA === undefined) {
-        // a="A", b="AB". index=1. valB='B'.
-        // We want char < valB.
-        // mid(0, valB).
-        // If valB=1 ('1'), mid=0 ('0').
-        // Return "A0". "A0" < "A1". "A" < "A0".
-        // If valB=0 ('0'). b="A0".
-        // We can't insert.
-        // We must inspect further chars of b.
-        // b="A0B".
-        // "A0" < "A0A" < "A0B".
-        // So we return "A0" + mid(0, 'B').
+      // a="A", b="AB". index=1. valB='B'.
+      // We want char < valB.
+      // mid(0, valB).
+      // If valB=1 ('1'), mid=0 ('0').
+      // Return "A0". "A0" < "A1". "A" < "A0".
+      // If valB=0 ('0'). b="A0".
+      // We can't insert.
+      // We must inspect further chars of b.
+      // b="A0B".
+      // "A0" < "A0A" < "A0B".
+      // So we return "A0" + mid(0, 'B').
 
-        // Loop until we find a char in b > '0'.
-        while (index < b.length && b[index] === DIGITS[0]) {
-            index++;
-        }
-        // now b[index] > '0' (or exhausted).
-        // if exhausted: b="A000".
-        // Impossible to insert between "A" and "A000".
+      // Loop until we find a char in b > '0'.
+      while (index < b.length && b[index] === DIGITS[0]) {
+        index++;
+      }
+      // now b[index] > '0' (or exhausted).
+      // if exhausted: b="A000".
+      // Impossible to insert between "A" and "A000".
 
-        // If found b[index] > '0'.
-        // We construct "A" + "0"*(zeros) + mid(0, b[index]).
+      // If found b[index] > '0'.
+      // We construct "A" + "0"*(zeros) + mid(0, b[index]).
 
-        const zeros = b.slice(a.length, index); // "00"
-        const charAt = b[index];
-        const valAt = getIndex(charAt);
-        const midVal = Math.floor(valAt / 2);
-        return a + zeros + DIGITS[midVal];
+      const zeros = b.slice(a.length, index); // "00"
+      const charAt = b[index];
+      const valAt = getIndex(charAt);
+      const midVal = Math.floor(valAt / 2);
+      const midChar = DIGITS[midVal];
+      if (!midChar) {
+        return a + zeros + DIGITS[0];
+      }
+      return a + zeros + midChar;
     }
 
     break;

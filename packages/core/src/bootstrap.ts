@@ -548,13 +548,9 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
             ? ok(cg)
             : addNodeGraph(
                 cg,
-                createBootstrapNode(
-                  def.id,
-                  SYSTEM_IDS.NODE_TYPE,
-                  def.name,
-                  def.description,
-                  { properties: text(JSON.stringify(def.properties)) },
-                ),
+                createBootstrapNode(def.id, SYSTEM_IDS.NODE_TYPE, def.name, def.description, {
+                  properties: text(JSON.stringify(def.properties)),
+                }),
               ),
         g,
       ),
@@ -569,7 +565,13 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
           const extraProps = props ? { properties: text(JSON.stringify(props)) } : {};
           return addNodeGraph(
             cg,
-            createBootstrapNode(def.id, SYSTEM_IDS.EDGE_TYPE, def.name, def.description, extraProps),
+            createBootstrapNode(
+              def.id,
+              SYSTEM_IDS.EDGE_TYPE,
+              def.name,
+              def.description,
+              extraProps,
+            ),
           );
         },
         g,

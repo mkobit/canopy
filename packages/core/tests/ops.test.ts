@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect } from 'bun:test';
 import { createGraph } from '../src/graph';
 import { addNode, updateNode } from '../src/ops/index';
 import { SYSTEM_IDS } from '../src/system';

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'bun:test';
 import * as Y from 'yjs';
 import { GraphStore } from './graph-store';
 import { asTypeId, asNodeId, unwrap, isErr } from '@canopy/types';
@@ -22,7 +22,7 @@ describe('GraphStore', () => {
       const node = unwrap(store.addNode(nodeData));
 
       expect(node.id).toBeDefined();
-      expect(node.type).toBe('person');
+      expect(node.type).toBe(asTypeId('person'));
       expect(node.properties.get('name')).toBe('Alice');
       expect(node.metadata.created).toBeDefined();
 
@@ -89,8 +89,8 @@ describe('GraphStore', () => {
 
       const edge = unwrap(store.addEdge(edgeData));
       expect(edge.id).toBeDefined();
-      expect(edge.source).toBe(sourceId);
-      expect(edge.target).toBe(targetId);
+      expect(edge.source).toBe(asNodeId(sourceId));
+      expect(edge.target).toBe(asNodeId(targetId));
 
       const retrieved = store.getEdge(edge.id);
       expect(retrieved).toEqual(edge);

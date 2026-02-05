@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { generateKeyBetween, DIGITS } from './fractional-index';
+import { generateKeyBetween } from './fractional-index';
 
 describe('fractional-index', () => {
   it('generates a start key', () => {
@@ -52,27 +52,27 @@ describe('fractional-index', () => {
   });
 
   it('handles nested prefix case a < b (b is extension of a)', () => {
-      // This is the hard case: a="A", b="A1".
-      // We want > "A", < "A1".
-      // "A0" works.
-      const a = 'A';
-      const b = 'A1';
-      const mid = generateKeyBetween(a, b);
-      expect(mid > a).toBe(true);
-      expect(mid < b).toBe(true);
-      expect(mid).toBe('A0');
+    // This is the hard case: a="A", b="A1".
+    // We want > "A", < "A1".
+    // "A0" works.
+    const a = 'A';
+    const b = 'A1';
+    const mid = generateKeyBetween(a, b);
+    expect(mid > a).toBe(true);
+    expect(mid < b).toBe(true);
+    expect(mid).toBe('A0');
   });
 
   it('handles nested prefix case a < b where b starts with 0', () => {
-      // a="A", b="A01".
-      // We want > "A", < "A01".
-      // "A00" works.
-      const a = 'A';
-      const b = 'A01';
-      const mid = generateKeyBetween(a, b);
-      expect(mid > a).toBe(true);
-      expect(mid < b).toBe(true);
-      expect(mid).toBe('A00');
+    // a="A", b="A01".
+    // We want > "A", < "A01".
+    // "A00" works.
+    const a = 'A';
+    const b = 'A01';
+    const mid = generateKeyBetween(a, b);
+    expect(mid > a).toBe(true);
+    expect(mid < b).toBe(true);
+    expect(mid).toBe('A00');
   });
 
   it('throws if order is wrong', () => {

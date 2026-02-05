@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect } from 'bun:test';
 import { isTextValue, isNumberValue, isNode, isEdge } from '../src/guards';
 
 describe('Type Guards', () => {

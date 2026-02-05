@@ -7,7 +7,7 @@
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc -p tsconfig.check.json",
-    "test": "vitest run"
+    "test": "bun test ./src"
   },
   "dependencies": {
     "@canopy/sync": "workspace:*",
@@ -18,7 +18,6 @@
   },
   "devDependencies": {
     "fake-indexeddb": "^6.2.5",
-    "typescript": "5.9.3",
-    "vitest": "1.6.0"
+    "typescript": "5.9.3"
   }
 }

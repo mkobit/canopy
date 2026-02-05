@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc -p tsconfig.check.json",
-    "test": "vitest run"
+    "test": "bun test ./src ./tests"
   },
   "dependencies": {
     "@canopy/schema": "workspace:*",
