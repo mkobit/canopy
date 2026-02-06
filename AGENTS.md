@@ -33,12 +33,12 @@ bun pm ls --all
 
 ## Development workflow
 
-| Task                 | Command          |
-| :------------------- | :--------------- |
-| Install dependencies | `bun install`    |
-| Run tests            | `bun test`       |
-| Build all packages   | `bun run build`  |
-| Lint codebase        | `bun run lint`   |
+| Task                 | Command             |
+| :------------------- | :------------------ |
+| Install dependencies | `bun install`       |
+| Run tests            | `bun test`          |
+| Build all packages   | `bun run build`     |
+| Lint codebase        | `bun run lint`      |
 | Type check           | `bun run typecheck` |
 
 ## Environment setup

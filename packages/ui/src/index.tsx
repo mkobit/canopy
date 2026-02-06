@@ -10,5 +10,11 @@ export { GraphCanvas } from './components/graph/GraphCanvas';
 // Editor
 export { BlockEditor } from './components/editor/BlockEditor';
 
+// Renderers
+export {
+  MarkdownRenderer,
+  type MarkdownRendererProps,
+} from './components/renderers/MarkdownRenderer';
+
 // Utils
 export { cn } from './utils/cn';

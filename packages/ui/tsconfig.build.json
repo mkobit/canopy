@@ -5,9 +5,7 @@
     "rootDir": "./src",
     "jsx": "react-jsx"
   },
-  "include": [
-    "src/**/*"
-  ],
+  "include": ["src/**/*"],
   "references": [
     {
       "path": "../core/tsconfig.build.json"
