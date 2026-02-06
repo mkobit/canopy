@@ -9,6 +9,7 @@ function getIndex(char: string | undefined): number {
  * Generates a sort key lexicographically between two keys.
  * Keys use the base62 alphabet.
  */
+/* eslint-disable functional/no-let, functional/no-loop-statements, functional/no-throw-statements, no-constant-condition */
 export function generateKeyBetween(a: string | null, b: string | null): string {
   if (a !== null && b !== null && a >= b) {
     throw new Error(`a (${a}) must be less than b (${b})`);
