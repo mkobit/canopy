@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect } from 'bun:test';
 import { createNodeId, createInstant, Graph, Node, createGraphId } from '@canopy/types';
 import { SYSTEM_IDS, SYSTEM_EDGE_TYPES } from '../system';
 import { insertBlock } from './blocks';

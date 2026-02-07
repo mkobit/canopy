@@ -50,12 +50,12 @@ export function insertBlock(
         const nextEdge = siblings[prevEdgeIndex + 1];
         return {
           prevPos: (prevEdge.properties.get('position') as string) || null,
-          nextPos: nextEdge ? ((nextEdge.properties.get('position') as string) || null) : null,
+          nextPos: nextEdge ? (nextEdge.properties.get('position') as string) || null : null,
         };
       })()
     : {
         prevPos: null,
-        nextPos: siblings[0] ? ((siblings[0].properties.get('position') as string) || null) : null,
+        nextPos: siblings[0] ? (siblings[0].properties.get('position') as string) || null : null,
       };
 
   const newPos = generateKeyBetween(prevPos, nextPos);

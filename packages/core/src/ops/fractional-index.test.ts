@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect } from 'bun:test';
 import { generateKeyBetween } from './fractional-index';
 
 describe('fractional-index', () => {
