@@ -5,7 +5,7 @@ It treats all content as nodes in a graph with strict typing, meta-circular defi
 
 ## Design Documentation
 
-The canonical design document is located at `docs/design/2025-01-21-v0.1-canopy-design.md`.
+The canonical design document is located at `docs/design/2025-01-21-canopy-design-v0.1.md`.
 Refer to this document for architectural decisions, data model definitions, and future roadmap.
 
 ## Package dependency graph
