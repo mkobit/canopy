@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'bun:test';
+import { describe, it, expect, setSystemTime } from 'bun:test';
 import {
   createGraph,
   addNode,
@@ -87,32 +87,41 @@ describe('Core Graph Engine', () => {
   it('should update nodes immutably and emit events', () => {
     const r1 = unwrap(addNode(emptyGraph, node1));
     const g1 = r1.graph;
-    const r2 = unwrap(
-      updateNode(g1, nodeId1, (n) => ({
-        ...n,
-        properties: new Map([['name', 'Alice']]),
-      })),
-    );
-    const g2 = r2.graph;
 
-    expect(g2.nodes.get(nodeId1)?.properties.get('name')).toEqual('Alice');
-    expect(g1.nodes.get(nodeId1)?.properties.size).toBe(0); // Original unmodified
+    // Use a fixed future time to ensure the update timestamp differs from
+    // the original node creation timestamp (which uses the real system time).
+    setSystemTime(new Date('2030-01-01T00:00:00Z'));
 
-    // Metadata modified should be updated
-    expect(g2.nodes.get(nodeId1)?.metadata.modified).not.toBe(
-      g1.nodes.get(nodeId1)?.metadata.modified,
-    );
+    try {
+      const r2 = unwrap(
+        updateNode(g1, nodeId1, (n) => ({
+          ...n,
+          properties: new Map([['name', 'Alice']]),
+        })),
+      );
+      const g2 = r2.graph;
 
-    expect(r2.events).toHaveLength(1);
-    const event = r2.events[0];
-    expect(event).toBeDefined();
-    if (!event) throw new Error('Event missing');
+      expect(g2.nodes.get(nodeId1)?.properties.get('name')).toEqual('Alice');
+      expect(g1.nodes.get(nodeId1)?.properties.size).toBe(0); // Original unmodified
 
-    expect(event.type).toBe('NodePropertiesUpdated');
-    if (event.type === 'NodePropertiesUpdated') {
-      expect(event.eventId).toEqual(expect.any(String));
-      expect(event.id).toBe(nodeId1);
-      expect(event.changes.get('name')).toEqual('Alice');
+      // Metadata modified should be updated
+      expect(g2.nodes.get(nodeId1)?.metadata.modified).not.toBe(
+        g1.nodes.get(nodeId1)?.metadata.modified,
+      );
+
+      expect(r2.events).toHaveLength(1);
+      const event = r2.events[0];
+      expect(event).toBeDefined();
+      if (!event) throw new Error('Event missing');
+
+      expect(event.type).toBe('NodePropertiesUpdated');
+      if (event.type === 'NodePropertiesUpdated') {
+        expect(event.eventId).toEqual(expect.any(String));
+        expect(event.id).toBe(nodeId1);
+        expect(event.changes.get('name')).toEqual('Alice');
+      }
+    } finally {
+      setSystemTime();
     }
   });
 
