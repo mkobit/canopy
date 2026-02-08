@@ -17,7 +17,7 @@ interface CanopyDB extends DBSchema {
 
 // eslint-disable-next-line functional/no-classes
 export class IndexedDBAdapter implements StorageAdapter {
-  // eslint-disable-next-line functional/prefer-readonly-type, functional/immutable-data, functional/prefer-immutable-types
+  // eslint-disable-next-line functional/prefer-immutable-types
   private db: IDBPDatabase<CanopyDB> | null = null;
   private readonly dbName: string;
 
@@ -57,7 +57,6 @@ export class IndexedDBAdapter implements StorageAdapter {
   ): Promise<Result<void, Error>> {
     if (!this.db) return err(new Error('Database not initialized'));
     return fromAsyncThrowable(async () => {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       await this.db!.put('graphs', {
         id: graphId,
         snapshot,
@@ -70,7 +69,6 @@ export class IndexedDBAdapter implements StorageAdapter {
   async load(graphId: string): Promise<Result<Uint8Array | null, Error>> {
     if (!this.db) return err(new Error('Database not initialized'));
     return fromAsyncThrowable(async () => {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const result = await this.db!.get('graphs', graphId);
       return result ? result.snapshot : null;
     });
@@ -79,7 +77,6 @@ export class IndexedDBAdapter implements StorageAdapter {
   async delete(graphId: string): Promise<Result<void, Error>> {
     if (!this.db) return err(new Error('Database not initialized'));
     return fromAsyncThrowable(async () => {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       await this.db!.delete('graphs', graphId);
       return;
     });
@@ -88,7 +85,6 @@ export class IndexedDBAdapter implements StorageAdapter {
   async list(): Promise<Result<readonly GraphStorageMetadata[], Error>> {
     if (!this.db) return err(new Error('Database not initialized'));
     return fromAsyncThrowable(async () => {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const all = await this.db!.getAll('graphs');
       return all.map((item) => item.metadata);
     });

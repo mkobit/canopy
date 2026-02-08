@@ -8,7 +8,7 @@ import { GraphProvider } from './context/GraphContext';
 import 'fake-indexeddb/auto';
 
 // Mock matchMedia for testing-library
-Object.defineProperty(window, 'matchMedia', {
+Object.defineProperty(globalThis, 'matchMedia', {
   writable: true,
   value: jest.fn().mockImplementation((query) => ({
     matches: false,

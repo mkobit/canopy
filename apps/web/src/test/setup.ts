@@ -5,7 +5,7 @@ import { mock } from 'bun:test';
 GlobalRegistrator.register();
 
 // Mock matchMedia for testing-library
-global.matchMedia = mock((query) => ({
+globalThis.matchMedia = mock((query) => ({
   matches: false,
   media: query,
   onchange: null,

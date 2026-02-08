@@ -68,9 +68,9 @@ const deserializeEvent = (storable: unknown): GraphEvent => {
 
 // eslint-disable-next-line functional/no-classes
 export class SQLiteAdapter implements StorageAdapter, EventLogStore {
-  // eslint-disable-next-line functional/prefer-readonly-type, functional/immutable-data, functional/prefer-immutable-types
+  // eslint-disable-next-line functional/prefer-immutable-types
   private db: Database | null = null;
-  // eslint-disable-next-line functional/prefer-readonly-type, functional/immutable-data, functional/prefer-immutable-types
+  // eslint-disable-next-line functional/prefer-immutable-types
   private SQL: SqlJsStatic | null = null;
   private readonly persistence: SQLitePersistence | null;
 
@@ -147,7 +147,7 @@ export class SQLiteAdapter implements StorageAdapter, EventLogStore {
 
     return fromAsyncThrowable(async () => {
       // Check if exists to decide insert or update? Or just REPLACE INTO (sqlite) or INSERT OR REPLACE
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
       const stmt = this.db!.prepare(`
         INSERT OR REPLACE INTO graphs (id, name, snapshot, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?)
@@ -165,7 +165,6 @@ export class SQLiteAdapter implements StorageAdapter, EventLogStore {
     if (!this.db) return err(new Error('Database not initialized'));
 
     return fromAsyncThrowable(async () => {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const stmt = this.db!.prepare('SELECT snapshot FROM graphs WHERE id = ?');
       stmt.bind([graphId]);
 
@@ -184,7 +183,6 @@ export class SQLiteAdapter implements StorageAdapter, EventLogStore {
     if (!this.db) return err(new Error('Database not initialized'));
 
     return fromAsyncThrowable(async () => {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       this.db!.run('DELETE FROM graphs WHERE id = ?', [graphId]);
       this.db!.run('DELETE FROM events WHERE graph_id = ?', [graphId]);
       await this.persist();
@@ -196,12 +194,10 @@ export class SQLiteAdapter implements StorageAdapter, EventLogStore {
     if (!this.db) return err(new Error('Database not initialized'));
 
     return fromAsyncThrowable(async () => {
-      // eslint-disable-next-line functional/prefer-readonly-type
       const result: GraphStorageMetadata[] = [];
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
       const stmt = this.db!.prepare('SELECT id, name, created_at, updated_at FROM graphs');
 
-      // eslint-disable-next-line functional/no-loop-statements
       while (stmt.step()) {
         const row = stmt.getAsObject();
         result.push({
@@ -221,28 +217,24 @@ export class SQLiteAdapter implements StorageAdapter, EventLogStore {
     if (!this.db) return err(new Error('Database not initialized'));
 
     return fromAsyncThrowable(async () => {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       this.db!.run('BEGIN TRANSACTION');
       // eslint-disable-next-line functional/no-try-statements
       try {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const stmt = this.db!.prepare(`
           INSERT OR IGNORE INTO events (graph_id, event_id, timestamp, type, payload)
           VALUES (?, ?, ?, ?, ?)
         `);
 
-        // eslint-disable-next-line functional/no-loop-statements
         for (const event of events) {
           const storable = serializeEvent(event);
           const payload = JSON.stringify(storable);
           stmt.run([graphId, event.eventId, event.timestamp, event.type, payload]);
         }
         stmt.free();
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
         this.db!.run('COMMIT');
         await this.persist();
       } catch (error) {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         this.db!.run('ROLLBACK');
         throw error;
       }
@@ -278,13 +270,11 @@ export class SQLiteAdapter implements StorageAdapter, EventLogStore {
         params.push(options.limit);
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const stmt = this.db!.prepare(query);
       stmt.bind(params);
 
-      // eslint-disable-next-line functional/prefer-readonly-type
       const events: GraphEvent[] = [];
-      // eslint-disable-next-line functional/no-loop-statements
+
       while (stmt.step()) {
         const row = stmt.getAsObject();
         const storable = JSON.parse(row.payload as string);

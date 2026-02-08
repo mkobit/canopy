@@ -35,6 +35,7 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
           metadata: {
             ...graph.metadata,
             modified:
+              // eslint-disable-next-line unicorn/prefer-math-min-max
               event.timestamp > graph.metadata.modified ? event.timestamp : graph.metadata.modified,
           },
         });
@@ -72,6 +73,7 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
           metadata: {
             ...graph.metadata,
             modified:
+              // eslint-disable-next-line unicorn/prefer-math-min-max
               event.timestamp > graph.metadata.modified ? event.timestamp : graph.metadata.modified,
           },
         });
@@ -109,6 +111,7 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
           metadata: {
             ...graph.metadata,
             modified:
+              // eslint-disable-next-line unicorn/prefer-math-min-max
               event.timestamp > graph.metadata.modified ? event.timestamp : graph.metadata.modified,
           },
         });
@@ -147,6 +150,7 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
           metadata: {
             ...graph.metadata,
             modified:
+              // eslint-disable-next-line unicorn/prefer-math-min-max
               event.timestamp > graph.metadata.modified ? event.timestamp : graph.metadata.modified,
           },
         });
@@ -184,6 +188,7 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
           metadata: {
             ...graph.metadata,
             modified:
+              // eslint-disable-next-line unicorn/prefer-math-min-max
               event.timestamp > graph.metadata.modified ? event.timestamp : graph.metadata.modified,
           },
         });
@@ -204,6 +209,7 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
           metadata: {
             ...graph.metadata,
             modified:
+              // eslint-disable-next-line unicorn/prefer-math-min-max
               event.timestamp > graph.metadata.modified ? event.timestamp : graph.metadata.modified,
           },
         });
