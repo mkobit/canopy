@@ -289,4 +289,11 @@ export default tseslint.config(
       'functional/no-this-expressions': 'off',
     },
   },
+  // Workaround for crashing rule in typescript-eslint v8.54.0
+  {
+    files: ['**/*.ts', '**/*.tsx'],
+    rules: {
+      '@typescript-eslint/consistent-generic-constructors': 'off',
+    },
+  },
 );
