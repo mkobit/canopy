@@ -10,7 +10,7 @@ export class SyncEngine {
   readonly doc: Y.Doc;
   readonly store: GraphStore;
   readonly awareness: Awareness;
-  // eslint-disable-next-line functional/prefer-readonly-type
+
   private provider: SyncProvider | null = null;
 
   constructor(options: SyncEngineOptions = {}) {

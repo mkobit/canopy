@@ -22,7 +22,7 @@ export function insertBlock(
   // Filter edges: target == parentId AND type == CHILD_OF
   const siblings = [...graphWithNode.edges.values()]
     .filter((e) => e.target === parentId && e.type === SYSTEM_EDGE_TYPES.CHILD_OF)
-    .sort((a, b) => {
+    .toSorted((a, b) => {
       const posA = (a.properties.get('position') as string) || '';
       const posB = (b.properties.get('position') as string) || '';
       if (posA < posB) return -1;

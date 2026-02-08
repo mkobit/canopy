@@ -28,7 +28,7 @@ export const StorageProvider: React.FC<Readonly<{ children: React.ReactNode }>> 
         // Use IndexedDBAdapter for browser environment
         const adapter = new IndexedDBAdapter();
         const initResult = await adapter.init();
-        // eslint-disable-next-line functional/no-throw-statements -- Re-throwing error to be caught by fromAsyncThrowable
+
         if (!initResult.ok) throw initResult.error;
         setStorage(adapter);
         return undefined;

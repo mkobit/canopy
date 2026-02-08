@@ -205,7 +205,7 @@ function traverse(
 }
 
 function applySort(items: readonly GraphItem[], sort: Sort): readonly GraphItem[] {
-  return [...items].sort((a, b) => {
+  return items.toSorted((a, b) => {
     const valA = unwrapValue(a.properties.get(sort.property));
     const valB = unwrapValue(b.properties.get(sort.property));
 

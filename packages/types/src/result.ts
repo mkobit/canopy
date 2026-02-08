@@ -17,7 +17,7 @@ export function isErr<T, E>(result: Result<T, E>): result is { ok: false; error:
  * Helper for testing or when you are sure it won't fail (will throw if it is an error).
  * This function intentionally throws to unwrap the value or fail hard if it's an error.
  */
-// eslint-disable-next-line functional/no-throw-statements -- Intentionally throws to unwrap the value or fail hard
+
 export function unwrap<T, E>(result: Result<T, E>): T {
   if (result.ok) {
     return result.value;

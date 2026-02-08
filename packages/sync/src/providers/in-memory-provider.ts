@@ -12,13 +12,13 @@ type EventHandler = (...args: any[]) => unknown;
 export class InMemoryProvider implements SyncProvider {
   readonly doc: Y.Doc;
   readonly awareness: Awareness;
-  // eslint-disable-next-line functional/prefer-readonly-type
+
   connected = false;
-  // eslint-disable-next-line functional/prefer-readonly-type
+
   readonly handlers: Map<string, EventHandler[]> = new Map<string, EventHandler[]>();
 
   // Shared state for all instances to simulate network
-  // eslint-disable-next-line functional/prefer-readonly-type
+
   static readonly networks: Map<string, Set<InMemoryProvider>> = new Map<
     string,
     Set<InMemoryProvider>
