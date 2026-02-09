@@ -2,7 +2,7 @@
 
 > Status: **draft**
 > Scope: view definitions, renderer nodes, resolution chain, renderer API surface, output model
-> Depends on: [2026-02-06-core-data-model.md](2026-02-06-core-data-model.md), [2026-02-06-content-model.md](2026-02-06-content-model.md)
+> Depends on: [2026-02-06-core-data-model.md](2026-02-06-core-data-model.md), [2026-02-06-content-model.md](2026-02-06-content-model.md), [2026-02-08-settings-system.md](2026-02-08-settings-system.md)
 
 ---
 
@@ -81,26 +81,28 @@ This means:
 
 When the system needs to render a node, it resolves which ViewDefinition and Renderer to use.
 
-Resolution checks multiple sources and coalesces the result:
+Resolution checks multiple sources in order:
 
 1. **Node-specific override**: check if the node has a direct edge to a ViewDefinition.
-2. **User settings**: query user settings for view preferences applicable to this node's type or context.
+2. **Settings cascade**: query the settings system for view preferences at multiple scope levels.
 3. **System default**: fall back to the system ViewDefinition for this node type (created during bootstrap).
 
-The first source that provides a ViewDefinition wins for the base selection.
-Settings may be granular, allowing partial overrides (e.g., user overrides display density but inherits the renderer from the system default).
+Step 2 uses the settings resolution cascade defined in the [settings system doc](2026-02-08-settings-system.md), section 4.
+The cascade checks per-node, per-type, per-namespace, and global user settings in that order.
+The first scope that provides a value wins.
+
+The full resolution sequence is therefore:
+
+1. Node-specific ViewDefinition edge.
+2. Per-node user setting for the view/renderer.
+3. Per-type user setting for the view/renderer.
+4. Per-namespace user setting for the view/renderer.
+5. Global user setting for the view/renderer.
+6. System default ViewDefinition for the node type.
 
 > **Open question**: exact coalescing behavior for partial overrides is TBD.
 > The simplest model is "first complete ViewDefinition wins."
 > A richer model allows merging configuration properties across resolution levels.
-
-### User settings
-
-User view preferences may live in a separate settings scope or subgraph.
-The resolution process queries this scope as part of the chain.
-
-How user settings are stored and queried is covered in a future settings design doc.
-For this document, the relevant point is: user settings are a source in the resolution chain, checked between node-specific overrides and system defaults.
 
 ---
 
@@ -208,13 +210,13 @@ This is a variant of the standard renderer input.
 
 ## 10. What this document does not cover
 
-| Concern                                           | Where it belongs              |
-| ------------------------------------------------- | ----------------------------- |
-| WASM execution runtime and sandboxing             | Extension and execution model |
-| Permission model for renderer graph access        | Extension and execution model |
-| User settings storage and query                   | Settings design doc           |
-| Inline query syntax in markdown                   | Content model / query engine  |
-| UI interaction patterns (editor chrome, toolbars) | UI/interaction design         |
+| Concern                                           | Where it belongs                                 |
+| ------------------------------------------------- | ------------------------------------------------ |
+| WASM execution runtime and sandboxing             | Extension and execution model                    |
+| Permission model for renderer graph access        | Extension and execution model                    |
+| User settings storage and query                   | [Settings system](2026-02-08-settings-system.md) |
+| Inline query syntax in markdown                   | Content model / query engine                     |
+| UI interaction patterns (editor chrome, toolbars) | UI/interaction design                            |
 
 ---
 

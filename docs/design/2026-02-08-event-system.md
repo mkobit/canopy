@@ -217,6 +217,9 @@ When conflicting events are projected, the system applies deterministic resoluti
 
 These rules produce a deterministic graph state from any set of valid events, regardless of the order they arrive.
 
+This section is the canonical definition of conflict resolution.
+Other docs (sync, settings) reference these rules but do not redefine them.
+
 ---
 
 ## 7. Event lifecycle
@@ -291,13 +294,13 @@ Event folding and archival are tradeoffs that sacrifice history for performance.
 
 ## 10. What this document does not cover
 
-| Concern                              | Where it belongs               |
-| ------------------------------------ | ------------------------------ |
-| Sync protocol and transport adapters | Sync design                    |
-| Storage engine event persistence     | Storage layer design           |
-| Workflow execution events            | Workflow system design         |
-| API layer event submission           | Query engine (external access) |
-| Undo/redo grouping                   | UI/interaction design          |
+| Concern                              | Where it belongs                                             |
+| ------------------------------------ | ------------------------------------------------------------ |
+| Sync protocol and transport adapters | [Sync](2026-02-08-sync.md)                                   |
+| Storage engine event persistence     | [Storage layer](2026-02-08-storage-layer.md)                 |
+| Workflow execution events            | [Workflow system](2026-02-08-workflow-system.md)             |
+| API layer event submission           | [Query engine](2026-02-08-query-engine.md) (external access) |
+| Undo/redo grouping                   | UI/interaction design                                        |
 
 ---
 

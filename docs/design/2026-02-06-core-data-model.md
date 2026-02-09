@@ -388,19 +388,22 @@ Rebuilding the materialized view from events is always possible.
 
 ---
 
-## 9. Relationship to other design areas
+## 9. What this document does not cover
 
 This document covers the foundation.
 Other areas build on it:
 
-| Area                     | Relationship                                                                                | Status              |
-| ------------------------ | ------------------------------------------------------------------------------------------- | ------------------- |
-| Content model            | TextBlock, CodeBlock, etc. are layer 2 system types; renderers interpret them               | Separate doc needed |
-| View and renderer system | ViewDefinition and Renderer are system node types; rendering is a query + template pipeline | Separate doc needed |
-| Query engine (ISO GQL)   | Queries target the materialized graph view; GQL is both internal and user-facing            | Separate doc needed |
-| Sync and CRDT            | Manages the event log; merges events across devices                                         | Separate doc needed |
-| Workflow system          | Workflow definitions are node types; execution produces events                              | Separate doc needed |
-| Extension API            | Extensions define types in their own namespaces; WASM renderers are renderer nodes          | Separate doc needed |
+| Concern                                              | Where it belongs                                                             |
+| ---------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Block types, containment, ordering                   | [Content model](2026-02-06-content-model.md)                                 |
+| View definitions, renderers, resolution chain        | [View and renderer system](2026-02-08-view-and-renderer-system.md)           |
+| ISO GQL, query execution, external/AI access         | [Query engine](2026-02-08-query-engine.md)                                   |
+| Event lifecycle, migrations, batches, validation     | [Event system](2026-02-08-event-system.md)                                   |
+| Event replication, transport adapters                | [Sync](2026-02-08-sync.md)                                                   |
+| Settings schemas, user overrides, resolution cascade | [Settings system](2026-02-08-settings-system.md)                             |
+| WASM sandbox, capabilities, permissions              | [Extension and execution model](2026-02-08-extension-and-execution-model.md) |
+| Workflow definitions, step execution, triggering     | [Workflow system](2026-02-08-workflow-system.md)                             |
+| Event/graph persistence, snapshots, backends         | [Storage layer](2026-02-08-storage-layer.md)                                 |
 
 ---
 
@@ -408,11 +411,15 @@ Other areas build on it:
 
 Tracked here for resolution in future design iterations:
 
-1. Vault/universe terminology: what is the top-level container called?
-2. Migration event structure: exact schema for version-tagged migration events.
-3. Batch event semantics: EventBatch wrapper vs transaction ID vs other mechanism.
-4. Object-typed properties: when and how to extend PropertyValue with nested structures.
-5. Namespace import mechanics: how external vocabularies and type systems are imported.
-6. Constraint validation on PropertyTypes: what validation rules are supported and when they run.
-7. External reference URI schemes: `canopy://`, `https://`, and resolution behavior.
-8. Yjs / event log integration for text content: hybrid model for character-level CRDT vs event-level granularity.
+1. Migration event structure: exact schema for version-tagged migration events.
+2. Object-typed properties: when and how to extend PropertyValue with nested structures.
+3. Namespace import mechanics: how external vocabularies and type systems are imported.
+4. Constraint validation on PropertyTypes: what validation rules are supported and when they run.
+5. External reference URI schemes: `canopy://`, `https://`, and resolution behavior.
+6. Namespace representation: whether namespaces are nodes in the graph, string conventions, or both.
+
+### Resolved questions
+
+- **Top-level container terminology**: the term is "vault." Used consistently across all design docs.
+- **Batch event semantics**: individual events with a shared `batchId`, no wrapper type. See [event system](2026-02-08-event-system.md), section 5.
+- **Yjs / event log integration**: the sync model does not depend on Yjs or any CRDT library. See [sync](2026-02-08-sync.md), section 7. Real-time collaborative text editing is not a current goal.

@@ -75,8 +75,12 @@ When a workflow runs, each step's execution produces events:
 | `WorkflowCompleted`     | All steps finished successfully                                 |
 | `WorkflowFailed`        | The workflow failed (a step failed and no recovery was defined) |
 
-These events enter the normal event log.
+These are **domain events**, distinct from the six core graph events defined in the [event system](2026-02-08-event-system.md).
+They enter the normal event log alongside graph events.
 Workflow execution history is queryable, replayable, and auditable.
+
+> **Open question**: whether workflow events are part of the core `GraphEvent` union or a separate `WorkflowEvent` category.
+> The event system doc defines the core six; workflow events extend that set.
 
 ### Step execution
 
@@ -132,12 +136,12 @@ These are illustrative, not exhaustive.
 
 ## 7. What this document does not cover
 
-| Concern                                          | Where it belongs               |
-| ------------------------------------------------ | ------------------------------ |
-| WASM action implementation                       | Extension and execution model  |
-| Workflow UI (builder, execution monitoring)      | UI/interaction design          |
-| Scheduler infrastructure for time-based triggers | Infrastructure design          |
-| AI agent workflow integration                    | Query engine (external access) |
+| Concern                                          | Where it belongs                                                             |
+| ------------------------------------------------ | ---------------------------------------------------------------------------- |
+| WASM action implementation                       | [Extension and execution model](2026-02-08-extension-and-execution-model.md) |
+| Workflow UI (builder, execution monitoring)      | UI/interaction design                                                        |
+| Scheduler infrastructure for time-based triggers | Infrastructure design                                                        |
+| AI agent workflow integration                    | [Query engine](2026-02-08-query-engine.md) (external access)                 |
 
 ---
 

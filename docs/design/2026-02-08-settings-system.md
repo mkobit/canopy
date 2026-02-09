@@ -124,6 +124,9 @@ For example, nodes imported from schema.org might use a different renderer than 
 Per-namespace is checked after per-type and before global.
 A per-type override still takes precedence over a per-namespace override.
 
+> **Note**: the `scope_target` for a per-namespace setting must reference something that identifies the namespace.
+> How namespaces are represented (as nodes, as string conventions, or both) is an open question in the [core data model](2026-02-06-core-data-model.md), section 10.
+
 ---
 
 ## 5. Settings and events
@@ -140,7 +143,7 @@ If a user changes a setting on device A, it syncs to device B through normal eve
 ### Settings conflicts
 
 Two devices can change the same setting concurrently.
-Resolution follows the same LWW rule as all other property conflicts: later timestamp wins.
+Resolution follows the same LWW rule as all other property conflicts: later timestamp wins (see [event system](2026-02-08-event-system.md), section 6).
 
 This is acceptable for settings.
 Settings changes are infrequent and rarely collide in practice.
@@ -190,12 +193,12 @@ They define the settings that the application supports out of the box.
 
 ## 8. What this document does not cover
 
-| Concern                              | Where it belongs                                     |
-| ------------------------------------ | ---------------------------------------------------- |
-| Which specific settings exist        | Individual subsystem docs (view, editor, sync, etc.) |
-| Settings UI (preferences panel)      | UI/interaction design                                |
-| Extension-defined settings schemas   | Extension and execution model                        |
-| Settings export/import across vaults | Future consideration                                 |
+| Concern                              | Where it belongs                                                             |
+| ------------------------------------ | ---------------------------------------------------------------------------- |
+| Which specific settings exist        | Individual subsystem docs (view, editor, sync, etc.)                         |
+| Settings UI (preferences panel)      | UI/interaction design                                                        |
+| Extension-defined settings schemas   | [Extension and execution model](2026-02-08-extension-and-execution-model.md) |
+| Settings export/import across vaults | Future consideration                                                         |
 
 ---
 

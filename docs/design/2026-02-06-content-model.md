@@ -59,6 +59,12 @@ This includes standard markdown syntax (bold, italic, headings, lists, tables) a
 MarkdownNode is the expected first-class authoring experience for most users.
 It offers the richest rendering without requiring multiple block nodes for simple formatted text.
 
+### Property naming convention
+
+TextBlock and CodeBlock use `text` for their content property because their content is plain text with no special interpretation at the data layer.
+MarkdownNode uses `content` because its value is interpreted by the renderer as markdown.
+This distinction is intentional: `text` means literal text, `content` means text with semantic structure that a renderer will parse.
+
 ### Common node properties
 
 All nodes carry temporal metadata from the core data model (created, modified).
@@ -174,15 +180,15 @@ It is the query and storage layers' responsibility to handle it.
 
 These are explicitly out of scope for this document:
 
-| Concern                                                   | Where it belongs              |
-| --------------------------------------------------------- | ----------------------------- |
-| How blocks are rendered                                   | View and renderer system      |
-| How queries work                                          | Query engine                  |
-| How text is collaboratively edited (character-level CRDT) | Sync and CRDT                 |
-| How blocks are created/edited in the UI                   | UI/interaction design         |
-| How references surface to the user                        | UI/interaction design         |
-| Pluggable renderers, custom hooks, workflow actions       | Extension and execution model |
-| WASM sandboxing, permission model, execution runtime      | Extension and execution model |
+| Concern                                                   | Where it belongs                                                             |
+| --------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| How blocks are rendered                                   | [View and renderer system](2026-02-08-view-and-renderer-system.md)           |
+| How queries work                                          | [Query engine](2026-02-08-query-engine.md)                                   |
+| How text is collaboratively edited (character-level CRDT) | Not a current goal; see [sync](2026-02-08-sync.md)                           |
+| How blocks are created/edited in the UI                   | UI/interaction design                                                        |
+| How references surface to the user                        | UI/interaction design                                                        |
+| Pluggable renderers, custom hooks, workflow actions       | [Extension and execution model](2026-02-08-extension-and-execution-model.md) |
+| WASM sandboxing, permission model, execution runtime      | [Extension and execution model](2026-02-08-extension-and-execution-model.md) |
 
 ---
 
@@ -194,4 +200,4 @@ These are explicitly out of scope for this document:
 4. Maximum practical depth for nested `child_of` hierarchies and whether to set a configurable limit.
 5. Inline syntax for embedding query results or linking to nodes within markdown content (deferred).
 6. Intra-graph linking protocol scheme (deferred).
-7. How query node view attachments interact with the view resolution chain (covered in view/renderer design doc).
+7. How query node view attachments interact with the view resolution chain (see [view and renderer system](2026-02-08-view-and-renderer-system.md)).

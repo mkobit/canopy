@@ -325,14 +325,14 @@ The programmatic API should have convenience methods for these common patterns, 
 
 ## 9. What this document does not cover
 
-| Concern                              | Where it belongs              |
-| ------------------------------------ | ----------------------------- |
-| How query results are rendered       | View and renderer system      |
-| How queries are stored as nodes      | Content model (query nodes)   |
-| Storage engine implementation        | Storage layer design          |
-| Index implementation details         | Storage layer design          |
-| Natural language query interface     | AI/agent interaction design   |
-| Query permissions and access control | Extension and execution model |
+| Concern                              | Where it belongs                                                             |
+| ------------------------------------ | ---------------------------------------------------------------------------- |
+| How query results are rendered       | [View and renderer system](2026-02-08-view-and-renderer-system.md)           |
+| How queries are stored as nodes      | [Content model](2026-02-06-content-model.md) (query nodes)                   |
+| Storage engine implementation        | [Storage layer](2026-02-08-storage-layer.md)                                 |
+| Index implementation details         | [Storage layer](2026-02-08-storage-layer.md)                                 |
+| Natural language query interface     | AI/agent interaction design                                                  |
+| Query permissions and access control | [Extension and execution model](2026-02-08-extension-and-execution-model.md) |
 
 ---
 

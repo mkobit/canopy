@@ -2,7 +2,7 @@
 
 > Status: **draft — conceptual, not implementation-ready**
 > Scope: extension model, WASM execution, sandboxing, capability-based access, permission model
-> Depends on: [2026-02-06-core-data-model.md](2026-02-06-core-data-model.md), [2026-02-08-query-engine.md](2026-02-08-query-engine.md)
+> Depends on: [2026-02-06-core-data-model.md](2026-02-06-core-data-model.md), [2026-02-08-query-engine.md](2026-02-08-query-engine.md), [2026-02-08-view-and-renderer-system.md](2026-02-08-view-and-renderer-system.md), [2026-02-08-workflow-system.md](2026-02-08-workflow-system.md)
 
 ---
 
@@ -161,14 +161,14 @@ Extensions expand what the system can do beyond these built-in capabilities.
 
 ## 7. What this document does not cover
 
-| Concern                              | Where it belongs         |
-| ------------------------------------ | ------------------------ |
-| WASM runtime implementation details  | Implementation phase     |
-| Extension distribution and discovery | Future consideration     |
-| Specific policy language syntax      | Future consideration     |
-| Extension versioning and updates     | Future consideration     |
-| Extension marketplace or registry    | Future consideration     |
-| System renderer implementation       | View and renderer system |
+| Concern                              | Where it belongs                                                   |
+| ------------------------------------ | ------------------------------------------------------------------ |
+| WASM runtime implementation details  | Implementation phase                                               |
+| Extension distribution and discovery | Future consideration                                               |
+| Specific policy language syntax      | Future consideration                                               |
+| Extension versioning and updates     | Future consideration                                               |
+| Extension marketplace or registry    | Future consideration                                               |
+| System renderer implementation       | [View and renderer system](2026-02-08-view-and-renderer-system.md) |
 
 ---
 

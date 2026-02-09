@@ -219,13 +219,13 @@ This is a recovery operation, not a normal flow.
 
 ## 9. What this document does not cover
 
-| Concern                             | Where it belongs     |
-| ----------------------------------- | -------------------- |
-| Sync protocol and transport         | Sync design          |
-| Query execution and planning        | Query engine         |
-| Event validation rules              | Event system         |
-| Specific database product selection | Implementation phase |
-| Cloud infrastructure architecture   | Deployment design    |
+| Concern                             | Where it belongs                           |
+| ----------------------------------- | ------------------------------------------ |
+| Sync protocol and transport         | [Sync](2026-02-08-sync.md)                 |
+| Query execution and planning        | [Query engine](2026-02-08-query-engine.md) |
+| Event validation rules              | [Event system](2026-02-08-event-system.md) |
+| Specific database product selection | Implementation phase                       |
+| Cloud infrastructure architecture   | Deployment design                          |
 
 ---
 
