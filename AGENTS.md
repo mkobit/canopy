@@ -1,12 +1,10 @@
 # Canopy
 
 Canopy is a graph-based personal knowledge management system.
-It treats all content as nodes in a graph with strict typing, meta-circular definition capabilities, and CRDT-based synchronization for offline-first operation.
 
 ## Design Documentation
 
 The canonical design document is located at `docs/design/2025-01-21-canopy-design-v0.1.md`.
-Refer to this document for architectural decisions, data model definitions, and future roadmap.
 
 ## Package dependency graph
 
@@ -44,20 +42,16 @@ bun pm ls --all
 ## Environment setup
 
 We use `mise` to align local tool versions (Node.js) with CI.
-Versions are defined in `mise.toml` and must match `package.json` (verified via `bun run lint`).
-
-### Local commands
 
 - Install tools: `mise install`
-- Activate shell: `eval "$(mise activate bash)"` (or add to `~/.bashrc`)
+- Activate shell: `eval "$(mise activate bash)"`
 - Trust config: `mise trust`
 
 ## Task tracking (Beads)
 
 We use Beads (`bd`) for distributed task tracking.
 Issues are stored in `.beads/` and versioned with git.
-Use `bun run bd` to execute commands (e.g., `bun run bd create "Fix bug" -p 1`).
-Refer to the [Beads documentation](https://github.com/steveyegge/beads) for detailed usage.
+Use `bun run bd` to execute commands.
 
 ## Programming style requirements
 
@@ -67,49 +61,23 @@ Build domain types from the bottom up, avoiding `any` or `Record<string, unknown
 Strict typing is enforced; use branded types for identifiers and `unknown` instead of `any` where appropriate.
 Documentation in `AGENTS.md` files must follow the one-sentence-per-line rule.
 
-## Query Engine (@canopy/query)
-
-The `@canopy/query` package provides a structured execution engine for graph queries.
-It uses an intermediate representation (IR) to define queries, decoupling the builder/parser from execution.
-The API follows a fluent builder pattern for constructing queries programmatically.
-Queries are executed against a `Graph` instance and return a `QueryResult`.
-The engine supports filtering, traversal, sorting, and limiting results.
-Future iterations will introduce a Cypher parser that generates the IR directly.
-This design prepares for a potential migration to ISO GQL without rewriting the execution logic.
-
-## View system (@canopy/query)
-
-Views are meta-circular definitions stored as nodes in the graph (ViewDefinition).
-A ViewDefinition pairs a stored QueryDefinition with presentation metadata (layout, sorting, grouping).
-The UI layer resolves a ViewDefinition to get both the executable query and the display configuration.
-Views are portable and can be exported along with the graph data.
-System views (All Nodes, By Type, Recent) are bootstrapped by default.
-Views do not contain rendering logic; they only describe _how_ data should be presented.
-Templates are placeholder definitions for UI components that can render specific layouts.
-
 ## Landing the Plane (Session Completion)
-
-**When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
 
 **MANDATORY WORKFLOW:**
 
-1. **File issues for remaining work** - Create issues for anything that needs follow-up
-2. **Run quality gates** (if code changed) - Tests, linters, builds
-3. **Update issue status** - Close finished work, update in-progress items
-4. **PUSH TO REMOTE** - This is MANDATORY:
+1. **File issues** for remaining work.
+2. **Run quality gates** (tests, linters, builds).
+3. **Update issue status**.
+4. **PUSH TO REMOTE** (MANDATORY):
    ```bash
    git pull --rebase
    bd sync
    git push
    git status  # MUST show "up to date with origin"
    ```
-5. **Clean up** - Clear stashes, prune remote branches
-6. **Verify** - All changes committed AND pushed
-7. **Hand off** - Provide context for next session
+5. **Clean up** and **Verify**.
+6. **Hand off** with context.
 
 **CRITICAL RULES:**
-
-- Work is NOT complete until `git push` succeeds
-- NEVER stop before pushing - that leaves work stranded locally
-- NEVER say "ready to push when you are" - YOU must push
-- If push fails, resolve and retry until it succeeds
+- Work is NOT complete until `git push` succeeds.
+- If push fails, resolve and retry until it succeeds.
