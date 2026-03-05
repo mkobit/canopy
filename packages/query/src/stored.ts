@@ -23,17 +23,20 @@ function list(items: readonly string[]): PropertyValue {
   return items;
 }
 
+import type { DeviceId } from '@canopy/types';
+
 export interface SaveQueryOptions {
   readonly description?: string;
   readonly nodeTypes?: readonly string[];
   readonly parameters?: readonly string[];
+  readonly deviceId: DeviceId;
 }
 
 export function saveQueryDefinition(
   graph: Graph,
   name: string,
   query: Query,
-  options: SaveQueryOptions = {},
+  options: SaveQueryOptions,
 ): Result<{ graph: Graph; nodeId: NodeId }, Error> {
   const nodeId = createNodeId();
 
@@ -82,7 +85,9 @@ export function saveQueryDefinition(
     },
   };
 
-  const newGraphResult = addNode(graph, node);
+  const newGraphResult = addNode(graph, node, {
+    deviceId: options.deviceId,
+  });
   if (!newGraphResult.ok) return err(newGraphResult.error);
 
   return ok({ graph: newGraphResult.value.graph, nodeId });

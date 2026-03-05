@@ -8,12 +8,14 @@ import type {
   PropertyDefinition,
   Result,
 } from '@canopy/types';
-import { createInstant, ok } from '@canopy/types';
+import { createInstant, ok, asDeviceId } from '@canopy/types';
 import { addNode } from './ops';
 import { SYSTEM_IDS, SYSTEM_EDGE_TYPES } from './system';
 
+export const SYSTEM_DEVICE_ID = asDeviceId('00000000-0000-0000-0000-000000000000');
+
 function addNodeGraph(graph: Graph, node: Node): Result<Graph, Error> {
-  const result = addNode(graph, node);
+  const result = addNode(graph, node, { deviceId: SYSTEM_DEVICE_ID });
   if (result.ok) {
     return ok(result.value.graph);
   }

@@ -7,7 +7,7 @@ import {
   listViewDefinitions,
 } from '../src/views';
 import { saveQueryDefinition } from '../src/stored';
-import { unwrap, createGraphId } from '@canopy/types';
+import { unwrap, createGraphId, asDeviceId } from '@canopy/types';
 import { pipe } from 'remeda';
 import { query, nodes } from '../src/pipeline';
 
@@ -17,19 +17,27 @@ describe('View Definitions', () => {
 
     // Create a query first
     const q = pipe(query(), nodes());
-    const { graph: g1, nodeId: queryId } = unwrap(saveQueryDefinition(graph, 'My Query', q));
+    const { graph: g1, nodeId: queryId } = unwrap(
+      saveQueryDefinition(graph, 'My Query', q, {
+        deviceId: asDeviceId('00000000-0000-0000-0000-000000000000'),
+      }),
+    );
     graph = g1;
 
     // Save view
     const { graph: g2, nodeId: viewId } = unwrap(
-      saveViewDefinition(graph, {
-        name: 'My View',
-        description: 'A test view',
-        queryRef: queryId,
-        layout: 'table',
-        sort: [{ property: 'name', direction: 'asc' }],
-        pageSize: 20,
-      }),
+      saveViewDefinition(
+        graph,
+        {
+          name: 'My View',
+          description: 'A test view',
+          queryRef: queryId,
+          layout: 'table',
+          sort: [{ property: 'name', direction: 'asc' }],
+          pageSize: 20,
+        },
+        { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') },
+      ),
     );
     graph = g2;
 
@@ -47,15 +55,23 @@ describe('View Definitions', () => {
     let graph = unwrap(createGraph(createGraphId(), 'Test Graph'));
 
     const q = pipe(query(), nodes());
-    const { graph: g1, nodeId: queryId } = unwrap(saveQueryDefinition(graph, 'My Query', q));
+    const { graph: g1, nodeId: queryId } = unwrap(
+      saveQueryDefinition(graph, 'My Query', q, {
+        deviceId: asDeviceId('00000000-0000-0000-0000-000000000000'),
+      }),
+    );
     graph = g1;
 
     const { graph: g2, nodeId: viewId } = unwrap(
-      saveViewDefinition(graph, {
-        name: 'Resolved View',
-        queryRef: queryId,
-        layout: 'list',
-      }),
+      saveViewDefinition(
+        graph,
+        {
+          name: 'Resolved View',
+          queryRef: queryId,
+          layout: 'list',
+        },
+        { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') },
+      ),
     );
     graph = g2;
 

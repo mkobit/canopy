@@ -1,4 +1,4 @@
-import type { NodeId, EdgeId, TypeId, EventId } from './identifiers';
+import type { NodeId, EdgeId, TypeId, EventId, DeviceId } from './identifiers';
 import type { PropertyMap } from './properties';
 import type { Instant } from './temporal';
 import type { Graph } from './graph';
@@ -18,6 +18,9 @@ export interface NodeCreated {
   readonly nodeType: TypeId;
   readonly properties: PropertyMap;
   readonly timestamp: Instant;
+  readonly deviceId: DeviceId;
+  readonly batchId?: string | undefined;
+  readonly migrationId?: string | undefined;
 }
 
 export interface NodePropertiesUpdated {
@@ -26,6 +29,9 @@ export interface NodePropertiesUpdated {
   readonly id: NodeId;
   readonly changes: PropertyMap; // Contains only the changed properties
   readonly timestamp: Instant;
+  readonly deviceId: DeviceId;
+  readonly batchId?: string | undefined;
+  readonly migrationId?: string | undefined;
 }
 
 export interface NodeDeleted {
@@ -33,6 +39,9 @@ export interface NodeDeleted {
   readonly eventId: EventId;
   readonly id: NodeId;
   readonly timestamp: Instant;
+  readonly deviceId: DeviceId;
+  readonly batchId?: string | undefined;
+  readonly migrationId?: string | undefined;
 }
 
 export interface EdgeCreated {
@@ -44,6 +53,9 @@ export interface EdgeCreated {
   readonly target: NodeId;
   readonly properties: PropertyMap;
   readonly timestamp: Instant;
+  readonly deviceId: DeviceId;
+  readonly batchId?: string | undefined;
+  readonly migrationId?: string | undefined;
 }
 
 export interface EdgePropertiesUpdated {
@@ -52,6 +64,9 @@ export interface EdgePropertiesUpdated {
   readonly id: EdgeId;
   readonly changes: PropertyMap; // Contains only the changed properties
   readonly timestamp: Instant;
+  readonly deviceId: DeviceId;
+  readonly batchId?: string | undefined;
+  readonly migrationId?: string | undefined;
 }
 
 export interface EdgeDeleted {
@@ -59,6 +74,9 @@ export interface EdgeDeleted {
   readonly eventId: EventId;
   readonly id: EdgeId;
   readonly timestamp: Instant;
+  readonly deviceId: DeviceId;
+  readonly batchId?: string | undefined;
+  readonly migrationId?: string | undefined;
 }
 
 export interface GraphResult<T> {

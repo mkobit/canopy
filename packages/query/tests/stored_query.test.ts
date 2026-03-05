@@ -7,7 +7,15 @@ import {
   listQueryDefinitions,
   executeStoredQuery,
 } from '../src/stored';
-import { createNodeId, asTypeId, createInstant, createGraphId, unwrap, isErr } from '@canopy/types';
+import {
+  createNodeId,
+  asTypeId,
+  createInstant,
+  createGraphId,
+  unwrap,
+  isErr,
+  asDeviceId,
+} from '@canopy/types';
 import { pipe } from 'remeda';
 import { query, nodes, where } from '../src/pipeline';
 
@@ -23,6 +31,7 @@ describe('Stored Queries', () => {
         description: 'Finds all high priority tasks',
         nodeTypes: ['node:type:task'],
         parameters: [],
+        deviceId: asDeviceId('00000000-0000-0000-0000-000000000000'),
       }),
     );
 
@@ -49,33 +58,41 @@ describe('Stored Queries', () => {
     const task2 = createNodeId();
 
     graph = unwrap(
-      addNode(graph, {
-        id: task1,
-        type: taskType,
-        properties: new Map([
-          ['name', 'Task 1'],
-          ['priority', 'high'],
-        ]),
-        metadata: {
-          created: createInstant(new Date('2023-01-01T00:00:00Z')),
-          modified: createInstant(new Date('2023-01-01T00:00:00Z')),
+      addNode(
+        graph,
+        {
+          id: task1,
+          type: taskType,
+          properties: new Map([
+            ['name', 'Task 1'],
+            ['priority', 'high'],
+          ]),
+          metadata: {
+            created: createInstant(new Date('2023-01-01T00:00:00Z')),
+            modified: createInstant(new Date('2023-01-01T00:00:00Z')),
+          },
         },
-      }),
+        { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') },
+      ),
     ).graph;
 
     graph = unwrap(
-      addNode(graph, {
-        id: task2,
-        type: taskType,
-        properties: new Map([
-          ['name', 'Task 2'],
-          ['priority', 'low'],
-        ]),
-        metadata: {
-          created: createInstant(new Date('2023-01-01T00:00:00Z')),
-          modified: createInstant(new Date('2023-01-01T00:00:00Z')),
+      addNode(
+        graph,
+        {
+          id: task2,
+          type: taskType,
+          properties: new Map([
+            ['name', 'Task 2'],
+            ['priority', 'low'],
+          ]),
+          metadata: {
+            created: createInstant(new Date('2023-01-01T00:00:00Z')),
+            modified: createInstant(new Date('2023-01-01T00:00:00Z')),
+          },
         },
-      }),
+        { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') },
+      ),
     ).graph;
 
     const q = pipe(query(), nodes('node:type:task'), where('priority', 'eq', '$priority'));
@@ -83,6 +100,7 @@ describe('Stored Queries', () => {
     const saveResult = unwrap(
       saveQueryDefinition(graph, 'Tasks by Priority', q, {
         parameters: ['priority'],
+        deviceId: asDeviceId('00000000-0000-0000-0000-000000000000'),
       }),
     );
     graph = saveResult.graph;

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
 import { SQLiteAdapter } from './sqlite-adapter';
-import { unwrap, asNodeId, asTypeId, asEventId, asInstant } from '@canopy/types';
+import { unwrap, asNodeId, asTypeId, asEventId, asInstant, asDeviceId } from '@canopy/types';
 import type { NodeCreated, GraphEvent } from '@canopy/types';
 
 const mockGraphId = 'test-graph-id';
@@ -13,6 +13,7 @@ const createEvent = (i: number): NodeCreated => ({
   nodeType: asTypeId('test-type'),
   properties: new Map(),
   timestamp: asInstant(new Date(2024, 0, 1, 10, i).toISOString()),
+  deviceId: asDeviceId('00000000-0000-0000-0000-000000000000'),
 });
 
 describe('SQLiteAdapter EventLog', () => {

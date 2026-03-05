@@ -13,6 +13,7 @@ import {
   PropertyValue,
   createInstant,
   unwrap,
+  asDeviceId,
 } from '@canopy/types';
 
 // Test helpers to replace missing factories
@@ -65,7 +66,9 @@ function createGraphWithTypes() {
     },
   });
 
-  g = unwrap(addNode(g, personTypeNode)).graph;
+  g = unwrap(
+    addNode(g, personTypeNode, { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') }),
+  ).graph;
 
   // Define a "Task" node type
   const taskTypeNode = createNode({
@@ -75,7 +78,9 @@ function createGraphWithTypes() {
       name: 'Task',
     },
   });
-  g = unwrap(addNode(g, taskTypeNode)).graph;
+  g = unwrap(
+    addNode(g, taskTypeNode, { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') }),
+  ).graph;
 
   // Define "AssignedTo" edge type
   const assignedToProperties: readonly PropertyDefinition[] = [
@@ -91,7 +96,11 @@ function createGraphWithTypes() {
       targetTypes: ['type-person'],
     },
   });
-  g = unwrap(addNode(g, assignedToTypeNode)).graph;
+  g = unwrap(
+    addNode(g, assignedToTypeNode, {
+      deviceId: asDeviceId('00000000-0000-0000-0000-000000000000'),
+    }),
+  ).graph;
 
   return g;
 }
@@ -158,8 +167,12 @@ describe('validation', () => {
     let g = createGraphWithTypes();
     const task = createNode({ id: asNodeId('task1'), type: asTypeId('type-task') });
     const person = createNode({ id: asNodeId('person1'), type: asTypeId('type-person') });
-    g = unwrap(addNode(g, task)).graph;
-    g = unwrap(addNode(g, person)).graph;
+    g = unwrap(
+      addNode(g, task, { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') }),
+    ).graph;
+    g = unwrap(
+      addNode(g, person, { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') }),
+    ).graph;
 
     const edge = createEdge({
       type: asTypeId('edge-assigned-to'),
@@ -178,8 +191,12 @@ describe('validation', () => {
     let g = createGraphWithTypes();
     const person1 = createNode({ id: asNodeId('person1'), type: asTypeId('type-person') });
     const person2 = createNode({ id: asNodeId('person2'), type: asTypeId('type-person') });
-    g = unwrap(addNode(g, person1)).graph;
-    g = unwrap(addNode(g, person2)).graph;
+    g = unwrap(
+      addNode(g, person1, { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') }),
+    ).graph;
+    g = unwrap(
+      addNode(g, person2, { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') }),
+    ).graph;
 
     // AssignedTo expects Source=Task, Target=Person. Here Source=Person.
     const edge = createEdge({
@@ -200,8 +217,12 @@ describe('validation', () => {
     let g = createGraphWithTypes();
     const task = createNode({ id: asNodeId('task1'), type: asTypeId('type-task') });
     const person = createNode({ id: asNodeId('person1'), type: asTypeId('type-person') });
-    g = unwrap(addNode(g, task)).graph;
-    g = unwrap(addNode(g, person)).graph;
+    g = unwrap(
+      addNode(g, task, { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') }),
+    ).graph;
+    g = unwrap(
+      addNode(g, person, { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') }),
+    ).graph;
 
     const edge = createEdge({
       type: asTypeId('edge-assigned-to'),

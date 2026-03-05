@@ -1,18 +1,31 @@
-import type { Graph, Node, NodeId, Result, GraphResult, Edge } from '@canopy/types';
+import type { Graph, Node, NodeId, Result, GraphResult, Edge, DeviceId } from '@canopy/types';
 import { createInstant, ok, err, createEdgeId } from '@canopy/types';
 import { addNode } from './node';
 import { addEdge } from './edge';
 import { SYSTEM_EDGE_TYPES } from '../system';
 import { generateKeyBetween } from './fractional-index';
 
+export type InsertBlockOptions = Readonly<{
+  deviceId: DeviceId;
+  validate?: boolean;
+  batchId?: string;
+  migrationId?: string;
+}>;
+
 export function insertBlock(
   graph: Graph,
   parentId: NodeId,
   block: Node,
-  prevBlockId?: NodeId,
+  prevBlockId: NodeId | undefined,
+  options: InsertBlockOptions,
 ): Result<GraphResult<Graph>, Error> {
   // 1. Add the block node
-  const nodeResult = addNode(graph, block);
+  const nodeResult = addNode(graph, block, {
+    deviceId: options.deviceId,
+    ...(options.validate === undefined ? {} : { validate: options.validate }),
+    ...(options.batchId === undefined ? {} : { batchId: options.batchId }),
+    ...(options.migrationId === undefined ? {} : { migrationId: options.migrationId }),
+  });
   if (!nodeResult.ok) return nodeResult;
 
   const graphWithNode = nodeResult.value.graph;
@@ -75,7 +88,12 @@ export function insertBlock(
     },
   };
 
-  const edgeResult = addEdge(graphWithNode, edge);
+  const edgeResult = addEdge(graphWithNode, edge, {
+    deviceId: options.deviceId,
+    ...(options.validate === undefined ? {} : { validate: options.validate }),
+    ...(options.batchId === undefined ? {} : { batchId: options.batchId }),
+    ...(options.migrationId === undefined ? {} : { migrationId: options.migrationId }),
+  });
   if (!edgeResult.ok) return edgeResult;
 
   const finalGraph = edgeResult.value.graph;

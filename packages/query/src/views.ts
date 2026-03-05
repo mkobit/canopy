@@ -4,6 +4,8 @@ import { SYSTEM_IDS, addNode } from '@canopy/core';
 import type { Query, Sort } from './model';
 import { getQueryDefinition } from './stored';
 
+import type { DeviceId } from '@canopy/types';
+
 export interface ViewDefinition {
   readonly name: string;
   readonly description?: string;
@@ -14,6 +16,12 @@ export interface ViewDefinition {
   readonly displayProperties?: readonly string[];
   readonly pageSize?: number;
 }
+
+export type SaveViewOptions = Readonly<{
+  deviceId: DeviceId;
+  batchId?: string;
+  migrationId?: string;
+}>;
 
 export interface ResolvedView {
   readonly definition: ViewDefinition;
@@ -38,6 +46,7 @@ function list(items: readonly string[]): PropertyValue {
 export function saveViewDefinition(
   graph: Graph,
   view: ViewDefinition,
+  options: SaveViewOptions,
 ): Result<{ graph: Graph; nodeId: NodeId }, Error> {
   const nodeId = createNodeId();
 
@@ -83,7 +92,11 @@ export function saveViewDefinition(
     },
   };
 
-  const newGraphResult = addNode(graph, node);
+  const newGraphResult = addNode(graph, node, {
+    deviceId: options.deviceId,
+    ...(options.batchId === undefined ? {} : { batchId: options.batchId }),
+    ...(options.migrationId === undefined ? {} : { migrationId: options.migrationId }),
+  });
   if (!newGraphResult.ok) return err(newGraphResult.error);
 
   return ok({ graph: newGraphResult.value.graph, nodeId });

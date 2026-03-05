@@ -3,6 +3,7 @@ export declare const edgeIdBrand: unique symbol;
 export declare const typeIdBrand: unique symbol;
 export declare const graphIdBrand: unique symbol;
 export declare const eventIdBrand: unique symbol;
+export declare const deviceIdBrand: unique symbol;
 
 /**
  * Unique identifier for a node within a graph.
@@ -28,3 +29,8 @@ export type GraphId = string & Readonly<{ [graphIdBrand]: never }>;
  * Unique identifier for a graph event.
  */
 export type EventId = string & Readonly<{ [eventIdBrand]: never }>;
+
+/**
+ * Unique identifier for a device originating an event.
+ */
+export type DeviceId = string & Readonly<{ [deviceIdBrand]: never }>;
