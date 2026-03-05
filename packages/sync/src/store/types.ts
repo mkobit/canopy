@@ -10,8 +10,13 @@ import type {
   Instant,
   DeviceId,
 } from '@canopy/types';
-import { asNodeId, asEdgeId, asTypeId, asEventId, asDeviceId } from '@canopy/types';
-import { PropertyValueSchema, TemporalMetadataSchema, InstantSchema } from '@canopy/schema';
+import { asNodeId, asEdgeId, asTypeId, asEventId } from '@canopy/types';
+import {
+  PropertyValueSchema,
+  TemporalMetadataSchema,
+  InstantSchema,
+  DeviceIdSchema,
+} from '@canopy/schema';
 
 // Helper types for storage (Plain Objects)
 export type StorableProperties = Record<string, PropertyValue>;
@@ -127,7 +132,7 @@ export const StorableNodeCreatedSchema = z.object({
   nodeType: z.string().transform((val) => asTypeId(val)),
   properties: StorablePropertiesSchema,
   timestamp: InstantSchema,
-  deviceId: z.string().transform((val) => asDeviceId(val)),
+  deviceId: DeviceIdSchema,
   batchId: z.string().optional(),
   migrationId: z.string().optional(),
 });
@@ -138,7 +143,7 @@ export const StorableNodePropertiesUpdatedSchema = z.object({
   id: z.string().transform((val) => asNodeId(val)),
   changes: StorablePropertiesSchema,
   timestamp: InstantSchema,
-  deviceId: z.string().transform((val) => asDeviceId(val)),
+  deviceId: DeviceIdSchema,
   batchId: z.string().optional(),
   migrationId: z.string().optional(),
 });
@@ -148,7 +153,7 @@ export const StorableNodeDeletedSchema = z.object({
   eventId: z.string().transform((val) => asEventId(val)),
   id: z.string().transform((val) => asNodeId(val)),
   timestamp: InstantSchema,
-  deviceId: z.string().transform((val) => asDeviceId(val)),
+  deviceId: DeviceIdSchema,
   batchId: z.string().optional(),
   migrationId: z.string().optional(),
 });
@@ -162,7 +167,7 @@ export const StorableEdgeCreatedSchema = z.object({
   target: z.string().transform((val) => asNodeId(val)),
   properties: StorablePropertiesSchema,
   timestamp: InstantSchema,
-  deviceId: z.string().transform((val) => asDeviceId(val)),
+  deviceId: DeviceIdSchema,
   batchId: z.string().optional(),
   migrationId: z.string().optional(),
 });
@@ -173,7 +178,7 @@ export const StorableEdgePropertiesUpdatedSchema = z.object({
   id: z.string().transform((val) => asEdgeId(val)),
   changes: StorablePropertiesSchema,
   timestamp: InstantSchema,
-  deviceId: z.string().transform((val) => asDeviceId(val)),
+  deviceId: DeviceIdSchema,
   batchId: z.string().optional(),
   migrationId: z.string().optional(),
 });
@@ -183,7 +188,7 @@ export const StorableEdgeDeletedSchema = z.object({
   eventId: z.string().transform((val) => asEventId(val)),
   id: z.string().transform((val) => asEdgeId(val)),
   timestamp: InstantSchema,
-  deviceId: z.string().transform((val) => asDeviceId(val)),
+  deviceId: DeviceIdSchema,
   batchId: z.string().optional(),
   migrationId: z.string().optional(),
 });

@@ -1,13 +1,5 @@
 import type { Graph, Node, NodeId, PropertyValue, ScalarValue, Result } from '@canopy/types';
-import {
-  createNodeId,
-  createInstant,
-  ok,
-  err,
-  fromThrowable,
-  asNodeId,
-  asDeviceId,
-} from '@canopy/types';
+import { createNodeId, createInstant, ok, err, fromThrowable, asNodeId } from '@canopy/types';
 import { SYSTEM_IDS, addNode } from '@canopy/core';
 import type { Query, Sort } from './model';
 import { getQueryDefinition } from './stored';
@@ -23,8 +15,13 @@ export interface ViewDefinition {
   readonly groupBy?: string;
   readonly displayProperties?: readonly string[];
   readonly pageSize?: number;
-  readonly deviceId: DeviceId;
 }
+
+export type SaveViewOptions = Readonly<{
+  deviceId: DeviceId;
+  batchId?: string;
+  migrationId?: string;
+}>;
 
 export interface ResolvedView {
   readonly definition: ViewDefinition;
@@ -49,6 +46,7 @@ function list(items: readonly string[]): PropertyValue {
 export function saveViewDefinition(
   graph: Graph,
   view: ViewDefinition,
+  options: SaveViewOptions,
 ): Result<{ graph: Graph; nodeId: NodeId }, Error> {
   const nodeId = createNodeId();
 
@@ -95,7 +93,9 @@ export function saveViewDefinition(
   };
 
   const newGraphResult = addNode(graph, node, {
-    deviceId: view.deviceId,
+    deviceId: options.deviceId,
+    ...(options.batchId === undefined ? {} : { batchId: options.batchId }),
+    ...(options.migrationId === undefined ? {} : { migrationId: options.migrationId }),
   });
   if (!newGraphResult.ok) return err(newGraphResult.error);
 
@@ -151,7 +151,6 @@ export function getViewDefinition(graph: Graph, nodeId: NodeId): Result<ViewDefi
     ...(typeof groupBy === 'string' ? { groupBy: groupBy } : {}),
     ...(displayPropertiesList ? { displayProperties: displayPropertiesList } : {}),
     ...(typeof pageSize === 'number' ? { pageSize: pageSize } : {}),
-    deviceId: asDeviceId('00000000-0000-0000-0000-000000000000'), // Or fetched from context if applicable
   });
 }
 
