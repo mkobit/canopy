@@ -26,15 +26,18 @@ describe('View Definitions', () => {
 
     // Save view
     const { graph: g2, nodeId: viewId } = unwrap(
-      saveViewDefinition(graph, {
-        name: 'My View',
-        description: 'A test view',
-        queryRef: queryId,
-        layout: 'table',
-        sort: [{ property: 'name', direction: 'asc' }],
-        pageSize: 20,
-        deviceId: asDeviceId('00000000-0000-0000-0000-000000000000'),
-      }),
+      saveViewDefinition(
+        graph,
+        {
+          name: 'My View',
+          description: 'A test view',
+          queryRef: queryId,
+          layout: 'table',
+          sort: [{ property: 'name', direction: 'asc' }],
+          pageSize: 20,
+        },
+        { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') },
+      ),
     );
     graph = g2;
 
@@ -60,12 +63,15 @@ describe('View Definitions', () => {
     graph = g1;
 
     const { graph: g2, nodeId: viewId } = unwrap(
-      saveViewDefinition(graph, {
-        name: 'Resolved View',
-        queryRef: queryId,
-        layout: 'list',
-        deviceId: asDeviceId('00000000-0000-0000-0000-000000000000'),
-      }),
+      saveViewDefinition(
+        graph,
+        {
+          name: 'Resolved View',
+          queryRef: queryId,
+          layout: 'list',
+        },
+        { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') },
+      ),
     );
     graph = g2;
 

@@ -58,8 +58,8 @@ export function addEdge(
     properties: edge.properties,
     timestamp: createInstant(),
     deviceId: options.deviceId,
-    ...(options.batchId ? { batchId: options.batchId } : {}),
-    ...(options.migrationId ? { migrationId: options.migrationId } : {}),
+    ...(options.batchId === undefined ? {} : { batchId: options.batchId }),
+    ...(options.migrationId === undefined ? {} : { migrationId: options.migrationId }),
   };
 
   return ok({
@@ -103,8 +103,8 @@ export function removeEdge(
     id: edgeId,
     timestamp: createInstant(),
     deviceId: options.deviceId,
-    ...(options.batchId ? { batchId: options.batchId } : {}),
-    ...(options.migrationId ? { migrationId: options.migrationId } : {}),
+    ...(options.batchId === undefined ? {} : { batchId: options.batchId }),
+    ...(options.migrationId === undefined ? {} : { migrationId: options.migrationId }),
   };
 
   return ok({
@@ -186,8 +186,8 @@ export function updateEdge(
     changes: finalEdge.properties,
     timestamp: createInstant(),
     deviceId: options.deviceId,
-    ...(options.batchId ? { batchId: options.batchId } : {}),
-    ...(options.migrationId ? { migrationId: options.migrationId } : {}),
+    ...(options.batchId === undefined ? {} : { batchId: options.batchId }),
+    ...(options.migrationId === undefined ? {} : { migrationId: options.migrationId }),
   };
 
   return ok({

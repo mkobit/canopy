@@ -50,8 +50,8 @@ export function addNode(
     properties: node.properties,
     timestamp: createInstant(),
     deviceId: options.deviceId,
-    ...(options.batchId ? { batchId: options.batchId } : {}),
-    ...(options.migrationId ? { migrationId: options.migrationId } : {}),
+    ...(options.batchId === undefined ? {} : { batchId: options.batchId }),
+    ...(options.migrationId === undefined ? {} : { migrationId: options.migrationId }),
   };
 
   return ok({
@@ -92,8 +92,8 @@ export function removeNode(
     id: edge.id,
     timestamp: createInstant(),
     deviceId: options.deviceId,
-    ...(options.batchId ? { batchId: options.batchId } : {}),
-    ...(options.migrationId ? { migrationId: options.migrationId } : {}),
+    ...(options.batchId === undefined ? {} : { batchId: options.batchId }),
+    ...(options.migrationId === undefined ? {} : { migrationId: options.migrationId }),
   }));
 
   const newEdges = new Map(
@@ -116,8 +116,8 @@ export function removeNode(
     id: nodeId,
     timestamp: createInstant(),
     deviceId: options.deviceId,
-    ...(options.batchId ? { batchId: options.batchId } : {}),
-    ...(options.migrationId ? { migrationId: options.migrationId } : {}),
+    ...(options.batchId === undefined ? {} : { batchId: options.batchId }),
+    ...(options.migrationId === undefined ? {} : { migrationId: options.migrationId }),
   };
 
   return ok({
@@ -191,8 +191,8 @@ export function updateNode(
     changes: finalNode.properties,
     timestamp: createInstant(),
     deviceId: options.deviceId,
-    ...(options.batchId ? { batchId: options.batchId } : {}),
-    ...(options.migrationId ? { migrationId: options.migrationId } : {}),
+    ...(options.batchId === undefined ? {} : { batchId: options.batchId }),
+    ...(options.migrationId === undefined ? {} : { migrationId: options.migrationId }),
   };
 
   return ok({
