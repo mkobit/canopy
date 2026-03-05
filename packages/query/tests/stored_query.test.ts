@@ -31,6 +31,7 @@ describe('Stored Queries', () => {
         description: 'Finds all high priority tasks',
         nodeTypes: ['node:type:task'],
         parameters: [],
+        deviceId: asDeviceId('00000000-0000-0000-0000-000000000000'),
       }),
     );
 
@@ -99,6 +100,7 @@ describe('Stored Queries', () => {
     const saveResult = unwrap(
       saveQueryDefinition(graph, 'Tasks by Priority', q, {
         parameters: ['priority'],
+        deviceId: asDeviceId('00000000-0000-0000-0000-000000000000'),
       }),
     );
     graph = saveResult.graph;

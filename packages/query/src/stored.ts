@@ -7,7 +7,7 @@ import type {
   ScalarValue,
   Result,
 } from '@canopy/types';
-import { createNodeId, createInstant, ok, err, fromThrowable, asDeviceId } from '@canopy/types';
+import { createNodeId, createInstant, ok, err, fromThrowable } from '@canopy/types';
 import { SYSTEM_IDS, addNode } from '@canopy/core';
 import type { Query } from './model';
 import { executeQuery } from './engine';
@@ -23,17 +23,20 @@ function list(items: readonly string[]): PropertyValue {
   return items;
 }
 
+import type { DeviceId } from '@canopy/types';
+
 export interface SaveQueryOptions {
   readonly description?: string;
   readonly nodeTypes?: readonly string[];
   readonly parameters?: readonly string[];
+  readonly deviceId: DeviceId;
 }
 
 export function saveQueryDefinition(
   graph: Graph,
   name: string,
   query: Query,
-  options: SaveQueryOptions = {},
+  options: SaveQueryOptions,
 ): Result<{ graph: Graph; nodeId: NodeId }, Error> {
   const nodeId = createNodeId();
 
@@ -83,7 +86,7 @@ export function saveQueryDefinition(
   };
 
   const newGraphResult = addNode(graph, node, {
-    deviceId: asDeviceId('00000000-0000-0000-0000-000000000000'),
+    deviceId: options.deviceId,
   });
   if (!newGraphResult.ok) return err(newGraphResult.error);
 

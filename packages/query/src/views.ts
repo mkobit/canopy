@@ -12,6 +12,8 @@ import { SYSTEM_IDS, addNode } from '@canopy/core';
 import type { Query, Sort } from './model';
 import { getQueryDefinition } from './stored';
 
+import type { DeviceId } from '@canopy/types';
+
 export interface ViewDefinition {
   readonly name: string;
   readonly description?: string;
@@ -21,6 +23,7 @@ export interface ViewDefinition {
   readonly groupBy?: string;
   readonly displayProperties?: readonly string[];
   readonly pageSize?: number;
+  readonly deviceId: DeviceId;
 }
 
 export interface ResolvedView {
@@ -92,7 +95,7 @@ export function saveViewDefinition(
   };
 
   const newGraphResult = addNode(graph, node, {
-    deviceId: asDeviceId('00000000-0000-0000-0000-000000000000'),
+    deviceId: view.deviceId,
   });
   if (!newGraphResult.ok) return err(newGraphResult.error);
 
@@ -148,6 +151,7 @@ export function getViewDefinition(graph: Graph, nodeId: NodeId): Result<ViewDefi
     ...(typeof groupBy === 'string' ? { groupBy: groupBy } : {}),
     ...(displayPropertiesList ? { displayProperties: displayPropertiesList } : {}),
     ...(typeof pageSize === 'number' ? { pageSize: pageSize } : {}),
+    deviceId: asDeviceId('00000000-0000-0000-0000-000000000000'), // Or fetched from context if applicable
   });
 }
 
