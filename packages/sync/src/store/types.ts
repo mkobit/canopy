@@ -8,8 +8,9 @@ import type {
   TypeId,
   EdgeId,
   Instant,
+  DeviceId,
 } from '@canopy/types';
-import { asNodeId, asEdgeId, asTypeId, asEventId } from '@canopy/types';
+import { asNodeId, asEdgeId, asTypeId, asEventId, asDeviceId } from '@canopy/types';
 import { PropertyValueSchema, TemporalMetadataSchema, InstantSchema } from '@canopy/schema';
 
 // Helper types for storage (Plain Objects)
@@ -31,6 +32,9 @@ export interface StorableNodeCreated {
   readonly nodeType: TypeId;
   readonly properties: StorableProperties;
   readonly timestamp: Instant;
+  readonly deviceId: DeviceId;
+  readonly batchId?: string | undefined;
+  readonly migrationId?: string | undefined;
 }
 
 export interface StorableNodePropertiesUpdated {
@@ -39,6 +43,9 @@ export interface StorableNodePropertiesUpdated {
   readonly id: NodeId;
   readonly changes: StorableProperties;
   readonly timestamp: Instant;
+  readonly deviceId: DeviceId;
+  readonly batchId?: string | undefined;
+  readonly migrationId?: string | undefined;
 }
 
 export interface StorableNodeDeleted {
@@ -46,6 +53,9 @@ export interface StorableNodeDeleted {
   readonly eventId: EventId;
   readonly id: NodeId;
   readonly timestamp: Instant;
+  readonly deviceId: DeviceId;
+  readonly batchId?: string | undefined;
+  readonly migrationId?: string | undefined;
 }
 
 export interface StorableEdgeCreated {
@@ -57,6 +67,9 @@ export interface StorableEdgeCreated {
   readonly target: NodeId;
   readonly properties: StorableProperties;
   readonly timestamp: Instant;
+  readonly deviceId: DeviceId;
+  readonly batchId?: string | undefined;
+  readonly migrationId?: string | undefined;
 }
 
 export interface StorableEdgePropertiesUpdated {
@@ -65,6 +78,9 @@ export interface StorableEdgePropertiesUpdated {
   readonly id: EdgeId;
   readonly changes: StorableProperties;
   readonly timestamp: Instant;
+  readonly deviceId: DeviceId;
+  readonly batchId?: string | undefined;
+  readonly migrationId?: string | undefined;
 }
 
 export interface StorableEdgeDeleted {
@@ -72,6 +88,9 @@ export interface StorableEdgeDeleted {
   readonly eventId: EventId;
   readonly id: EdgeId;
   readonly timestamp: Instant;
+  readonly deviceId: DeviceId;
+  readonly batchId?: string | undefined;
+  readonly migrationId?: string | undefined;
 }
 
 export type StorableGraphEvent =
@@ -108,6 +127,9 @@ export const StorableNodeCreatedSchema = z.object({
   nodeType: z.string().transform((val) => asTypeId(val)),
   properties: StorablePropertiesSchema,
   timestamp: InstantSchema,
+  deviceId: z.string().transform((val) => asDeviceId(val)),
+  batchId: z.string().optional(),
+  migrationId: z.string().optional(),
 });
 
 export const StorableNodePropertiesUpdatedSchema = z.object({
@@ -116,6 +138,9 @@ export const StorableNodePropertiesUpdatedSchema = z.object({
   id: z.string().transform((val) => asNodeId(val)),
   changes: StorablePropertiesSchema,
   timestamp: InstantSchema,
+  deviceId: z.string().transform((val) => asDeviceId(val)),
+  batchId: z.string().optional(),
+  migrationId: z.string().optional(),
 });
 
 export const StorableNodeDeletedSchema = z.object({
@@ -123,6 +148,9 @@ export const StorableNodeDeletedSchema = z.object({
   eventId: z.string().transform((val) => asEventId(val)),
   id: z.string().transform((val) => asNodeId(val)),
   timestamp: InstantSchema,
+  deviceId: z.string().transform((val) => asDeviceId(val)),
+  batchId: z.string().optional(),
+  migrationId: z.string().optional(),
 });
 
 export const StorableEdgeCreatedSchema = z.object({
@@ -134,6 +162,9 @@ export const StorableEdgeCreatedSchema = z.object({
   target: z.string().transform((val) => asNodeId(val)),
   properties: StorablePropertiesSchema,
   timestamp: InstantSchema,
+  deviceId: z.string().transform((val) => asDeviceId(val)),
+  batchId: z.string().optional(),
+  migrationId: z.string().optional(),
 });
 
 export const StorableEdgePropertiesUpdatedSchema = z.object({
@@ -142,6 +173,9 @@ export const StorableEdgePropertiesUpdatedSchema = z.object({
   id: z.string().transform((val) => asEdgeId(val)),
   changes: StorablePropertiesSchema,
   timestamp: InstantSchema,
+  deviceId: z.string().transform((val) => asDeviceId(val)),
+  batchId: z.string().optional(),
+  migrationId: z.string().optional(),
 });
 
 export const StorableEdgeDeletedSchema = z.object({
@@ -149,6 +183,9 @@ export const StorableEdgeDeletedSchema = z.object({
   eventId: z.string().transform((val) => asEventId(val)),
   id: z.string().transform((val) => asEdgeId(val)),
   timestamp: InstantSchema,
+  deviceId: z.string().transform((val) => asDeviceId(val)),
+  batchId: z.string().optional(),
+  migrationId: z.string().optional(),
 });
 
 export const StorableGraphEventSchema: z.ZodType<StorableGraphEvent, unknown> =

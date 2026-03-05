@@ -4,9 +4,10 @@ export type {
   typeIdBrand,
   graphIdBrand,
   eventIdBrand,
+  deviceIdBrand,
 } from './identifiers';
 
-export type { NodeId, EdgeId, TypeId, GraphId, EventId } from './identifiers';
+export type { NodeId, EdgeId, TypeId, GraphId, EventId, DeviceId } from './identifiers';
 
 export type { instantBrand, plainDateBrand } from './temporal';
 
@@ -59,6 +60,8 @@ export {
   asEdgeId,
   createEventId,
   asEventId,
+  createDeviceId,
+  asDeviceId,
 } from './factories';
 
 export type { QueryNode } from './query';

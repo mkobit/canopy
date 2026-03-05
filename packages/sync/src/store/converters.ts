@@ -60,7 +60,7 @@ export const eventToStorable = (event: GraphEvent): StorableGraphEvent => {
       };
     }
     case 'NodeDeleted': {
-      return event;
+      return { ...event };
     }
     case 'EdgeCreated': {
       return {
@@ -75,7 +75,7 @@ export const eventToStorable = (event: GraphEvent): StorableGraphEvent => {
       };
     }
     case 'EdgeDeleted': {
-      return event;
+      return { ...event };
     }
   }
 };
@@ -96,7 +96,7 @@ export const storableToEvent = (storable: unknown): GraphEvent => {
       };
     }
     case 'NodeDeleted': {
-      return e;
+      return { ...e };
     }
     case 'EdgeCreated': {
       return {
@@ -111,7 +111,7 @@ export const storableToEvent = (storable: unknown): GraphEvent => {
       };
     }
     case 'EdgeDeleted': {
-      return e;
+      return { ...e };
     }
   }
 };

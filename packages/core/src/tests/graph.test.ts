@@ -20,6 +20,7 @@ import {
   createGraphId,
   createInstant,
   unwrap,
+  asDeviceId,
 } from '@canopy/types';
 import type { Node, Edge } from '@canopy/types';
 
@@ -53,7 +54,9 @@ describe('Core Graph Engine', () => {
   };
 
   it('should add nodes immutably and emit events', () => {
-    const r1 = unwrap(addNode(emptyGraph, node1));
+    const r1 = unwrap(
+      addNode(emptyGraph, node1, { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') }),
+    );
     const g1 = r1.graph;
     expect(g1.nodes.size).toBe(20); // 19 bootstrap + 1 new
     expect(g1.nodes.get(nodeId1)).toBe(node1);
@@ -68,7 +71,9 @@ describe('Core Graph Engine', () => {
       properties: node1.properties,
     });
 
-    const r2 = unwrap(addNode(g1, node2));
+    const r2 = unwrap(
+      addNode(g1, node2, { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') }),
+    );
     const g2 = r2.graph;
     expect(g2.nodes.size).toBe(21); // 19 bootstrap + 2 new
     expect(g2.nodes.get(nodeId2)).toBe(node2);
@@ -85,7 +90,9 @@ describe('Core Graph Engine', () => {
   });
 
   it('should update nodes immutably and emit events', () => {
-    const r1 = unwrap(addNode(emptyGraph, node1));
+    const r1 = unwrap(
+      addNode(emptyGraph, node1, { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') }),
+    );
     const g1 = r1.graph;
 
     // Use a fixed future time to ensure the update timestamp differs from
@@ -94,10 +101,15 @@ describe('Core Graph Engine', () => {
 
     try {
       const r2 = unwrap(
-        updateNode(g1, nodeId1, (n) => ({
-          ...n,
-          properties: new Map([['name', 'Alice']]),
-        })),
+        updateNode(
+          g1,
+          nodeId1,
+          (n) => ({
+            ...n,
+            properties: new Map([['name', 'Alice']]),
+          }),
+          { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') },
+        ),
       );
       const g2 = r2.graph;
 
@@ -126,9 +138,11 @@ describe('Core Graph Engine', () => {
   });
 
   it('should remove nodes and connected edges and emit events', () => {
-    let r = unwrap(addNode(emptyGraph, node1));
+    let r = unwrap(
+      addNode(emptyGraph, node1, { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') }),
+    );
     let g = r.graph;
-    r = unwrap(addNode(g, node2));
+    r = unwrap(addNode(g, node2, { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') }));
     g = r.graph;
 
     const edgeId = createEdgeId();
@@ -141,11 +155,15 @@ describe('Core Graph Engine', () => {
       metadata: { created: createInstant(), modified: createInstant() },
     };
 
-    const re = unwrap(addEdge(g, edge));
+    const re = unwrap(
+      addEdge(g, edge, { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') }),
+    );
     g = re.graph;
     expect(g.edges.size).toBe(1);
 
-    const rRemoved = unwrap(removeNode(g, nodeId1));
+    const rRemoved = unwrap(
+      removeNode(g, nodeId1, { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') }),
+    );
     const gRemoved = rRemoved.graph;
     expect(gRemoved.nodes.size).toBe(20); // 19 bootstrap + 1 remaining node
     expect(gRemoved.nodes.has(nodeId1)).toBe(false);
@@ -171,9 +189,11 @@ describe('Core Graph Engine', () => {
   });
 
   it('should query nodes and edges', () => {
-    let r = unwrap(addNode(emptyGraph, node1));
+    let r = unwrap(
+      addNode(emptyGraph, node1, { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') }),
+    );
     let g = r.graph;
-    r = unwrap(addNode(g, node2));
+    r = unwrap(addNode(g, node2, { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') }));
     g = r.graph;
 
     const edgeId = createEdgeId();
@@ -185,7 +205,9 @@ describe('Core Graph Engine', () => {
       properties: new Map(),
       metadata: { created: createInstant(), modified: createInstant() },
     };
-    const re = unwrap(addEdge(g, edge));
+    const re = unwrap(
+      addEdge(g, edge, { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') }),
+    );
     g = re.graph;
 
     expect(getNode(g, nodeId1)).toBe(node1);
@@ -204,9 +226,11 @@ describe('Core Graph Engine', () => {
   });
 
   it('should update edges immutably and emit events', () => {
-    let r = unwrap(addNode(emptyGraph, node1));
+    let r = unwrap(
+      addNode(emptyGraph, node1, { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') }),
+    );
     let g = r.graph;
-    r = unwrap(addNode(g, node2));
+    r = unwrap(addNode(g, node2, { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') }));
     g = r.graph;
 
     const edgeId = createEdgeId();
@@ -218,14 +242,21 @@ describe('Core Graph Engine', () => {
       properties: new Map(),
       metadata: { created: createInstant(), modified: createInstant() },
     };
-    const re = unwrap(addEdge(g, edge));
+    const re = unwrap(
+      addEdge(g, edge, { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') }),
+    );
     g = re.graph;
 
     const rUpdated = unwrap(
-      updateEdge(g, edgeId, (e) => ({
-        ...e,
-        properties: new Map([['since', 2023]]),
-      })),
+      updateEdge(
+        g,
+        edgeId,
+        (e) => ({
+          ...e,
+          properties: new Map([['since', 2023]]),
+        }),
+        { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') },
+      ),
     );
     const gUpdated = rUpdated.graph;
 
@@ -246,9 +277,11 @@ describe('Core Graph Engine', () => {
   });
 
   it('should remove edges and emit events', () => {
-    let r = unwrap(addNode(emptyGraph, node1));
+    let r = unwrap(
+      addNode(emptyGraph, node1, { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') }),
+    );
     let g = r.graph;
-    r = unwrap(addNode(g, node2));
+    r = unwrap(addNode(g, node2, { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') }));
     g = r.graph;
 
     const edgeId = createEdgeId();
@@ -260,10 +293,14 @@ describe('Core Graph Engine', () => {
       properties: new Map(),
       metadata: { created: createInstant(), modified: createInstant() },
     };
-    const re = unwrap(addEdge(g, edge));
+    const re = unwrap(
+      addEdge(g, edge, { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') }),
+    );
     g = re.graph;
 
-    const rRemoved = unwrap(removeEdge(g, edgeId));
+    const rRemoved = unwrap(
+      removeEdge(g, edgeId, { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') }),
+    );
     const gRemoved = rRemoved.graph;
     expect(gRemoved.edges.size).toBe(0);
     expect(g.edges.size).toBe(1); // Original unmodified

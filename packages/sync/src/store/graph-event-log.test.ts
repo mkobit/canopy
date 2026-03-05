@@ -8,6 +8,7 @@ import {
   asTypeId,
   GraphEvent,
   unwrap,
+  asDeviceId,
 } from '@canopy/types';
 
 describe('GraphStore Event Log', () => {
@@ -27,6 +28,7 @@ describe('GraphStore Event Log', () => {
       nodeType: asTypeId('person'),
       properties: new Map([['name', 'Alice']]),
       timestamp: createInstant(),
+      deviceId: asDeviceId('00000000-0000-0000-0000-000000000000'),
     };
 
     unwrap(store.addEvent(event));
@@ -44,6 +46,7 @@ describe('GraphStore Event Log', () => {
       nodeType: asTypeId('person'),
       properties: new Map(),
       timestamp: createInstant(),
+      deviceId: asDeviceId('00000000-0000-0000-0000-000000000000'),
     };
 
     unwrap(store.addEvent(event));
@@ -60,6 +63,7 @@ describe('GraphStore Event Log', () => {
       eventId: createEventId(),
       id: asNodeId('n1'),
       timestamp: createInstant(),
+      deviceId: asDeviceId('00000000-0000-0000-0000-000000000000'),
     };
 
     // Ensure event2 has a later ID.
@@ -78,6 +82,7 @@ describe('GraphStore Event Log', () => {
       eventId: event2Id,
       id: asNodeId('n2'),
       timestamp: createInstant(),
+      deviceId: asDeviceId('00000000-0000-0000-0000-000000000000'),
     };
 
     // Add in reverse order
@@ -97,6 +102,7 @@ describe('GraphStore Event Log', () => {
       id: asNodeId('n1'),
       changes: new Map([['age', 30]]),
       timestamp: createInstant(),
+      deviceId: asDeviceId('00000000-0000-0000-0000-000000000000'),
     };
 
     unwrap(store.addEvent(event));

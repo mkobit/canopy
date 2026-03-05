@@ -1,9 +1,12 @@
-import type { Graph, Node, NodeId, Result, GraphResult, GraphEvent } from '@canopy/types';
+import type { Graph, Node, NodeId, Result, GraphResult, GraphEvent, DeviceId } from '@canopy/types';
 import { createInstant, createEventId, ok, err } from '@canopy/types';
 import { validateNode } from '../validation';
 
 export type NodeOperationOptions = Readonly<{
+  deviceId: DeviceId;
   validate?: boolean;
+  batchId?: string;
+  migrationId?: string;
 }>;
 
 /**
@@ -14,7 +17,7 @@ export type NodeOperationOptions = Readonly<{
 export function addNode(
   graph: Graph,
   node: Node,
-  options: NodeOperationOptions = {},
+  options: NodeOperationOptions,
 ): Result<GraphResult<Graph>, Error> {
   if (graph.nodes.has(node.id)) {
     return err(new Error(`Node with ID ${node.id} already exists`));
@@ -46,6 +49,9 @@ export function addNode(
     nodeType: node.type,
     properties: node.properties,
     timestamp: createInstant(),
+    deviceId: options.deviceId,
+    ...(options.batchId ? { batchId: options.batchId } : {}),
+    ...(options.migrationId ? { migrationId: options.migrationId } : {}),
   };
 
   return ok({
@@ -60,7 +66,11 @@ export function addNode(
  * Also removes any edges connected to the node.
  * Returns a new graph.
  */
-export function removeNode(graph: Graph, nodeId: NodeId): Result<GraphResult<Graph>, Error> {
+export function removeNode(
+  graph: Graph,
+  nodeId: NodeId,
+  options: NodeOperationOptions,
+): Result<GraphResult<Graph>, Error> {
   if (!graph.nodes.has(nodeId)) {
     return ok({
       graph,
@@ -81,6 +91,9 @@ export function removeNode(graph: Graph, nodeId: NodeId): Result<GraphResult<Gra
     eventId: createEventId(),
     id: edge.id,
     timestamp: createInstant(),
+    deviceId: options.deviceId,
+    ...(options.batchId ? { batchId: options.batchId } : {}),
+    ...(options.migrationId ? { migrationId: options.migrationId } : {}),
   }));
 
   const newEdges = new Map(
@@ -102,6 +115,9 @@ export function removeNode(graph: Graph, nodeId: NodeId): Result<GraphResult<Gra
     eventId: createEventId(),
     id: nodeId,
     timestamp: createInstant(),
+    deviceId: options.deviceId,
+    ...(options.batchId ? { batchId: options.batchId } : {}),
+    ...(options.migrationId ? { migrationId: options.migrationId } : {}),
   };
 
   return ok({
@@ -120,7 +136,7 @@ export function updateNode(
   graph: Graph,
   nodeId: NodeId,
   updater: (node: Node) => Node,
-  options: NodeOperationOptions = {},
+  options: NodeOperationOptions,
 ): Result<GraphResult<Graph>, Error> {
   const existingNode = graph.nodes.get(nodeId);
   if (!existingNode) {
@@ -174,6 +190,9 @@ export function updateNode(
     id: nodeId,
     changes: finalNode.properties,
     timestamp: createInstant(),
+    deviceId: options.deviceId,
+    ...(options.batchId ? { batchId: options.batchId } : {}),
+    ...(options.migrationId ? { migrationId: options.migrationId } : {}),
   };
 
   return ok({

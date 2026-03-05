@@ -1,6 +1,6 @@
 import { v7 as uuidv7 } from 'uuid';
 import { Temporal } from 'temporal-polyfill';
-import type { NodeId, EdgeId, TypeId, GraphId, EventId } from './identifiers';
+import type { NodeId, EdgeId, TypeId, GraphId, EventId, DeviceId } from './identifiers';
 import type { Instant, PlainDate } from './temporal';
 import type { Result } from './result';
 import { err, fromThrowable } from './result';
@@ -36,6 +36,14 @@ export function createEventId(): EventId {
 
 export function asEventId(id: string): EventId {
   return id as EventId;
+}
+
+export function createDeviceId(): DeviceId {
+  return uuidv7() as DeviceId;
+}
+
+export function asDeviceId(id: string): DeviceId {
+  return id as DeviceId;
 }
 
 export function createInstant(instant: Temporal.Instant = Temporal.Now.instant()): Instant {

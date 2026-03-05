@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'bun:test';
-import { createNodeId, createInstant, Graph, Node, createGraphId } from '@canopy/types';
+import { createNodeId, createInstant, Graph, Node, createGraphId, asDeviceId } from '@canopy/types';
 import { SYSTEM_IDS, SYSTEM_EDGE_TYPES } from '../system';
 import { insertBlock } from './blocks';
 import { addNode } from './node';
@@ -36,12 +36,16 @@ describe('ops/blocks', () => {
       properties: new Map(),
       metadata: { created: createInstant(), modified: createInstant() },
     };
-    const addResult = addNode(graph, parentNode);
+    const addResult = addNode(graph, parentNode, {
+      deviceId: asDeviceId('00000000-0000-0000-0000-000000000000'),
+    });
     if (!addResult.ok) throw new Error('Failed to add parent node');
     graph = addResult.value.value;
 
     const block = createBlockNode();
-    const result = insertBlock(graph, parentId, block);
+    const result = insertBlock(graph, parentId, block, undefined, {
+      deviceId: asDeviceId('00000000-0000-0000-0000-000000000000'),
+    });
 
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error('Failed to insert block');
@@ -57,22 +61,30 @@ describe('ops/blocks', () => {
   it('inserts a block after another block', () => {
     let graph = createTestGraph();
     const parentId = createNodeId();
-    const addParentResult = addNode(graph, {
-      id: parentId,
-      type: SYSTEM_IDS.NODE_TYPE,
-      properties: new Map(),
-      metadata: { created: createInstant(), modified: createInstant() },
-    });
+    const addParentResult = addNode(
+      graph,
+      {
+        id: parentId,
+        type: SYSTEM_IDS.NODE_TYPE,
+        properties: new Map(),
+        metadata: { created: createInstant(), modified: createInstant() },
+      },
+      { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') },
+    );
     if (!addParentResult.ok) throw new Error('Failed to add parent');
     graph = addParentResult.value.value;
 
     const block1 = createBlockNode();
-    const insert1Result = insertBlock(graph, parentId, block1);
+    const insert1Result = insertBlock(graph, parentId, block1, undefined, {
+      deviceId: asDeviceId('00000000-0000-0000-0000-000000000000'),
+    });
     if (!insert1Result.ok) throw new Error('Failed to insert block1');
     graph = insert1Result.value.value;
 
     const block2 = createBlockNode();
-    const result = insertBlock(graph, parentId, block2, block1.id);
+    const result = insertBlock(graph, parentId, block2, block1.id, {
+      deviceId: asDeviceId('00000000-0000-0000-0000-000000000000'),
+    });
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error('Failed to insert block2');
     const newGraph = result.value.value;
@@ -89,28 +101,38 @@ describe('ops/blocks', () => {
   it('inserts a block between two blocks', () => {
     let graph = createTestGraph();
     const parentId = createNodeId();
-    const addParentResult = addNode(graph, {
-      id: parentId,
-      type: SYSTEM_IDS.NODE_TYPE,
-      properties: new Map(),
-      metadata: { created: createInstant(), modified: createInstant() },
-    });
+    const addParentResult = addNode(
+      graph,
+      {
+        id: parentId,
+        type: SYSTEM_IDS.NODE_TYPE,
+        properties: new Map(),
+        metadata: { created: createInstant(), modified: createInstant() },
+      },
+      { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') },
+    );
     if (!addParentResult.ok) throw new Error('Failed to add parent');
     graph = addParentResult.value.value;
 
     const block1 = createBlockNode();
     const block3 = createBlockNode();
 
-    const insert1Result = insertBlock(graph, parentId, block1);
+    const insert1Result = insertBlock(graph, parentId, block1, undefined, {
+      deviceId: asDeviceId('00000000-0000-0000-0000-000000000000'),
+    });
     if (!insert1Result.ok) throw new Error('Failed to insert block1');
     graph = insert1Result.value.value;
 
-    const res3 = insertBlock(graph, parentId, block3, block1.id);
+    const res3 = insertBlock(graph, parentId, block3, block1.id, {
+      deviceId: asDeviceId('00000000-0000-0000-0000-000000000000'),
+    });
     if (!res3.ok) throw new Error('Failed to insert block3');
     graph = res3.value.value;
 
     const block2 = createBlockNode();
-    const res2 = insertBlock(graph, parentId, block2, block1.id);
+    const res2 = insertBlock(graph, parentId, block2, block1.id, {
+      deviceId: asDeviceId('00000000-0000-0000-0000-000000000000'),
+    });
     expect(res2.ok).toBe(true);
     if (!res2.ok) throw new Error('Failed to insert block2');
     const newGraph = res2.value.value;
@@ -127,22 +149,30 @@ describe('ops/blocks', () => {
   it('inserts at start (before existing)', () => {
     let graph = createTestGraph();
     const parentId = createNodeId();
-    const addParentResult = addNode(graph, {
-      id: parentId,
-      type: SYSTEM_IDS.NODE_TYPE,
-      properties: new Map(),
-      metadata: { created: createInstant(), modified: createInstant() },
-    });
+    const addParentResult = addNode(
+      graph,
+      {
+        id: parentId,
+        type: SYSTEM_IDS.NODE_TYPE,
+        properties: new Map(),
+        metadata: { created: createInstant(), modified: createInstant() },
+      },
+      { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') },
+    );
     if (!addParentResult.ok) throw new Error('Failed to add parent');
     graph = addParentResult.value.value;
 
     const block1 = createBlockNode();
-    const insert1Result = insertBlock(graph, parentId, block1);
+    const insert1Result = insertBlock(graph, parentId, block1, undefined, {
+      deviceId: asDeviceId('00000000-0000-0000-0000-000000000000'),
+    });
     if (!insert1Result.ok) throw new Error('Failed to insert block1');
     graph = insert1Result.value.value;
 
     const block0 = createBlockNode();
-    const result = insertBlock(graph, parentId, block0);
+    const result = insertBlock(graph, parentId, block0, undefined, {
+      deviceId: asDeviceId('00000000-0000-0000-0000-000000000000'),
+    });
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error('Failed to insert block0');
     const newGraph = result.value.value;

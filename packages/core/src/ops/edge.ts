@@ -1,9 +1,12 @@
-import type { Graph, Edge, EdgeId, Result, GraphResult, GraphEvent } from '@canopy/types';
+import type { Graph, Edge, EdgeId, Result, GraphResult, GraphEvent, DeviceId } from '@canopy/types';
 import { createInstant, createEventId, ok, err } from '@canopy/types';
 import { validateEdge } from '../validation';
 
 export type EdgeOperationOptions = Readonly<{
+  deviceId: DeviceId;
   validate?: boolean;
+  batchId?: string;
+  migrationId?: string;
 }>;
 
 /**
@@ -14,7 +17,7 @@ export type EdgeOperationOptions = Readonly<{
 export function addEdge(
   graph: Graph,
   edge: Edge,
-  options: EdgeOperationOptions = {},
+  options: EdgeOperationOptions,
 ): Result<GraphResult<Graph>, Error> {
   if (graph.edges.has(edge.id)) {
     return err(new Error(`Edge with ID ${edge.id} already exists`));
@@ -54,6 +57,9 @@ export function addEdge(
     target: edge.target,
     properties: edge.properties,
     timestamp: createInstant(),
+    deviceId: options.deviceId,
+    ...(options.batchId ? { batchId: options.batchId } : {}),
+    ...(options.migrationId ? { migrationId: options.migrationId } : {}),
   };
 
   return ok({
@@ -67,7 +73,11 @@ export function addEdge(
  * Removes an edge from the graph.
  * Returns a new graph.
  */
-export function removeEdge(graph: Graph, edgeId: EdgeId): Result<GraphResult<Graph>, Error> {
+export function removeEdge(
+  graph: Graph,
+  edgeId: EdgeId,
+  options: EdgeOperationOptions,
+): Result<GraphResult<Graph>, Error> {
   if (!graph.edges.has(edgeId)) {
     return ok({
       graph,
@@ -92,6 +102,9 @@ export function removeEdge(graph: Graph, edgeId: EdgeId): Result<GraphResult<Gra
     eventId: createEventId(),
     id: edgeId,
     timestamp: createInstant(),
+    deviceId: options.deviceId,
+    ...(options.batchId ? { batchId: options.batchId } : {}),
+    ...(options.migrationId ? { migrationId: options.migrationId } : {}),
   };
 
   return ok({
@@ -110,7 +123,7 @@ export function updateEdge(
   graph: Graph,
   edgeId: EdgeId,
   updater: (edge: Edge) => Edge,
-  options: EdgeOperationOptions = {},
+  options: EdgeOperationOptions,
 ): Result<GraphResult<Graph>, Error> {
   const existingEdge = graph.edges.get(edgeId);
   if (!existingEdge) {
@@ -172,6 +185,9 @@ export function updateEdge(
     id: edgeId,
     changes: finalEdge.properties,
     timestamp: createInstant(),
+    deviceId: options.deviceId,
+    ...(options.batchId ? { batchId: options.batchId } : {}),
+    ...(options.migrationId ? { migrationId: options.migrationId } : {}),
   };
 
   return ok({

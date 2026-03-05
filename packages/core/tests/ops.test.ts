@@ -13,6 +13,7 @@ import {
   unwrap,
   isErr,
   isOk,
+  asDeviceId,
 } from '@canopy/types';
 
 // Test helpers
@@ -45,7 +46,9 @@ function createGraphWithTypes() {
       properties: JSON.stringify(personProperties),
     },
   });
-  g = unwrap(addNode(g, personTypeNode)).graph;
+  g = unwrap(
+    addNode(g, personTypeNode, { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') }),
+  ).graph;
   return g;
 }
 
@@ -57,7 +60,10 @@ describe('ops with validation', () => {
       properties: {}, // missing age
     });
 
-    const result = addNode(g, node, { validate: true });
+    const result = addNode(g, node, {
+      validate: true,
+      deviceId: asDeviceId('00000000-0000-0000-0000-000000000000'),
+    });
     expect(isErr(result)).toBe(true);
     if (isErr(result)) {
       expect(result.error.message).toMatch(/Node validation failed/);
@@ -71,7 +77,9 @@ describe('ops with validation', () => {
       properties: {}, // missing age
     });
 
-    const result = addNode(g, node);
+    const result = addNode(g, node, {
+      deviceId: asDeviceId('00000000-0000-0000-0000-000000000000'),
+    });
     expect(isOk(result)).toBe(true);
   });
 
@@ -82,7 +90,10 @@ describe('ops with validation', () => {
       properties: { age: 20 },
     });
 
-    const result = addNode(g, node, { validate: true });
+    const result = addNode(g, node, {
+      validate: true,
+      deviceId: asDeviceId('00000000-0000-0000-0000-000000000000'),
+    });
     expect(isOk(result)).toBe(true);
   });
 
@@ -93,7 +104,9 @@ describe('ops with validation', () => {
       type: asTypeId('type-person'),
       properties: { age: 20 },
     });
-    g = unwrap(addNode(g, node)).graph;
+    g = unwrap(
+      addNode(g, node, { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') }),
+    ).graph;
 
     const result = updateNode(
       g,
@@ -102,7 +115,7 @@ describe('ops with validation', () => {
         ...n,
         properties: new Map(), // remove age
       }),
-      { validate: true },
+      { validate: true, deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') },
     );
 
     expect(isErr(result)).toBe(true);
