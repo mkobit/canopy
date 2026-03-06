@@ -34,6 +34,8 @@ export const TypeIdSchema = z.string().min(1).transform(asTypeId);
 export const GraphIdSchema = z.string().uuid().transform(asGraphId);
 export const DeviceIdSchema = z.string().uuid().transform(asDeviceId);
 
+export const NamespaceSchema = z.enum(['system', 'user', 'imported', 'user-settings']);
+
 export const InstantSchema: z.ZodType<Instant, unknown> = z
   .string()
   .datetime({ offset: true }) // ISO 8601 strict
@@ -145,6 +147,7 @@ export const NodeTypeDefinitionSchema: z.ZodType<NodeTypeDefinition, unknown> = 
   .object({
     id: TypeIdSchema,
     name: z.string(),
+    namespace: NamespaceSchema,
     description: z.string().optional(),
     properties: z.array(PropertyDefinitionSchema),
     validOutgoingEdges: z.array(TypeIdSchema),
@@ -159,6 +162,7 @@ export const EdgeTypeDefinitionSchema: z.ZodType<EdgeTypeDefinition, unknown> = 
   .object({
     id: TypeIdSchema,
     name: z.string(),
+    namespace: NamespaceSchema,
     description: z.string().optional(),
     sourceTypes: z.array(TypeIdSchema),
     targetTypes: z.array(TypeIdSchema),

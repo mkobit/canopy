@@ -65,3 +65,5 @@ export {
 } from './factories';
 
 export type { QueryNode } from './query';
+
+export type { Namespace } from './namespace';

@@ -1,5 +1,6 @@
 import type { TypeId } from './identifiers';
 import type { PropertyDefinition } from './properties';
+import type { Namespace } from './namespace';
 
 /**
  * Defines a node type in the meta-circular type system.
@@ -8,6 +9,7 @@ import type { PropertyDefinition } from './properties';
 export interface NodeTypeDefinition {
   readonly id: TypeId;
   readonly name: string;
+  readonly namespace: Namespace;
   readonly description: string | undefined;
   readonly properties: readonly PropertyDefinition[];
   readonly validOutgoingEdges: readonly TypeId[];
@@ -21,6 +23,7 @@ export interface NodeTypeDefinition {
 export interface EdgeTypeDefinition {
   readonly id: TypeId;
   readonly name: string;
+  readonly namespace: Namespace;
   readonly description: string | undefined;
   readonly sourceTypes: readonly TypeId[];
   readonly targetTypes: readonly TypeId[];

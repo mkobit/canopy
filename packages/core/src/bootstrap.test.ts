@@ -14,24 +14,28 @@ describe('Meta-circular bootstrap', () => {
     expect(nodeTypeDef).toBeDefined();
     expect(nodeTypeDef?.type).toBe(SYSTEM_IDS.NODE_TYPE);
     expect(nodeTypeDef?.properties.get('name')).toEqual('Node Type');
+    expect(nodeTypeDef?.properties.get('namespace')).toEqual('system');
 
     // Check EdgeType definition
     const edgeTypeDef = graph.nodes.get(SYSTEM_IDS.EDGE_TYPE_DEF);
     expect(edgeTypeDef).toBeDefined();
     expect(edgeTypeDef?.type).toBe(SYSTEM_IDS.NODE_TYPE); // EdgeType definition is a NodeType
     expect(edgeTypeDef?.properties.get('name')).toEqual('Edge Type');
+    expect(edgeTypeDef?.properties.get('namespace')).toEqual('system');
 
     // Check Renderer definition
     const rendererDef = graph.nodes.get(SYSTEM_IDS.RENDERER_DEF);
     expect(rendererDef).toBeDefined();
     expect(rendererDef?.type).toBe(SYSTEM_IDS.NODE_TYPE);
     expect(rendererDef?.properties.get('name')).toEqual('Renderer');
+    expect(rendererDef?.properties.get('namespace')).toEqual('system');
 
     // Check Core Edge Types
     const childOf = graph.nodes.get(SYSTEM_IDS.EDGE_CHILD_OF);
     expect(childOf).toBeDefined();
     expect(childOf?.type).toBe(SYSTEM_IDS.EDGE_TYPE);
     expect(childOf?.properties.get('name')).toEqual('Child Of');
+    expect(childOf?.properties.get('namespace')).toEqual('system');
   });
 
   it('is idempotent', () => {
