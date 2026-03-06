@@ -1,4 +1,42 @@
-import type { Result, GraphEvent, EventId } from '@canopy/types';
+import type {
+  Result,
+  GraphEvent,
+  EventId,
+  Node,
+  Edge,
+  NodeId,
+  EdgeId,
+  TypeId,
+} from '@canopy/types';
+
+export interface NodeFilter {
+  readonly type?: TypeId;
+  readonly properties?: ReadonlyMap<string, unknown>;
+}
+
+export interface EdgeFilter {
+  readonly type?: TypeId;
+  readonly source?: NodeId;
+  readonly target?: NodeId;
+}
+
+export interface GraphStore {
+  readonly getNode: (id: NodeId) => Node | undefined;
+  readonly getNodes: (filter?: NodeFilter) => readonly Node[];
+  readonly getEdge: (id: EdgeId) => Edge | undefined;
+  readonly getEdges: (filter?: EdgeFilter) => readonly Edge[];
+  readonly getEdgesFrom: (nodeId: NodeId, edgeType?: TypeId) => readonly Edge[];
+  readonly getEdgesTo: (nodeId: NodeId, edgeType?: TypeId) => readonly Edge[];
+  readonly applyEvents: (events: readonly GraphEvent[]) => Result<void, Error>;
+  readonly getSnapshot: () => GraphStoreSnapshot;
+  readonly loadSnapshot: (snapshot: GraphStoreSnapshot) => Result<void, Error>;
+}
+
+export interface GraphStoreSnapshot {
+  readonly nodes: ReadonlyMap<NodeId, Node>;
+  readonly edges: ReadonlyMap<EdgeId, Edge>;
+  readonly lastEventId: string | undefined;
+}
 
 export interface GraphStorageMetadata {
   readonly id: string;
