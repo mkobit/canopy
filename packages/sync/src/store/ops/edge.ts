@@ -1,6 +1,6 @@
 import type * as Y from 'yjs';
 import type { Edge, EdgeId, Result } from '@canopy/types';
-import { createEdgeId, createInstant, asEdgeId, ok, err } from '@canopy/types';
+import { createEdgeId, createInstant, asEdgeId, ok, err, asDeviceId } from '@canopy/types';
 import { EdgeSchema } from '@canopy/schema';
 import { map } from 'remeda';
 import { edgeToStorable, storableToEdge } from '../converters';
@@ -36,6 +36,7 @@ export function addEdge(
     metadata: {
       created: now,
       modified: now,
+      modifiedBy: asDeviceId('00000000-0000-0000-0000-000000000000'),
     },
   };
 
@@ -91,6 +92,7 @@ export function updateEdge(
     metadata: {
       ...existing.metadata,
       modified: now,
+      modifiedBy: asDeviceId('00000000-0000-0000-0000-000000000000'),
     },
   };
 

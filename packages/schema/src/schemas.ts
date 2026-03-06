@@ -96,6 +96,7 @@ export const PropertyDefinitionSchema: z.ZodType<PropertyDefinition, unknown> = 
 export const TemporalMetadataSchema: z.ZodType<TemporalMetadata, unknown> = z.object({
   created: InstantSchema,
   modified: InstantSchema,
+  modifiedBy: DeviceIdSchema,
 });
 
 // Property Map: Map<string, PropertyValue>

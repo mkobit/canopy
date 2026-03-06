@@ -13,6 +13,7 @@ function createTestGraph(): Graph {
     metadata: {
       created: createInstant(),
       modified: createInstant(),
+      modifiedBy: asDeviceId('00000000-0000-0000-0000-000000000000'),
     },
   };
 }
@@ -22,7 +23,11 @@ function createBlockNode(): Node {
     id: createNodeId(),
     type: SYSTEM_IDS.NODE_TYPE,
     properties: new Map([['content', 'test']]),
-    metadata: { created: createInstant(), modified: createInstant() },
+    metadata: {
+      created: createInstant(),
+      modified: createInstant(),
+      modifiedBy: asDeviceId('00000000-0000-0000-0000-000000000000'),
+    },
   };
 }
 
@@ -34,7 +39,11 @@ describe('ops/blocks', () => {
       id: parentId,
       type: SYSTEM_IDS.NODE_TYPE,
       properties: new Map(),
-      metadata: { created: createInstant(), modified: createInstant() },
+      metadata: {
+        created: createInstant(),
+        modified: createInstant(),
+        modifiedBy: asDeviceId('00000000-0000-0000-0000-000000000000'),
+      },
     };
     const addResult = addNode(graph, parentNode, {
       deviceId: asDeviceId('00000000-0000-0000-0000-000000000000'),
@@ -67,7 +76,11 @@ describe('ops/blocks', () => {
         id: parentId,
         type: SYSTEM_IDS.NODE_TYPE,
         properties: new Map(),
-        metadata: { created: createInstant(), modified: createInstant() },
+        metadata: {
+          created: createInstant(),
+          modified: createInstant(),
+          modifiedBy: asDeviceId('00000000-0000-0000-0000-000000000000'),
+        },
       },
       { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') },
     );
@@ -107,7 +120,11 @@ describe('ops/blocks', () => {
         id: parentId,
         type: SYSTEM_IDS.NODE_TYPE,
         properties: new Map(),
-        metadata: { created: createInstant(), modified: createInstant() },
+        metadata: {
+          created: createInstant(),
+          modified: createInstant(),
+          modifiedBy: asDeviceId('00000000-0000-0000-0000-000000000000'),
+        },
       },
       { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') },
     );
@@ -155,7 +172,11 @@ describe('ops/blocks', () => {
         id: parentId,
         type: SYSTEM_IDS.NODE_TYPE,
         properties: new Map(),
-        metadata: { created: createInstant(), modified: createInstant() },
+        metadata: {
+          created: createInstant(),
+          modified: createInstant(),
+          modifiedBy: asDeviceId('00000000-0000-0000-0000-000000000000'),
+        },
       },
       { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') },
     );

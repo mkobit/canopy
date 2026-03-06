@@ -85,6 +85,7 @@ export function insertBlock(
     metadata: {
       created: createInstant(),
       modified: createInstant(),
+      modifiedBy: options.deviceId,
     },
   };
 

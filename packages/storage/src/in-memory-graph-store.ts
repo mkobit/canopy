@@ -82,6 +82,7 @@ export class InMemoryGraphStore implements GraphStore {
             metadata: {
               created: event.timestamp,
               modified: event.timestamp,
+              modifiedBy: event.deviceId,
             },
           });
           break;
@@ -100,6 +101,7 @@ export class InMemoryGraphStore implements GraphStore {
               metadata: {
                 ...node.metadata,
                 modified: event.timestamp,
+                modifiedBy: event.deviceId,
               },
             });
           }
@@ -127,6 +129,7 @@ export class InMemoryGraphStore implements GraphStore {
             metadata: {
               created: event.timestamp,
               modified: event.timestamp,
+              modifiedBy: event.deviceId,
             },
           });
           break;
@@ -145,6 +148,7 @@ export class InMemoryGraphStore implements GraphStore {
               metadata: {
                 ...edge.metadata,
                 modified: event.timestamp,
+                modifiedBy: event.deviceId,
               },
             });
           }

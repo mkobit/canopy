@@ -1,12 +1,21 @@
 import { describe, it, expect } from 'bun:test';
 import { resolveNamespace } from './namespace';
-import { asGraphId, asNodeId, asTypeId, createInstant, type Graph, type Node } from '@canopy/types';
+import {
+  asGraphId,
+  asNodeId,
+  asTypeId,
+  createInstant,
+  type Graph,
+  type Node,
+  asDeviceId,
+} from '@canopy/types';
 import { SYSTEM_IDS } from './system';
 
 describe('resolveNamespace', () => {
   const dummyMetadata = {
     created: createInstant(),
     modified: createInstant(),
+    modifiedBy: asDeviceId('00000000-0000-0000-0000-000000000000'),
   };
 
   const graph: Graph = {

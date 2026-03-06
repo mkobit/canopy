@@ -39,6 +39,7 @@ export function addNode(
     metadata: {
       ...graph.metadata,
       modified: createInstant(),
+      modifiedBy: options.deviceId,
     },
   };
 
@@ -107,6 +108,7 @@ export function removeNode(
     metadata: {
       ...graph.metadata,
       modified: createInstant(),
+      modifiedBy: options.deviceId,
     },
   };
 
@@ -163,6 +165,7 @@ export function updateNode(
     metadata: {
       ...updatedNode.metadata,
       modified: createInstant(),
+      modifiedBy: options.deviceId,
     },
   };
 
@@ -181,6 +184,7 @@ export function updateNode(
     metadata: {
       ...graph.metadata,
       modified: createInstant(),
+      modifiedBy: options.deviceId,
     },
   };
 

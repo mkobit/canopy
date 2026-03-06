@@ -45,6 +45,7 @@ export function addEdge(
     metadata: {
       ...graph.metadata,
       modified: createInstant(),
+      modifiedBy: options.deviceId,
     },
   };
 
@@ -94,6 +95,7 @@ export function removeEdge(
     metadata: {
       ...graph.metadata,
       modified: createInstant(),
+      modifiedBy: options.deviceId,
     },
   };
 
@@ -158,6 +160,7 @@ export function updateEdge(
     metadata: {
       ...updatedEdge.metadata,
       modified: createInstant(),
+      modifiedBy: options.deviceId,
     },
   };
 
@@ -176,6 +179,7 @@ export function updateEdge(
     metadata: {
       ...graph.metadata,
       modified: createInstant(),
+      modifiedBy: options.deviceId,
     },
   };
 

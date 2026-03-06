@@ -42,7 +42,11 @@ describe('Core Graph Engine', () => {
     id: nodeId1,
     type: asTypeId('person'),
     properties: new Map(),
-    metadata: { created: createInstant(), modified: createInstant() },
+    metadata: {
+      created: createInstant(),
+      modified: createInstant(),
+      modifiedBy: asDeviceId('00000000-0000-0000-0000-000000000000'),
+    },
   };
 
   const nodeId2 = createNodeId();
@@ -50,7 +54,11 @@ describe('Core Graph Engine', () => {
     id: nodeId2,
     type: asTypeId('person'),
     properties: new Map(),
-    metadata: { created: createInstant(), modified: createInstant() },
+    metadata: {
+      created: createInstant(),
+      modified: createInstant(),
+      modifiedBy: asDeviceId('00000000-0000-0000-0000-000000000000'),
+    },
   };
 
   it('should add nodes immutably and emit events', () => {
@@ -152,7 +160,11 @@ describe('Core Graph Engine', () => {
       target: nodeId2,
       type: asTypeId('knows'),
       properties: new Map(),
-      metadata: { created: createInstant(), modified: createInstant() },
+      metadata: {
+        created: createInstant(),
+        modified: createInstant(),
+        modifiedBy: asDeviceId('00000000-0000-0000-0000-000000000000'),
+      },
     };
 
     const re = unwrap(
@@ -203,7 +215,11 @@ describe('Core Graph Engine', () => {
       target: nodeId2,
       type: asTypeId('knows'),
       properties: new Map(),
-      metadata: { created: createInstant(), modified: createInstant() },
+      metadata: {
+        created: createInstant(),
+        modified: createInstant(),
+        modifiedBy: asDeviceId('00000000-0000-0000-0000-000000000000'),
+      },
     };
     const re = unwrap(
       addEdge(g, edge, { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') }),
@@ -240,7 +256,11 @@ describe('Core Graph Engine', () => {
       target: nodeId2,
       type: asTypeId('knows'),
       properties: new Map(),
-      metadata: { created: createInstant(), modified: createInstant() },
+      metadata: {
+        created: createInstant(),
+        modified: createInstant(),
+        modifiedBy: asDeviceId('00000000-0000-0000-0000-000000000000'),
+      },
     };
     const re = unwrap(
       addEdge(g, edge, { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') }),
@@ -291,7 +311,11 @@ describe('Core Graph Engine', () => {
       target: nodeId2,
       type: asTypeId('knows'),
       properties: new Map(),
-      metadata: { created: createInstant(), modified: createInstant() },
+      metadata: {
+        created: createInstant(),
+        modified: createInstant(),
+        modifiedBy: asDeviceId('00000000-0000-0000-0000-000000000000'),
+      },
     };
     const re = unwrap(
       addEdge(g, edge, { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') }),
