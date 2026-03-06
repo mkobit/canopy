@@ -1,13 +1,6 @@
 import { describe, it, expect } from 'bun:test';
 import { resolveNamespace } from './namespace';
-import {
-  asGraphId,
-  asNodeId,
-  asTypeId,
-  createInstant,
-  type Graph,
-  type Node,
-} from '@canopy/types';
+import { asGraphId, asNodeId, asTypeId, createInstant, type Graph, type Node } from '@canopy/types';
 import { SYSTEM_IDS } from './system';
 
 describe('resolveNamespace', () => {

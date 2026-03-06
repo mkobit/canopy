@@ -583,10 +583,14 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
             return ok(cg);
           }
           const props = 'properties' in def ? def.properties : undefined;
-          const extraProps: Record<string, import('@canopy/types').PropertyValue> = { namespace: text('system') };
-          if (props) {
-            extraProps.properties = text(JSON.stringify(props));
-          }
+          const extraProps: Record<string, import('@canopy/types').PropertyValue> = props
+            ? {
+                namespace: text('system'),
+                properties: text(JSON.stringify(props)),
+              }
+            : {
+                namespace: text('system'),
+              };
           return addNodeGraph(
             cg,
             createBootstrapNode(

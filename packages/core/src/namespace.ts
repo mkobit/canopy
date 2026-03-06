@@ -18,12 +18,7 @@ export function resolveNamespace(graph: Graph, node: Node): Namespace {
   const typeDef = getNodeType(graph, node.type);
   if (typeDef) {
     const ns = typeDef.properties.get('namespace');
-    if (
-      ns === 'system' ||
-      ns === 'user' ||
-      ns === 'imported' ||
-      ns === 'user-settings'
-    ) {
+    if (ns === 'system' || ns === 'user' || ns === 'imported' || ns === 'user-settings') {
       return ns as Namespace;
     }
   }
