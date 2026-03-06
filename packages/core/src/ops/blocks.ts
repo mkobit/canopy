@@ -1,5 +1,5 @@
 import type { Graph, Node, NodeId, Result, GraphResult, Edge, DeviceId } from '@canopy/types';
-import { createInstant, ok, err, createEdgeId } from '@canopy/types';
+import { createInstant, ok, err, createEdgeId, asDeviceId } from '@canopy/types';
 import { addNode } from './node';
 import { addEdge } from './edge';
 import { SYSTEM_EDGE_TYPES } from '../system';
@@ -85,6 +85,7 @@ export function insertBlock(
     metadata: {
       created: createInstant(),
       modified: createInstant(),
+      modifiedBy: asDeviceId('00000000-0000-0000-0000-000000000000'),
     },
   };
 

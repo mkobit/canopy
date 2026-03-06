@@ -1,6 +1,6 @@
 import type { Graph, GraphId, Result } from '@canopy/types';
 import { createInstant } from '@canopy/types';
-import { bootstrap } from './bootstrap';
+import { bootstrap, SYSTEM_DEVICE_ID } from './bootstrap';
 
 // Re-export types for convenience
 
@@ -16,6 +16,7 @@ export function createGraph(id: GraphId, name: string): Result<Graph, Error> {
     metadata: {
       created: createInstant(),
       modified: createInstant(),
+      modifiedBy: SYSTEM_DEVICE_ID,
     },
     nodes: new Map(),
     edges: new Map(),

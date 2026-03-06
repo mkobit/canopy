@@ -1,5 +1,13 @@
 import type { Graph, Node, NodeId, PropertyValue, ScalarValue, Result } from '@canopy/types';
-import { createNodeId, createInstant, ok, err, fromThrowable, asNodeId } from '@canopy/types';
+import {
+  createNodeId,
+  createInstant,
+  ok,
+  err,
+  fromThrowable,
+  asNodeId,
+  asDeviceId,
+} from '@canopy/types';
 import { SYSTEM_IDS, addNode } from '@canopy/core';
 import type { Query, Sort } from './model';
 import { getQueryDefinition } from './stored';
@@ -89,6 +97,7 @@ export function saveViewDefinition(
     metadata: {
       created: createInstant(),
       modified: createInstant(),
+      modifiedBy: asDeviceId('00000000-0000-0000-0000-000000000000'),
     },
   };
 

@@ -1,3 +1,4 @@
+import { asDeviceId } from '@canopy/types';
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { SyncEngine } from '@canopy/sync';
 import type {
@@ -119,7 +120,11 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
     setGraph({
       id: graphId,
       name: 'Graph', // We should load this
-      metadata: { created: now, modified: now }, // Placeholder
+      metadata: {
+        created: now,
+        modified: now,
+        modifiedBy: asDeviceId('00000000-0000-0000-0000-000000000000'),
+      }, // Placeholder
       nodes,
       edges,
     });

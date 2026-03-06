@@ -7,7 +7,7 @@ import type {
   ScalarValue,
   Result,
 } from '@canopy/types';
-import { createNodeId, createInstant, ok, err, fromThrowable } from '@canopy/types';
+import { createNodeId, createInstant, ok, err, fromThrowable, asDeviceId } from '@canopy/types';
 import { SYSTEM_IDS, addNode } from '@canopy/core';
 import type { Query } from './model';
 import { executeQuery } from './engine';
@@ -82,6 +82,7 @@ export function saveQueryDefinition(
     metadata: {
       created: createInstant(),
       modified: createInstant(),
+      modifiedBy: asDeviceId('00000000-0000-0000-0000-000000000000'),
     },
   };
 

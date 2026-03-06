@@ -55,6 +55,7 @@ function createBootstrapNode(
     metadata: {
       created: createInstant(),
       modified: createInstant(),
+      modifiedBy: SYSTEM_DEVICE_ID,
     },
   };
 }

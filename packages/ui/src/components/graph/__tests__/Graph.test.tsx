@@ -3,7 +3,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { NodeView } from '../NodeView';
 import { GraphCanvas } from '../GraphCanvas';
-import { Node } from '@canopy/types';
+import { Node, asDeviceId } from '@canopy/types';
 import { asNodeId, asTypeId, createInstant } from '@canopy/types';
 
 // Mocks
@@ -15,7 +15,11 @@ const mockNode: Node = {
   id: mockNodeId,
   type: mockTypeId,
   properties: new Map([['name', mockTextValue]]),
-  metadata: { created: createInstant(), modified: createInstant() },
+  metadata: {
+    created: createInstant(),
+    modified: createInstant(),
+    modifiedBy: asDeviceId('00000000-0000-0000-0000-000000000000'),
+  },
 };
 
 const mockGraphNode = {

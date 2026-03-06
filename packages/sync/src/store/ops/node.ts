@@ -1,6 +1,6 @@
 import type * as Y from 'yjs';
 import type { Node, NodeId, Result } from '@canopy/types';
-import { createNodeId, createInstant, asNodeId, ok, err } from '@canopy/types';
+import { createNodeId, createInstant, asNodeId, ok, err, asDeviceId } from '@canopy/types';
 import { NodeSchema } from '@canopy/schema';
 import { map } from 'remeda';
 import { nodeToStorable, storableToNode } from '../converters';
@@ -28,6 +28,7 @@ export function addNode(
     metadata: {
       created: now,
       modified: now,
+      modifiedBy: asDeviceId('00000000-0000-0000-0000-000000000000'),
     },
   };
 
@@ -82,6 +83,7 @@ export function updateNode(
     metadata: {
       ...existing.metadata,
       modified: now,
+      modifiedBy: asDeviceId('00000000-0000-0000-0000-000000000000'),
     },
   };
 

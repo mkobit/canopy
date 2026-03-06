@@ -38,6 +38,7 @@ describe('Zod Schemas', () => {
       metadata: {
         created: '2023-10-27T10:00:00.000Z',
         modified: '2023-10-27T10:00:00.000Z',
+        modifiedBy: '00000000-0000-0000-0000-000000000000',
       },
     };
 
@@ -57,6 +58,7 @@ describe('Zod Schemas', () => {
       metadata: {
         created: '2023-10-27T10:00:00.000Z',
         modified: '2023-10-27T10:00:00.000Z',
+        modifiedBy: '00000000-0000-0000-0000-000000000000',
       },
     };
 
@@ -72,6 +74,7 @@ describe('Zod Schemas', () => {
       metadata: {
         created: '2023-10-27T10:00:00.000Z',
         modified: '2023-10-27T10:00:00.000Z',
+        modifiedBy: '00000000-0000-0000-0000-000000000000',
       },
       nodes: {
         '123e4567-e89b-12d3-a456-426614174000': {
@@ -81,6 +84,7 @@ describe('Zod Schemas', () => {
           metadata: {
             created: '2023-10-27T10:00:00.000Z',
             modified: '2023-10-27T10:00:00.000Z',
+            modifiedBy: '00000000-0000-0000-0000-000000000000',
           },
         },
       },

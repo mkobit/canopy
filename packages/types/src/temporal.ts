@@ -1,3 +1,5 @@
+import type { DeviceId } from './identifiers';
+
 export declare const instantBrand: unique symbol;
 export declare const plainDateBrand: unique symbol;
 
@@ -21,4 +23,5 @@ export type PlainDate = string & Readonly<{ [plainDateBrand]: never }>;
 export interface TemporalMetadata {
   readonly created: Instant;
   readonly modified: Instant;
+  readonly modifiedBy: DeviceId;
 }

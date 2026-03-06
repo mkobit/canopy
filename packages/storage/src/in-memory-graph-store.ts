@@ -1,5 +1,5 @@
 import type { Node, Edge, NodeId, EdgeId, TypeId, GraphEvent, Result } from '@canopy/types';
-import { ok } from '@canopy/types';
+import { ok, asDeviceId } from '@canopy/types';
 import type { GraphStore, GraphStoreSnapshot, NodeFilter, EdgeFilter } from './types';
 
 // eslint-disable-next-line functional/no-classes
@@ -82,6 +82,7 @@ export class InMemoryGraphStore implements GraphStore {
             metadata: {
               created: event.timestamp,
               modified: event.timestamp,
+              modifiedBy: asDeviceId('00000000-0000-0000-0000-000000000000'),
             },
           });
           break;
@@ -100,6 +101,7 @@ export class InMemoryGraphStore implements GraphStore {
               metadata: {
                 ...node.metadata,
                 modified: event.timestamp,
+                modifiedBy: asDeviceId('00000000-0000-0000-0000-000000000000'),
               },
             });
           }
@@ -127,6 +129,7 @@ export class InMemoryGraphStore implements GraphStore {
             metadata: {
               created: event.timestamp,
               modified: event.timestamp,
+              modifiedBy: asDeviceId('00000000-0000-0000-0000-000000000000'),
             },
           });
           break;
@@ -145,6 +148,7 @@ export class InMemoryGraphStore implements GraphStore {
               metadata: {
                 ...edge.metadata,
                 modified: event.timestamp,
+                modifiedBy: asDeviceId('00000000-0000-0000-0000-000000000000'),
               },
             });
           }

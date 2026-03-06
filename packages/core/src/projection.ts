@@ -1,5 +1,21 @@
-import type { Graph, GraphEvent, Node, Edge, Result } from '@canopy/types';
+import type { Graph, GraphEvent, Node, Edge, Result, Instant, DeviceId } from '@canopy/types';
 import { ok, err } from '@canopy/types';
+
+/**
+ * Returns true if the incoming event should win over the current state.
+ * Uses timestamp as primary sort key, deviceId as tiebreaker (lexicographic).
+ */
+function lwwWins(
+  incomingTimestamp: Instant,
+  incomingDeviceId: DeviceId,
+  currentTimestamp: Instant,
+  currentDeviceId: DeviceId,
+): boolean {
+  if (incomingTimestamp > currentTimestamp) return true;
+  if (incomingTimestamp < currentTimestamp) return false;
+  // Equal timestamps: use deviceId as tiebreaker
+  return incomingDeviceId >= currentDeviceId;
+}
 
 /**
  * Applies a single event to the graph, returning a new graph state.
@@ -22,6 +38,7 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
           metadata: {
             created: event.timestamp,
             modified: event.timestamp,
+            modifiedBy: event.deviceId,
           },
         };
 
@@ -37,6 +54,10 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
             modified:
               // eslint-disable-next-line unicorn/prefer-math-min-max
               event.timestamp > graph.metadata.modified ? event.timestamp : graph.metadata.modified,
+            modifiedBy:
+              event.timestamp > graph.metadata.modified
+                ? event.deviceId
+                : graph.metadata.modifiedBy,
           },
         });
       }
@@ -45,6 +66,16 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
         const node = graph.nodes.get(event.id);
         if (!node) {
           return err(new Error(`Node with ID ${event.id} not found`));
+        }
+
+        const eventWins = lwwWins(
+          event.timestamp,
+          event.deviceId,
+          node.metadata.modified,
+          node.metadata.modifiedBy,
+        );
+        if (!eventWins) {
+          return ok(graph);
         }
 
         const updatedProperties = new Map(node.properties);
@@ -60,6 +91,7 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
           metadata: {
             ...node.metadata,
             modified: event.timestamp,
+            modifiedBy: event.deviceId,
           },
         };
 
@@ -75,6 +107,10 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
             modified:
               // eslint-disable-next-line unicorn/prefer-math-min-max
               event.timestamp > graph.metadata.modified ? event.timestamp : graph.metadata.modified,
+            modifiedBy:
+              event.timestamp > graph.metadata.modified
+                ? event.deviceId
+                : graph.metadata.modifiedBy,
           },
         });
       }
@@ -113,6 +149,10 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
             modified:
               // eslint-disable-next-line unicorn/prefer-math-min-max
               event.timestamp > graph.metadata.modified ? event.timestamp : graph.metadata.modified,
+            modifiedBy:
+              event.timestamp > graph.metadata.modified
+                ? event.deviceId
+                : graph.metadata.modifiedBy,
           },
         });
       }
@@ -137,6 +177,7 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
           metadata: {
             created: event.timestamp,
             modified: event.timestamp,
+            modifiedBy: event.deviceId,
           },
         };
 
@@ -152,6 +193,10 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
             modified:
               // eslint-disable-next-line unicorn/prefer-math-min-max
               event.timestamp > graph.metadata.modified ? event.timestamp : graph.metadata.modified,
+            modifiedBy:
+              event.timestamp > graph.metadata.modified
+                ? event.deviceId
+                : graph.metadata.modifiedBy,
           },
         });
       }
@@ -160,6 +205,16 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
         const edge = graph.edges.get(event.id);
         if (!edge) {
           return err(new Error(`Edge with ID ${event.id} not found`));
+        }
+
+        const eventWins = lwwWins(
+          event.timestamp,
+          event.deviceId,
+          edge.metadata.modified,
+          edge.metadata.modifiedBy,
+        );
+        if (!eventWins) {
+          return ok(graph);
         }
 
         const updatedProperties = new Map(edge.properties);
@@ -175,6 +230,7 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
           metadata: {
             ...edge.metadata,
             modified: event.timestamp,
+            modifiedBy: event.deviceId,
           },
         };
 
@@ -190,6 +246,10 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
             modified:
               // eslint-disable-next-line unicorn/prefer-math-min-max
               event.timestamp > graph.metadata.modified ? event.timestamp : graph.metadata.modified,
+            modifiedBy:
+              event.timestamp > graph.metadata.modified
+                ? event.deviceId
+                : graph.metadata.modifiedBy,
           },
         });
       }
@@ -211,6 +271,10 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
             modified:
               // eslint-disable-next-line unicorn/prefer-math-min-max
               event.timestamp > graph.metadata.modified ? event.timestamp : graph.metadata.modified,
+            modifiedBy:
+              event.timestamp > graph.metadata.modified
+                ? event.deviceId
+                : graph.metadata.modifiedBy,
           },
         });
       }
@@ -233,11 +297,13 @@ export function projectGraph(
   events: readonly GraphEvent[],
   initialGraph: Graph,
 ): Result<Graph, Error> {
+  const sortedEvents = [...events].toSorted((a, b) => a.eventId.localeCompare(b.eventId));
+
   // eslint-disable-next-line functional/no-let
   let currentGraph = initialGraph;
 
   // eslint-disable-next-line functional/no-loop-statements
-  for (const event of events) {
+  for (const event of sortedEvents) {
     const result = applyEvent(currentGraph, event);
     if (!result.ok) {
       return result;
