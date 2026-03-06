@@ -52,7 +52,11 @@ describe('Settings Resolver', () => {
         ['scopeType', 'global'],
         ['value', '"compact"'], // JSON-encoded string
       ]),
-      metadata: { created: createInstant(), modified: createInstant() },
+      metadata: {
+        created: createInstant(),
+        modified: createInstant(),
+        modifiedBy: SYSTEM_DEVICE_ID,
+      },
     };
     const res = addNode(graph, settingNode, { deviceId: SYSTEM_DEVICE_ID });
     graph = unwrap(res).graph;
@@ -76,7 +80,11 @@ describe('Settings Resolver', () => {
         ['scopeType', 'global'],
         ['value', '"global-renderer"'],
       ]),
-      metadata: { created: createInstant(), modified: createInstant() },
+      metadata: {
+        created: createInstant(),
+        modified: createInstant(),
+        modifiedBy: SYSTEM_DEVICE_ID,
+      },
     };
     graph = unwrap(addNode(graph, globalSetting, { deviceId: SYSTEM_DEVICE_ID })).graph;
 
@@ -90,7 +98,11 @@ describe('Settings Resolver', () => {
         ['scopeTarget', 'user'],
         ['value', '"namespace-renderer"'],
       ]),
-      metadata: { created: createInstant(), modified: createInstant() },
+      metadata: {
+        created: createInstant(),
+        modified: createInstant(),
+        modifiedBy: SYSTEM_DEVICE_ID,
+      },
     };
     graph = unwrap(addNode(graph, namespaceSetting, { deviceId: SYSTEM_DEVICE_ID })).graph;
 
@@ -118,7 +130,11 @@ describe('Settings Resolver', () => {
         ['scopeTarget', 'user'],
         ['value', '"namespace-renderer"'],
       ]),
-      metadata: { created: createInstant(), modified: createInstant() },
+      metadata: {
+        created: createInstant(),
+        modified: createInstant(),
+        modifiedBy: SYSTEM_DEVICE_ID,
+      },
     };
     graph = unwrap(addNode(graph, namespaceSetting, { deviceId: SYSTEM_DEVICE_ID })).graph;
 
@@ -132,7 +148,11 @@ describe('Settings Resolver', () => {
         ['scopeTarget', typeId],
         ['value', '"type-renderer"'],
       ]),
-      metadata: { created: createInstant(), modified: createInstant() },
+      metadata: {
+        created: createInstant(),
+        modified: createInstant(),
+        modifiedBy: SYSTEM_DEVICE_ID,
+      },
     };
     graph = unwrap(addNode(graph, typeSetting, { deviceId: SYSTEM_DEVICE_ID })).graph;
 
@@ -161,7 +181,11 @@ describe('Settings Resolver', () => {
         ['scopeTarget', typeId],
         ['value', '"type-renderer"'],
       ]),
-      metadata: { created: createInstant(), modified: createInstant() },
+      metadata: {
+        created: createInstant(),
+        modified: createInstant(),
+        modifiedBy: SYSTEM_DEVICE_ID,
+      },
     };
     graph = unwrap(addNode(graph, typeSetting, { deviceId: SYSTEM_DEVICE_ID })).graph;
 
@@ -175,7 +199,11 @@ describe('Settings Resolver', () => {
         ['scopeTarget', nodeId],
         ['value', '"node-renderer"'],
       ]),
-      metadata: { created: createInstant(), modified: createInstant() },
+      metadata: {
+        created: createInstant(),
+        modified: createInstant(),
+        modifiedBy: SYSTEM_DEVICE_ID,
+      },
     };
     graph = unwrap(addNode(graph, nodeSetting, { deviceId: SYSTEM_DEVICE_ID })).graph;
 
