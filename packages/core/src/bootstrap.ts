@@ -414,8 +414,78 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
           ),
   ];
 
-  // 4. Core Node Types (Content Blocks)
+  // 4. Core Node Types (Content Blocks and Settings)
   const coreNodeTypes = [
+    {
+      id: SYSTEM_IDS.SETTINGS_SCHEMA_DEF,
+      name: 'SettingsSchema',
+      description: 'Defines an available system setting.',
+      namespace: 'system',
+      properties: [
+        {
+          name: 'key',
+          valueKind: 'text',
+          required: true,
+          description: 'Unique identifier for the setting',
+        },
+        {
+          name: 'valueKind',
+          valueKind: 'text',
+          required: true,
+          description: 'Expected value type',
+        },
+        {
+          name: 'defaultValue',
+          valueKind: 'text',
+          required: true,
+          description: 'JSON-encoded default value',
+        },
+        {
+          name: 'description',
+          valueKind: 'text',
+          required: true,
+          description: 'Human-readable explanation',
+        },
+        {
+          name: 'scopes',
+          valueKind: 'list',
+          required: true,
+          description: 'Supported scope levels',
+        },
+      ],
+    },
+    {
+      id: SYSTEM_IDS.USER_SETTING_DEF,
+      name: 'UserSetting',
+      description: 'A user override of a setting at a specific scope.',
+      namespace: 'user-settings',
+      properties: [
+        {
+          name: 'schemaId',
+          valueKind: 'reference',
+          required: true,
+          description: 'NodeId of the SettingsSchema this overrides',
+        },
+        {
+          name: 'value',
+          valueKind: 'text',
+          required: true,
+          description: 'JSON-encoded override value',
+        },
+        {
+          name: 'scopeType',
+          valueKind: 'text',
+          required: true,
+          description: 'One of: node, type, namespace, global',
+        },
+        {
+          name: 'scopeTarget',
+          valueKind: 'text',
+          required: false,
+          description: 'NodeId, TypeId, or namespace string',
+        },
+      ],
+    },
     {
       id: SYSTEM_IDS.NODE_TYPE_TEXT_BLOCK,
       name: 'TextBlock',
@@ -557,6 +627,28 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
     },
   ];
 
+  // 7. System Settings Schemas
+  const systemSettings = [
+    {
+      id: SYSTEM_IDS.SETTING_DEFAULT_RENDERER,
+      key: 'default-renderer',
+      valueKind: 'reference',
+      defaultValue: 'null',
+      description: 'The default renderer node to use for a given scope.',
+      scopes: '["node","type","namespace","global"]',
+      namespace: 'system',
+    },
+    {
+      id: SYSTEM_IDS.SETTING_DISPLAY_DENSITY,
+      key: 'display-density',
+      valueKind: 'text',
+      defaultValue: '"comfortable"',
+      description: 'UI display density: comfortable, compact, or spacious.',
+      scopes: '["global"]',
+      namespace: 'system',
+    },
+  ] as const;
+
   // Chain everything
   const allSteps: readonly ((g: Graph) => Result<Graph, Error>)[] = [
     ...steps,
@@ -569,7 +661,7 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
             : addNodeGraph(
                 cg,
                 createBootstrapNode(def.id, SYSTEM_IDS.NODE_TYPE, def.name, def.description, {
-                  namespace: text('system'),
+                  namespace: text('namespace' in def ? def.namespace : 'system'),
                   properties: text(JSON.stringify(def.properties)),
                 }),
               ),
@@ -645,6 +737,25 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
           }
           return ok(cg);
         },
+        g,
+      ),
+    (g) =>
+      reduceResult(
+        systemSettings,
+        (cg, def) =>
+          cg.nodes.has(def.id)
+            ? ok(cg)
+            : addNodeGraph(
+                cg,
+                createBootstrapNode(def.id, SYSTEM_IDS.SETTINGS_SCHEMA, def.key, def.description, {
+                  key: text(def.key),
+                  valueKind: text(def.valueKind),
+                  defaultValue: text(def.defaultValue),
+                  description: text(def.description),
+                  scopes: text(def.scopes),
+                  namespace: text(def.namespace),
+                }),
+              ),
         g,
       ),
   ];
