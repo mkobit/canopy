@@ -36,6 +36,23 @@ describe('Meta-circular bootstrap', () => {
     expect(childOf?.type).toBe(SYSTEM_IDS.EDGE_TYPE);
     expect(childOf?.properties.get('name')).toEqual('Child Of');
     expect(childOf?.properties.get('namespace')).toEqual('system');
+
+    // Check Settings schemas
+    const settingsSchemaDef = graph.nodes.get(SYSTEM_IDS.SETTINGS_SCHEMA_DEF);
+    expect(settingsSchemaDef).toBeDefined();
+    expect(settingsSchemaDef?.type).toBe(SYSTEM_IDS.NODE_TYPE);
+
+    const userSettingDef = graph.nodes.get(SYSTEM_IDS.USER_SETTING_DEF);
+    expect(userSettingDef).toBeDefined();
+    expect(userSettingDef?.type).toBe(SYSTEM_IDS.NODE_TYPE);
+
+    const defaultRenderer = graph.nodes.get(SYSTEM_IDS.SETTING_DEFAULT_RENDERER);
+    expect(defaultRenderer).toBeDefined();
+    expect(defaultRenderer?.type).toBe(SYSTEM_IDS.SETTINGS_SCHEMA);
+
+    const displayDensity = graph.nodes.get(SYSTEM_IDS.SETTING_DISPLAY_DENSITY);
+    expect(displayDensity).toBeDefined();
+    expect(displayDensity?.type).toBe(SYSTEM_IDS.SETTINGS_SCHEMA);
   });
 
   it('is idempotent', () => {

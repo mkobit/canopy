@@ -27,6 +27,14 @@ export const SYSTEM_IDS = {
   VIEW_BY_TYPE: asNodeId('view:system:by-type'),
   VIEW_RECENT: asNodeId('view:system:recent'),
 
+  // Settings type definitions
+  SETTINGS_SCHEMA_DEF: asNodeId('system:nodetype:settings-schema'),
+  USER_SETTING_DEF: asNodeId('system:nodetype:user-setting'),
+
+  // System settings schemas
+  SETTING_DEFAULT_RENDERER: asNodeId('system:setting:default-renderer'),
+  SETTING_DISPLAY_DENSITY: asNodeId('system:setting:display-density'),
+
   // Node Type Definitions for Block Content
   NODE_TYPE_TEXT_BLOCK: asNodeId('system:nodetype:text-block'),
   NODE_TYPE_CODE_BLOCK: asNodeId('system:nodetype:code-block'),
@@ -37,6 +45,9 @@ export const SYSTEM_IDS = {
   EDGE_DEFINES: asNodeId('edge:type:defines'),
   EDGE_REFERENCES: asNodeId('edge:type:references'),
   EDGE_PREREQUISITE: asNodeId('edge:type:prerequisite'),
+
+  SETTINGS_SCHEMA: asTypeId('system:nodetype:settings-schema'),
+  USER_SETTING: asTypeId('system:nodetype:user-setting'),
 };
 
 // Corresponding TypeIds for the Edge Types
