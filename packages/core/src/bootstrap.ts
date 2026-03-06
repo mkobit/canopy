@@ -67,6 +67,12 @@ const nodeTypeProperties: readonly PropertyDefinition[] = [
     description: 'The name of the node type.',
   },
   {
+    name: 'namespace',
+    valueKind: 'text',
+    required: true,
+    description: 'The namespace this type belongs to (system, user, imported, user-settings).',
+  },
+  {
     name: 'description',
     valueKind: 'text',
     required: false,
@@ -98,6 +104,12 @@ const edgeTypeProperties: readonly PropertyDefinition[] = [
     valueKind: 'text',
     required: true,
     description: 'The name of the edge type.',
+  },
+  {
+    name: 'namespace',
+    valueKind: 'text',
+    required: true,
+    description: 'The namespace this type belongs to (system, user, imported, user-settings).',
   },
   {
     name: 'description',
@@ -165,6 +177,7 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
               'Node Type',
               'Defines a type of node in the graph.',
               {
+                namespace: text('system'),
                 properties: text(JSON.stringify(nodeTypeProperties)),
               },
             ),
@@ -181,6 +194,7 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
               'Renderer',
               'Defines how to render nodes of a type',
               {
+                namespace: text('system'),
                 properties: text(
                   JSON.stringify([
                     {
@@ -237,6 +251,7 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
               'Edge Type',
               'Defines a type of edge in the graph.',
               {
+                namespace: text('system'),
                 properties: text(JSON.stringify(edgeTypeProperties)),
               },
             ),
@@ -253,6 +268,7 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
               'Query Definition',
               'Defines a stored query in the graph.',
               {
+                namespace: text('system'),
                 properties: text(
                   JSON.stringify([
                     {
@@ -302,6 +318,7 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
               'View Definition',
               'Defines a view of data in the graph.',
               {
+                namespace: text('system'),
                 properties: text(
                   JSON.stringify([
                     {
@@ -369,6 +386,7 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
               'Template',
               'Defines a UI template.',
               {
+                namespace: text('system'),
                 properties: text(
                   JSON.stringify([
                     {
@@ -551,6 +569,7 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
             : addNodeGraph(
                 cg,
                 createBootstrapNode(def.id, SYSTEM_IDS.NODE_TYPE, def.name, def.description, {
+                  namespace: text('system'),
                   properties: text(JSON.stringify(def.properties)),
                 }),
               ),
@@ -564,7 +583,14 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
             return ok(cg);
           }
           const props = 'properties' in def ? def.properties : undefined;
-          const extraProps = props ? { properties: text(JSON.stringify(props)) } : {};
+          const extraProps: Record<string, import('@canopy/types').PropertyValue> = props
+            ? {
+                namespace: text('system'),
+                properties: text(JSON.stringify(props)),
+              }
+            : {
+                namespace: text('system'),
+              };
           return addNodeGraph(
             cg,
             createBootstrapNode(

@@ -50,6 +50,15 @@ function extractEdgeTypeDefinition(node: Node): EdgeTypeDefinition | undefined {
   const name = node.properties.get('name');
   const description = node.properties.get('description');
 
+  const namespaceProp = node.properties.get('namespace');
+  const namespace: import('@canopy/types').Namespace =
+    namespaceProp === 'system' ||
+    namespaceProp === 'user' ||
+    namespaceProp === 'imported' ||
+    namespaceProp === 'user-settings'
+      ? (namespaceProp as import('@canopy/types').Namespace)
+      : 'user';
+
   const properties = extractProperties(node);
 
   const sourceTypesVal = node.properties.get('sourceTypes');
@@ -86,6 +95,7 @@ function extractEdgeTypeDefinition(node: Node): EdgeTypeDefinition | undefined {
   return {
     id: asTypeId(node.id),
     name: typeof name === 'string' ? name : 'Unknown',
+    namespace,
     description: typeof description === 'string' ? description : undefined,
     properties,
     sourceTypes,
@@ -101,9 +111,19 @@ function extractNodeTypeDefinition(node: Node): NodeTypeDefinition {
   const name = node.properties.get('name');
   const description = node.properties.get('description');
 
+  const namespaceProp = node.properties.get('namespace');
+  const namespace: import('@canopy/types').Namespace =
+    namespaceProp === 'system' ||
+    namespaceProp === 'user' ||
+    namespaceProp === 'imported' ||
+    namespaceProp === 'user-settings'
+      ? (namespaceProp as import('@canopy/types').Namespace)
+      : 'user';
+
   return {
     id: asTypeId(node.id),
     name: typeof name === 'string' ? name : 'Unknown',
+    namespace,
     description: typeof description === 'string' ? description : undefined,
     properties,
     validOutgoingEdges: [], // TODO

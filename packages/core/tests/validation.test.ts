@@ -260,6 +260,7 @@ describe('validation', () => {
       type: SYSTEM_IDS.NODE_TYPE,
       properties: {
         name: 'New Type',
+        namespace: 'user',
         description: 'Description',
         // 'properties' is optional
       },
@@ -276,6 +277,7 @@ describe('validation', () => {
       type: SYSTEM_IDS.NODE_TYPE,
       properties: {
         name: 123, // Should be text
+        namespace: 'user',
       },
     });
 
