@@ -5,6 +5,7 @@ import {
   asNodeId,
   asTypeId,
   asInstant,
+  asDeviceId,
   unwrap,
   type NodeCreated,
   type NodePropertiesUpdated,
@@ -63,8 +64,7 @@ describe('Time Travel API', () => {
       nodeType: asTypeId('person'),
       properties: new Map([['name', 'Alice']]),
       timestamp: t1,
-      deviceId:
-        '00000000-0000-0000-0000-000000000001' as unknown as import('@canopy/types').DeviceId,
+      deviceId: asDeviceId('00000000-0000-0000-0000-000000000001'),
     };
 
     const event2: NodeCreated = {
@@ -74,8 +74,7 @@ describe('Time Travel API', () => {
       nodeType: asTypeId('person'),
       properties: new Map([['name', 'Bob']]),
       timestamp: t2,
-      deviceId:
-        '00000000-0000-0000-0000-000000000001' as unknown as import('@canopy/types').DeviceId,
+      deviceId: asDeviceId('00000000-0000-0000-0000-000000000001'),
     };
 
     const event3: NodePropertiesUpdated = {
@@ -84,8 +83,7 @@ describe('Time Travel API', () => {
       id: nodeA,
       changes: new Map([['age', 30]]),
       timestamp: t3,
-      deviceId:
-        '00000000-0000-0000-0000-000000000001' as unknown as import('@canopy/types').DeviceId,
+      deviceId: asDeviceId('00000000-0000-0000-0000-000000000001'),
     };
 
     const event4: NodeDeleted = {
@@ -93,8 +91,7 @@ describe('Time Travel API', () => {
       eventId: createEventIdAt(t4, 1),
       id: nodeB,
       timestamp: t4,
-      deviceId:
-        '00000000-0000-0000-0000-000000000001' as unknown as import('@canopy/types').DeviceId,
+      deviceId: asDeviceId('00000000-0000-0000-0000-000000000001'),
     };
 
     await unwrap(await adapter.appendEvents(mockGraphId, [event1, event2, event3, event4]));
@@ -137,8 +134,7 @@ describe('Time Travel API', () => {
       nodeType: asTypeId('person'),
       properties: new Map([['name', 'Alice']]),
       timestamp: t1,
-      deviceId:
-        '00000000-0000-0000-0000-000000000001' as unknown as import('@canopy/types').DeviceId,
+      deviceId: asDeviceId('00000000-0000-0000-0000-000000000001'),
     };
 
     const event2: NodePropertiesUpdated = {
@@ -147,8 +143,7 @@ describe('Time Travel API', () => {
       id: nodeA,
       changes: new Map([['name', 'Alice Cooper']]),
       timestamp: t1,
-      deviceId:
-        '00000000-0000-0000-0000-000000000002' as unknown as import('@canopy/types').DeviceId,
+      deviceId: asDeviceId('00000000-0000-0000-0000-000000000002'),
     };
 
     await unwrap(await adapter.appendEvents(mockGraphId, [event1, event2]));
