@@ -1,4 +1,13 @@
-import type { Graph, Edge, EdgeId, Result, GraphResult, GraphEvent, DeviceId } from '@canopy/types';
+import type {
+  Graph,
+  Edge,
+  EdgeId,
+  Result,
+  GraphResult,
+  GraphEvent,
+  DeviceId,
+  PropertyValue,
+} from '@canopy/types';
 import { createInstant, createEventId, ok, err } from '@canopy/types';
 import { validateEdge } from '../validation';
 
@@ -183,11 +192,21 @@ export function updateEdge(
     },
   };
 
+  const changes = new Map<string, PropertyValue>();
+  // eslint-disable-next-line functional/no-loop-statements
+  for (const [key, value] of finalEdge.properties) {
+    const existing = existingEdge.properties.get(key);
+    if (existing !== value) {
+      // eslint-disable-next-line functional/immutable-data
+      changes.set(key, value);
+    }
+  }
+
   const event: GraphEvent = {
     type: 'EdgePropertiesUpdated',
     eventId: createEventId(),
     id: edgeId,
-    changes: finalEdge.properties,
+    changes,
     timestamp: createInstant(),
     deviceId: options.deviceId,
     ...(options.batchId === undefined ? {} : { batchId: options.batchId }),

@@ -14,6 +14,7 @@ import {
   isErr,
   isOk,
   asDeviceId,
+  NodePropertiesUpdated,
 } from '@canopy/types';
 
 // Test helpers
@@ -122,5 +123,85 @@ describe('ops with validation', () => {
     if (isErr(result)) {
       expect(result.error.message).toMatch(/Node validation failed/);
     }
+  });
+
+  it('updateNode emits only changed properties in the event', () => {
+    let graph = unwrap(createGraph(createGraphId(), 'Test'));
+    const nodeId = createNodeId();
+    const node = {
+      id: nodeId,
+      type: SYSTEM_IDS.NODE_TYPE,
+      properties: new Map([
+        ['name', 'Alice'],
+        ['age', 30],
+      ]),
+      metadata: {
+        created: createInstant(),
+        modified: createInstant(),
+        modifiedBy: asDeviceId('00000000-0000-0000-0000-000000000000'),
+      },
+    };
+    graph = unwrap(
+      addNode(graph, node, { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') }),
+    ).graph;
+
+    // Update only 'name', leave 'age' unchanged
+    const result = unwrap(
+      updateNode(
+        graph,
+        nodeId,
+        (n) => ({
+          ...n,
+          properties: new Map([
+            ['name', 'Bob'],
+            ['age', 30],
+          ]),
+        }),
+        { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') },
+      ),
+    );
+
+    const event = result.events[0];
+    expect(event.type).toBe('NodePropertiesUpdated');
+    // Only 'name' changed, so changes should only contain 'name'
+    const changes = (event as NodePropertiesUpdated).changes;
+    expect(changes.size).toBe(1);
+    expect(changes.get('name')).toBe('Bob');
+    expect(changes.has('age')).toBe(false);
+  });
+
+  it('updateNode emits empty changes when no properties changed', () => {
+    let graph = unwrap(createGraph(createGraphId(), 'Test'));
+    const nodeId = createNodeId();
+    const node = {
+      id: nodeId,
+      type: SYSTEM_IDS.NODE_TYPE,
+      properties: new Map([['name', 'Alice']]),
+      metadata: {
+        created: createInstant(),
+        modified: createInstant(),
+        modifiedBy: asDeviceId('00000000-0000-0000-0000-000000000000'),
+      },
+    };
+    graph = unwrap(
+      addNode(graph, node, { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') }),
+    ).graph;
+
+    // "Update" with same values
+    const result = unwrap(
+      updateNode(
+        graph,
+        nodeId,
+        (n) => ({
+          ...n,
+          properties: new Map([['name', 'Alice']]),
+        }),
+        { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') },
+      ),
+    );
+
+    const event = result.events[0];
+    const changes = (event as NodePropertiesUpdated).changes;
+    expect(changes.size).toBe(0);
   });
 });
