@@ -1,4 +1,13 @@
-import type { Graph, Node, NodeId, Result, GraphResult, GraphEvent, DeviceId } from '@canopy/types';
+import type {
+  Graph,
+  Node,
+  NodeId,
+  Result,
+  GraphResult,
+  GraphEvent,
+  DeviceId,
+  PropertyValue,
+} from '@canopy/types';
 import { createInstant, createEventId, ok, err } from '@canopy/types';
 import { validateNode } from '../validation';
 
@@ -188,11 +197,21 @@ export function updateNode(
     },
   };
 
+  const changes = new Map<string, PropertyValue>();
+  // eslint-disable-next-line functional/no-loop-statements
+  for (const [key, value] of finalNode.properties) {
+    const existing = existingNode.properties.get(key);
+    if (existing !== value) {
+      // eslint-disable-next-line functional/immutable-data
+      changes.set(key, value);
+    }
+  }
+
   const event: GraphEvent = {
     type: 'NodePropertiesUpdated',
     eventId: createEventId(),
     id: nodeId,
-    changes: finalNode.properties,
+    changes,
     timestamp: createInstant(),
     deviceId: options.deviceId,
     ...(options.batchId === undefined ? {} : { batchId: options.batchId }),
