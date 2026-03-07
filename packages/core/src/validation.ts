@@ -46,6 +46,24 @@ function extractProperties(node: Node): readonly PropertyDefinition[] {
   return [];
 }
 
+// Extract a list of TypeIds from a property value (supports both array and JSON string formats)
+function extractTypeIdList(val: PropertyValue | undefined): readonly TypeId[] {
+  if (val === undefined) {
+    return [];
+  }
+  if (Array.isArray(val)) {
+    return val.map((i) => (typeof i === 'string' ? asTypeId(i) : asTypeId('unknown')));
+  }
+  if (typeof val === 'string') {
+    const result = fromThrowable(() => JSON.parse(val) as readonly string[]);
+    if (result.ok && Array.isArray(result.value)) {
+      return result.value.map(asTypeId);
+    }
+    return [];
+  }
+  return [];
+}
+
 function extractEdgeTypeDefinition(node: Node): EdgeTypeDefinition | undefined {
   const name = node.properties.get('name');
   const description = node.properties.get('description');
@@ -61,36 +79,14 @@ function extractEdgeTypeDefinition(node: Node): EdgeTypeDefinition | undefined {
 
   const properties = extractProperties(node);
 
-  const sourceTypesVal = node.properties.get('sourceTypes');
-  const targetTypesVal = node.properties.get('targetTypes');
+  const sourceTypes = extractTypeIdList(node.properties.get('sourceTypes'));
+  const targetTypes = extractTypeIdList(node.properties.get('targetTypes'));
 
-  const sourceTypes: readonly TypeId[] = (() => {
-    if (Array.isArray(sourceTypesVal)) {
-      return sourceTypesVal.map((i) => (typeof i === 'string' ? asTypeId(i) : asTypeId('unknown')));
-    }
-    if (typeof sourceTypesVal === 'string') {
-      const result = fromThrowable(() => JSON.parse(sourceTypesVal) as readonly string[]);
-      if (result.ok) {
-        return result.value.map(asTypeId);
-      }
-      return [];
-    }
-    return [];
-  })();
+  const transitiveProp = node.properties.get('transitive');
+  const transitive = transitiveProp === true;
 
-  const targetTypes: readonly TypeId[] = (() => {
-    if (Array.isArray(targetTypesVal)) {
-      return targetTypesVal.map((i) => (typeof i === 'string' ? asTypeId(i) : asTypeId('unknown')));
-    }
-    if (typeof targetTypesVal === 'string') {
-      const result = fromThrowable(() => JSON.parse(targetTypesVal) as readonly string[]);
-      if (result.ok) {
-        return result.value.map(asTypeId);
-      }
-      return [];
-    }
-    return [];
-  })();
+  const inverseProp = node.properties.get('inverse');
+  const inverse = typeof inverseProp === 'string' ? asTypeId(inverseProp) : undefined;
 
   return {
     id: asTypeId(node.id),
@@ -100,8 +96,8 @@ function extractEdgeTypeDefinition(node: Node): EdgeTypeDefinition | undefined {
     properties,
     sourceTypes,
     targetTypes,
-    transitive: false, // TODO
-    inverse: undefined, // TODO
+    transitive,
+    inverse,
   };
 }
 
@@ -120,14 +116,17 @@ function extractNodeTypeDefinition(node: Node): NodeTypeDefinition {
       ? (namespaceProp as import('@canopy/types').Namespace)
       : 'user';
 
+  const validOutgoingEdges = extractTypeIdList(node.properties.get('validOutgoingEdges'));
+  const validIncomingEdges = extractTypeIdList(node.properties.get('validIncomingEdges'));
+
   return {
     id: asTypeId(node.id),
     name: typeof name === 'string' ? name : 'Unknown',
     namespace,
     description: typeof description === 'string' ? description : undefined,
     properties,
-    validOutgoingEdges: [], // TODO
-    validIncomingEdges: [], // TODO
+    validOutgoingEdges,
+    validIncomingEdges,
   };
 }
 
@@ -224,62 +223,107 @@ export function validateNode(graph: Graph, node: Node): ValidationResult {
   return SUCCESS;
 }
 
+// Validate edge constraints from the node type side (validOutgoingEdges / validIncomingEdges)
+function validateNodeTypeEdgeConstraints(graph: Graph, edge: Edge): readonly ValidationError[] {
+  const sourceNode = graph.nodes.get(edge.source);
+  const targetNode = graph.nodes.get(edge.target);
+
+  const sourceErrors: readonly ValidationError[] = (() => {
+    if (!sourceNode) return [];
+    const sourceTypeDef = getNodeTypeDefinition(graph, sourceNode.type);
+    if (!sourceTypeDef) return [];
+    const sourceDef = extractNodeTypeDefinition(sourceTypeDef);
+    if (sourceDef.validOutgoingEdges.length === 0) return [];
+    if (sourceDef.validOutgoingEdges.includes(edge.type)) return [];
+    return [
+      {
+        path: ['source'],
+        message: `Source node type '${sourceDef.name}' does not allow outgoing edge type '${edge.type}'`,
+        expected: sourceDef.validOutgoingEdges.join(' | '),
+        actual: edge.type,
+      },
+    ];
+  })();
+
+  const targetErrors: readonly ValidationError[] = (() => {
+    if (!targetNode) return [];
+    const targetTypeDef = getNodeTypeDefinition(graph, targetNode.type);
+    if (!targetTypeDef) return [];
+    const targetDef = extractNodeTypeDefinition(targetTypeDef);
+    if (targetDef.validIncomingEdges.length === 0) return [];
+    if (targetDef.validIncomingEdges.includes(edge.type)) return [];
+    return [
+      {
+        path: ['target'],
+        message: `Target node type '${targetDef.name}' does not allow incoming edge type '${edge.type}'`,
+        expected: targetDef.validIncomingEdges.join(' | '),
+        actual: edge.type,
+      },
+    ];
+  })();
+
+  return [...sourceErrors, ...targetErrors];
+}
+
 export function validateEdge(graph: Graph, edge: Edge): ValidationResult {
   // 1. Lookup EdgeType
   const edgeTypeId = asNodeId(edge.type);
   const rawDefNode = graph.nodes.get(edgeTypeId);
   const defNode = rawDefNode && rawDefNode.type === SYSTEM_IDS.EDGE_TYPE ? rawDefNode : undefined;
 
-  if (!defNode) {
-    return SUCCESS;
-  }
+  // 2. Validate edge-type-level constraints (source/target types, properties)
+  const edgeTypeErrors: readonly ValidationError[] = (() => {
+    if (!defNode) return [];
+    const def = extractEdgeTypeDefinition(defNode);
+    if (!def) return [];
 
-  const def = extractEdgeTypeDefinition(defNode);
-  if (!def) return SUCCESS;
+    const sourceErrors = pipe(
+      [edge.source],
+      map((id) => graph.nodes.get(id)),
+      filter((node): node is Node => !!node),
+      flatMap((node) => {
+        if (def.sourceTypes.length > 0 && !def.sourceTypes.includes(node.type)) {
+          return [
+            {
+              path: ['source'],
+              message: `Source node type '${node.type}' is not allowed for edge type '${edge.type}'`,
+              expected: def.sourceTypes.join(' | '),
+              actual: node.type,
+            },
+          ];
+        }
+        return [];
+      }),
+    );
 
-  // 2. Validate source/target types
-  const sourceErrors = pipe(
-    [edge.source],
-    map((id) => graph.nodes.get(id)),
-    filter((node): node is Node => !!node),
-    flatMap((node) => {
-      if (def.sourceTypes.length > 0 && !def.sourceTypes.includes(node.type)) {
-        return [
-          {
-            path: ['source'],
-            message: `Source node type '${node.type}' is not allowed for edge type '${edge.type}'`,
-            expected: def.sourceTypes.join(' | '),
-            actual: node.type,
-          },
-        ];
-      }
-      return [];
-    }),
-  );
+    const targetErrors = pipe(
+      [edge.target],
+      map((id) => graph.nodes.get(id)),
+      filter((node): node is Node => !!node),
+      flatMap((node) => {
+        if (def.targetTypes.length > 0 && !def.targetTypes.includes(node.type)) {
+          return [
+            {
+              path: ['target'],
+              message: `Target node type '${node.type}' is not allowed for edge type '${edge.type}'`,
+              expected: def.targetTypes.join(' | '),
+              actual: node.type,
+            },
+          ];
+        }
+        return [];
+      }),
+    );
 
-  const targetErrors = pipe(
-    [edge.target],
-    map((id) => graph.nodes.get(id)),
-    filter((node): node is Node => !!node),
-    flatMap((node) => {
-      if (def.targetTypes.length > 0 && !def.targetTypes.includes(node.type)) {
-        return [
-          {
-            path: ['target'],
-            message: `Target node type '${node.type}' is not allowed for edge type '${edge.type}'`,
-            expected: def.targetTypes.join(' | '),
-            actual: node.type,
-          },
-        ];
-      }
-      return [];
-    }),
-  );
+    const propertyErrors = validateProperties(edge.properties, def.properties);
 
-  // 3. Validate properties
-  const propertyErrors = validateProperties(edge.properties, def.properties);
+    return [...sourceErrors, ...targetErrors, ...propertyErrors];
+  })();
 
-  const errors = [...sourceErrors, ...targetErrors, ...propertyErrors];
+  // 3. Validate node-type-level edge constraints (validOutgoingEdges / validIncomingEdges)
+  const nodeTypeErrors = validateNodeTypeEdgeConstraints(graph, edge);
+
+  const errors = [...edgeTypeErrors, ...nodeTypeErrors];
 
   if (errors.length > 0) {
     return failure(errors);

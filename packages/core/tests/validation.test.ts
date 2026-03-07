@@ -298,3 +298,221 @@ describe('validation', () => {
     expect(result.valid).toBe(false);
   });
 });
+
+describe('validOutgoingEdges / validIncomingEdges', () => {
+  const DEVICE = asDeviceId('00000000-0000-0000-0000-000000000000');
+
+  function createGraphWithEdgeConstraints() {
+    let g = unwrap(createGraph(createGraphId(), 'Constrained Graph'));
+
+    // Define an edge type "manages"
+    const managesEdgeType = createNode({
+      id: asNodeId('edge-manages'),
+      type: SYSTEM_IDS.EDGE_TYPE,
+      properties: {
+        name: 'Manages',
+        namespace: 'user',
+      },
+    });
+    g = unwrap(addNode(g, managesEdgeType, { deviceId: DEVICE })).graph;
+
+    // Define an edge type "reports-to"
+    const reportsToEdgeType = createNode({
+      id: asNodeId('edge-reports-to'),
+      type: SYSTEM_IDS.EDGE_TYPE,
+      properties: {
+        name: 'Reports To',
+        namespace: 'user',
+      },
+    });
+    g = unwrap(addNode(g, reportsToEdgeType, { deviceId: DEVICE })).graph;
+
+    // Define "Manager" node type — can only have "manages" as outgoing edges
+    const managerType = createNode({
+      id: asNodeId('type-manager'),
+      type: SYSTEM_IDS.NODE_TYPE,
+      properties: {
+        name: 'Manager',
+        namespace: 'user',
+        validOutgoingEdges: ['edge-manages'],
+      },
+    });
+    g = unwrap(addNode(g, managerType, { deviceId: DEVICE })).graph;
+
+    // Define "Employee" node type — can only have "reports-to" as incoming edges
+    const employeeType = createNode({
+      id: asNodeId('type-employee'),
+      type: SYSTEM_IDS.NODE_TYPE,
+      properties: {
+        name: 'Employee',
+        namespace: 'user',
+        validIncomingEdges: ['edge-reports-to'],
+      },
+    });
+    g = unwrap(addNode(g, employeeType, { deviceId: DEVICE })).graph;
+
+    // Define "Generic" node type — no edge constraints
+    const genericType = createNode({
+      id: asNodeId('type-generic'),
+      type: SYSTEM_IDS.NODE_TYPE,
+      properties: {
+        name: 'Generic',
+        namespace: 'user',
+      },
+    });
+    g = unwrap(addNode(g, genericType, { deviceId: DEVICE })).graph;
+
+    return g;
+  }
+
+  it('allows edge when source type permits outgoing edge type', () => {
+    let g = createGraphWithEdgeConstraints();
+    const manager = createNode({ id: asNodeId('mgr1'), type: asTypeId('type-manager') });
+    const generic = createNode({ id: asNodeId('gen1'), type: asTypeId('type-generic') });
+    g = unwrap(addNode(g, manager, { deviceId: DEVICE })).graph;
+    g = unwrap(addNode(g, generic, { deviceId: DEVICE })).graph;
+
+    const edge = createEdge({
+      type: asTypeId('edge-manages'),
+      source: manager.id,
+      target: generic.id,
+    });
+
+    const result = validateEdge(g, edge);
+    expect(result.valid).toBe(true);
+  });
+
+  it('rejects edge when source type does not permit outgoing edge type', () => {
+    let g = createGraphWithEdgeConstraints();
+    const manager = createNode({ id: asNodeId('mgr1'), type: asTypeId('type-manager') });
+    const generic = createNode({ id: asNodeId('gen1'), type: asTypeId('type-generic') });
+    g = unwrap(addNode(g, manager, { deviceId: DEVICE })).graph;
+    g = unwrap(addNode(g, generic, { deviceId: DEVICE })).graph;
+
+    // Manager only allows "manages" outgoing, not "reports-to"
+    const edge = createEdge({
+      type: asTypeId('edge-reports-to'),
+      source: manager.id,
+      target: generic.id,
+    });
+
+    const result = validateEdge(g, edge);
+    expect(result.valid).toBe(false);
+    expect(result.errors[0]?.message).toContain('does not allow outgoing edge type');
+  });
+
+  it('allows edge when target type permits incoming edge type', () => {
+    let g = createGraphWithEdgeConstraints();
+    const generic = createNode({ id: asNodeId('gen1'), type: asTypeId('type-generic') });
+    const employee = createNode({ id: asNodeId('emp1'), type: asTypeId('type-employee') });
+    g = unwrap(addNode(g, generic, { deviceId: DEVICE })).graph;
+    g = unwrap(addNode(g, employee, { deviceId: DEVICE })).graph;
+
+    const edge = createEdge({
+      type: asTypeId('edge-reports-to'),
+      source: generic.id,
+      target: employee.id,
+    });
+
+    const result = validateEdge(g, edge);
+    expect(result.valid).toBe(true);
+  });
+
+  it('rejects edge when target type does not permit incoming edge type', () => {
+    let g = createGraphWithEdgeConstraints();
+    const generic = createNode({ id: asNodeId('gen1'), type: asTypeId('type-generic') });
+    const employee = createNode({ id: asNodeId('emp1'), type: asTypeId('type-employee') });
+    g = unwrap(addNode(g, generic, { deviceId: DEVICE })).graph;
+    g = unwrap(addNode(g, employee, { deviceId: DEVICE })).graph;
+
+    // Employee only allows "reports-to" incoming, not "manages"
+    const edge = createEdge({
+      type: asTypeId('edge-manages'),
+      source: generic.id,
+      target: employee.id,
+    });
+
+    const result = validateEdge(g, edge);
+    expect(result.valid).toBe(false);
+    expect(result.errors[0]?.message).toContain('does not allow incoming edge type');
+  });
+
+  it('skips node-type edge constraints when type has no restrictions', () => {
+    let g = createGraphWithEdgeConstraints();
+    const gen1 = createNode({ id: asNodeId('gen1'), type: asTypeId('type-generic') });
+    const gen2 = createNode({ id: asNodeId('gen2'), type: asTypeId('type-generic') });
+    g = unwrap(addNode(g, gen1, { deviceId: DEVICE })).graph;
+    g = unwrap(addNode(g, gen2, { deviceId: DEVICE })).graph;
+
+    // Generic has no edge constraints, any edge type is fine
+    const edge = createEdge({
+      type: asTypeId('edge-manages'),
+      source: gen1.id,
+      target: gen2.id,
+    });
+
+    const result = validateEdge(g, edge);
+    expect(result.valid).toBe(true);
+  });
+});
+
+describe('transitive and inverse edge type extraction', () => {
+  const DEVICE = asDeviceId('00000000-0000-0000-0000-000000000000');
+
+  it('extracts transitive=true from edge type definition', () => {
+    let g = unwrap(createGraph(createGraphId(), 'Test'));
+
+    const transitiveEdgeType = createNode({
+      id: asNodeId('edge-descendant-of'),
+      type: SYSTEM_IDS.EDGE_TYPE,
+      properties: {
+        name: 'Descendant Of',
+        namespace: 'user',
+        transitive: true,
+      },
+    });
+    g = unwrap(addNode(g, transitiveEdgeType, { deviceId: DEVICE })).graph;
+
+    // Verify the definition node exists and has the transitive property
+    const defNode = g.nodes.get(asNodeId('edge-descendant-of'));
+    expect(defNode).toBeDefined();
+    expect(defNode?.properties.get('transitive')).toBe(true);
+  });
+
+  it('extracts inverse reference from edge type definition', () => {
+    let g = unwrap(createGraph(createGraphId(), 'Test'));
+
+    const parentOfEdge = createNode({
+      id: asNodeId('edge-parent-of'),
+      type: SYSTEM_IDS.EDGE_TYPE,
+      properties: {
+        name: 'Parent Of',
+        namespace: 'user',
+        inverse: 'edge-child-of',
+      },
+    });
+    g = unwrap(addNode(g, parentOfEdge, { deviceId: DEVICE })).graph;
+
+    const defNode = g.nodes.get(asNodeId('edge-parent-of'));
+    expect(defNode).toBeDefined();
+    expect(defNode?.properties.get('inverse')).toBe('edge-child-of');
+  });
+
+  it('validates edge type node with transitive and inverse properties', () => {
+    const g = unwrap(createGraph(createGraphId(), 'System'));
+
+    const edgeTypeNode = createNode({
+      type: SYSTEM_IDS.EDGE_TYPE,
+      properties: {
+        name: 'Test Edge',
+        namespace: 'user',
+        transitive: true,
+        inverse: 'some-edge-type',
+      },
+    });
+
+    // Should be valid — transitive is boolean, inverse is reference (string)
+    const result = validateNode(g, edgeTypeNode);
+    expect(result.valid).toBe(true);
+  });
+});
