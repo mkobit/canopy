@@ -136,6 +136,18 @@ const edgeTypeProperties: readonly PropertyDefinition[] = [
     required: false,
     description: 'JSON definition of properties for this edge type.',
   },
+  {
+    name: 'transitive',
+    valueKind: 'boolean',
+    required: false,
+    description: 'Whether this edge type supports transitive closure queries.',
+  },
+  {
+    name: 'inverse',
+    valueKind: 'reference',
+    required: false,
+    description: 'Reference to the inverse EdgeType (e.g., parent_of is inverse of child_of).',
+  },
 ];
 
 // Helper to reduce results safely using recursion to avoid loops
