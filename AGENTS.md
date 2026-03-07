@@ -47,12 +47,6 @@ We use `mise` to align local tool versions (Node.js) with CI.
 - Activate shell: `eval "$(mise activate bash)"`
 - Trust config: `mise trust`
 
-## Task tracking (Beads)
-
-We use Beads (`bd`) for distributed task tracking.
-Issues are stored in `.beads/` and versioned with git.
-Use `bun run bd` to execute commands.
-
 ## Programming style requirements
 
 All code must follow a functional programming style, avoiding mutations and side effects.
@@ -71,7 +65,6 @@ Documentation in `AGENTS.md` files must follow the one-sentence-per-line rule.
 4. **PUSH TO REMOTE** (MANDATORY):
    ```bash
    git pull --rebase
-   bd sync
    git push
    git status  # MUST show "up to date with origin"
    ```
