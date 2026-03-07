@@ -17,15 +17,12 @@
     "lint": "bun run check:versions && eslint .",
     "format": "prettier --write .",
     "typecheck": "bun --filter '*' typecheck",
-    "prepare": "husky",
-    "bd": "bd",
-    "postinstall": "bd hooks install || true"
+    "prepare": "husky"
   },
   "overrides": {
     "@typescript-eslint/utils": "8.54.0"
   },
   "devDependencies": {
-    "@beads/bd": "^0.57.0",
     "@eslint/js": "10",
     "@stylistic/eslint-plugin": "^5.7.0",
     "@types/node": "^25.0.7",
