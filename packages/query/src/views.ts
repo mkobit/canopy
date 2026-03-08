@@ -1,4 +1,5 @@
 import type { Graph, Node, NodeId, PropertyValue, ScalarValue, Result } from '@canopy/types';
+import { executeQuery } from './engine';
 import {
   createNodeId,
   createInstant,
@@ -165,6 +166,33 @@ export function getViewDefinition(graph: Graph, nodeId: NodeId): Result<ViewDefi
 
 export function listViewDefinitions(graph: Graph): readonly Node[] {
   return [...graph.nodes.values()].filter((node) => node.type === SYSTEM_IDS.VIEW_DEFINITION);
+}
+
+const SYSTEM_ID_PREFIXES = [
+  'node:type:',
+  'edge:type:',
+  'meta:',
+  'query:system:',
+  'view:system:',
+  'system:',
+] as const;
+
+export function isSystemNode(node: Node): boolean {
+  return SYSTEM_ID_PREFIXES.some((prefix) => node.id.startsWith(prefix));
+}
+
+export function executeView(
+  graph: Graph,
+  viewNodeId: NodeId,
+): Result<Readonly<{ definition: ViewDefinition; nodes: readonly Node[] }>, Error> {
+  const resolved = resolveView(graph, viewNodeId);
+  if (!resolved.ok) return err(resolved.error);
+
+  const queryResult = executeQuery(graph, resolved.value.query);
+  if (!queryResult.ok) return err(queryResult.error);
+
+  const nodes = queryResult.value.nodes.filter((node) => !isSystemNode(node));
+  return ok({ definition: resolved.value.definition, nodes });
 }
 
 export function resolveView(graph: Graph, viewNodeId: NodeId): Result<ResolvedView, Error> {
