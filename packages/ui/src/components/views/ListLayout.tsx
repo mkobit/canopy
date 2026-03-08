@@ -32,7 +32,7 @@ function groupNodes(nodes: readonly Node[], groupBy: string): readonly [string, 
     new Map(),
   );
 
-  return [...groups.entries()].sort(([a], [b]) => a.localeCompare(b));
+  return [...groups.entries()].toSorted(([a], [b]) => a.localeCompare(b));
 }
 
 const NodeListItem = ({
