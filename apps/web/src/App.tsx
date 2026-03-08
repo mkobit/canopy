@@ -7,6 +7,7 @@ import { NodePage } from './pages/NodePage';
 import { SearchPage } from './pages/SearchPage';
 import { StorageProvider } from './context/StorageContext';
 import { GraphProvider } from './context/GraphContext';
+import { ViewPage } from './pages/ViewPage';
 
 const App = () => {
   return (
@@ -18,6 +19,7 @@ const App = () => {
               <Route index element={<HomePage />} />
               <Route path="graph/:graphId" element={<GraphPage />}>
                 <Route path="node/:nodeId" element={<NodePage />} />
+                <Route path="view/:viewId" element={<ViewPage />} />
                 {/* Default graph view: could be a dashboard or redirect to search/last node */}
                 <Route index element={<SearchPage />} />
               </Route>

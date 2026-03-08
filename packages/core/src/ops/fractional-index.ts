@@ -76,6 +76,7 @@ export function generateKeyBetween(a: string | null, b: string | null): string {
   }
 
   // Both exist.
+  // eslint-disable-next-line no-constant-condition
   while (true) {
     const charA = a[index]; // undefined if exhausted
     const charB = b[index]; // undefined if exhausted

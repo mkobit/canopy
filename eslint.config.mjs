@@ -235,6 +235,7 @@ export default tseslint.config(
       'unicorn/no-array-callback-reference': 'off', // Conflicts with functional/prefer-tacit
       'unicorn/import-style': 'off',
       'unicorn/no-useless-undefined': 'off', // Conflicts with functional/no-return-void
+      'unicorn/prefer-math-min-max': 'off', // Project uses Instant (ISO strings) for timestamps; Math.max() does not work with strings
     },
   },
 

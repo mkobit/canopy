@@ -204,10 +204,19 @@ function traverse(
   );
 }
 
+function getItemFieldValue(item: GraphItem, property: string): unknown {
+  if (property === 'type') return item.type;
+  if (property.startsWith('metadata.')) {
+    const metaKey = property.slice('metadata.'.length) as keyof typeof item.metadata;
+    return item.metadata[metaKey];
+  }
+  return unwrapValue(item.properties.get(property));
+}
+
 function applySort(items: readonly GraphItem[], sort: Sort): readonly GraphItem[] {
   return items.toSorted((a, b) => {
-    const valA = unwrapValue(a.properties.get(sort.property));
-    const valB = unwrapValue(b.properties.get(sort.property));
+    const valA = getItemFieldValue(a, sort.property);
+    const valB = getItemFieldValue(b, sort.property);
 
     if (valA === valB) return 0;
     if (valA === undefined) return 1; // undefined last

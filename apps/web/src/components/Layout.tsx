@@ -1,17 +1,26 @@
 import React from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { Home, Search, PlusCircle, Settings } from 'lucide-react';
+import { Home, Search, PlusCircle, Settings, Table2, List, Clock } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useGraph } from '../context/GraphContext';
+import { SYSTEM_IDS } from '@canopy/core';
+
+const SYSTEM_VIEWS = [
+  { id: SYSTEM_IDS.VIEW_ALL_NODES, icon: Table2, fallbackName: 'All Nodes' },
+  { id: SYSTEM_IDS.VIEW_BY_TYPE, icon: List, fallbackName: 'By Type' },
+  { id: SYSTEM_IDS.VIEW_RECENT, icon: Clock, fallbackName: 'Recent' },
+] as const;
 
 const Sidebar = ({ onQuickCapture }: Readonly<{ onQuickCapture: () => unknown }>) => {
+  const { graph } = useGraph();
+
   return (
     <div className="w-64 h-screen bg-gray-50 border-r border-gray-200 flex flex-col">
       <div className="p-4 border-b border-gray-200">
         <h1 className="text-xl font-bold text-gray-800">Canopy</h1>
       </div>
 
-      <nav className="flex-1 p-4 space-y-2">
+      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
         <NavLink
           to="/"
           className={({ isActive }) =>
@@ -46,6 +55,36 @@ const Sidebar = ({ onQuickCapture }: Readonly<{ onQuickCapture: () => unknown }>
           <PlusCircle size={20} />
           <span>Quick Capture</span>
         </button>
+
+        {graph && (
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-2">
+              Views
+            </h3>
+            {SYSTEM_VIEWS.map(({ id, icon: Icon, fallbackName }) => {
+              const viewNode = graph.nodes.get(id);
+              const name =
+                typeof viewNode?.properties.get('name') === 'string'
+                  ? (viewNode.properties.get('name') as string)
+                  : fallbackName;
+              return (
+                <NavLink
+                  key={id}
+                  to={`/graph/${graph.id}/view/${id}`}
+                  className={({ isActive }) =>
+                    clsx(
+                      'flex items-center gap-2 p-2 rounded-md hover:bg-gray-100 text-gray-700',
+                      isActive && 'bg-gray-200 font-medium',
+                    )
+                  }
+                >
+                  <Icon size={20} />
+                  <span>{name}</span>
+                </NavLink>
+              );
+            })}
+          </div>
+        )}
       </nav>
 
       <div className="p-4 border-t border-gray-200">
