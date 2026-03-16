@@ -37,6 +37,7 @@ fi
 
 # Activate mise
 eval "$(mise activate bash)"
+eval "$(mise env bash)"
 # Check if mise activation is already in .bashrc to avoid duplicates
 if ! grep -q "mise activate bash" ~/.bashrc; then
     echo 'eval "$(mise activate bash)"' >> ~/.bashrc
