@@ -42,6 +42,6 @@ fi
 
 # Install dependencies
 echo "Installing dependencies..."
-bun install
+bun install --frozen-lockfile
 
 echo "Environment ready (dependencies installed)"
