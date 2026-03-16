@@ -16,6 +16,6 @@
   },
   "devDependencies": {
     "typescript": "5.9.3",
-    "yjs": "^13.6.29"
+    "yjs": "^13.6.30"
   }
 }

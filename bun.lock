@@ -56,7 +56,7 @@
         "remeda": "^2.33.1",
         "tailwind-merge": "^3.4.0",
         "temporal-polyfill": "^0.3.0",
-        "yjs": "^13.6.29",
+        "yjs": "^13.6.30",
         "zod": "^4.3.5",
       },
       "devDependencies": {
@@ -113,7 +113,7 @@
       },
       "devDependencies": {
         "typescript": "5.9.3",
-        "yjs": "^13.6.29",
+        "yjs": "^13.6.30",
       },
     },
     "packages/schema": {
@@ -152,7 +152,7 @@
         "remeda": "^2.33.1",
         "uuid": "^13.0.0",
         "y-protocols": "^1.0.7",
-        "yjs": "^13.6.29",
+        "yjs": "^13.6.30",
         "zod": "^4.3.5",
       },
       "devDependencies": {
@@ -1357,7 +1357,7 @@
 
     "yauzl": ["yauzl@2.10.0", "", { "dependencies": { "buffer-crc32": "~0.2.3", "fd-slicer": "~1.1.0" } }, "sha512-p4a9I6X6nu6IhoGmBqAcbJy1mlC4j27vEPZX9F4L4/vZT3Lyq1VkFHw/V/PUcB9Buo+DG3iHkT0x3Qya58zc3g=="],
 
-    "yjs": ["yjs@13.6.29", "", { "dependencies": { "lib0": "^0.2.99" } }, "sha512-kHqDPdltoXH+X4w1lVmMtddE3Oeqq48nM40FD5ojTd8xYhQpzIDcfE2keMSU5bAgRPJBe225WTUdyUgj1DtbiQ=="],
+    "yjs": ["yjs@13.6.30", "", { "dependencies": { "lib0": "^0.2.99" } }, "sha512-vv/9h42eCMC81ZHDFswuu/MKzkl/vyq1BhaNGfHyOonwlG4CJbQF4oiBBJPvfdeCt/PlVDWh7Nov9D34YY09uQ=="],
 
     "yocto-queue": ["yocto-queue@0.1.0", "", {}, "sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q=="],
 
