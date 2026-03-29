@@ -15,7 +15,7 @@
     "remeda": "^2.33.1"
   },
   "devDependencies": {
-    "typescript": "5.9.3",
+    "typescript": "6.0.2",
     "yjs": "^13.6.30"
   }
 }
