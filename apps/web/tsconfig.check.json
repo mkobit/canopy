@@ -3,7 +3,6 @@
   "compilerOptions": {
     "composite": false,
     "noEmit": true,
-    "baseUrl": ".",
     "paths": {
       "@canopy/schema": ["../../packages/schema/src/index.ts"],
       "@canopy/core": ["../../packages/core/src/index.ts"],
