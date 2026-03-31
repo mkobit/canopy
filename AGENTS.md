@@ -72,5 +72,10 @@ Documentation in `AGENTS.md` files must follow the one-sentence-per-line rule.
 6. **Hand off** with context.
 
 **CRITICAL RULES:**
+
 - Work is NOT complete until `git push` succeeds.
 - If push fails, resolve and retry until it succeeds.
+
+## Handling Install Failures
+
+If `bun install` fails due to a package being too new (we enforce a 14-day minimum release age), do not retry the installation of the same version. Instead, find and install an older, established version of the package that meets the release age requirement.
