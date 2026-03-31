@@ -78,5 +78,5 @@ Documentation in `AGENTS.md` files must follow the one-sentence-per-line rule.
 
 ## Handling install failures
 
-If `bun install` fails due to a package being too new (we enforce a 14-day minimum release age), do not retry the installation of the same version.
+If `bun install` fails due to a package being too new (we enforce a minimum release age for newly published packages), do not retry the installation of the same version.
 Instead, find and install an older, established version of the package that meets the release age requirement.
