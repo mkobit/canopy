@@ -3,13 +3,17 @@ updates:
   - package-ecosystem: 'bun'
     directory: '/'
     schedule:
-      interval: 'weekly'
+      interval: 'cron'
+      cronjob: '0 8 1,15 * *'
     assignees:
       - 'mkobit'
+    cooldown:
+      default-days: 14
 
   - package-ecosystem: 'github-actions'
     directory: '/'
     schedule:
-      interval: 'weekly'
+      interval: 'cron'
+      cronjob: '0 8 1,15 * *'
     assignees:
       - 'mkobit'
