@@ -17,3 +17,5 @@ updates:
       cronjob: '0 8 1,15 * *'
     assignees:
       - 'mkobit'
+    cooldown:
+      default-days: 14
