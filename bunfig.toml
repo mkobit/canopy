@@ -1,3 +1,4 @@
 [install]
 # minimumReleaseAge is in seconds
 minimumReleaseAge = 1209600
+ignoreScripts = true
