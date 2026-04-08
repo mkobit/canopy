@@ -43,6 +43,7 @@ Canopy has `ExternalReferenceValue` as a property value type and a system `Exter
 However, the research memo proposes that external URIs should be first-class graph nodes with full edge participation, not just property values pointing outward.
 
 Current state:
+
 - `ExternalReferenceValue` = `{graph: GraphId, target: NodeId}` — cross-graph reference, not general URI
 - `NODE_TYPE_EXTERNAL_REFERENCE` exists but is underspecified in current design docs
 
@@ -59,13 +60,13 @@ Consider whether virtual nodes should be lazily created (on first reference) or 
 Canopy uses migration events tagged with `migrationId` to evolve the schema.
 The memo proposes complementary patterns:
 
-- *Schema-on-read with upcasters*: transform old event shapes into new ones during projection, rather than rewriting events.
+- _Schema-on-read with upcasters_: transform old event shapes into new ones during projection, rather than rewriting events.
   Canopy's current design replays events through `applyEvent`, which could serve as the upcaster layer.
   This would mean `applyEvent` handles both current and historical event shapes.
-- *Graceful degradation*: unknown node types rendered as generic nodes.
+- _Graceful degradation_: unknown node types rendered as generic nodes.
   Canopy's validation currently rejects unknown types.
   For multi-device scenarios with staggered updates, graceful degradation would prevent data loss.
-- *Additive schema*: system definitions should only add, never remove or rename.
+- _Additive schema_: system definitions should only add, never remove or rename.
   Canopy's migration system doesn't currently enforce this constraint.
 
 Recommendation:
@@ -77,6 +78,7 @@ Document an additive-only policy for system namespace definitions.
 Canopy's sync design mentions file-based transport adapters but doesn't detail the per-device branching and folding mechanism the memo describes.
 
 The memo proposes:
+
 - Each device writes events to its own file/directory (avoiding write conflicts on "dumb" storage like Google Drive)
 - The app "folds" per-device event streams into a unified causal timeline on read
 
@@ -95,6 +97,7 @@ The memo proposes an editor that acts as a "graph ingestion engine," extracting 
 This is the most significant new concept relative to Canopy's current design.
 
 Key capabilities proposed:
+
 - Entity extraction from prose ("Lunch at McDonald's with Kelsey" → nodes for McDonald's, Kelsey; edges for `located_at`, `attended_by`)
 - Triple-awareness: suggesting relationship types based on context
 - Schema-aware UI: surfacing property slots based on node type
@@ -102,9 +105,10 @@ Key capabilities proposed:
 Assessment:
 This is a large scope addition that touches the editor, type system, and UX.
 It could be decomposed into:
-1. *Entity suggestion* — as-you-type lookup against existing nodes (simpler, high value)
-2. *Relationship suggestion* — context-aware edge type proposals (medium complexity)
-3. *NLP extraction* — full natural language entity/relationship extraction (high complexity, likely requires LLM integration)
+
+1. _Entity suggestion_ — as-you-type lookup against existing nodes (simpler, high value)
+2. _Relationship suggestion_ — context-aware edge type proposals (medium complexity)
+3. _NLP extraction_ — full natural language entity/relationship extraction (high complexity, likely requires LLM integration)
 
 Recommendation:
 Phase 1 could be designed as part of the editor system without requiring NLP.
@@ -117,8 +121,9 @@ The memo proposes heuristic entity resolution to prevent duplicate or "ghost" no
 Assessment:
 This is valuable for any graph system that grows organically.
 It could operate at two levels:
-1. *Preventive* — suggest existing nodes during creation (editor-level)
-2. *Corrective* — detect and merge duplicate nodes after the fact (batch operation)
+
+1. _Preventive_ — suggest existing nodes during creation (editor-level)
+2. _Corrective_ — detect and merge duplicate nodes after the fact (batch operation)
 
 Recommendation:
 Design entity resolution as a query pattern (find similar nodes by name/type/properties).

@@ -1,0 +1,27 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "moduleResolution": "bundler",
+    "target": "ESNext",
+    "module": "ESNext",
+    "lib": ["ESNext"],
+    "skipLibCheck": true,
+    "noEmit": true,
+    "types": ["bun-types"]
+  },
+  "include": ["src/**/*"],
+  "references": [
+    {
+      "path": "../../packages/core/tsconfig.build.json"
+    },
+    {
+      "path": "../../packages/schema/tsconfig.build.json"
+    },
+    {
+      "path": "../../packages/storage/tsconfig.build.json"
+    },
+    {
+      "path": "../../packages/types/tsconfig.build.json"
+    }
+  ]
+}
