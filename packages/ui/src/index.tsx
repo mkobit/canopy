@@ -23,3 +23,14 @@ export { CardsLayout, type CardsLayoutProps } from './components/views/CardsLayo
 
 // Utils
 export { cn } from './utils/cn';
+
+// Explorer
+export { SideNavBar, type SideNavBarProps } from './components/layout/SideNavBar';
+export { TopAppBar, type TopAppBarProps } from './components/layout/TopAppBar';
+export { InspectorPanel, type InspectorPanelProps } from './components/explorer/InspectorPanel';
+export {
+  GraphExplorerCanvas,
+  type GraphExplorerCanvasProps,
+} from './components/explorer/GraphExplorerCanvas';
+
+export type { InspectorNodeData } from './components/explorer/InspectorPanel';
