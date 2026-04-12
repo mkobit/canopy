@@ -1,13 +1,17 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, Outlet, useNavigate } from 'react-router-dom';
 import { useGraph } from '../context/GraphContext';
 import { asGraphId } from '@canopy/types';
 import { toHandler } from '../utils/handlers';
+import { TopAppBar, GraphExplorerCanvas, InspectorPanel, type InspectorNodeData } from '@canopy/ui';
 
 export const GraphPage = () => {
   const { graphId } = useParams<Readonly<{ graphId: string }>>();
   const { loadGraph, graph, isLoading, error } = useGraph();
   const navigate = useNavigate();
+
+  const [selectedNode, setSelectedNode] = useState<InspectorNodeData | undefined>();
+  const [isInspectorOpen, setIsInspectorOpen] = useState(false);
 
   useEffect(() => {
     if (graphId) {
@@ -16,18 +20,39 @@ export const GraphPage = () => {
     return undefined;
   }, [graphId]);
 
+  const handleRunQuery = (query: string) => {
+    // Dummy selection to show the inspector works
+    setSelectedNode({
+      id: 'dummy-node-1',
+      name: 'Query Result Node',
+      type: 'Note',
+      properties: { query, matched: true },
+    });
+    setIsInspectorOpen(true);
+    return undefined;
+  };
+
+  const closeInspector = () => {
+    setIsInspectorOpen(false);
+    return undefined;
+  };
+
   if (isLoading) {
-    return <div className="flex items-center justify-center h-full">Loading graph...</div>;
+    return (
+      <div className="flex items-center justify-center h-full text-on-surface">
+        Loading graph...
+      </div>
+    );
   }
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center h-full gap-4">
-        <div className="text-red-600 font-semibold">Error loading graph</div>
-        <p className="text-gray-600">{error.message}</p>
+      <div className="flex flex-col items-center justify-center h-full gap-4 text-on-surface">
+        <div className="text-error font-semibold">Error loading graph</div>
+        <p className="text-on-surface-variant">{error.message}</p>
         <button
           onClick={toHandler(() => navigate('/'))}
-          className="px-4 py-2 bg-gray-100 rounded hover:bg-gray-200"
+          className="px-4 py-2 bg-surface-container rounded hover:bg-surface-container-high transition-colors"
         >
           Back to Home
         </button>
@@ -40,20 +65,19 @@ export const GraphPage = () => {
   }
 
   return (
-    <div className="h-full flex flex-col">
-      {/* Graph Header / Toolbar could go here */}
-      <div className="flex-1 overflow-auto p-4 relative">
-        {/* If we are at the root of the graph, maybe show a dashboard or node list?
-              For now, we render the Outlet which will likely handle specific node views.
-              If no Outlet matches, we should probably redirect to a default node or show a list.
-           */}
-        <Outlet />
+    <div className="h-full flex flex-col w-full">
+      <TopAppBar onRunQuery={handleRunQuery} />
 
-        {/* If we are exactly at /graph/:id, show the graph overview */}
-        <div className="absolute inset-0 -z-10">
-          {/* Background graph visualization could go here */}
+      <GraphExplorerCanvas>
+        {/* Render child routes if any, otherwise default canvas */}
+        <div className="absolute inset-0 z-10 p-4 pointer-events-none">
+          <Outlet context={{ setSelectedNode, setIsInspectorOpen }} />
         </div>
-      </div>
+      </GraphExplorerCanvas>
+
+      {isInspectorOpen && selectedNode && (
+        <InspectorPanel selectedNode={selectedNode} onClose={closeInspector} />
+      )}
     </div>
   );
 };

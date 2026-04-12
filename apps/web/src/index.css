@@ -1,3 +1,59 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    --color-on-primary-fixed: #004075;
+    --color-surface-container-low: #0e141c;
+    --color-tertiary: #b088ff;
+    --color-on-surface: #d9e6fd;
+    --color-on-tertiary: #2b0064;
+    --color-on-tertiary-fixed-variant: #1d0049;
+    --color-on-secondary-container: #bac0c8;
+    --color-inverse-surface: #f8f9ff;
+    --color-error: #ee7d77;
+    --color-primary-dim: #88bcff;
+    --color-primary: #a2c9ff;
+    --color-primary-container: #004882;
+    --color-secondary-dim: #989ea7;
+    --color-on-tertiary-fixed: #000000;
+    --color-on-background: #d9e6fd;
+    --color-surface: #0a0e14;
+    --color-surface-variant: #1a2637;
+    --color-on-primary-container: #b4d2ff;
+    --color-surface-container-highest: #1a2637;
+    --color-surface-dim: #0a0e14;
+    --color-on-primary-fixed-variant: #005da5;
+    --color-secondary-fixed: #dde3ec;
+    --color-tertiary-dim: #b088ff;
+    --color-primary-fixed: #d3e4ff;
+    --color-on-secondary-fixed-variant: #565c64;
+    --color-on-primary: #004176;
+    --color-on-error-container: #ff9993;
+    --color-inverse-primary: #0061ab;
+    --color-surface-bright: #1e2d41;
+    --color-surface-tint: #a2c9ff;
+    --color-tertiary-fixed: #a06ffe;
+    --color-error-container: #7f2927;
+    --color-on-secondary: #1b2127;
+    --color-inverse-on-surface: #51555c;
+    --color-outline-variant: #3c495b;
+    --color-surface-container-lowest: #000000;
+    --color-on-surface-variant: #9facc1;
+    --color-tertiary-fixed-dim: #9361ef;
+    --color-secondary-fixed-dim: #cfd5de;
+    --color-outline: #6a768a;
+    --color-on-error: #490106;
+    --color-on-tertiary-container: #06001a;
+    --color-error-dim: #bb5551;
+    --color-background: #0a0e14;
+    --color-secondary-container: #363c43;
+    --color-primary-fixed-dim: #bbd6ff;
+    --color-tertiary-container: #a06ffe;
+    --color-surface-container: #121a25;
+    --color-surface-container-high: #16202e;
+    --color-secondary: #989ea7;
+    --color-on-secondary-fixed: #3a4047;
+  }
+}
