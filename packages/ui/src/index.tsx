@@ -34,3 +34,16 @@ export {
 } from './components/explorer/GraphExplorerCanvas';
 
 export type { InspectorNodeData } from './components/explorer/InspectorPanel';
+export {
+  TextBlockRenderer,
+  type TextBlockRendererProps,
+} from './components/renderers/TextBlockRenderer';
+export {
+  CodeBlockRenderer,
+  type CodeBlockRendererProps,
+} from './components/renderers/CodeBlockRenderer';
+export { BlockRenderer, type BlockRendererProps } from './components/renderers/BlockRenderer';
+export {
+  DocumentRenderer,
+  type DocumentRendererProps,
+} from './components/renderers/DocumentRenderer';
