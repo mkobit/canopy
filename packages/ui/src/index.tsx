@@ -47,3 +47,9 @@ export {
   DocumentRenderer,
   type DocumentRendererProps,
 } from './components/renderers/DocumentRenderer';
+
+// Quick Entry
+export {
+  QuickEntryOverlay,
+  type QuickEntryOverlayProps,
+} from './components/graph/QuickEntryOverlay';
