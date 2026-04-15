@@ -41,7 +41,7 @@ export const QuickEntryOverlay: React.FC<QuickEntryOverlayProps> = ({ onSubmit }
           <input
             autoFocus
             type="text"
-            placeholder="Capture node or edge..."
+            placeholder="Capture a thought..."
             value={inputValue}
             onChange={(e) => {
               setInputValue(e.target.value);
@@ -51,7 +51,7 @@ export const QuickEntryOverlay: React.FC<QuickEntryOverlayProps> = ({ onSubmit }
           />
           <div className="flex justify-between items-center mt-1">
             <span className="text-[10px] text-on-surface-variant font-mono uppercase tracking-wider">
-              Format: Node Name [-&gt; Other Node]
+              Hit Enter to capture
             </span>
             <button
               type="submit"
