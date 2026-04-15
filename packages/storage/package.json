@@ -12,7 +12,7 @@
   "dependencies": {
     "@canopy/sync": "workspace:*",
     "@canopy/types": "workspace:*",
-    "@types/sql.js": "^1.4.10",
+    "@types/sql.js": "^1.4.11",
     "idb": "^8.0.3",
     "sql.js": "^1.14.1"
   },
