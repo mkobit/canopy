@@ -33,6 +33,12 @@ interface GraphContextActions {
     type: string,
     properties?: Record<string, unknown>,
   ) => Promise<Result<NodeId, Error>>;
+  readonly createEdge: (
+    type: string,
+    source: NodeId,
+    target: NodeId,
+    properties?: Record<string, unknown>,
+  ) => Promise<Result<EdgeId, Error>>;
 }
 
 type GraphContextType = GraphContextState & GraphContextActions;
@@ -46,6 +52,7 @@ const GraphContext = createContext<GraphContextType>({
   closeGraph: () => ok(undefined),
   saveGraph: async () => ok(undefined),
   createNode: async () => err(new Error('Not initialized')),
+  createEdge: async () => err(new Error('Not initialized')),
 });
 
 export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = ({ children }) => {
@@ -222,6 +229,55 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
     [saveGraph],
   );
 
+  const CreateEdgeInputSchema = z.object({
+    type: TypeIdSchema,
+    source: z.string(),
+    target: z.string(),
+    properties: z.record(z.string(), z.unknown()).optional(),
+  });
+
+  const createEdge = useCallback(
+    async (
+      type: string,
+      source: NodeId,
+      target: NodeId,
+      properties: Record<string, unknown> = {},
+    ): Promise<Result<EdgeId, Error>> => {
+      if (!syncEngineRef.current) return err(new Error('SyncEngine not initialized'));
+
+      return fromAsyncThrowable(async () => {
+        const input = CreateEdgeInputSchema.parse({ type, source, target, properties });
+        const typeId = input.type as unknown as TypeId;
+
+        const entries = input.properties
+          ? Object.entries(input.properties)
+              .filter(([_, value]) => typeof value === 'string')
+              .map(([key, value]) => [key, { kind: 'text', value: value }] as const)
+          : [];
+
+        const propsMap = new Map<string, PropertyValue>(
+          entries as Iterable<readonly [string, PropertyValue]>,
+        );
+
+        const newEdgeResult = syncEngineRef.current!.store.addEdge({
+          type: typeId,
+          source: source,
+          target: target,
+          properties: propsMap,
+        });
+
+        if (!newEdgeResult.ok) throw newEdgeResult.error;
+        const newEdge = newEdgeResult.value;
+
+        const saveResult = await saveGraph();
+        if (!saveResult.ok) throw saveResult.error;
+
+        return newEdge.id;
+      });
+    },
+    [saveGraph],
+  );
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -234,7 +290,17 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
 
   return (
     <GraphContext.Provider
-      value={{ graph, syncEngine, isLoading, error, loadGraph, closeGraph, saveGraph, createNode }}
+      value={{
+        graph,
+        syncEngine,
+        isLoading,
+        error,
+        loadGraph,
+        closeGraph,
+        saveGraph,
+        createNode,
+        createEdge,
+      }}
     >
       {children}
     </GraphContext.Provider>

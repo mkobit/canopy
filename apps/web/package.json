@@ -17,6 +17,7 @@
     "@canopy/sync": "workspace:*",
     "@canopy/types": "workspace:*",
     "@canopy/ui": "workspace:*",
+    "@xyflow/react": "^12.10.2",
     "clsx": "^2.1.1",
     "lucide-react": "^1.7.0",
     "react": "^19.2.3",

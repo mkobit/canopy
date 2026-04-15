@@ -1,13 +1,21 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Outlet, useNavigate } from 'react-router-dom';
+import { useParams, Outlet, useNavigate, useOutlet } from 'react-router-dom';
 import { useGraph } from '../context/GraphContext';
-import { asGraphId } from '@canopy/types';
+import { asGraphId, type NodeId } from '@canopy/types';
 import { toHandler } from '../utils/handlers';
-import { TopAppBar, GraphExplorerCanvas, InspectorPanel, type InspectorNodeData } from '@canopy/ui';
+import {
+  TopAppBar,
+  GraphExplorerCanvas,
+  InspectorPanel,
+  type InspectorNodeData,
+  QuickEntryOverlay,
+} from '@canopy/ui';
+import { InteractiveGraphView } from '../components/graph/InteractiveGraphView';
 
 export const GraphPage = () => {
   const { graphId } = useParams<Readonly<{ graphId: string }>>();
-  const { loadGraph, graph, isLoading, error } = useGraph();
+  const { loadGraph, graph, isLoading, error, createNode, createEdge } = useGraph();
+
   const navigate = useNavigate();
 
   const [selectedNode, setSelectedNode] = useState<InspectorNodeData | undefined>();
@@ -34,6 +42,66 @@ export const GraphPage = () => {
 
   const closeInspector = () => {
     setIsInspectorOpen(false);
+    return undefined;
+  };
+
+  const outlet = useOutlet();
+
+  const handleQuickEntry = async (text: string) => {
+    // Parse "Node A -> Node B" format simply
+    const parts = text.split('->').map((p) => p.trim());
+
+    // eslint-disable-next-line functional/no-try-statements
+    try {
+      if (parts.length === 2 && parts[0] && parts[1]) {
+        // Find existing nodes by name or create new ones
+        // eslint-disable-next-line functional/no-let
+        let sourceNodeId;
+        // eslint-disable-next-line functional/no-let
+        let targetNodeId;
+
+        const existingNodes = [...(graph?.nodes.values() || [])];
+
+        const sourceNode = existingNodes.find((n) => n.properties.get('name') === parts[0]);
+        if (sourceNode) {
+          sourceNodeId = sourceNode.id;
+        } else {
+          const res = await createNode('Note', { name: parts[0] });
+          if (!res.ok) {
+            // eslint-disable-next-line functional/no-throw-statements
+            throw res.error;
+          }
+          sourceNodeId = res.value;
+        }
+
+        const targetNode = existingNodes.find((n) => n.properties.get('name') === parts[1]);
+        if (targetNode) {
+          targetNodeId = targetNode.id;
+        } else {
+          const res = await createNode('Note', { name: parts[1] });
+          if (!res.ok) {
+            // eslint-disable-next-line functional/no-throw-statements
+            throw res.error;
+          }
+          targetNodeId = res.value;
+        }
+
+        const edgeRes = await createEdge('Link', sourceNodeId as NodeId, targetNodeId as NodeId);
+        if (!edgeRes.ok) {
+          // eslint-disable-next-line functional/no-throw-statements
+          throw edgeRes.error;
+        }
+      } else {
+        const res = await createNode('Note', { name: text });
+        if (!res.ok) {
+          // eslint-disable-next-line functional/no-throw-statements
+          throw res.error;
+        }
+      }
+    } catch (error_) {
+      console.error('Failed to quick entry', error_);
+      alert('Failed to quick entry');
+    }
     return undefined;
   };
 
@@ -69,10 +137,14 @@ export const GraphPage = () => {
       <TopAppBar onRunQuery={handleRunQuery} />
 
       <GraphExplorerCanvas>
-        {/* Render child routes if any, otherwise default canvas */}
-        <div className="absolute inset-0 z-10 p-4 pointer-events-none">
-          <Outlet context={{ setSelectedNode, setIsInspectorOpen }} />
-        </div>
+        {outlet ? (
+          <div className="absolute inset-0 z-10 p-4 pointer-events-none">
+            <Outlet context={{ setSelectedNode, setIsInspectorOpen }} />
+          </div>
+        ) : (
+          <InteractiveGraphView />
+        )}
+        {!outlet && <QuickEntryOverlay onSubmit={handleQuickEntry} />}
       </GraphExplorerCanvas>
 
       {isInspectorOpen && selectedNode && (
