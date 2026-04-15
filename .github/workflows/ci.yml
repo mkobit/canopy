@@ -6,9 +6,17 @@ on:
       - main
     paths-ignore:
       - 'docs/design/**'
+      - 'AGENTS.md'
+      - '.claude/**'
+      - '.jules/**'
+      - '.gemini/**'
   pull_request:
     paths-ignore:
       - 'docs/design/**'
+      - 'AGENTS.md'
+      - '.claude/**'
+      - '.jules/**'
+      - '.gemini/**'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
