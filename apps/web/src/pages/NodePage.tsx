@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useGraph } from '../context/GraphContext';
-import { NodeView, PropertyInput } from '@canopy/ui';
+import { NodeView, PropertyInput, DocumentRenderer } from '@canopy/ui';
 import type { Node, NodeId, PropertyValue } from '@canopy/types';
 import { ArrowLeft, Save, Trash, Link as LinkIcon } from 'lucide-react';
 import { filter, map } from 'remeda';
@@ -168,47 +168,65 @@ export const NodePage = () => {
             </div>
           </div>
         ) : (
-          <>
-            <NodeView node={currentNode} />
+          <div className="flex flex-col xl:flex-row gap-8 items-start">
+            {/* Document Projection View */}
+            <div className="flex-1 min-w-[50%] bg-white rounded shadow-sm border border-gray-100 overflow-hidden">
+              <div className="bg-gray-50 border-b border-gray-100 p-2 text-xs font-mono text-gray-500 uppercase tracking-wider sticky top-0 z-10">
+                Document Projection
+              </div>
+              <div className="max-h-[80vh] overflow-y-auto">
+                <DocumentRenderer rootNode={currentNode} graph={graph!} />
+              </div>
+            </div>
 
-            {/* Connections section */}
-            {connectedEdges.length > 0 && (
-              <div className="mt-12 pt-8 border-t border-gray-100">
-                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                  <LinkIcon size={20} /> Connections
-                </h3>
-                <div className="grid gap-3">
-                  {map(connectedEdges, (edge) => {
-                    const otherId = edge.source === currentNode.id ? edge.target : edge.source;
-                    const otherNode = graph?.nodes.get(otherId);
-                    return (
-                      <div
-                        key={edge.id}
-                        onClick={() => {
-                          navigate(`../node/${otherId}`);
-                          return undefined;
-                        }}
-                        className="p-3 border rounded-md hover:bg-gray-50 cursor-pointer flex justify-between items-center"
-                      >
-                        <div className="flex flex-col">
-                          <span className="text-sm text-gray-500">{edge.type}</span>
-                          <span className="font-medium">
-                            {(() => {
-                              const nameProp = otherNode?.properties.get('name');
-                              return typeof nameProp === 'string' ? nameProp : otherId;
-                            })()}
+            {/* Raw Node Data and Connections */}
+            <div className="w-full xl:w-80 flex-shrink-0 flex flex-col gap-8">
+              <div>
+                <div className="bg-gray-50 border border-b-0 border-gray-100 rounded-t p-2 text-xs font-mono text-gray-500 uppercase tracking-wider">
+                  Raw Node Data
+                </div>
+                <NodeView node={currentNode} className="rounded-t-none w-full" />
+              </div>
+
+              {/* Connections section */}
+              {connectedEdges.length > 0 && (
+                <div className="mt-12 pt-8 border-t border-gray-100">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <LinkIcon size={20} /> Connections
+                  </h3>
+                  <div className="grid gap-3">
+                    {map(connectedEdges, (edge) => {
+                      const otherId = edge.source === currentNode.id ? edge.target : edge.source;
+                      const otherNode = graph?.nodes.get(otherId);
+                      return (
+                        <div
+                          key={edge.id}
+                          onClick={() => {
+                            navigate(`../node/${otherId}`);
+                            return undefined;
+                          }}
+                          className="p-3 border rounded-md hover:bg-gray-50 cursor-pointer flex justify-between items-center"
+                        >
+                          <div className="flex flex-col">
+                            <span className="text-sm text-gray-500">{edge.type}</span>
+                            <span className="font-medium">
+                              {(() => {
+                                const nameProp = otherNode?.properties.get('name');
+                                return typeof nameProp === 'string' ? nameProp : otherId;
+                              })()}
+                            </span>
+                          </div>
+                          <span className="text-xs text-gray-400 font-mono">
+                            {edge.source === currentNode.id ? '->' : '<-'}
                           </span>
                         </div>
-                        <span className="text-xs text-gray-400 font-mono">
-                          {edge.source === currentNode.id ? '->' : '<-'}
-                        </span>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            )}
-          </>
+              )}
+            </div>
+          </div>
         )}
       </div>
     </div>
