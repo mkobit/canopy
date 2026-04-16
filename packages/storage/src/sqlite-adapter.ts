@@ -146,10 +146,8 @@ export class SQLiteAdapter implements StorageAdapter, EventLogStore {
     if (!this.db) return err(new Error('Database not initialized'));
 
     return fromAsyncThrowable(async () => {
-      // Check if exists to decide insert or update? Or just REPLACE INTO (sqlite) or INSERT OR REPLACE
-
       const stmt = this.db!.prepare(`
-        INSERT OR REPLACE INTO graphs (id, name, snapshot, created_at, updated_at)
+        REPLACE INTO graphs (id, name, snapshot, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?)
       `);
 
