@@ -46,7 +46,9 @@ export function isNode(value: unknown): value is Node {
     'id' in value &&
     'type' in value &&
     'properties' in value &&
-    'metadata' in value
+    'metadata' in value &&
+    !('source' in value) &&
+    !('target' in value)
   );
 }
 
