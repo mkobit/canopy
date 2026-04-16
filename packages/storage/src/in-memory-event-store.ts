@@ -13,18 +13,22 @@ export class InMemoryEventStore implements EventLogStore {
     events: readonly GraphEvent[],
   ): Promise<Result<void, Error>> {
     const existingEvents = this.graphs.get(graphId) ?? [];
+    const existingIds = new Set(existingEvents.map((e) => e.eventId));
     const newEvents = [...existingEvents];
 
     for (const event of events) {
-      if (!newEvents.some((e) => e.eventId === event.eventId)) {
+      if (!existingIds.has(event.eventId)) {
         newEvents.push(event);
+        existingIds.add(event.eventId);
       }
     }
 
     // Sort the events by eventId ascending
-    newEvents.sort((a, b) => (a.eventId < b.eventId ? -1 : a.eventId > b.eventId ? 1 : 0));
+    const sortedEvents = newEvents.toSorted((a, b) =>
+      a.eventId < b.eventId ? -1 : a.eventId > b.eventId ? 1 : 0,
+    );
 
-    this.graphs.set(graphId, newEvents);
+    this.graphs.set(graphId, sortedEvents);
 
     return Promise.resolve(ok(undefined));
   }
