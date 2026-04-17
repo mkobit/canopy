@@ -13,7 +13,8 @@
   "scripts": {
     "build": "tsc -b && bun --filter './apps/*' build",
     "check:versions": "bun tools/verify-versions.ts",
-    "test": "bun --filter '*' test",
+    "test": "bun test",
+    "test:e2e": "playwright test",
     "lint": "bun run check:versions && eslint .",
     "format": "prettier --write .",
     "typecheck": "bun --filter '*' typecheck",
@@ -24,6 +25,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.59.1",
     "@stylistic/eslint-plugin": "^5.10.0",
     "@types/node": "^25.5.0",
     "@types/react": "^19.2.14",
