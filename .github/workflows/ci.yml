@@ -23,8 +23,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
-    name: Build, lint, and test
+  ci:
+    name: ci
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: true
