@@ -11,6 +11,7 @@ import {
   QuickEntryOverlay,
 } from '@canopy/ui';
 import { InteractiveGraphView } from '../components/graph/InteractiveGraphView';
+import { ReactFlowProvider } from '@xyflow/react';
 
 export const GraphPage = () => {
   const { graphId } = useParams<Readonly<{ graphId: string }>>();
@@ -99,7 +100,9 @@ export const GraphPage = () => {
             <Outlet context={{ setSelectedNode, setIsInspectorOpen }} />
           </div>
         ) : (
-          <InteractiveGraphView />
+          <ReactFlowProvider>
+            <InteractiveGraphView />
+          </ReactFlowProvider>
         )}
         {!outlet && <QuickEntryOverlay onSubmit={handleQuickEntry} />}
       </GraphExplorerCanvas>
