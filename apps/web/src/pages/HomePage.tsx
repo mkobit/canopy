@@ -42,6 +42,9 @@ export const HomePage = () => {
     const id = createGraphId();
     const now = Temporal.Now.instant().toString();
 
+    // Use a minimal empty state if required, though Y.js might not like 0-byte arrays,
+    // passing new Uint8Array() was already what it was doing,
+    // let's put it back to avoid TS error
     const result = await storage.save(id, new Uint8Array(), {
       id,
       name,
