@@ -21,18 +21,12 @@ export const Layout = () => {
     const text = prompt('New Node Name:');
     if (!text) return undefined;
 
-    // eslint-disable-next-line functional/no-try-statements
-    try {
-      const result = await createNode('Note', { name: text });
-      if (result.ok) {
-        navigate(`/graph/${graph.id}/node/${result.value}`);
-      } else {
-        console.error('Failed to create node', result.error);
-        alert('Failed to create node: ' + result.error.message);
-      }
-    } catch (error) {
-      console.error('Failed to create node', error);
-      alert('Failed to create node.');
+    const result = await createNode('Note', { name: text });
+    if (result.ok) {
+      navigate(`/graph/${graph.id}/node/${result.value}`);
+    } else {
+      console.error('Failed to create node', result.error);
+      alert('Failed to create node: ' + result.error.message);
     }
     return undefined;
   };

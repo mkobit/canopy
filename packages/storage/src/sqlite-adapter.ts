@@ -214,29 +214,29 @@ export class SQLiteAdapter implements StorageAdapter, EventLogStore {
   async appendEvents(graphId: string, events: readonly GraphEvent[]): Promise<Result<void, Error>> {
     if (!this.db) return err(new Error('Database not initialized'));
 
+    const db = this.db;
     return fromAsyncThrowable(async () => {
-      this.db!.run('BEGIN TRANSACTION');
-      // eslint-disable-next-line functional/no-try-statements
-      try {
-        const stmt = this.db!.prepare(`
-          INSERT OR IGNORE INTO events (graph_id, event_id, timestamp, type, payload)
-          VALUES (?, ?, ?, ?, ?)
-        `);
+      db.run('BEGIN TRANSACTION');
+      const stmt = db.prepare(`
+        INSERT OR IGNORE INTO events (graph_id, event_id, timestamp, type, payload)
+        VALUES (?, ?, ?, ?, ?)
+      `);
 
-        for (const event of events) {
-          const storable = serializeEvent(event);
-          const payload = JSON.stringify(storable);
-          stmt.run([graphId, event.eventId, event.timestamp, event.type, payload]);
-        }
-        stmt.free();
-
-        this.db!.run('COMMIT');
-        await this.persist();
-      } catch (error) {
-        this.db!.run('ROLLBACK');
-        throw error;
+      for (const event of events) {
+        const storable = serializeEvent(event);
+        const payload = JSON.stringify(storable);
+        stmt.run([graphId, event.eventId, event.timestamp, event.type, payload]);
       }
+      stmt.free();
+
+      db.run('COMMIT');
+      await this.persist();
       return;
+    }).then((result) => {
+      if (!result.ok) {
+        db.run('ROLLBACK');
+      }
+      return result;
     });
   }
 

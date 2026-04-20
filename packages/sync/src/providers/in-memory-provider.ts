@@ -3,7 +3,7 @@ import type { Awareness } from 'y-protocols/awareness';
 import * as AwarenessProtocol from 'y-protocols/awareness';
 import type { SyncProvider } from '../types';
 import type { Result } from '@canopy/types';
-import { ok, err } from '@canopy/types';
+import { fromThrowable } from '@canopy/types';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type EventHandler = (...args: any[]) => unknown;
@@ -88,8 +88,7 @@ export class InMemoryProvider implements SyncProvider {
   }
 
   connect(): Result<void, Error> {
-    // eslint-disable-next-line functional/no-try-statements
-    try {
+    return fromThrowable(() => {
       if (!InMemoryProvider.networks.has(this.roomName)) {
         InMemoryProvider.networks.set(this.roomName, new Set());
       }
@@ -135,17 +134,13 @@ export class InMemoryProvider implements SyncProvider {
           }
         }
       }
-
       this.emit('status', { status: 'connected' });
-      return ok(undefined);
-    } catch (error) {
-      return err(error instanceof Error ? error : new Error(String(error)));
-    }
+      return undefined;
+    });
   }
 
   disconnect(): Result<void, Error> {
-    // eslint-disable-next-line functional/no-try-statements
-    try {
+    return fromThrowable(() => {
       const network = InMemoryProvider.networks.get(this.roomName);
       if (network) {
         network.delete(this);
@@ -155,10 +150,8 @@ export class InMemoryProvider implements SyncProvider {
       }
       this.connected = false;
       this.emit('status', { status: 'disconnected' });
-      return ok(undefined);
-    } catch (error) {
-      return err(error instanceof Error ? error : new Error(String(error)));
-    }
+      return undefined;
+    });
   }
 
   on(

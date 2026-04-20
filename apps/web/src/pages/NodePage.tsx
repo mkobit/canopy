@@ -40,18 +40,26 @@ export const NodePage = () => {
   const handleSave = async () => {
     if (!syncEngine || !currentNode) return undefined;
 
-    // eslint-disable-next-line functional/no-try-statements
-    try {
-      syncEngine.store.updateNode(currentNode.id, {
-        properties: new Map(editedProps),
-      });
+    const updateResult = syncEngine.store.updateNode(currentNode.id, {
+      properties: new Map(editedProps),
+    });
 
-      await saveGraph(); // Persist changes
-      setIsEditing(false);
-    } catch (error) {
-      console.error('Failed to save node', error);
+    if (!updateResult.ok) {
+      console.error('Failed to update node in store', updateResult.error);
       alert('Failed to save changes');
+      return undefined;
     }
+
+    saveGraph()
+      .then(() => {
+        setIsEditing(false);
+        return undefined;
+      })
+      .catch((error) => {
+        console.error('Failed to save node', error);
+        alert('Failed to save changes');
+        return undefined;
+      });
     return undefined;
   };
 
@@ -69,14 +77,21 @@ export const NodePage = () => {
     if (!syncEngine || !currentNode) return undefined;
     if (!confirm('Delete this node?')) return undefined;
 
-    // eslint-disable-next-line functional/no-try-statements
-    try {
-      syncEngine.store.deleteNode(currentNode.id);
-      await saveGraph();
-      navigate('../'); // Go up to graph view
-    } catch (error) {
-      console.error('Delete failed', error);
+    const deleteResult = syncEngine.store.deleteNode(currentNode.id);
+    if (!deleteResult.ok) {
+      console.error('Delete failed in store', deleteResult.error);
+      return undefined;
     }
+
+    saveGraph()
+      .then(() => {
+        navigate('../'); // Go up to graph view
+        return undefined;
+      })
+      .catch((error) => {
+        console.error('Delete failed', error);
+        return undefined;
+      });
     return undefined;
   };
 

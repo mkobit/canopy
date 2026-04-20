@@ -49,15 +49,9 @@ export const GraphPage = () => {
   const outlet = useOutlet();
 
   const handleQuickEntry = async (text: string) => {
-    // eslint-disable-next-line functional/no-try-statements
-    try {
-      const res = await createNode('RawNode', { name: text });
-      if (!res.ok) {
-        // eslint-disable-next-line functional/no-throw-statements
-        throw res.error;
-      }
-    } catch (error_) {
-      console.error('Failed to quick entry', error_);
+    const res = await createNode('RawNode', { name: text });
+    if (!res.ok) {
+      console.error('Failed to quick entry', res.error);
       alert('Failed to capture thought');
     }
     return undefined;

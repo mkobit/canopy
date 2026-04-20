@@ -1,6 +1,14 @@
 import type * as Y from 'yjs';
 import type { Node, NodeId, Result } from '@canopy/types';
-import { createNodeId, createInstant, asNodeId, ok, err, asDeviceId } from '@canopy/types';
+import {
+  createNodeId,
+  createInstant,
+  asNodeId,
+  ok,
+  err,
+  asDeviceId,
+  fromThrowable,
+} from '@canopy/types';
 import { NodeSchema } from '@canopy/schema';
 import { map } from 'remeda';
 import { nodeToStorable, storableToNode } from '../converters';
@@ -47,22 +55,11 @@ export function getNode(nodes: Y.Map<unknown>, id: string): Result<Node, Error> 
   if (!n) {
     return err(new Error(`Node ${id} not found`));
   }
-  // eslint-disable-next-line functional/no-try-statements
-  try {
-    return ok(storableToNode(n));
-  } catch (error) {
-    return err(error instanceof Error ? error : new Error(String(error)));
-  }
+  return fromThrowable(() => storableToNode(n));
 }
 
 export function getAllNodes(nodes: Y.Map<unknown>): Result<IterableIterator<Node>, Error> {
-  // eslint-disable-next-line functional/no-try-statements
-  try {
-    const iterator = map([...nodes.values()], storableToNode)[Symbol.iterator]();
-    return ok(iterator);
-  } catch (error) {
-    return err(error instanceof Error ? error : new Error(String(error)));
-  }
+  return fromThrowable(() => map([...nodes.values()], storableToNode)[Symbol.iterator]());
 }
 
 export function updateNode(

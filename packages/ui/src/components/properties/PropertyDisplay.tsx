@@ -2,6 +2,7 @@ import React from 'react';
 import type { PropertyValue, PropertyValueKind, ScalarValue } from '@canopy/types';
 import { cn } from '../../utils/cn';
 import { Temporal } from 'temporal-polyfill';
+import { fromThrowable } from '@canopy/types';
 
 interface PropertyDisplayProps {
   readonly value: PropertyValue;
@@ -105,10 +106,6 @@ function inferKind(value: ScalarValue): PropertyValueKind {
 }
 
 function tryFormatInstant(val: string): string {
-  // eslint-disable-next-line functional/no-try-statements
-  try {
-    return Temporal.Instant.from(val).toLocaleString();
-  } catch {
-    return val;
-  }
+  const result = fromThrowable(() => Temporal.Instant.from(val).toLocaleString());
+  return result.ok ? result.value : val;
 }

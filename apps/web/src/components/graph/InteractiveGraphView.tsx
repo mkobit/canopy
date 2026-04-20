@@ -100,13 +100,13 @@ export const InteractiveGraphView = () => {
       const sourceId = params.source as unknown as NodeId;
       const targetId = params.target as unknown as NodeId;
 
-      // eslint-disable-next-line functional/no-try-statements
-      try {
-        void createEdge(edgeType, sourceId, targetId);
-      } catch (error) {
-        console.error('Failed to create edge:', error);
-        alert('Failed to create edge');
-      }
+      void createEdge(edgeType, sourceId, targetId).then((result) => {
+        if (!result.ok) {
+          console.error('Failed to create edge:', result.error);
+          alert('Failed to create edge');
+        }
+        return undefined;
+      });
 
       return undefined;
     },
@@ -121,13 +121,13 @@ export const InteractiveGraphView = () => {
       const type = prompt('Enter node type (e.g., Note, Person):', 'Note');
       if (!type) return undefined;
 
-      // eslint-disable-next-line functional/no-try-statements
-      try {
-        void createNode(type, { name });
-      } catch (error) {
-        console.error('Failed to create node:', error);
-        alert('Failed to create node');
-      }
+      void createNode(type, { name }).then((result) => {
+        if (!result.ok) {
+          console.error('Failed to create node:', result.error);
+          alert('Failed to create node');
+        }
+        return undefined;
+      });
 
       return undefined;
     },
