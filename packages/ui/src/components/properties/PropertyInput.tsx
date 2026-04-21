@@ -119,6 +119,7 @@ const ScalarInput: React.FC<
     className?: string | undefined;
     kind?: PropertyValueKind;
   }>
+  // eslint-disable-next-line max-lines-per-function
 > = ({ value, onChange, className, kind }) => {
   const baseInputClass = cn('border rounded px-2 py-1 w-full text-sm', className);
 

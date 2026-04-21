@@ -2,6 +2,7 @@ import type { Node, Edge, NodeId, EdgeId, TypeId, GraphEvent, Result } from '@ca
 import { ok } from '@canopy/types';
 import type { GraphStore, GraphStoreSnapshot, NodeFilter, EdgeFilter } from './types';
 
+// eslint-disable-next-line max-lines-per-function
 export const createInMemoryGraphStore = (): GraphStore => {
   let nodes: Map<NodeId, Node> = new Map();
 

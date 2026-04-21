@@ -7,6 +7,7 @@ import type { Node, NodeId, PropertyValue } from '@canopy/types';
 import { ArrowLeft, Save, Trash, Link as LinkIcon } from 'lucide-react';
 import { filter, map } from 'remeda';
 
+// eslint-disable-next-line max-lines-per-function
 export const NodePage = () => {
   const { nodeId } = useParams<Readonly<{ nodeId: string }>>();
   const { graph, syncEngine, saveGraph } = useGraph();

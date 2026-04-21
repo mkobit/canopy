@@ -166,6 +166,8 @@ export default tseslint.config(
       'functional/no-throw-statements': 'error',
       'functional/no-try-statements': 'error',
       'functional/no-expression-statements': 'off',
+      'max-params': ['error', 6],
+      'max-lines-per-function': ['error', 100],
       'functional/functional-parameters': [
         'error',
         {

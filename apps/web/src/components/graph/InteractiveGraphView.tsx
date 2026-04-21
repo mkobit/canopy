@@ -25,6 +25,7 @@ const edgeTypes = {
   customEdge: CustomEdge,
 };
 
+// eslint-disable-next-line max-lines-per-function
 export const InteractiveGraphView = () => {
   const { graph, createNode, createEdge } = useGraph();
   const navigate = useNavigate();
