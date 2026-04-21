@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
-import { SideNavBar } from '@canopy/ui';
+import { SideNavBar } from '.';
 import { useGraph } from '../context/GraphContext';
 import { withResultAlert } from '../utils/handlers';
 

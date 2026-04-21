@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { withResultAlert } from '../utils/handlers';
 import { useGraph } from '../context/GraphContext';
-import { NodeView, PropertyInput, DocumentRenderer } from '@canopy/ui';
+import { NodeView, PropertyInput, DocumentRenderer } from '../components';
 import type { Node, NodeId, PropertyValue } from '@canopy/types';
 import { ArrowLeft, Save, Trash, Link as LinkIcon } from 'lucide-react';
 import { filter, map } from 'remeda';

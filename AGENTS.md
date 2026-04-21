@@ -22,7 +22,7 @@ bun pm ls --all
     - Well-known system IDs are defined in `@canopy/core/system`.
 3.  Yjs integration lives in `@canopy/sync`, not scattered across packages.
 4.  `@canopy/query` is isolated to enable swapping Cypher for ISO GQL later.
-5.  UI components are stateless—`@canopy/ui` receives data via props, does not fetch or mutate.
+5.  UI components are stateless—`` receives data via props, does not fetch or mutate.
 6.  Zod schemas in `@canopy/schema` are the source of truth for runtime validation.
     `@canopy/schema` also provides strict constructors and type guards for domain types.
 7.  All type properties are `readonly`.

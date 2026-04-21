@@ -1,3 +1,0 @@
-[test]
-environment = "happy-dom"
-preload = ["./src/test/setup.ts"]
