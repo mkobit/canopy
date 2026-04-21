@@ -8,7 +8,7 @@ import {
   createInstant,
 } from '@canopy/types';
 import type { GraphEvent } from '@canopy/types';
-import { InMemoryEventStore } from './in-memory-event-store';
+import { createInMemoryEventStore } from './in-memory-event-store';
 
 describe('InMemoryEventStore', () => {
   const deviceId = asDeviceId('00000000-0000-0000-0000-000000000000');
@@ -25,7 +25,7 @@ describe('InMemoryEventStore', () => {
   });
 
   it('appends events and retrieves them in order', async () => {
-    const store = new InMemoryEventStore();
+    const store = createInMemoryEventStore();
     const event1 = createTestEvent();
     const event2 = createTestEvent();
     const event3 = createTestEvent();
@@ -40,7 +40,7 @@ describe('InMemoryEventStore', () => {
   });
 
   it('deduplicates events by eventId', async () => {
-    const store = new InMemoryEventStore();
+    const store = createInMemoryEventStore();
     const event1 = createTestEvent();
     const event2 = createTestEvent();
 
@@ -53,7 +53,7 @@ describe('InMemoryEventStore', () => {
   });
 
   it('filters events using the "after" option', async () => {
-    const store = new InMemoryEventStore();
+    const store = createInMemoryEventStore();
     const event1 = createTestEvent();
     const event2 = createTestEvent();
     const event3 = createTestEvent();
@@ -65,7 +65,7 @@ describe('InMemoryEventStore', () => {
   });
 
   it('filters events using the "before" option', async () => {
-    const store = new InMemoryEventStore();
+    const store = createInMemoryEventStore();
     const event1 = createTestEvent();
     const event2 = createTestEvent();
     const event3 = createTestEvent();
@@ -77,7 +77,7 @@ describe('InMemoryEventStore', () => {
   });
 
   it('limits the number of returned events using the "limit" option', async () => {
-    const store = new InMemoryEventStore();
+    const store = createInMemoryEventStore();
     const event1 = createTestEvent();
     const event2 = createTestEvent();
     const event3 = createTestEvent();
@@ -89,7 +89,7 @@ describe('InMemoryEventStore', () => {
   });
 
   it('reverses the returned events using the "reverse" option', async () => {
-    const store = new InMemoryEventStore();
+    const store = createInMemoryEventStore();
     const event1 = createTestEvent();
     const event2 = createTestEvent();
     const event3 = createTestEvent();
@@ -101,7 +101,7 @@ describe('InMemoryEventStore', () => {
   });
 
   it('isolates multiple graphIds from each other', async () => {
-    const store = new InMemoryEventStore();
+    const store = createInMemoryEventStore();
     const event1 = createTestEvent();
     const event2 = createTestEvent();
 

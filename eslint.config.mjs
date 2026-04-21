@@ -1,4 +1,3 @@
-// eslint.config.mjs
 import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import prettier from 'eslint-config-prettier';
@@ -260,34 +259,12 @@ export default tseslint.config(
       'unicorn/no-array-method-this-argument': 'off',
     },
   },
-  // Legacy/Imperative Packages (Sync, Storage)
-  {
-    files: ['packages/sync/**/*.ts', 'packages/storage/**/*.ts'],
-    rules: {
-      'functional/no-return-void': 'off',
-      'functional/no-loop-statements': 'off',
-    },
-  },
 
-  // Existing Legacy Overrides
-  // TODO(canopy-q8x): Refactor legacy classes to functional patterns
   {
-    files: [
-      'packages/sync/**/*.ts',
-      'packages/ui/**/*.tsx',
-      'packages/ui/**/*.ts',
-      'apps/web/**/*.tsx',
-      'apps/web/**/*.ts',
-    ],
+    files: ['packages/ui/**/*.tsx', 'packages/ui/**/*.ts', 'apps/web/**/*.tsx', 'apps/web/**/*.ts'],
     rules: {
       'functional/prefer-immutable-types': 'off',
       'functional/type-declaration-immutability': 'off',
-    },
-  },
-  {
-    files: ['packages/sync/**/*.ts', 'packages/storage/**/*.ts'],
-    rules: {
-      'functional/no-this-expressions': 'off',
     },
   },
   // Workaround for crashing rule in typescript-eslint v8.54.0
@@ -295,6 +272,17 @@ export default tseslint.config(
     files: ['**/*.ts', '**/*.tsx'],
     rules: {
       '@typescript-eslint/consistent-generic-constructors': 'off',
+    },
+  },
+  // Exceptions for mutable state in adapters/stores (since they encapsulate it behind pure interfaces)
+  {
+    files: ['packages/storage/src/**/*.ts', 'packages/sync/src/**/*.ts'],
+    rules: {
+      'functional/no-let': 'off',
+      'functional/immutable-data': 'off',
+      'functional/no-return-void': 'off',
+      'functional/no-mixed-types': 'off',
+      'functional/readonly-type': 'off',
     },
   },
 );

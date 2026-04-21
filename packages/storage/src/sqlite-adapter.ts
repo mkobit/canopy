@@ -66,39 +66,16 @@ const deserializeEvent = (storable: unknown): GraphEvent => {
   }
 };
 
-// eslint-disable-next-line functional/no-classes
-export class SQLiteAdapter implements StorageAdapter, EventLogStore {
-  // eslint-disable-next-line functional/prefer-immutable-types
-  private db: Database | null = null;
-  // eslint-disable-next-line functional/prefer-immutable-types
-  private SQL: SqlJsStatic | null = null;
-  private readonly persistence: SQLitePersistence | null;
+export const createSQLiteAdapter = (
+  persistence?: SQLitePersistence,
+): StorageAdapter & EventLogStore => {
+  let db: Database | null = null;
 
-  constructor(persistence?: SQLitePersistence) {
-    this.persistence = persistence || null;
-  }
+  let SQL: SqlJsStatic | null = null;
 
-  async init(): Promise<Result<void, Error>> {
-    if (this.db) return ok(undefined);
-
-    return fromAsyncThrowable(async () => {
-      this.SQL = await initSqlJs();
-
-      const data = this.persistence ? await this.persistence.read() : null;
-
-      if (data) {
-        this.db = new this.SQL.Database(data);
-      } else {
-        this.db = new this.SQL.Database();
-        this.initSchema();
-      }
-      return;
-    });
-  }
-
-  private initSchema() {
-    if (!this.db) return; // Should not happen if called from init
-    this.db.run(`
+  const initSchema = () => {
+    if (!db) return; // Should not happen if called from init
+    db.run(`
       CREATE TABLE IF NOT EXISTS graphs (
         id TEXT PRIMARY KEY,
         name TEXT,
@@ -107,7 +84,7 @@ export class SQLiteAdapter implements StorageAdapter, EventLogStore {
         updated_at TEXT
       );
     `);
-    this.db.run(`
+    db.run(`
       CREATE TABLE IF NOT EXISTS events (
         graph_id TEXT NOT NULL,
         event_id TEXT NOT NULL,
@@ -119,167 +96,197 @@ export class SQLiteAdapter implements StorageAdapter, EventLogStore {
     `);
     // Redundant index removed
     return;
-  }
+  };
 
-  async close(): Promise<Result<void, Error>> {
-    return fromAsyncThrowable(async () => {
-      if (this.db) {
-        this.db.close();
-        this.db = null;
-      }
-      return;
-    });
-  }
-
-  private async persist(): Promise<void> {
-    if (this.persistence && this.db) {
-      const data = this.db.export();
-      await this.persistence.write(data);
+  const persist = async (): Promise<void> => {
+    if (persistence && db) {
+      const data = db.export();
+      await persistence.write(data);
     }
-  }
+  };
 
-  async save(
-    graphId: string,
-    snapshot: Uint8Array,
-    metadata: GraphStorageMetadata,
-  ): Promise<Result<void, Error>> {
-    if (!this.db) return err(new Error('Database not initialized'));
+  return {
+    init: async (): Promise<Result<void, Error>> => {
+      if (db) return ok(undefined);
 
-    return fromAsyncThrowable(async () => {
-      const stmt = this.db!.prepare(`
-        REPLACE INTO graphs (id, name, snapshot, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?)
-      `);
+      return fromAsyncThrowable(async () => {
+        SQL = await initSqlJs();
 
-      stmt.run([graphId, metadata.name, snapshot, metadata.createdAt, metadata.updatedAt]);
-      stmt.free();
+        const data = persistence ? await persistence.read() : null;
 
-      await this.persist();
-      return;
-    });
-  }
+        if (data) {
+          db = new SQL.Database(data);
+        } else {
+          db = new SQL.Database();
+          initSchema();
+        }
+        return;
+      });
+    },
 
-  async load(graphId: string): Promise<Result<Uint8Array | null, Error>> {
-    if (!this.db) return err(new Error('Database not initialized'));
+    close: async (): Promise<Result<void, Error>> => {
+      return fromAsyncThrowable(async () => {
+        if (db) {
+          db.close();
+          db = null;
+        }
+        return;
+      });
+    },
 
-    return fromAsyncThrowable(async () => {
-      const stmt = this.db!.prepare('SELECT snapshot FROM graphs WHERE id = ?');
-      stmt.bind([graphId]);
+    save: async (
+      graphId: string,
+      snapshot: Uint8Array,
+      metadata: GraphStorageMetadata,
+    ): Promise<Result<void, Error>> => {
+      if (!db) return err(new Error('Database not initialized'));
 
-      if (stmt.step()) {
-        const result = stmt.getAsObject();
+      return fromAsyncThrowable(async () => {
+        const stmt = db!.prepare(`
+          REPLACE INTO graphs (id, name, snapshot, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?)
+        `);
+
+        stmt.run([graphId, metadata.name, snapshot, metadata.createdAt, metadata.updatedAt]);
         stmt.free();
-        return result.snapshot as Uint8Array;
-      }
 
-      stmt.free();
-      return null;
-    });
-  }
+        await persist();
+        return;
+      });
+    },
 
-  async delete(graphId: string): Promise<Result<void, Error>> {
-    if (!this.db) return err(new Error('Database not initialized'));
+    load: async (graphId: string): Promise<Result<Uint8Array | null, Error>> => {
+      if (!db) return err(new Error('Database not initialized'));
 
-    return fromAsyncThrowable(async () => {
-      this.db!.run('DELETE FROM graphs WHERE id = ?', [graphId]);
-      this.db!.run('DELETE FROM events WHERE graph_id = ?', [graphId]);
-      await this.persist();
-      return;
-    });
-  }
+      return fromAsyncThrowable(async () => {
+        const stmt = db!.prepare('SELECT snapshot FROM graphs WHERE id = ?');
+        stmt.bind([graphId]);
 
-  async list(): Promise<Result<readonly GraphStorageMetadata[], Error>> {
-    if (!this.db) return err(new Error('Database not initialized'));
+        if (stmt.step()) {
+          const result = stmt.getAsObject();
+          stmt.free();
+          return result.snapshot as Uint8Array;
+        }
 
-    return fromAsyncThrowable(async () => {
-      const result: GraphStorageMetadata[] = [];
+        stmt.free();
+        return null;
+      });
+    },
 
-      const stmt = this.db!.prepare('SELECT id, name, created_at, updated_at FROM graphs');
+    delete: async (graphId: string): Promise<Result<void, Error>> => {
+      if (!db) return err(new Error('Database not initialized'));
 
-      while (stmt.step()) {
-        const row = stmt.getAsObject();
-        result.push({
-          id: row.id as string,
-          name: row.name as string,
-          createdAt: row.created_at as string,
-          updatedAt: row.updated_at as string,
-        });
-      }
+      return fromAsyncThrowable(async () => {
+        db!.run('DELETE FROM graphs WHERE id = ?', [graphId]);
+        db!.run('DELETE FROM events WHERE graph_id = ?', [graphId]);
+        await persist();
+        return;
+      });
+    },
 
-      stmt.free();
-      return result;
-    });
-  }
+    list: async (): Promise<Result<readonly GraphStorageMetadata[], Error>> => {
+      if (!db) return err(new Error('Database not initialized'));
 
-  async appendEvents(graphId: string, events: readonly GraphEvent[]): Promise<Result<void, Error>> {
-    if (!this.db) return err(new Error('Database not initialized'));
+      return fromAsyncThrowable(async () => {
+        const result: GraphStorageMetadata[] = [];
 
-    const db = this.db;
-    return fromAsyncThrowable(async () => {
-      db.run('BEGIN TRANSACTION');
-      const stmt = db.prepare(`
-        INSERT OR IGNORE INTO events (graph_id, event_id, timestamp, type, payload)
-        VALUES (?, ?, ?, ?, ?)
-      `);
+        const stmt = db!.prepare('SELECT id, name, created_at, updated_at FROM graphs');
 
-      for (const event of events) {
-        const storable = serializeEvent(event);
-        const payload = JSON.stringify(storable);
-        stmt.run([graphId, event.eventId, event.timestamp, event.type, payload]);
-      }
-      stmt.free();
+        // eslint-disable-next-line functional/no-loop-statements
+        while (stmt.step()) {
+          const row = stmt.getAsObject();
 
-      db.run('COMMIT');
-      await this.persist();
-      return;
-    }).then((result) => {
-      if (!result.ok) {
-        db.run('ROLLBACK');
-      }
-      return result;
-    });
-  }
+          result.push({
+            id: row.id as string,
+            name: row.name as string,
+            createdAt: row.created_at as string,
+            updatedAt: row.updated_at as string,
+          });
+        }
 
-  async getEvents(
-    graphId: string,
-    options: EventLogQueryOptions = {},
-  ): Promise<Result<readonly GraphEvent[], Error>> {
-    if (!this.db) return err(new Error('Database not initialized'));
+        stmt.free();
+        return result;
+      });
+    },
 
-    return fromAsyncThrowable(async () => {
-      // eslint-disable-next-line functional/no-let
-      let query = 'SELECT payload FROM events WHERE graph_id = ?';
-      const params: (string | number | null)[] = [graphId];
+    appendEvents: async (
+      graphId: string,
+      events: readonly GraphEvent[],
+    ): Promise<Result<void, Error>> => {
+      if (!db) return err(new Error('Database not initialized'));
 
-      if (options.after) {
-        query += ' AND event_id > ?';
-        params.push(options.after);
-      }
+      const dbInstance = db;
+      return fromAsyncThrowable(async () => {
+        dbInstance.run('BEGIN TRANSACTION');
+        const stmt = dbInstance.prepare(`
+          INSERT OR IGNORE INTO events (graph_id, event_id, timestamp, type, payload)
+          VALUES (?, ?, ?, ?, ?)
+        `);
 
-      if (options.before) {
-        query += ' AND event_id < ?';
-        params.push(options.before);
-      }
+        // eslint-disable-next-line functional/no-loop-statements
+        for (const event of events) {
+          const storable = serializeEvent(event);
+          const payload = JSON.stringify(storable);
+          stmt.run([graphId, event.eventId, event.timestamp, event.type, payload]);
+        }
+        stmt.free();
 
-      query += ` ORDER BY event_id ${options.reverse ? 'DESC' : 'ASC'}`;
+        dbInstance.run('COMMIT');
+        await persist();
+        return;
+      }).then((result) => {
+        if (!result.ok) {
+          dbInstance.run('ROLLBACK');
+        }
+        return result;
+      });
+    },
 
-      if (options.limit) {
-        query += ' LIMIT ?';
-        params.push(options.limit);
-      }
+    getEvents: async (
+      graphId: string,
+      options: EventLogQueryOptions = {},
+    ): Promise<Result<readonly GraphEvent[], Error>> => {
+      if (!db) return err(new Error('Database not initialized'));
 
-      const stmt = this.db!.prepare(query);
-      stmt.bind(params);
+      return fromAsyncThrowable(async () => {
+        let query = 'SELECT payload FROM events WHERE graph_id = ?';
+        const params: (string | number | null)[] = [graphId];
 
-      const events: GraphEvent[] = [];
+        if (options.after) {
+          query += ' AND event_id > ?';
 
-      while (stmt.step()) {
-        const row = stmt.getAsObject();
-        const storable = JSON.parse(row.payload as string);
-        events.push(deserializeEvent(storable));
-      }
-      stmt.free();
-      return events;
-    });
-  }
-}
+          params.push(options.after);
+        }
+
+        if (options.before) {
+          query += ' AND event_id < ?';
+
+          params.push(options.before);
+        }
+
+        query += ` ORDER BY event_id ${options.reverse ? 'DESC' : 'ASC'}`;
+
+        if (options.limit) {
+          query += ' LIMIT ?';
+
+          params.push(options.limit);
+        }
+
+        const stmt = db!.prepare(query);
+        stmt.bind(params);
+
+        const events: GraphEvent[] = [];
+
+        // eslint-disable-next-line functional/no-loop-statements
+        while (stmt.step()) {
+          const row = stmt.getAsObject();
+          const storable = JSON.parse(row.payload as string);
+
+          events.push(deserializeEvent(storable));
+        }
+        stmt.free();
+        return events;
+      });
+    },
+  };
+};

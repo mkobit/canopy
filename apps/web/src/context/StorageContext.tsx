@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { StorageAdapter } from '@canopy/storage';
-import { IndexedDBAdapter } from '@canopy/storage';
+import { createIndexedDBAdapter } from '@canopy/storage';
 import { fromAsyncThrowable } from '@canopy/types';
 
 interface StorageContextType {
@@ -26,7 +26,7 @@ export const StorageProvider: React.FC<Readonly<{ children: React.ReactNode }>> 
     const initStorage = async () => {
       const result = await fromAsyncThrowable(async () => {
         // Use IndexedDBAdapter for browser environment
-        const adapter = new IndexedDBAdapter();
+        const adapter = createIndexedDBAdapter();
         const initResult = await adapter.init();
 
         if (!initResult.ok) throw initResult.error;

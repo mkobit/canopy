@@ -16,7 +16,7 @@ import type {
   EdgePropertiesUpdated,
   EdgeDeleted,
 } from '@canopy/types';
-import { InMemoryGraphStore } from './in-memory-graph-store';
+import { createInMemoryGraphStore } from './in-memory-graph-store';
 
 describe('InMemoryGraphStore', () => {
   const deviceId = asDeviceId('00000000-0000-0000-0000-000000000000');
@@ -49,7 +49,7 @@ describe('InMemoryGraphStore', () => {
   });
 
   it('applyEvents with NodeCreated adds node to store', () => {
-    const store = new InMemoryGraphStore();
+    const store = createInMemoryGraphStore();
     const event = createNodeEvent();
 
     unwrap(store.applyEvents([event]));
@@ -64,7 +64,7 @@ describe('InMemoryGraphStore', () => {
   });
 
   it('applyEvents with NodePropertiesUpdated merges properties', () => {
-    const store = new InMemoryGraphStore();
+    const store = createInMemoryGraphStore();
     const createEvent = createNodeEvent();
 
     setSystemTime(new Date(Date.now() + 1000));
@@ -90,7 +90,7 @@ describe('InMemoryGraphStore', () => {
   });
 
   it('applyEvents with NodeDeleted removes node and connected edges', () => {
-    const store = new InMemoryGraphStore();
+    const store = createInMemoryGraphStore();
     const node1Event = createNodeEvent();
     const node2Event = createNodeEvent();
     const edgeEvent = createEdgeEvent(undefined, node1Event.id, node2Event.id);
@@ -115,7 +115,7 @@ describe('InMemoryGraphStore', () => {
   });
 
   it('applyEvents with EdgeCreated adds edge', () => {
-    const store = new InMemoryGraphStore();
+    const store = createInMemoryGraphStore();
     const event = createEdgeEvent();
 
     unwrap(store.applyEvents([event]));
@@ -132,7 +132,7 @@ describe('InMemoryGraphStore', () => {
   });
 
   it('applyEvents with EdgePropertiesUpdated merges properties', () => {
-    const store = new InMemoryGraphStore();
+    const store = createInMemoryGraphStore();
     const createEvent = createEdgeEvent();
 
     setSystemTime(new Date(Date.now() + 1000));
@@ -158,7 +158,7 @@ describe('InMemoryGraphStore', () => {
   });
 
   it('applyEvents with EdgeDeleted removes edge', () => {
-    const store = new InMemoryGraphStore();
+    const store = createInMemoryGraphStore();
     const createEvent = createEdgeEvent();
 
     unwrap(store.applyEvents([createEvent]));
@@ -177,12 +177,12 @@ describe('InMemoryGraphStore', () => {
   });
 
   it('getNode returns undefined for missing node', () => {
-    const store = new InMemoryGraphStore();
+    const store = createInMemoryGraphStore();
     expect(store.getNode(createNodeId())).toBeUndefined();
   });
 
   it('getNodes with type filter returns only matching nodes', () => {
-    const store = new InMemoryGraphStore();
+    const store = createInMemoryGraphStore();
     const event1 = createNodeEvent();
     const event2 = createNodeEvent();
     const event3 = { ...createNodeEvent(), nodeType: asTypeId('other-node') };
@@ -199,7 +199,7 @@ describe('InMemoryGraphStore', () => {
   });
 
   it('getNodes with properties filter returns only matching nodes', () => {
-    const store = new InMemoryGraphStore();
+    const store = createInMemoryGraphStore();
     const event1 = createNodeEvent();
     const event2 = { ...createNodeEvent(), properties: new Map([['key1', 'value2']]) };
 
@@ -211,7 +211,7 @@ describe('InMemoryGraphStore', () => {
   });
 
   it('getEdgesFrom returns edges from a specific node', () => {
-    const store = new InMemoryGraphStore();
+    const store = createInMemoryGraphStore();
     const sourceNode = createNodeId();
     const targetNode1 = createNodeId();
     const targetNode2 = createNodeId();
@@ -229,7 +229,7 @@ describe('InMemoryGraphStore', () => {
   });
 
   it('getEdgesTo returns edges to a specific node', () => {
-    const store = new InMemoryGraphStore();
+    const store = createInMemoryGraphStore();
     const targetNode = createNodeId();
     const sourceNode1 = createNodeId();
     const sourceNode2 = createNodeId();
@@ -247,7 +247,7 @@ describe('InMemoryGraphStore', () => {
   });
 
   it('getEdgesFrom with edgeType filter returns only matching edges', () => {
-    const store = new InMemoryGraphStore();
+    const store = createInMemoryGraphStore();
     const sourceNode = createNodeId();
 
     const edge1 = createEdgeEvent(undefined, sourceNode, createNodeId());
@@ -264,14 +264,14 @@ describe('InMemoryGraphStore', () => {
   });
 
   it('getSnapshot and loadSnapshot round-trip correctly', () => {
-    const store1 = new InMemoryGraphStore();
+    const store1 = createInMemoryGraphStore();
     const nodeEvent = createNodeEvent();
     const edgeEvent = createEdgeEvent(undefined, nodeEvent.id, createNodeId());
 
     unwrap(store1.applyEvents([nodeEvent, edgeEvent]));
     const snapshot = store1.getSnapshot();
 
-    const store2 = new InMemoryGraphStore();
+    const store2 = createInMemoryGraphStore();
     unwrap(store2.loadSnapshot(snapshot));
 
     expect(store2.getNode(nodeEvent.id)).toBeDefined();
@@ -280,7 +280,7 @@ describe('InMemoryGraphStore', () => {
   });
 
   it('lastEventId is updated after applyEvents', () => {
-    const store = new InMemoryGraphStore();
+    const store = createInMemoryGraphStore();
     const event1 = createNodeEvent();
     const event2 = createNodeEvent();
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
-import { SQLiteAdapter } from '@canopy/storage';
+import { createSQLiteAdapter } from '@canopy/storage';
 import { getGraphAt } from '../src/time-travel';
 import {
   asNodeId,
@@ -34,7 +34,7 @@ describe('Time Travel API', () => {
   let adapter: SQLiteAdapter;
 
   beforeEach(async () => {
-    adapter = new SQLiteAdapter();
+    adapter = createSQLiteAdapter();
     await unwrap(await adapter.init());
   });
 

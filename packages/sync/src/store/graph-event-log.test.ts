@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'bun:test';
 import * as Y from 'yjs';
-import { GraphStore } from './graph-store';
+import { createGraphStore, type GraphStore } from './graph-store';
 import {
   createEventId,
   createInstant,
@@ -17,7 +17,7 @@ describe('GraphStore Event Log', () => {
 
   beforeEach(() => {
     document = new Y.Doc();
-    store = new GraphStore(document);
+    store = createGraphStore(document);
   });
 
   it('should add and retrieve an event', () => {

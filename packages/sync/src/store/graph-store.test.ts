@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'bun:test';
 import * as Y from 'yjs';
-import { GraphStore } from './graph-store';
+import { createGraphStore, type GraphStore } from './graph-store';
 import { asTypeId, asNodeId, unwrap, isErr } from '@canopy/types';
 
 describe('GraphStore', () => {
@@ -9,7 +9,7 @@ describe('GraphStore', () => {
 
   beforeEach(() => {
     document = new Y.Doc();
-    store = new GraphStore(document);
+    store = createGraphStore(document);
   });
 
   describe('Nodes', () => {
