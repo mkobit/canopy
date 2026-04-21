@@ -8,42 +8,36 @@ import { fromThrowable } from '@canopy/types';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type EventHandler = (...args: any[]) => unknown;
 
-// eslint-disable-next-line functional/no-classes
-export class InMemoryProvider implements SyncProvider {
-  readonly doc: Y.Doc;
-  readonly awareness: Awareness;
+// Shared state for all instances to simulate network
+const networks: Map<
+  string,
+  Set<
+    SyncProvider & {
+      readonly connected: boolean;
+      readonly roomName: string;
+      readonly broadcastDocUpdate: (update: Uint8Array) => void;
+      readonly broadcastAwarenessUpdate: (update: Uint8Array) => void;
+      readonly emit: (event: string, data: unknown) => void;
+    }
+  >
+> = new Map();
 
-  connected = false;
+export const createInMemoryProvider = (
+  roomName: string,
+  doc: Y.Doc,
+  awareness: Awareness,
+): SyncProvider => {
+  let connected = false;
+  const handlers: Map<string, EventHandler[]> = new Map();
 
-  readonly handlers: Map<string, EventHandler[]> = new Map<string, EventHandler[]>();
-
-  // Shared state for all instances to simulate network
-
-  static readonly networks: Map<string, Set<InMemoryProvider>> = new Map<
-    string,
-    Set<InMemoryProvider>
-  >();
-
-  readonly roomName: string;
-
-  constructor(roomName: string, doc: Y.Doc, awareness: Awareness) {
-    this.doc = doc;
-    this.awareness = awareness;
-    this.roomName = roomName;
-
-    // Listen to local updates and broadcast
-    this.doc.on('update', this.handleDocUpdate);
-    this.awareness.on('update', this.handleAwarenessUpdate);
-  }
-
-  private readonly handleDocUpdate = (update: Uint8Array, origin: unknown) => {
-    if (origin !== this && this.connected) {
-      this.broadcastDocUpdate(update);
+  const handleDocUpdate = (update: Uint8Array, origin: unknown) => {
+    if (origin !== provider && connected) {
+      provider.broadcastDocUpdate(update);
     }
     return undefined;
   };
 
-  private readonly handleAwarenessUpdate = (
+  const handleAwarenessUpdate = (
     {
       added,
       updated,
@@ -55,137 +49,147 @@ export class InMemoryProvider implements SyncProvider {
     }>,
     origin: unknown,
   ) => {
-    if (origin !== 'remote' && this.connected) {
+    if (origin !== 'remote' && connected) {
       const changedClients = [...added, ...updated, ...removed];
-      const update = AwarenessProtocol.encodeAwarenessUpdate(this.awareness, changedClients);
-      this.broadcastAwarenessUpdate(update);
+      const update = AwarenessProtocol.encodeAwarenessUpdate(awareness, changedClients);
+      provider.broadcastAwarenessUpdate(update);
     }
     return undefined;
   };
 
-  broadcastDocUpdate(update: Uint8Array) {
-    const network = InMemoryProvider.networks.get(this.roomName);
-    if (network) {
-      for (const peer of network) {
-        if (peer !== this && peer.connected) {
-          Y.applyUpdate(peer.doc, update, this);
-        }
-      }
-    }
-    return undefined;
-  }
+  doc.on('update', handleDocUpdate);
+  awareness.on('update', handleAwarenessUpdate);
 
-  broadcastAwarenessUpdate(update: Uint8Array) {
-    const network = InMemoryProvider.networks.get(this.roomName);
-    if (network) {
-      for (const peer of network) {
-        if (peer !== this && peer.connected) {
-          AwarenessProtocol.applyAwarenessUpdate(peer.awareness, update, 'remote');
-        }
-      }
-    }
-    return undefined;
-  }
+  const provider = {
+    doc,
+    awareness,
+    get connected() {
+      return connected;
+    },
+    roomName,
 
-  connect(): Result<void, Error> {
-    return fromThrowable(() => {
-      if (!InMemoryProvider.networks.has(this.roomName)) {
-        InMemoryProvider.networks.set(this.roomName, new Set());
-      }
-      InMemoryProvider.networks.get(this.roomName)!.add(this);
-      this.connected = true;
-
-      // Sync with existing peers?
-      // In a real provider we would do a sync handshake.
-      // For this simple mock, we might rely on the fact that if we join, we might miss history unless we sync.
-      // But Yjs is resilient.
-      // Let's iterate peers and apply their state.
-      const network = InMemoryProvider.networks.get(this.roomName);
+    broadcastDocUpdate: (update: Uint8Array) => {
+      const network = networks.get(roomName);
       if (network) {
+        // eslint-disable-next-line functional/no-loop-statements
         for (const peer of network) {
-          if (peer !== this && peer.connected) {
-            // Sync step 1
-            const stateVector = Y.encodeStateVector(this.doc);
-            const diff = Y.encodeStateAsUpdate(peer.doc, stateVector);
-            Y.applyUpdate(this.doc, diff, this);
-
-            // Sync step 2 (peer needs my updates)
-            const peerStateVector = Y.encodeStateVector(peer.doc);
-            const myDiff = Y.encodeStateAsUpdate(this.doc, peerStateVector);
-            Y.applyUpdate(peer.doc, myDiff, this);
-
-            // Sync Awareness
-            // Send my state to peer
-            const myAwarenessUpdate = AwarenessProtocol.encodeAwarenessUpdate(this.awareness, [
-              this.doc.clientID,
-            ]);
-            AwarenessProtocol.applyAwarenessUpdate(peer.awareness, myAwarenessUpdate, 'remote');
-
-            // Get peer state
-            // Note: encodeAwarenessUpdate with [clientId] gets that client's state.
-            // But we don't know all client IDs easily without iterating.
-            // Awareness protocol usually syncs everything.
-            // For now let's just push ours. The peer should push theirs back if we had a full handshake.
-            // Let's cheat and push peer's state to us.
-            const peerAwarenessUpdate = AwarenessProtocol.encodeAwarenessUpdate(peer.awareness, [
-              ...peer.awareness.getStates().keys(),
-            ]);
-            AwarenessProtocol.applyAwarenessUpdate(this.awareness, peerAwarenessUpdate, 'remote');
+          if (peer !== provider && peer.connected) {
+            Y.applyUpdate(peer.doc, update, provider);
           }
         }
       }
-      this.emit('status', { status: 'connected' });
       return undefined;
-    });
-  }
+    },
 
-  disconnect(): Result<void, Error> {
-    return fromThrowable(() => {
-      const network = InMemoryProvider.networks.get(this.roomName);
+    broadcastAwarenessUpdate: (update: Uint8Array) => {
+      const network = networks.get(roomName);
       if (network) {
-        network.delete(this);
-        if (network.size === 0) {
-          InMemoryProvider.networks.delete(this.roomName);
+        // eslint-disable-next-line functional/no-loop-statements
+        for (const peer of network) {
+          if (peer !== provider && peer.connected) {
+            AwarenessProtocol.applyAwarenessUpdate(peer.awareness, update, 'remote');
+          }
         }
       }
-      this.connected = false;
-      this.emit('status', { status: 'disconnected' });
       return undefined;
-    });
-  }
+    },
 
-  on(
-    event: 'status',
-    handler: (event: Readonly<{ status: 'connected' | 'disconnected' | 'connecting' }>) => unknown,
-  ) {
-    if (!this.handlers.has(event)) {
-      this.handlers.set(event, []);
-    }
-    this.handlers.get(event)?.push(handler);
-    return undefined;
-  }
+    connect: (): Result<void, Error> => {
+      return fromThrowable(() => {
+        if (!networks.has(roomName)) {
+          networks.set(roomName, new Set());
+        }
+        networks.get(roomName)!.add(provider);
+        connected = true;
 
-  off(
-    event: 'status',
-    handler: (event: Readonly<{ status: 'connected' | 'disconnected' | 'connecting' }>) => unknown,
-  ) {
-    const handlers = this.handlers.get(event);
-    if (handlers) {
-      this.handlers.set(
-        event,
-        handlers.filter((h) => h !== handler),
-      );
-    }
-    return undefined;
-  }
+        const network = networks.get(roomName);
+        if (network) {
+          // eslint-disable-next-line functional/no-loop-statements
+          for (const peer of network) {
+            if (peer !== provider && peer.connected) {
+              // Sync step 1
+              const stateVector = Y.encodeStateVector(doc);
+              const diff = Y.encodeStateAsUpdate(peer.doc, stateVector);
+              Y.applyUpdate(doc, diff, provider);
 
-  emit(event: string, data: unknown) {
-    const handlers = this.handlers.get(event);
-    if (handlers) {
-      for (const h of handlers) {
-        h(data);
+              // Sync step 2
+              const peerStateVector = Y.encodeStateVector(peer.doc);
+              const myDiff = Y.encodeStateAsUpdate(doc, peerStateVector);
+              Y.applyUpdate(peer.doc, myDiff, provider);
+
+              // Sync Awareness
+              const myAwarenessUpdate = AwarenessProtocol.encodeAwarenessUpdate(awareness, [
+                doc.clientID,
+              ]);
+              AwarenessProtocol.applyAwarenessUpdate(peer.awareness, myAwarenessUpdate, 'remote');
+
+              const peerAwarenessUpdate = AwarenessProtocol.encodeAwarenessUpdate(peer.awareness, [
+                ...peer.awareness.getStates().keys(),
+              ]);
+              AwarenessProtocol.applyAwarenessUpdate(awareness, peerAwarenessUpdate, 'remote');
+            }
+          }
+        }
+        provider.emit('status', { status: 'connected' });
+        return undefined;
+      });
+    },
+
+    disconnect: (): Result<void, Error> => {
+      return fromThrowable(() => {
+        const network = networks.get(roomName);
+        if (network) {
+          network.delete(provider);
+          if (network.size === 0) {
+            networks.delete(roomName);
+          }
+        }
+        connected = false;
+        provider.emit('status', { status: 'disconnected' });
+        return undefined;
+      });
+    },
+
+    on: (
+      event: 'status',
+      handler: (
+        event: Readonly<{ status: 'connected' | 'disconnected' | 'connecting' }>,
+      ) => unknown,
+    ) => {
+      if (!handlers.has(event)) {
+        handlers.set(event, []);
       }
-    }
-    return undefined;
-  }
-}
+      handlers.get(event)?.push(handler);
+      return undefined;
+    },
+
+    off: (
+      event: 'status',
+      handler: (
+        event: Readonly<{ status: 'connected' | 'disconnected' | 'connecting' }>,
+      ) => unknown,
+    ) => {
+      const eventHandlers = handlers.get(event);
+      if (eventHandlers) {
+        handlers.set(
+          event,
+          eventHandlers.filter((h) => h !== handler),
+        );
+      }
+      return undefined;
+    },
+
+    emit: (event: string, data: unknown) => {
+      const eventHandlers = handlers.get(event);
+      if (eventHandlers) {
+        // eslint-disable-next-line functional/no-loop-statements
+        for (const h of eventHandlers) {
+          h(data);
+        }
+      }
+      return undefined;
+    },
+  };
+
+  return provider;
+};

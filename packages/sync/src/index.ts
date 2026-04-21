@@ -1,4 +1,4 @@
 export * from './types';
-export * from './sync-engine';
-export * from './store/graph-store';
-export * from './providers/in-memory-provider';
+export { createSyncEngine, type SyncEngine } from './sync-engine';
+export { createGraphStore, type GraphStore } from './store/graph-store';
+export { createInMemoryProvider } from './providers/in-memory-provider';

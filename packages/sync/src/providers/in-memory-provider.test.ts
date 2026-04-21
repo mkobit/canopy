@@ -1,15 +1,15 @@
 import { describe, it, expect } from 'bun:test';
-import { SyncEngine } from '../sync-engine';
-import { InMemoryProvider } from './in-memory-provider';
+import { createSyncEngine } from '../sync-engine';
+import { createInMemoryProvider } from './in-memory-provider';
 import { asTypeId, unwrap } from '@canopy/types';
 
 describe('InMemoryProvider', () => {
   it('should sync changes between two engines using InMemoryProvider', () => {
-    const engine1 = new SyncEngine();
-    const engine2 = new SyncEngine();
+    const engine1 = createSyncEngine();
+    const engine2 = createSyncEngine();
 
-    const provider1 = new InMemoryProvider('room1', engine1.doc, engine1.awareness);
-    const provider2 = new InMemoryProvider('room1', engine2.doc, engine2.awareness);
+    const provider1 = createInMemoryProvider('room1', engine1.doc, engine1.awareness);
+    const provider2 = createInMemoryProvider('room1', engine2.doc, engine2.awareness);
 
     engine1.setProvider(provider1);
     engine2.setProvider(provider2);
@@ -33,11 +33,11 @@ describe('InMemoryProvider', () => {
   });
 
   it('should sync awareness states', () => {
-    const engine1 = new SyncEngine();
-    const engine2 = new SyncEngine();
+    const engine1 = createSyncEngine();
+    const engine2 = createSyncEngine();
 
-    const provider1 = new InMemoryProvider('room_awareness', engine1.doc, engine1.awareness);
-    const provider2 = new InMemoryProvider('room_awareness', engine2.doc, engine2.awareness);
+    const provider1 = createInMemoryProvider('room_awareness', engine1.doc, engine1.awareness);
+    const provider2 = createInMemoryProvider('room_awareness', engine2.doc, engine2.awareness);
 
     engine1.setProvider(provider1);
     engine2.setProvider(provider2);

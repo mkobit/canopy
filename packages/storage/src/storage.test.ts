@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
-import { SQLiteAdapter } from './sqlite-adapter';
-import { IndexedDBAdapter } from './indexeddb-adapter';
-import { GraphStorageMetadata } from './types';
+import { createSQLiteAdapter } from './sqlite-adapter';
+import { createIndexedDBAdapter } from './indexeddb-adapter';
+import { GraphStorageMetadata, StorageAdapter } from './types';
 import { unwrap } from '@canopy/types';
 import 'fake-indexeddb/auto';
 
@@ -16,10 +16,10 @@ const mockMetadata: GraphStorageMetadata = {
 };
 
 describe('SQLiteAdapter', () => {
-  let adapter: SQLiteAdapter;
+  let adapter: StorageAdapter;
 
   beforeEach(async () => {
-    adapter = new SQLiteAdapter(); // In-memory
+    adapter = createSQLiteAdapter(); // In-memory
     await adapter.init();
   });
 
@@ -66,7 +66,7 @@ describe('SQLiteAdapter', () => {
       },
     };
 
-    const persistAdapter = new SQLiteAdapter(persistence);
+    const persistAdapter = createSQLiteAdapter(persistence);
     await unwrap(await persistAdapter.init());
     await unwrap(await persistAdapter.save(mockGraphId, mockSnapshot, mockMetadata));
     await unwrap(await persistAdapter.close());
@@ -74,7 +74,7 @@ describe('SQLiteAdapter', () => {
     expect(storedData).not.toBeNull();
 
     // Re-open with data
-    const newAdapter = new SQLiteAdapter(persistence);
+    const newAdapter = createSQLiteAdapter(persistence);
     await unwrap(await newAdapter.init());
     const loaded = unwrap(await newAdapter.load(mockGraphId));
     expect(loaded).toEqual(mockSnapshot);
@@ -83,10 +83,10 @@ describe('SQLiteAdapter', () => {
 });
 
 describe('IndexedDBAdapter', () => {
-  let adapter: IndexedDBAdapter;
+  let adapter: StorageAdapter;
 
   beforeEach(async () => {
-    adapter = new IndexedDBAdapter('test-db-' + Math.random());
+    adapter = createIndexedDBAdapter('test-db-' + Math.random());
     await adapter.init();
   });
 

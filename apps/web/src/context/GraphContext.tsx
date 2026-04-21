@@ -1,6 +1,6 @@
 import { asDeviceId } from '@canopy/types';
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
-import { SyncEngine } from '@canopy/sync';
+import { createSyncEngine, type SyncEngine } from '@canopy/sync';
 import type {
   Graph,
   GraphId,
@@ -86,7 +86,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
 
         // 2. Initialize SyncEngine
         // If snapshot is undefined (new graph), we pass undefined, SyncEngine creates new Doc.
-        const engine = new SyncEngine(snapshot ? { initialSnapshot: snapshot } : {});
+        const engine = createSyncEngine(snapshot ? { initialSnapshot: snapshot } : {});
 
         setSyncEngine(engine);
         syncEngineRef.current = engine;

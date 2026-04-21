@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
-import { SQLiteAdapter } from './sqlite-adapter';
+import { createSQLiteAdapter } from './sqlite-adapter';
+import type { StorageAdapter, EventLogStore } from './types';
 import { unwrap, asNodeId, asTypeId, asEventId, asInstant, asDeviceId } from '@canopy/types';
 import type { NodeCreated, GraphEvent } from '@canopy/types';
 
@@ -17,10 +18,10 @@ const createEvent = (i: number): NodeCreated => ({
 });
 
 describe('SQLiteAdapter EventLog', () => {
-  let adapter: SQLiteAdapter;
+  let adapter: StorageAdapter & EventLogStore;
 
   beforeEach(async () => {
-    adapter = new SQLiteAdapter();
+    adapter = createSQLiteAdapter();
     await adapter.init();
   });
 
