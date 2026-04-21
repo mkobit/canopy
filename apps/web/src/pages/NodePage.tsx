@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { withResultAlert } from '../utils/handlers';
 import { useGraph } from '../context/GraphContext';
 import { NodeView, PropertyInput, DocumentRenderer } from '@canopy/ui';
 import type { Node, NodeId, PropertyValue } from '@canopy/types';
@@ -50,17 +51,10 @@ export const NodePage = () => {
       return undefined;
     }
 
-    saveGraph()
-      .then(() => {
-        setIsEditing(false);
-        return undefined;
-      })
-      .catch((error) => {
-        console.error('Failed to save node', error);
-        alert('Failed to save changes');
-        return undefined;
-      });
-    return undefined;
+    return withResultAlert(saveGraph, 'Failed to save node', () => {
+      setIsEditing(false);
+      return undefined;
+    })();
   };
 
   const handlePropertyChange = (key: string, value: PropertyValue) => {
@@ -83,16 +77,14 @@ export const NodePage = () => {
       return undefined;
     }
 
-    saveGraph()
-      .then(() => {
-        navigate('../'); // Go up to graph view
+    return withResultAlert(
+      saveGraph,
+      'Delete failed',
+      () => {
+        navigate('../');
         return undefined;
-      })
-      .catch((error) => {
-        console.error('Delete failed', error);
-        return undefined;
-      });
-    return undefined;
+      }, // Go up to graph view
+    )();
   };
 
   // Find connected edges
