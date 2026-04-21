@@ -272,13 +272,7 @@ export default tseslint.config(
   // Existing Legacy Overrides
   // TODO(canopy-q8x): Refactor legacy classes to functional patterns
   {
-    files: [
-      'packages/sync/**/*.ts',
-      'packages/ui/**/*.tsx',
-      'packages/ui/**/*.ts',
-      'apps/web/**/*.tsx',
-      'apps/web/**/*.ts',
-    ],
+    files: ['packages/sync/**/*.ts', 'apps/web/**/*.tsx', 'apps/web/**/*.ts'],
     rules: {
       'functional/prefer-immutable-types': 'off',
       'functional/type-declaration-immutability': 'off',

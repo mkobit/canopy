@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
-import { SideNavBar } from '@canopy/ui';
+import { SideNavBar } from '../ui';
 import { useGraph } from '../context/GraphContext';
 
 const handleLogout = () => {

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useGraph } from '../context/GraphContext';
-import { NodeView, PropertyInput, DocumentRenderer } from '@canopy/ui';
+import { NodeView, PropertyInput, DocumentRenderer } from '../ui';
 import type { Node, NodeId, PropertyValue } from '@canopy/types';
 import { ArrowLeft, Save, Trash, Link as LinkIcon } from 'lucide-react';
 import { filter, map } from 'remeda';
@@ -158,7 +158,7 @@ export const NodePage = () => {
                   <label className="text-sm text-gray-600">{key}</label>
                   <PropertyInput
                     value={val}
-                    onChange={(newVal) => {
+                    onChange={(newVal: import('@canopy/types').PropertyValue) => {
                       handlePropertyChange(key, newVal);
                       return undefined;
                     }}

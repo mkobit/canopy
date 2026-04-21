@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useGraph } from '../context/GraphContext';
 import { executeView } from '@canopy/query';
-import { TableLayout, ListLayout, CardsLayout } from '@canopy/ui';
+import { TableLayout, ListLayout, CardsLayout } from '../ui';
 import type { Node, NodeId } from '@canopy/types';
 
 export const ViewPage = () => {

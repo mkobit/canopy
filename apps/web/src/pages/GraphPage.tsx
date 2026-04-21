@@ -9,7 +9,7 @@ import {
   InspectorPanel,
   type InspectorNodeData,
   QuickEntryOverlay,
-} from '@canopy/ui';
+} from '../ui';
 import { InteractiveGraphView } from '../components/graph/InteractiveGraphView';
 import { ReactFlowProvider } from '@xyflow/react';
 
