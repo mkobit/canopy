@@ -12,6 +12,7 @@ import type { Connection } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { useGraph } from '../../context/GraphContext';
 import { useNavigate, useParams } from 'react-router-dom';
+import { withResultAlert } from '../../utils/handlers';
 import { CustomNode } from './CustomNode';
 import { CustomEdge } from './CustomEdge';
 import type { NodeId } from '@canopy/types';
@@ -100,13 +101,10 @@ export const InteractiveGraphView = () => {
       const sourceId = params.source as unknown as NodeId;
       const targetId = params.target as unknown as NodeId;
 
-      // eslint-disable-next-line functional/no-try-statements
-      try {
-        void createEdge(edgeType, sourceId, targetId);
-      } catch (error) {
-        console.error('Failed to create edge:', error);
-        alert('Failed to create edge');
-      }
+      void withResultAlert(
+        () => createEdge(edgeType, sourceId, targetId),
+        'Failed to create edge',
+      )();
 
       return undefined;
     },
@@ -121,13 +119,7 @@ export const InteractiveGraphView = () => {
       const type = prompt('Enter node type (e.g., Note, Person):', 'Note');
       if (!type) return undefined;
 
-      // eslint-disable-next-line functional/no-try-statements
-      try {
-        void createNode(type, { name });
-      } catch (error) {
-        console.error('Failed to create node:', error);
-        alert('Failed to create node');
-      }
+      void withResultAlert(() => createNode(type, { name }), 'Failed to create node')();
 
       return undefined;
     },

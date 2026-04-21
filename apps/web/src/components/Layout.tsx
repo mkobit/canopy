@@ -2,6 +2,7 @@ import React from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { SideNavBar } from '@canopy/ui';
 import { useGraph } from '../context/GraphContext';
+import { withResultAlert } from '../utils/handlers';
 
 const handleLogout = () => {
   alert('Logout clicked');
@@ -21,20 +22,11 @@ export const Layout = () => {
     const text = prompt('New Node Name:');
     if (!text) return undefined;
 
-    // eslint-disable-next-line functional/no-try-statements
-    try {
-      const result = await createNode('Note', { name: text });
-      if (result.ok) {
-        navigate(`/graph/${graph.id}/node/${result.value}`);
-      } else {
-        console.error('Failed to create node', result.error);
-        alert('Failed to create node: ' + result.error.message);
-      }
-    } catch (error) {
-      console.error('Failed to create node', error);
-      alert('Failed to create node.');
-    }
-    return undefined;
+    return withResultAlert(
+      () => createNode('Note', { name: text }),
+      'Failed to create node',
+      (val) => navigate(`/graph/${graph.id}/node/${val}`),
+    )();
   };
 
   // Add the `dark` class to html/body implicitly via container, or manually update index.html.

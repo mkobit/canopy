@@ -18,6 +18,7 @@ import {
   ok,
   err,
 } from '@canopy/types';
+import { fromThrowable } from '@canopy/types';
 import { Temporal } from 'temporal-polyfill';
 
 // UUID regex (generic)
@@ -89,24 +90,24 @@ export function createTypeId(id: string): Result<TypeId, Error> {
  * Validates that the string is a valid date-time.
  */
 export function createInstant(isoString: string): Result<Instant, Error> {
-  // eslint-disable-next-line functional/no-try-statements
-  try {
-    const instant = Temporal.Instant.from(isoString);
-    return ok(asInstant(instant.toString()));
-  } catch {
-    return err(new Error(`Invalid Instant: '${isoString}' is not a valid ISO 8601 date string.`));
-  }
+  return fromThrowable(
+    () => {
+      const instant = Temporal.Instant.from(isoString);
+      return asInstant(instant.toString());
+    },
+    () => new Error(`Invalid Instant: '${isoString}' is not a valid ISO 8601 date string.`),
+  );
 }
 
 /**
  * Creates a branded PlainDate from an ISO 8601 date string (YYYY-MM-DD).
  */
 export function createPlainDate(dateString: string): Result<PlainDate, Error> {
-  // eslint-disable-next-line functional/no-try-statements
-  try {
-    const date = Temporal.PlainDate.from(dateString);
-    return ok(asPlainDate(date.toString()));
-  } catch {
-    return err(new Error(`Invalid PlainDate: '${dateString}' must be in YYYY-MM-DD format.`));
-  }
+  return fromThrowable(
+    () => {
+      const date = Temporal.PlainDate.from(dateString);
+      return asPlainDate(date.toString());
+    },
+    () => new Error(`Invalid PlainDate: '${dateString}' must be in YYYY-MM-DD format.`),
+  );
 }

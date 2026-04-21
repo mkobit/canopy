@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { withResultAlert } from '../utils/handlers';
 import { useGraph } from '../context/GraphContext';
 import { NodeView, PropertyInput, DocumentRenderer } from '@canopy/ui';
 import type { Node, NodeId, PropertyValue } from '@canopy/types';
@@ -40,19 +41,20 @@ export const NodePage = () => {
   const handleSave = async () => {
     if (!syncEngine || !currentNode) return undefined;
 
-    // eslint-disable-next-line functional/no-try-statements
-    try {
-      syncEngine.store.updateNode(currentNode.id, {
-        properties: new Map(editedProps),
-      });
+    const updateResult = syncEngine.store.updateNode(currentNode.id, {
+      properties: new Map(editedProps),
+    });
 
-      await saveGraph(); // Persist changes
-      setIsEditing(false);
-    } catch (error) {
-      console.error('Failed to save node', error);
+    if (!updateResult.ok) {
+      console.error('Failed to update node in store', updateResult.error);
       alert('Failed to save changes');
+      return undefined;
     }
-    return undefined;
+
+    return withResultAlert(saveGraph, 'Failed to save node', () => {
+      setIsEditing(false);
+      return undefined;
+    })();
   };
 
   const handlePropertyChange = (key: string, value: PropertyValue) => {
@@ -69,15 +71,20 @@ export const NodePage = () => {
     if (!syncEngine || !currentNode) return undefined;
     if (!confirm('Delete this node?')) return undefined;
 
-    // eslint-disable-next-line functional/no-try-statements
-    try {
-      syncEngine.store.deleteNode(currentNode.id);
-      await saveGraph();
-      navigate('../'); // Go up to graph view
-    } catch (error) {
-      console.error('Delete failed', error);
+    const deleteResult = syncEngine.store.deleteNode(currentNode.id);
+    if (!deleteResult.ok) {
+      console.error('Delete failed in store', deleteResult.error);
+      return undefined;
     }
-    return undefined;
+
+    return withResultAlert(
+      saveGraph,
+      'Delete failed',
+      () => {
+        navigate('../');
+        return undefined;
+      }, // Go up to graph view
+    )();
   };
 
   // Find connected edges

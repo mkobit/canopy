@@ -1,5 +1,6 @@
 import type { Graph, Node, NodeId, TypeId, PropertyValue } from '@canopy/types';
 import type { Namespace } from '@canopy/types';
+import { fromThrowable } from '@canopy/types';
 import { SYSTEM_IDS } from './system';
 
 export type ScopeType = 'node' | 'type' | 'namespace' | 'global';
@@ -39,12 +40,11 @@ export function resolveSetting(
   const defaultValueRaw = schema.properties.get('defaultValue');
   if (typeof defaultValueRaw === 'string' && defaultValueRaw !== 'null') {
     // defaultValue is JSON-encoded
-    // eslint-disable-next-line functional/no-try-statements
-    try {
-      return JSON.parse(defaultValueRaw) as PropertyValue;
-    } catch {
-      return undefined;
+    const result = fromThrowable(() => JSON.parse(defaultValueRaw) as PropertyValue);
+    if (result.ok) {
+      return result.value;
     }
+    return undefined;
   }
 
   return undefined;
@@ -83,12 +83,11 @@ function findUserSetting(
 
     const raw = node.properties.get('value');
     if (typeof raw === 'string') {
-      // eslint-disable-next-line functional/no-try-statements
-      try {
-        return JSON.parse(raw) as PropertyValue;
-      } catch {
-        return undefined;
+      const result = fromThrowable(() => JSON.parse(raw) as PropertyValue);
+      if (result.ok) {
+        return result.value;
       }
+      return undefined;
     }
   }
   return undefined;

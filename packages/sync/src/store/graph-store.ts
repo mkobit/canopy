@@ -1,6 +1,6 @@
 import type * as Y from 'yjs';
 import type { Node, Edge, Result, GraphEvent } from '@canopy/types';
-import { ok, err } from '@canopy/types';
+import { fromThrowable } from '@canopy/types';
 import * as NodeOps from './ops/node';
 import * as EdgeOps from './ops/edge';
 import { eventToStorable, storableToEvent } from './converters';
@@ -81,24 +81,19 @@ export class GraphStore {
   }
 
   addEvent(event: GraphEvent): Result<void, Error> {
-    // eslint-disable-next-line functional/no-try-statements
-    try {
+    return fromThrowable(() => {
       this.events.set(event.eventId, eventToStorable(event));
-      return ok(undefined);
-    } catch (error) {
-      return err(error instanceof Error ? error : new Error(String(error)));
-    }
+      return undefined;
+    });
   }
 
   getEvents(): IterableIterator<GraphEvent> {
-    // eslint-disable-next-line functional/no-try-statements
-    try {
+    const result = fromThrowable(() => {
       const events = [...this.events.values()].map(storableToEvent);
       // Sort by eventId (UUIDv7 is time-ordered)
       events.sort((a, b) => a.eventId.localeCompare(b.eventId));
       return events[Symbol.iterator]();
-    } catch {
-      return [][Symbol.iterator]();
-    }
+    });
+    return result.ok ? result.value : [][Symbol.iterator]();
   }
 }

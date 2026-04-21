@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Outlet, useNavigate, useOutlet } from 'react-router-dom';
 import { useGraph } from '../context/GraphContext';
 import { asGraphId } from '@canopy/types';
-import { toHandler } from '../utils/handlers';
+import { toHandler, withResultAlert } from '../utils/handlers';
 import {
   TopAppBar,
   GraphExplorerCanvas,
@@ -48,20 +48,10 @@ export const GraphPage = () => {
 
   const outlet = useOutlet();
 
-  const handleQuickEntry = async (text: string) => {
-    // eslint-disable-next-line functional/no-try-statements
-    try {
-      const res = await createNode('RawNode', { name: text });
-      if (!res.ok) {
-        // eslint-disable-next-line functional/no-throw-statements
-        throw res.error;
-      }
-    } catch (error_) {
-      console.error('Failed to quick entry', error_);
-      alert('Failed to capture thought');
-    }
-    return undefined;
-  };
+  const handleQuickEntry = withResultAlert(
+    (text: string) => createNode('RawNode', { name: text }),
+    'Failed to capture thought',
+  );
 
   if (isLoading) {
     return (

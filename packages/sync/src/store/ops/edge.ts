@@ -1,6 +1,14 @@
 import type * as Y from 'yjs';
 import type { Edge, EdgeId, Result } from '@canopy/types';
-import { createEdgeId, createInstant, asEdgeId, ok, err, asDeviceId } from '@canopy/types';
+import {
+  createEdgeId,
+  createInstant,
+  asEdgeId,
+  ok,
+  err,
+  asDeviceId,
+  fromThrowable,
+} from '@canopy/types';
 import { EdgeSchema } from '@canopy/schema';
 import { map } from 'remeda';
 import { edgeToStorable, storableToEdge } from '../converters';
@@ -55,22 +63,11 @@ export function getEdge(edges: Y.Map<unknown>, id: string): Result<Edge, Error> 
   if (!e) {
     return err(new Error(`Edge ${id} not found`));
   }
-  // eslint-disable-next-line functional/no-try-statements
-  try {
-    return ok(storableToEdge(e));
-  } catch (error) {
-    return err(error instanceof Error ? error : new Error(String(error)));
-  }
+  return fromThrowable(() => storableToEdge(e));
 }
 
 export function getAllEdges(edges: Y.Map<unknown>): Result<IterableIterator<Edge>, Error> {
-  // eslint-disable-next-line functional/no-try-statements
-  try {
-    const iterator = map([...edges.values()], storableToEdge)[Symbol.iterator]();
-    return ok(iterator);
-  } catch (error) {
-    return err(error instanceof Error ? error : new Error(String(error)));
-  }
+  return fromThrowable(() => map([...edges.values()], storableToEdge)[Symbol.iterator]());
 }
 
 export function updateEdge(

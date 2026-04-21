@@ -106,43 +106,39 @@ describe('Core Graph Engine', () => {
     // Use a fixed future time to ensure the update timestamp differs from
     // the original node creation timestamp (which uses the real system time).
     setSystemTime(new Date('2030-01-01T00:00:00Z'));
+    const r2 = unwrap(
+      updateNode(
+        g1,
+        nodeId1,
+        (n) => ({
+          ...n,
+          properties: new Map([['name', 'Alice']]),
+        }),
+        { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') },
+      ),
+    );
+    const g2 = r2.graph;
 
-    try {
-      const r2 = unwrap(
-        updateNode(
-          g1,
-          nodeId1,
-          (n) => ({
-            ...n,
-            properties: new Map([['name', 'Alice']]),
-          }),
-          { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') },
-        ),
-      );
-      const g2 = r2.graph;
+    expect(g2.nodes.get(nodeId1)?.properties.get('name')).toEqual('Alice');
+    expect(g1.nodes.get(nodeId1)?.properties.size).toBe(0); // Original unmodified
 
-      expect(g2.nodes.get(nodeId1)?.properties.get('name')).toEqual('Alice');
-      expect(g1.nodes.get(nodeId1)?.properties.size).toBe(0); // Original unmodified
+    // Metadata modified should be updated
+    expect(g2.nodes.get(nodeId1)?.metadata.modified).not.toBe(
+      g1.nodes.get(nodeId1)?.metadata.modified,
+    );
 
-      // Metadata modified should be updated
-      expect(g2.nodes.get(nodeId1)?.metadata.modified).not.toBe(
-        g1.nodes.get(nodeId1)?.metadata.modified,
-      );
+    expect(r2.events).toHaveLength(1);
+    const event = r2.events[0];
+    expect(event).toBeDefined();
+    if (!event) throw new Error('Event missing');
 
-      expect(r2.events).toHaveLength(1);
-      const event = r2.events[0];
-      expect(event).toBeDefined();
-      if (!event) throw new Error('Event missing');
-
-      expect(event.type).toBe('NodePropertiesUpdated');
-      if (event.type === 'NodePropertiesUpdated') {
-        expect(event.eventId).toEqual(expect.any(String));
-        expect(event.id).toBe(nodeId1);
-        expect(event.changes.get('name')).toEqual('Alice');
-      }
-    } finally {
-      setSystemTime();
+    expect(event.type).toBe('NodePropertiesUpdated');
+    if (event.type === 'NodePropertiesUpdated') {
+      expect(event.eventId).toEqual(expect.any(String));
+      expect(event.id).toBe(nodeId1);
+      expect(event.changes.get('name')).toEqual('Alice');
     }
+    setSystemTime();
   });
 
   it('should remove nodes and connected edges and emit events', () => {
