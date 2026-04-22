@@ -7,6 +7,8 @@ import functional from 'eslint-plugin-functional';
 import importPlugin from 'eslint-plugin-import';
 import unicorn from 'eslint-plugin-unicorn';
 import stylistic from '@stylistic/eslint-plugin';
+import reactPlugin from 'eslint-plugin-react';
+import reactHooksPlugin from 'eslint-plugin-react-hooks';
 import eslintPluginJsonc from 'eslint-plugin-jsonc';
 import * as jsoncParser from 'jsonc-eslint-parser';
 import { fileURLToPath } from 'node:url';
@@ -211,6 +213,14 @@ export default tseslint.config(
           name: 'Date',
           message: 'Use Temporal instead of Date.',
         },
+        {
+          name: 'alert',
+          message: 'Use custom alert components or notifications instead of standard alert().',
+        },
+        {
+          name: 'prompt',
+          message: 'Use custom modals or inputs instead of standard prompt().',
+        },
       ],
       '@typescript-eslint/no-restricted-types': [
         'error',
@@ -223,6 +233,47 @@ export default tseslint.config(
           },
         },
       ],
+    },
+  },
+
+  {
+    plugins: {
+      react: reactPlugin,
+      'react-hooks': reactHooksPlugin,
+    },
+    files: ['packages/ui/**/*.tsx', 'packages/ui/**/*.ts', 'apps/web/**/*.tsx', 'apps/web/**/*.ts'],
+    languageOptions: {
+      parserOptions: {
+        ecmaFeatures: {
+          jsx: true,
+        },
+      },
+    },
+    rules: {
+      ...reactPlugin.configs.recommended.rules,
+      ...reactHooksPlugin.configs.recommended.rules,
+      'react/react-in-jsx-scope': 'off', // Not needed for React 17+
+      'react/prop-types': 'off', // We use TypeScript
+      'no-restricted-globals': [
+        'error',
+        {
+          name: 'alert',
+          message: 'Use custom alert components or notifications instead of standard alert().',
+        },
+        {
+          name: 'prompt',
+          message: 'Use custom modals or inputs instead of standard prompt().',
+        },
+        {
+          name: 'Date',
+          message: 'Use Temporal instead of Date.',
+        },
+      ],
+    },
+    settings: {
+      react: {
+        version: '18.2.0',
+      },
     },
   },
 
