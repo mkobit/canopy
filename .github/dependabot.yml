@@ -10,7 +10,49 @@ updates:
     cooldown:
       default-days: 14
     groups:
-      all:
+      typescript:
+        patterns:
+          - 'typescript'
+          - 'tsx'
+          - 'bun-types'
+          - '@types/node'
+      lint-and-format:
+        patterns:
+          - 'eslint*'
+          - '@eslint/*'
+          - '@stylistic/*'
+          - '@typescript-eslint/*'
+          - 'prettier*'
+          - 'globals'
+      build-and-test:
+        patterns:
+          - 'vite*'
+          - '@vitejs/*'
+          - 'husky'
+          - 'lint-staged'
+          - 'happy-dom'
+          - '@happy-dom/*'
+          - '@testing-library/*'
+          - 'fake-indexeddb'
+          - 'electron'
+      react-and-ui:
+        patterns:
+          - 'react'
+          - 'react-*'
+          - '@types/react*'
+          - '@xyflow/*'
+          - 'clsx'
+          - 'lucide-react'
+          - 'tailwind*'
+          - '@tailwindcss/*'
+          - 'postcss'
+          - 'autoprefixer'
+      functional:
+        patterns:
+          - 'remeda'
+          - 'effect'
+          - '@effect/*'
+      other:
         patterns:
           - '*'
 
