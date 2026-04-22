@@ -1,4 +1,4 @@
-import type { Graph, Node } from '@canopy/types';
+import type { Graph, Node, Edge, TypeId, NodeId } from '@canopy/types';
 import { SYSTEM_IDS } from './system';
 import { asNodeId } from '@canopy/types';
 import { filter } from 'remeda';
@@ -40,4 +40,54 @@ export function getNodeType(graph: Readonly<Graph>, typeNameOrId: string): Node 
     const nameProp = n.properties.get('name');
     return nameProp === typeNameOrId;
   });
+}
+
+/**
+ * Returns a specific edge type definition node by its name,
+ * or by its ID if the name is not found (or if name is treated as ID).
+ *
+ * Note: Type definitions are Nodes.
+ */
+export function getEdgeType(graph: Readonly<Graph>, typeNameOrId: string): Node | undefined {
+  // First try to find by ID (assuming the type name is the ID)
+  const nodeId = asNodeId(typeNameOrId);
+  const node = graph.nodes.get(nodeId);
+  if (node && node.type === SYSTEM_IDS.EDGE_TYPE) {
+    return node;
+  }
+
+  // Fallback: search by name property
+  return findNode(graph, (n) => {
+    if (n.type !== SYSTEM_IDS.EDGE_TYPE) return false;
+    const nameProp = n.properties.get('name');
+    return nameProp === typeNameOrId;
+  });
+}
+
+/**
+ * Returns all nodes whose type matches the given typeId.
+ */
+export function getNodesOfType(graph: Readonly<Graph>, typeId: TypeId): readonly Node[] {
+  return filter([...graph.nodes.values()], (node) => node.type === typeId);
+}
+
+/**
+ * Returns all edges whose type matches the given typeId.
+ */
+export function getEdgesOfType(graph: Readonly<Graph>, typeId: TypeId): readonly Edge[] {
+  return filter([...graph.edges.values()], (edge) => edge.type === typeId);
+}
+
+/**
+ * Returns all edges originating from the given nodeId, optionally filtered by edgeTypeId.
+ */
+export function getEdgesFrom(
+  graph: Readonly<Graph>,
+  nodeId: NodeId,
+  edgeTypeId?: TypeId,
+): readonly Edge[] {
+  return filter(
+    [...graph.edges.values()],
+    (edge) => edge.source === nodeId && (edgeTypeId === undefined || edge.type === edgeTypeId),
+  );
 }

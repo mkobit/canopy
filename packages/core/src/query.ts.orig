@@ -23,6 +23,13 @@ export function getNodesByType(graph: Graph, type: TypeId): readonly Node[] {
 }
 
 /**
+ * Retrieves all edges outgoing from a node.
+ */
+export function getEdgesFrom(graph: Graph, nodeId: NodeId): readonly Edge[] {
+  return filter([...graph.edges.values()], (edge) => edge.source === nodeId);
+}
+
+/**
  * Retrieves all edges incoming to a node.
  */
 export function getEdgesTo(graph: Graph, nodeId: NodeId): readonly Edge[] {
