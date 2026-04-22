@@ -14,7 +14,7 @@ import { addNode } from './ops/node';
 import { addEdge } from './ops/edge';
 import { SYSTEM_IDS } from './system';
 import type { Graph, Node, Edge } from '@canopy/types';
-import { createInstant, createNodeId, createEdgeId } from '@canopy/types';
+import { createInstant, createEdgeId } from '@canopy/types';
 
 describe('Graph Queries', () => {
   let graph: Graph;
@@ -27,7 +27,7 @@ describe('Graph Queries', () => {
       name: 'Test Graph',
       metadata: { created: createInstant(), modified: createInstant(), modifiedBy: DEVICE_ID },
       nodes: new Map(),
-      edges: new Map()
+      edges: new Map(),
     };
 
     // Bootstrap creates a graph populated with system nodes/edges.
@@ -43,7 +43,7 @@ describe('Graph Queries', () => {
       id: asNodeId('node-1'),
       type: customNodeTypeId,
       properties: new Map(),
-      metadata: { created: createInstant(), modified: createInstant(), modifiedBy: DEVICE_ID }
+      metadata: { created: createInstant(), modified: createInstant(), modifiedBy: DEVICE_ID },
     };
     graph = unwrap(addNode(graph, node1, { deviceId: DEVICE_ID })).graph;
 
@@ -51,7 +51,7 @@ describe('Graph Queries', () => {
       id: asNodeId('node-2'),
       type: customNodeTypeId,
       properties: new Map(),
-      metadata: { created: createInstant(), modified: createInstant(), modifiedBy: DEVICE_ID }
+      metadata: { created: createInstant(), modified: createInstant(), modifiedBy: DEVICE_ID },
     };
     graph = unwrap(addNode(graph, node2, { deviceId: DEVICE_ID })).graph;
 
@@ -59,7 +59,7 @@ describe('Graph Queries', () => {
       id: asNodeId('node-3'),
       type: asTypeId('another-type'),
       properties: new Map(),
-      metadata: { created: createInstant(), modified: createInstant(), modifiedBy: DEVICE_ID }
+      metadata: { created: createInstant(), modified: createInstant(), modifiedBy: DEVICE_ID },
     };
     graph = unwrap(addNode(graph, node3, { deviceId: DEVICE_ID })).graph;
 
@@ -70,7 +70,7 @@ describe('Graph Queries', () => {
       source: asNodeId('node-1'),
       target: asNodeId('node-2'),
       properties: new Map(),
-      metadata: { created: createInstant(), modified: createInstant(), modifiedBy: DEVICE_ID }
+      metadata: { created: createInstant(), modified: createInstant(), modifiedBy: DEVICE_ID },
     };
     graph = unwrap(addEdge(graph, edge1, { deviceId: DEVICE_ID })).graph;
 
@@ -80,7 +80,7 @@ describe('Graph Queries', () => {
       source: asNodeId('node-1'),
       target: asNodeId('node-3'),
       properties: new Map(),
-      metadata: { created: createInstant(), modified: createInstant(), modifiedBy: DEVICE_ID }
+      metadata: { created: createInstant(), modified: createInstant(), modifiedBy: DEVICE_ID },
     };
     graph = unwrap(addEdge(graph, edge2, { deviceId: DEVICE_ID })).graph;
 
@@ -90,7 +90,7 @@ describe('Graph Queries', () => {
       source: asNodeId('node-1'),
       target: asNodeId('node-2'),
       properties: new Map(),
-      metadata: { created: createInstant(), modified: createInstant(), modifiedBy: DEVICE_ID }
+      metadata: { created: createInstant(), modified: createInstant(), modifiedBy: DEVICE_ID },
     };
     graph = unwrap(addEdge(graph, edge3, { deviceId: DEVICE_ID })).graph;
   });
@@ -168,7 +168,7 @@ describe('Graph Queries', () => {
     test('returns all edges of a specific type', () => {
       const edges = getEdgesOfType(graph, asTypeId('custom-edge-type'));
       expect(edges.length).toBe(2);
-      expect(edges.every(e => e.type === 'custom-edge-type')).toBe(true);
+      expect(edges.every((e) => e.type === 'custom-edge-type')).toBe(true);
     });
 
     test('returns empty array if no edges of type exist', () => {
@@ -181,13 +181,13 @@ describe('Graph Queries', () => {
     test('returns all edges originating from a node', () => {
       const edges = getEdgesFrom(graph, asNodeId('node-1'));
       expect(edges.length).toBe(3);
-      expect(edges.every(e => e.source === 'node-1')).toBe(true);
+      expect(edges.every((e) => e.source === 'node-1')).toBe(true);
     });
 
     test('returns edges filtered by type if provided', () => {
       const edges = getEdgesFrom(graph, asNodeId('node-1'), asTypeId('custom-edge-type'));
       expect(edges.length).toBe(2);
-      expect(edges.every(e => e.source === 'node-1' && e.type === 'custom-edge-type')).toBe(true);
+      expect(edges.every((e) => e.source === 'node-1' && e.type === 'custom-edge-type')).toBe(true);
     });
 
     test('returns empty array for node with no outgoing edges', () => {

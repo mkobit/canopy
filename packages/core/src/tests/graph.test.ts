@@ -231,7 +231,7 @@ describe('Core Graph Engine', () => {
     expect(people.map((p) => p.id)).toContain(nodeId1);
     expect(people.map((p) => p.id)).toContain(nodeId2);
 
-    expect([...g.edges.values()].filter(e => e.source === nodeId1)).toHaveLength(1);
+    expect([...g.edges.values()].filter((e) => e.source === nodeId1)).toHaveLength(1);
     expect(getEdgesTo(g, nodeId2)).toHaveLength(1);
     expect(getEdgesTo(g, nodeId1)).toHaveLength(0);
   });
