@@ -22,6 +22,7 @@ const networks: Map<
   >
 > = new Map();
 
+// eslint-disable-next-line max-lines-per-function
 export const createInMemoryProvider = (
   roomName: string,
   doc: Y.Doc,

@@ -16,17 +16,16 @@ import { getNodeType } from './queries';
 import { SYSTEM_IDS } from './system';
 import { pipe, map, flatMap, filter } from 'remeda';
 
-export function getNodeTypeDefinition(graph: Graph, typeId: TypeId): Node | undefined {
-  return getNodeType(graph, typeId);
-}
+export const getNodeTypeDefinition = getNodeType;
 
 // Helper to create a success result
 const SUCCESS: ValidationResult = { valid: true, errors: [] };
 
 // Helper to create an error result
-function failure(errors: readonly ValidationError[]): ValidationResult {
-  return { valid: false, errors };
-}
+const failure = (errors: readonly ValidationError[]): ValidationResult => ({
+  valid: false,
+  errors,
+});
 
 // Extract properties from a definition node
 function extractProperties(node: Node): readonly PropertyDefinition[] {
