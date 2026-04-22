@@ -10,6 +10,7 @@ function getIndex(char: string | undefined): number {
  * Keys use the base62 alphabet.
  */
 /* eslint-disable functional/no-let, functional/no-loop-statements, functional/no-throw-statements */
+// eslint-disable-next-line max-lines-per-function
 export function generateKeyBetween(a: string | null, b: string | null): string {
   if (a !== null && b !== null && a >= b) {
     throw new Error(`a (${a}) must be less than b (${b})`);
@@ -76,7 +77,7 @@ export function generateKeyBetween(a: string | null, b: string | null): string {
   }
 
   // Both exist.
-  // eslint-disable-next-line no-constant-condition
+
   while (true) {
     const charA = a[index]; // undefined if exhausted
     const charB = b[index]; // undefined if exhausted

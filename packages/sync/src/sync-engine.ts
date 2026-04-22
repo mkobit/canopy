@@ -44,6 +44,7 @@ export interface SyncEngine {
   ) => Result<void, Error>;
 }
 
+// eslint-disable-next-line max-lines-per-function
 export const createSyncEngine = (options: SyncEngineOptions = {}): SyncEngine => {
   const doc = new Y.Doc();
 

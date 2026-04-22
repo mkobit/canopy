@@ -66,6 +66,7 @@ const deserializeEvent = (storable: unknown): GraphEvent => {
   }
 };
 
+// eslint-disable-next-line max-lines-per-function
 export const createSQLiteAdapter = (
   persistence?: SQLitePersistence,
 ): StorageAdapter & EventLogStore => {

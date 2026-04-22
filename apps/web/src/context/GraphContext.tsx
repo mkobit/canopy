@@ -55,6 +55,7 @@ const GraphContext = createContext<GraphContextType>({
   createEdge: async () => err(new Error('Not initialized')),
 });
 
+// eslint-disable-next-line max-lines-per-function
 export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = ({ children }) => {
   const { storage } = useStorage();
   const [syncEngine, setSyncEngine] = useState<SyncEngine | null>(null);

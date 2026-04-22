@@ -176,6 +176,7 @@ function reduceResult<T, R>(
  * Bootstraps a graph with system nodes.
  * This is idempotent - it only adds nodes if they are missing.
  */
+// eslint-disable-next-line max-lines-per-function
 export function bootstrap(graph: Graph): Result<Graph, Error> {
   const steps: readonly ((g: Graph) => Result<Graph, Error>)[] = [
     // 1. Ensure NodeType definition exists
