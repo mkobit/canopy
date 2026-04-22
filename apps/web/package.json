@@ -22,7 +22,7 @@
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "react-markdown": "^10.1.0",
-    "react-router-dom": "^7.13.2",
+    "react-router-dom": "^7.14.0",
     "remeda": "^2.33.7",
     "tailwind-merge": "^3.5.0",
     "temporal-polyfill": "^0.3.2",
@@ -40,9 +40,9 @@
     "autoprefixer": "^10.4.27",
     "fake-indexeddb": "^6.2.5",
     "happy-dom": "^20.4.0",
-    "postcss": "^8.5.8",
+    "postcss": "^8.5.9",
     "tailwindcss": "^4.2.2",
     "typescript": "6.0.2",
-    "vite": "^8.0.3"
+    "vite": "^8.0.7"
   }
 }
