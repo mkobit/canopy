@@ -1,14 +1,4 @@
 {
-  "name": "@canopy/sync",
-  "version": "0.0.0",
-  "private": true,
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "scripts": {
-    "build": "tsc",
-    "typecheck": "tsc -p tsconfig.check.json",
-    "test": "bun test ./src"
-  },
   "dependencies": {
     "@canopy/schema": "workspace:*",
     "@canopy/types": "workspace:*",
@@ -21,5 +11,15 @@
   "devDependencies": {
     "@types/uuid": "^11.0.0",
     "typescript": "6.0.2"
-  }
+  },
+  "main": "dist/index.js",
+  "name": "@canopy/sync",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "test": "bun test ./src",
+    "typecheck": "tsc -p tsconfig.check.json"
+  },
+  "types": "dist/index.d.ts",
+  "version": "0.0.0"
 }

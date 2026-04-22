@@ -1,26 +1,7 @@
 {
-  "name": "canopy-graph",
-  "version": "0.0.0",
-  "private": true,
-  "workspaces": [
-    "packages/*",
-    "apps/*",
-    "tools"
-  ],
-  "engines": {
-    "bun": "1.3.11"
-  },
-  "scripts": {
-    "build": "tsc -b && bun --filter './apps/*' build",
-    "check:versions": "bun tools/verify-versions.ts",
-    "test": "bun --filter '*' test",
-    "lint": "bun run check:versions && eslint .",
-    "format": "prettier --write .",
-    "typecheck": "bun --filter '*' typecheck",
-    "prepare": "husky"
-  },
-  "overrides": {
-    "@typescript-eslint/utils": "8.54.0"
+  "dependencies": {
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -38,10 +19,12 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-functional": "^9.0.4",
     "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-jsonc": "^3.1.2",
     "eslint-plugin-prettier": "^5.5.5",
     "eslint-plugin-unicorn": "^64.0.0",
     "globals": "^17.4.0",
     "husky": "^9.1.7",
+    "jsonc-eslint-parser": "^3.1.0",
     "lint-staged": "^16.4.0",
     "prettier": "^3.8.1",
     "tsx": "^4.21.0",
@@ -50,8 +33,27 @@
     "uuid": "^13.0.0",
     "vite": "^8.0.7"
   },
-  "dependencies": {
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4"
-  }
+  "engines": {
+    "bun": "1.3.11"
+  },
+  "name": "canopy-graph",
+  "overrides": {
+    "@typescript-eslint/utils": "8.54.0"
+  },
+  "private": true,
+  "scripts": {
+    "build": "tsc -b && bun --filter './apps/*' build",
+    "check:versions": "bun tools/verify-versions.ts",
+    "format": "prettier --write .",
+    "lint": "bun run check:versions && eslint .",
+    "prepare": "husky",
+    "test": "bun --filter '*' test",
+    "typecheck": "bun --filter '*' typecheck"
+  },
+  "version": "0.0.0",
+  "workspaces": [
+    "packages/*",
+    "apps/*",
+    "tools"
+  ]
 }

@@ -1,14 +1,14 @@
 {
-  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "moduleResolution": "bundler",
-    "target": "ESNext",
-    "module": "ESNext",
     "lib": ["ESNext"],
-    "skipLibCheck": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
     "noEmit": true,
+    "skipLibCheck": true,
+    "target": "ESNext",
     "types": ["bun-types"]
   },
+  "extends": "../../tsconfig.base.json",
   "include": ["src/**/*"],
   "references": [
     {

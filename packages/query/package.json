@@ -1,13 +1,4 @@
 {
-  "name": "@canopy/query",
-  "version": "0.0.0",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "scripts": {
-    "build": "tsc",
-    "typecheck": "tsc -p tsconfig.check.json",
-    "test": "bun test ./src ./tests"
-  },
   "dependencies": {
     "@canopy/core": "workspace:*",
     "@canopy/schema": "workspace:*",
@@ -17,5 +8,14 @@
   "devDependencies": {
     "typescript": "6.0.2",
     "yjs": "^13.6.30"
-  }
+  },
+  "main": "./dist/index.js",
+  "name": "@canopy/query",
+  "scripts": {
+    "build": "tsc",
+    "test": "bun test ./src ./tests",
+    "typecheck": "tsc -p tsconfig.check.json"
+  },
+  "types": "./dist/index.d.ts",
+  "version": "0.0.0"
 }
