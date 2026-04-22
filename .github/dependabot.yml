@@ -12,7 +12,7 @@ updates:
     groups:
       all:
         patterns:
-          - "*"
+          - '*'
 
   - package-ecosystem: 'github-actions'
     directory: '/'
@@ -26,4 +26,4 @@ updates:
     groups:
       all:
         patterns:
-          - "*"
+          - '*'

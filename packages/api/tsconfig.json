@@ -8,8 +8,7 @@
       "@canopy/api": ["../../packages/api/src/index.ts"],
       "@canopy/query": ["../../packages/query/src/index.ts"],
       "@canopy/storage": ["../../packages/storage/src/index.ts"],
-      "@canopy/sync": ["../../packages/sync/src/index.ts"],
-      "@canopy/ui": ["../../packages/ui/src/index.tsx"]
+      "@canopy/sync": ["../../packages/sync/src/index.ts"]
     },
     "composite": false,
     "noEmit": true
