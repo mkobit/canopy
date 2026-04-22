@@ -81,6 +81,7 @@ const deserializeEvent = (storable: unknown): GraphEvent => {
   }
 };
 
+// eslint-disable-next-line max-lines-per-function
 export const createIndexedDBAdapter = (
   dbName = 'canopy-storage',
 ): StorageAdapter & EventLogStore => {
@@ -194,11 +195,11 @@ export const createIndexedDBAdapter = (
             true,
           );
         } else if (options.after) {
-          range = IDBKeyRange.bound([graphId, options.after], [graphId, '\uffff'], true, false);
+          range = IDBKeyRange.bound([graphId, options.after], [graphId, '\uFFFF'], true, false);
         } else if (options.before) {
           range = IDBKeyRange.bound([graphId, ''], [graphId, options.before], false, true);
         } else {
-          range = IDBKeyRange.bound([graphId, ''], [graphId, '\uffff']);
+          range = IDBKeyRange.bound([graphId, ''], [graphId, '\uFFFF']);
         }
 
         let records = await db!.getAllFromIndex('events', 'by-graph-event', range);
