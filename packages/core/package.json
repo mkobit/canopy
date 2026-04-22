@@ -1,13 +1,4 @@
 {
-  "name": "@canopy/core",
-  "version": "0.0.0",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "scripts": {
-    "build": "tsc",
-    "typecheck": "tsc -p tsconfig.check.json",
-    "test": "bun test ./src ./tests"
-  },
   "dependencies": {
     "@canopy/schema": "workspace:*",
     "@canopy/types": "workspace:*",
@@ -16,5 +7,14 @@
   },
   "devDependencies": {
     "@types/uuid": "^11.0.0"
-  }
+  },
+  "main": "./dist/index.js",
+  "name": "@canopy/core",
+  "scripts": {
+    "build": "tsc",
+    "test": "bun test ./src ./tests",
+    "typecheck": "tsc -p tsconfig.check.json"
+  },
+  "types": "./dist/index.d.ts",
+  "version": "0.0.0"
 }

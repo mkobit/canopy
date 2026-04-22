@@ -7,6 +7,8 @@ import functional from 'eslint-plugin-functional';
 import importPlugin from 'eslint-plugin-import';
 import unicorn from 'eslint-plugin-unicorn';
 import stylistic from '@stylistic/eslint-plugin';
+import eslintPluginJsonc from 'eslint-plugin-jsonc';
+import * as jsoncParser from 'jsonc-eslint-parser';
 import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
 
@@ -224,6 +226,25 @@ export default tseslint.config(
     },
   },
 
+  // JSON files
+  ...eslintPluginJsonc.configs['flat/recommended-with-jsonc'],
+  {
+    files: ['**/*.json'],
+    languageOptions: {
+      parser: jsoncParser,
+    },
+    rules: {
+      'jsonc/sort-keys': 'error',
+      'jsonc/array-bracket-newline': 'off',
+      'jsonc/array-bracket-spacing': 'off',
+      'jsonc/comma-style': 'off',
+      'jsonc/indent': 'off',
+      'jsonc/key-spacing': 'off',
+      'jsonc/object-curly-newline': 'off',
+      'jsonc/object-curly-spacing': 'off',
+      'jsonc/object-property-newline': 'off',
+    },
+  },
   // === Specific Overrides (Must come last to win) ===
 
   // Unicorn Overrides (Global)

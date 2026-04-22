@@ -1,14 +1,4 @@
 {
-  "name": "@canopy/api",
-  "version": "0.0.0",
-  "private": true,
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "scripts": {
-    "build": "tsc",
-    "typecheck": "tsc -p tsconfig.check.json",
-    "test": "bun test ./src ./tests"
-  },
   "dependencies": {
     "@canopy/core": "workspace:*",
     "@canopy/storage": "workspace:*",
@@ -17,5 +7,15 @@
   },
   "devDependencies": {
     "typescript": "6.0.2"
-  }
+  },
+  "main": "dist/index.js",
+  "name": "@canopy/api",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "test": "bun test ./src ./tests",
+    "typecheck": "tsc -p tsconfig.check.json"
+  },
+  "types": "dist/index.d.ts",
+  "version": "0.0.0"
 }

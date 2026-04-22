@@ -1,14 +1,4 @@
 {
-  "name": "@canopy/storage",
-  "version": "0.0.0",
-  "private": true,
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "scripts": {
-    "build": "tsc",
-    "typecheck": "tsc -p tsconfig.check.json",
-    "test": "bun test ./src"
-  },
   "dependencies": {
     "@canopy/sync": "workspace:*",
     "@canopy/types": "workspace:*",
@@ -19,5 +9,15 @@
   "devDependencies": {
     "fake-indexeddb": "^6.2.5",
     "typescript": "6.0.2"
-  }
+  },
+  "main": "dist/index.js",
+  "name": "@canopy/storage",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "test": "bun test ./src",
+    "typecheck": "tsc -p tsconfig.check.json"
+  },
+  "types": "dist/index.d.ts",
+  "version": "0.0.0"
 }

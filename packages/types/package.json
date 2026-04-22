@@ -1,19 +1,19 @@
 {
-  "name": "@canopy/types",
-  "version": "0.0.0",
-  "private": true,
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "scripts": {
-    "build": "tsc",
-    "typecheck": "tsc --noEmit"
+  "dependencies": {
+    "temporal-polyfill": "^0.3.2",
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "@types/uuid": "^11.0.0",
     "typescript": "6.0.2"
   },
-  "dependencies": {
-    "temporal-polyfill": "^0.3.2",
-    "uuid": "^13.0.0"
-  }
+  "main": "dist/index.js",
+  "name": "@canopy/types",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "types": "dist/index.d.ts",
+  "version": "0.0.0"
 }
