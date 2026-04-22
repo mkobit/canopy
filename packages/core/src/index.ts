@@ -7,3 +7,4 @@ export * from './ops/index';
 export * from './projection';
 export * from './namespace';
 export * from './settings';
+export * from './event-bus';
