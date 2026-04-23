@@ -66,9 +66,7 @@ export const SearchPage = () => {
           );
         })}
         {query && results.length === 0 && (
-          <div className="text-center text-gray-500 py-12">
-            No results found for &quot;{query}&quot;
-          </div>
+          <div className="text-center text-gray-500 py-12">No results found for "{query}"</div>
         )}
       </div>
     </div>

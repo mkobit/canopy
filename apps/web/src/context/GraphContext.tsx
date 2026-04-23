@@ -66,29 +66,6 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
   const [error, setError] = useState<Error | null>(null);
   const [currentGraphId, setCurrentGraphId] = useState<GraphId | null>(null);
 
-  const updateGraphFromStore = useCallback((engine: SyncEngine, graphId: GraphId) => {
-    const nodes = new Map<NodeId, Node>(
-      [...engine.store.getAllNodes()].map((node) => [node.id, node]),
-    );
-    const edges = new Map<EdgeId, Edge>(
-      [...engine.store.getAllEdges()].map((edge) => [edge.id, edge]),
-    );
-
-    const now = asInstant(Temporal.Now.instant().toString());
-    setGraph({
-      id: graphId,
-      name: 'Graph', // We should load this
-      metadata: {
-        created: now,
-        modified: now,
-        modifiedBy: asDeviceId('00000000-0000-0000-0000-000000000000'),
-      }, // Placeholder
-      nodes,
-      edges,
-    });
-    return undefined;
-  }, []);
-
   const loadGraph = useCallback(
     async (graphId: GraphId): Promise<Result<void, Error>> => {
       if (!storage) return err(new Error('Storage not available'));
@@ -136,8 +113,31 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
       setIsLoading(false);
       return result;
     },
-    [storage, updateGraphFromStore],
+    [storage],
   ); // Removed syncEngine from dependency
+
+  const updateGraphFromStore = (engine: SyncEngine, graphId: GraphId) => {
+    const nodes = new Map<NodeId, Node>(
+      [...engine.store.getAllNodes()].map((node) => [node.id, node]),
+    );
+    const edges = new Map<EdgeId, Edge>(
+      [...engine.store.getAllEdges()].map((edge) => [edge.id, edge]),
+    );
+
+    const now = asInstant(Temporal.Now.instant().toString());
+    setGraph({
+      id: graphId,
+      name: 'Graph', // We should load this
+      metadata: {
+        created: now,
+        modified: now,
+        modifiedBy: asDeviceId('00000000-0000-0000-0000-000000000000'),
+      }, // Placeholder
+      nodes,
+      edges,
+    });
+    return undefined;
+  };
 
   const closeGraph = useCallback((): Result<void, Error> => {
     return fromThrowable(() => {

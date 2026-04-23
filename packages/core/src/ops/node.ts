@@ -1,7 +1,6 @@
 import type {
   Graph,
   Node,
-  Edge,
   NodeId,
   Result,
   GraphResult,
@@ -90,24 +89,12 @@ export function removeNode(
     });
   }
 
-  const newNodes = new Map(graph.nodes);
-  // eslint-disable-next-line functional/immutable-data
-  newNodes.delete(nodeId);
+  const newNodes = new Map([...graph.nodes].filter(([id]) => id !== nodeId));
 
   // Remove connected edges and track events
-
-  const edgesToRemove: Edge[] = [];
-  const newEdges = new Map(graph.edges);
-
-  // eslint-disable-next-line functional/no-loop-statements
-  for (const edge of graph.edges.values()) {
-    if (edge.source === nodeId || edge.target === nodeId) {
-      // eslint-disable-next-line functional/immutable-data
-      edgesToRemove.push(edge);
-      // eslint-disable-next-line functional/immutable-data
-      newEdges.delete(edge.id);
-    }
-  }
+  const edgesToRemove = [...graph.edges]
+    .map(([, edge]) => edge)
+    .filter((edge) => edge.source === nodeId || edge.target === nodeId);
 
   const edgeEvents: readonly GraphEvent[] = edgesToRemove.map((edge) => ({
     type: 'EdgeDeleted',
@@ -118,6 +105,10 @@ export function removeNode(
     ...(options.batchId === undefined ? {} : { batchId: options.batchId }),
     ...(options.migrationId === undefined ? {} : { migrationId: options.migrationId }),
   }));
+
+  const newEdges = new Map(
+    [...graph.edges].filter(([_id, edge]) => edge.source !== nodeId && edge.target !== nodeId),
+  );
 
   const newGraph = {
     ...graph,

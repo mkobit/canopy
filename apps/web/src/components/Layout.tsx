@@ -5,7 +5,6 @@ import { useGraph } from '../context/GraphContext';
 import { withResultAlert } from '../utils/handlers';
 
 const handleLogout = () => {
-  // eslint-disable-next-line no-restricted-globals
   alert('Logout clicked');
   return undefined;
 };
@@ -16,12 +15,10 @@ export const Layout = () => {
 
   const handleNewNode = async () => {
     if (!graph) {
-      // eslint-disable-next-line no-restricted-globals
       alert('Open a graph first.');
       return undefined;
     }
 
-    // eslint-disable-next-line no-restricted-globals
     const text = prompt('New Node Name:');
     if (!text) return undefined;
 

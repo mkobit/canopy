@@ -1,5 +1,6 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useStorage } from '../context/StorageContext';
+import { showPrompt, showConfirm } from '../utils/dialogs';
 import { useNavigate } from 'react-router-dom';
 import { createGraphId } from '@canopy/types';
 import { Plus, Trash2, FolderOpen } from 'lucide-react';
@@ -13,7 +14,7 @@ export const HomePage = () => {
   const [graphs, setGraphs] = useState<readonly GraphStorageMetadata[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const loadGraphs = useCallback(async () => {
+  const loadGraphs = React.useCallback(async () => {
     if (!storage) return undefined;
     setLoading(true);
 
@@ -30,16 +31,15 @@ export const HomePage = () => {
 
   useEffect(() => {
     if (storage) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      loadGraphs();
+      // eslint-disable-next-line functional/prefer-tacit
+      Promise.resolve().then(() => loadGraphs());
     }
     return undefined;
   }, [storage, loadGraphs]);
 
   const handleCreateGraph = async () => {
     if (!storage) return undefined;
-    // eslint-disable-next-line no-restricted-globals
-    const name = prompt('Enter graph name:');
+    const name = showPrompt('Enter graph name:');
     if (!name) return undefined;
 
     const id = createGraphId();
@@ -66,7 +66,7 @@ export const HomePage = () => {
   const handleDeleteGraph = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!storage) return undefined;
-    if (!confirm('Are you sure you want to delete this graph?')) return undefined;
+    if (!showConfirm('Are you sure you want to delete this graph?')) return undefined;
 
     const result = await storage.delete(id);
     if (result.ok) {

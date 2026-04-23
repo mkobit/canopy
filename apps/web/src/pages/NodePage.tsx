@@ -20,25 +20,13 @@ export const NodePage = () => {
   useEffect(() => {
     if (graph && nodeId) {
       const node = graph.nodes.get(nodeId as NodeId);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCurrentNode(node);
       if (node) {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         setEditedProps(new Map(node.properties));
       }
     }
     return undefined;
   }, [graph, nodeId]);
-
-  // Find connected edges
-  const connectedEdges = useMemo(() => {
-    if (!graph || !currentNode) return [];
-
-    return filter(
-      [...graph.edges.values()],
-      (edge) => edge.source === currentNode.id || edge.target === currentNode.id,
-    );
-  }, [graph, currentNode]);
 
   if (!currentNode) {
     return (
@@ -60,7 +48,6 @@ export const NodePage = () => {
 
     if (!updateResult.ok) {
       console.error('Failed to update node in store', updateResult.error);
-      // eslint-disable-next-line no-restricted-globals
       alert('Failed to save changes');
       return undefined;
     }
@@ -100,6 +87,16 @@ export const NodePage = () => {
       }, // Go up to graph view
     )();
   };
+
+  // Find connected edges
+  const connectedEdges = useMemo(() => {
+    if (!graph || !currentNode) return [];
+
+    return filter(
+      [...graph.edges.values()],
+      (edge) => edge.source === currentNode.id || edge.target === currentNode.id,
+    );
+  }, [graph, currentNode]);
 
   return (
     <div className="max-w-3xl mx-auto bg-white min-h-full shadow-sm border-x border-gray-100 flex flex-col">
