@@ -9,7 +9,28 @@ export type GraphEvent =
   | NodeDeleted
   | EdgeCreated
   | EdgePropertiesUpdated
-  | EdgeDeleted;
+  | EdgeDeleted
+  | WorkflowStarted
+  | WorkflowCompleted;
+
+export interface WorkflowStarted {
+  readonly type: 'WorkflowStarted';
+  readonly eventId: EventId;
+  readonly workflowId: NodeId;
+  readonly triggerId: NodeId;
+  readonly timestamp: Instant;
+  readonly deviceId: DeviceId;
+  readonly batchId?: string | undefined;
+}
+
+export interface WorkflowCompleted {
+  readonly type: 'WorkflowCompleted';
+  readonly eventId: EventId;
+  readonly executionId: EventId;
+  readonly timestamp: Instant;
+  readonly deviceId: DeviceId;
+  readonly batchId?: string | undefined;
+}
 
 export interface NodeCreated {
   readonly type: 'NodeCreated';

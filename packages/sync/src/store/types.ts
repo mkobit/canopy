@@ -98,13 +98,34 @@ export interface StorableEdgeDeleted {
   readonly migrationId?: string | undefined;
 }
 
+export interface StorableWorkflowStarted {
+  readonly type: 'WorkflowStarted';
+  readonly eventId: EventId;
+  readonly workflowId: NodeId;
+  readonly triggerId: NodeId;
+  readonly timestamp: Instant;
+  readonly deviceId: DeviceId;
+  readonly batchId?: string | undefined;
+}
+
+export interface StorableWorkflowCompleted {
+  readonly type: 'WorkflowCompleted';
+  readonly eventId: EventId;
+  readonly executionId: EventId;
+  readonly timestamp: Instant;
+  readonly deviceId: DeviceId;
+  readonly batchId?: string | undefined;
+}
+
 export type StorableGraphEvent =
   | StorableNodeCreated
   | StorableNodePropertiesUpdated
   | StorableNodeDeleted
   | StorableEdgeCreated
   | StorableEdgePropertiesUpdated
-  | StorableEdgeDeleted;
+  | StorableEdgeDeleted
+  | StorableWorkflowStarted
+  | StorableWorkflowCompleted;
 
 // Zod schemas for Storable types
 export const StorablePropertiesSchema = z.record(z.string(), PropertyValueSchema);
@@ -193,6 +214,25 @@ export const StorableEdgeDeletedSchema = z.object({
   migrationId: z.string().optional(),
 });
 
+export const StorableWorkflowStartedSchema = z.object({
+  type: z.literal('WorkflowStarted'),
+  eventId: z.string().transform((val) => asEventId(val)),
+  workflowId: z.string().transform((val) => asNodeId(val)),
+  triggerId: z.string().transform((val) => asNodeId(val)),
+  timestamp: InstantSchema,
+  deviceId: DeviceIdSchema,
+  batchId: z.string().optional(),
+});
+
+export const StorableWorkflowCompletedSchema = z.object({
+  type: z.literal('WorkflowCompleted'),
+  eventId: z.string().transform((val) => asEventId(val)),
+  executionId: z.string().transform((val) => asEventId(val)),
+  timestamp: InstantSchema,
+  deviceId: DeviceIdSchema,
+  batchId: z.string().optional(),
+});
+
 export const StorableGraphEventSchema: z.ZodType<StorableGraphEvent, unknown> =
   z.discriminatedUnion('type', [
     StorableNodeCreatedSchema,
@@ -201,4 +241,6 @@ export const StorableGraphEventSchema: z.ZodType<StorableGraphEvent, unknown> =
     StorableEdgeCreatedSchema,
     StorableEdgePropertiesUpdatedSchema,
     StorableEdgeDeletedSchema,
+    StorableWorkflowStartedSchema,
+    StorableWorkflowCompletedSchema,
   ]);
