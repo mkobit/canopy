@@ -1,5 +1,6 @@
 import { v7 as uuidv7 } from 'uuid';
-import type { Graph, Node } from '@canopy/types';
+import { createInstant } from '@canopy/types';
+import type { Graph, Node, GraphEvent } from '@canopy/types';
 
 /**
  * Generates a stable UUIDv7 string for workflow execution contexts.
@@ -21,4 +22,21 @@ export function findNode(graph: Graph, predicate: (node: Node) => boolean): Node
     }
   }
   return undefined;
+}
+
+/**
+ * Takes a list of events (missing batchId and timestamp) and returns a completed set
+ * where all events share the same batchId and have a consistent timestamp.
+ */
+export function createBatch(events: readonly Partial<GraphEvent>[]): readonly GraphEvent[] {
+  const batchId = uuidv7();
+  const timestamp = createInstant();
+
+  return events.map((event) => {
+    return {
+      ...event,
+      batchId,
+      timestamp,
+    } as GraphEvent;
+  });
 }
