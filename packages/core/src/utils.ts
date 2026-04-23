@@ -1,6 +1,6 @@
 import { v7 as uuidv7 } from 'uuid';
 import { createInstant } from '@canopy/types';
-import type { Graph, Node, GraphEvent } from '@canopy/types';
+import type { EventId, Graph, Node, GraphEvent } from '@canopy/types';
 
 /**
  * Generates a stable UUIDv7 string for workflow execution contexts.
@@ -39,4 +39,39 @@ export function createBatch(events: readonly Partial<GraphEvent>[]): readonly Gr
       timestamp,
     } as GraphEvent;
   });
+}
+
+// eslint-disable-next-line functional/no-classes
+export class EventDeduplicator {
+  private readonly seen: Set<EventId>;
+  private readonly maxSize: number;
+
+  constructor(maxSize = 10_000) {
+    // eslint-disable-next-line functional/no-this-expressions
+    this.seen = new Set<EventId>();
+    // eslint-disable-next-line functional/no-this-expressions
+    this.maxSize = maxSize;
+  }
+
+  public add(id: EventId): boolean {
+    // eslint-disable-next-line functional/no-this-expressions
+    if (this.seen.has(id)) {
+      return false;
+    }
+
+    // eslint-disable-next-line functional/no-this-expressions
+    this.seen.add(id);
+
+    // eslint-disable-next-line functional/no-this-expressions
+    if (this.seen.size > this.maxSize) {
+      // eslint-disable-next-line functional/no-this-expressions
+      const oldest = this.seen.keys().next().value;
+      if (oldest !== undefined) {
+        // eslint-disable-next-line functional/no-this-expressions
+        this.seen.delete(oldest);
+      }
+    }
+
+    return true;
+  }
 }
