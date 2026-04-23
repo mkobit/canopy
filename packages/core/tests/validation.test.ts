@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'bun:test';
 import { createGraph } from '../src/graph';
 import { addNode } from '../src/ops';
-import { validateNode, validateEdge, matchesCondition } from '../src/validation';
+import { validateNode, validateEdge, matchesCondition, isEdgeCompatible } from '../src/validation';
+import type { EdgeTypeDefinition } from '@canopy/types';
 import { SYSTEM_IDS } from '../src/system';
 import {
   asNodeId,
@@ -558,5 +559,61 @@ describe('transitive and inverse edge type extraction', () => {
     // Should be valid — transitive is boolean, inverse is reference (string)
     const result = validateNode(g, edgeTypeNode);
     expect(result.valid).toBe(true);
+  });
+});
+
+describe('isEdgeCompatible', () => {
+  const mockDef = (sourceTypes: string[], targetTypes: string[]): EdgeTypeDefinition => ({
+    id: asTypeId('test-edge-type'),
+    name: 'Test Edge Type',
+    namespace: 'user',
+    properties: [],
+    sourceTypes: sourceTypes.map(asTypeId),
+    targetTypes: targetTypes.map(asTypeId),
+    transitive: false,
+    inverse: undefined,
+  });
+
+  const t1 = asTypeId('type-1');
+  const t2 = asTypeId('type-2');
+  const t3 = asTypeId('type-3');
+
+  it('allows explicit matches for both source and target', () => {
+    const def = mockDef(['type-1', 'type-2'], ['type-3']);
+    expect(isEdgeCompatible(def, t1, t3)).toBe(true);
+    expect(isEdgeCompatible(def, t2, t3)).toBe(true);
+  });
+
+  it('rejects when source does not match', () => {
+    const def = mockDef(['type-1'], ['type-3']);
+    expect(isEdgeCompatible(def, t2, t3)).toBe(false);
+  });
+
+  it('rejects when target does not match', () => {
+    const def = mockDef(['type-1'], ['type-3']);
+    expect(isEdgeCompatible(def, t1, t2)).toBe(false);
+  });
+
+  it('rejects when both source and target do not match', () => {
+    const def = mockDef(['type-1'], ['type-3']);
+    expect(isEdgeCompatible(def, t2, t2)).toBe(false);
+  });
+
+  it('allows wildcard source (empty list)', () => {
+    const def = mockDef([], ['type-3']);
+    expect(isEdgeCompatible(def, t1, t3)).toBe(true);
+    expect(isEdgeCompatible(def, t2, t3)).toBe(true);
+  });
+
+  it('allows wildcard target (empty list)', () => {
+    const def = mockDef(['type-1'], []);
+    expect(isEdgeCompatible(def, t1, t2)).toBe(true);
+    expect(isEdgeCompatible(def, t1, t3)).toBe(true);
+  });
+
+  it('allows wildcard source and target (both empty lists)', () => {
+    const def = mockDef([], []);
+    expect(isEdgeCompatible(def, t1, t2)).toBe(true);
+    expect(isEdgeCompatible(def, t2, t3)).toBe(true);
   });
 });

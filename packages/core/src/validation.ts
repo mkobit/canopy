@@ -283,6 +283,16 @@ function validateNodeTypeEdgeConstraints(graph: Graph, edge: Edge): readonly Val
   return [...sourceErrors, ...targetErrors];
 }
 
+export function isEdgeCompatible(
+  def: EdgeTypeDefinition,
+  sourceType: TypeId,
+  targetType: TypeId,
+): boolean {
+  const sourceMatches = def.sourceTypes.length === 0 || def.sourceTypes.includes(sourceType);
+  const targetMatches = def.targetTypes.length === 0 || def.targetTypes.includes(targetType);
+  return sourceMatches && targetMatches;
+}
+
 export function validateEdge(graph: Graph, edge: Edge): ValidationResult {
   // 1. Lookup EdgeType
   const edgeTypeId = asNodeId(edge.type);
