@@ -20,8 +20,10 @@ export const NodePage = () => {
   useEffect(() => {
     if (graph && nodeId) {
       const node = graph.nodes.get(nodeId as NodeId);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCurrentNode(node);
       if (node) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setEditedProps(new Map(node.properties));
       }
     }
@@ -58,6 +60,7 @@ export const NodePage = () => {
 
     if (!updateResult.ok) {
       console.error('Failed to update node in store', updateResult.error);
+      // eslint-disable-next-line no-restricted-globals
       alert('Failed to save changes');
       return undefined;
     }

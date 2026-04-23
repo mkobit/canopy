@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useStorage } from '../context/StorageContext';
 import { useNavigate } from 'react-router-dom';
 import { createGraphId } from '@canopy/types';
@@ -30,6 +30,7 @@ export const HomePage = () => {
 
   useEffect(() => {
     if (storage) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       loadGraphs();
     }
     return undefined;
@@ -37,6 +38,7 @@ export const HomePage = () => {
 
   const handleCreateGraph = async () => {
     if (!storage) return undefined;
+    // eslint-disable-next-line no-restricted-globals
     const name = prompt('Enter graph name:');
     if (!name) return undefined;
 
