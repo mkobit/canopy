@@ -1,7 +1,23 @@
-import type { GraphEvent } from '@canopy/types';
+import type { GraphEvent, TypeId, NodeCreated } from '@canopy/types';
 
 // eslint-disable-next-line functional/no-return-void
 export type EventHandler = (events: readonly GraphEvent[]) => void;
+
+export const onNodeCreated = (
+  typeId: TypeId,
+  // eslint-disable-next-line functional/no-return-void
+  callback: (event: NodeCreated) => void,
+): EventHandler => {
+  // eslint-disable-next-line functional/no-return-void
+  return (events: readonly GraphEvent[]) => {
+    // eslint-disable-next-line functional/no-loop-statements
+    for (const event of events.filter(
+      (event): event is NodeCreated => event.type === 'NodeCreated' && event.nodeType === typeId,
+    )) {
+      callback(event);
+    }
+  };
+};
 
 export interface EventBus {
   // eslint-disable-next-line functional/no-return-void
