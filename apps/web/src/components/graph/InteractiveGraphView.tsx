@@ -11,6 +11,7 @@ import {
 import type { Connection } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { useGraph } from '../../context/GraphContext';
+import { showPrompt } from '../../utils/dialogs';
 import { useNavigate, useParams } from 'react-router-dom';
 import { withResultAlert } from '../../utils/handlers';
 import { CustomNode } from './CustomNode';
@@ -96,7 +97,7 @@ export const InteractiveGraphView = () => {
 
   const onConnect = useCallback(
     (params: Connection) => {
-      const edgeType = prompt('Enter edge type (e.g., RelatedTo, HasAuthor):', 'RelatedTo');
+      const edgeType = showPrompt('Enter edge type (e.g., RelatedTo, HasAuthor):', 'RelatedTo');
       if (!edgeType || !params.source || !params.target) return undefined;
 
       const sourceId = params.source as unknown as NodeId;
@@ -114,10 +115,10 @@ export const InteractiveGraphView = () => {
 
   const onDoubleClick = useCallback(
     (_event: React.MouseEvent) => {
-      const name = prompt('Enter node name:');
+      const name = showPrompt('Enter node name:');
       if (!name) return undefined;
 
-      const type = prompt('Enter node type (e.g., Note, Person):', 'Note');
+      const type = showPrompt('Enter node type (e.g., Note, Person):', 'Note');
       if (!type) return undefined;
 
       void withResultAlert(() => createNode(type, { name }), 'Failed to create node')();

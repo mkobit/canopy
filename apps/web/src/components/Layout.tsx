@@ -3,9 +3,10 @@ import { Outlet, useNavigate } from 'react-router-dom';
 import { SideNavBar } from '.';
 import { useGraph } from '../context/GraphContext';
 import { withResultAlert } from '../utils/handlers';
+import { showAlert, showPrompt } from '../utils/dialogs';
 
 const handleLogout = () => {
-  alert('Logout clicked');
+  showAlert('Logout clicked');
   return undefined;
 };
 
@@ -15,11 +16,11 @@ export const Layout = () => {
 
   const handleNewNode = async () => {
     if (!graph) {
-      alert('Open a graph first.');
+      showAlert('Open a graph first.');
       return undefined;
     }
 
-    const text = prompt('New Node Name:');
+    const text = showPrompt('New Node Name:');
     if (!text) return undefined;
 
     return withResultAlert(
