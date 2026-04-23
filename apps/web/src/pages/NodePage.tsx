@@ -28,6 +28,16 @@ export const NodePage = () => {
     return undefined;
   }, [graph, nodeId]);
 
+  // Find connected edges
+  const connectedEdges = useMemo(() => {
+    if (!graph || !currentNode) return [];
+
+    return filter(
+      [...graph.edges.values()],
+      (edge) => edge.source === currentNode.id || edge.target === currentNode.id,
+    );
+  }, [graph, currentNode]);
+
   if (!currentNode) {
     return (
       <div className="p-8 text-center">
@@ -87,16 +97,6 @@ export const NodePage = () => {
       }, // Go up to graph view
     )();
   };
-
-  // Find connected edges
-  const connectedEdges = useMemo(() => {
-    if (!graph || !currentNode) return [];
-
-    return filter(
-      [...graph.edges.values()],
-      (edge) => edge.source === currentNode.id || edge.target === currentNode.id,
-    );
-  }, [graph, currentNode]);
 
   return (
     <div className="max-w-3xl mx-auto bg-white min-h-full shadow-sm border-x border-gray-100 flex flex-col">

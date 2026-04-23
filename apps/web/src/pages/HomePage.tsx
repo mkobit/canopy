@@ -13,14 +13,7 @@ export const HomePage = () => {
   const [graphs, setGraphs] = useState<readonly GraphStorageMetadata[]>([]);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (storage) {
-      loadGraphs();
-    }
-    return undefined;
-  }, [storage]);
-
-  const loadGraphs = async () => {
+  const loadGraphs = useCallback(async () => {
     if (!storage) return undefined;
     setLoading(true);
 
@@ -33,7 +26,14 @@ export const HomePage = () => {
 
     setLoading(false);
     return undefined;
-  };
+  }, [storage]);
+
+  useEffect(() => {
+    if (storage) {
+      loadGraphs();
+    }
+    return undefined;
+  }, [storage, loadGraphs]);
 
   const handleCreateGraph = async () => {
     if (!storage) return undefined;
