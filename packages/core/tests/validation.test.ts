@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'bun:test';
 import { createGraph } from '../src/graph';
 import { addNode } from '../src/ops';
-import { validateNode, validateEdge, matchesCondition, isEdgeCompatible } from '../src/validation';
+import { validateNode, validateEdge, matchesCondition, isEdgeCompatible, validatePropertyByType } from '../src/validation';
 import type { EdgeTypeDefinition } from '@canopy/types';
 import { SYSTEM_IDS } from '../src/system';
 import {
@@ -498,6 +498,90 @@ describe('matchesCondition', () => {
     const payload = { a: 1 };
     const condition = JSON.stringify(null);
     expect(matchesCondition(payload, condition)).toBe(false);
+  });
+});
+
+describe('validatePropertyByType', () => {
+  const DEVICE = asDeviceId('00000000-0000-0000-0000-000000000000');
+
+  function setupGraph() {
+    let g = unwrap(createGraph(createGraphId(), 'Test Graph'));
+
+    // Add a PropertyType node
+    const propType = createNode({
+      id: asNodeId('prop-age'),
+      type: asTypeId('system:nodetype:property-type'),
+      properties: {
+        name: 'age',
+        valueKind: 'number',
+        namespace: 'user',
+      },
+    });
+
+    g = unwrap(addNode(g, propType, { deviceId: DEVICE })).graph;
+
+    return { graph: g, propTypeId: propType.id };
+  }
+
+  it('returns valid: true when value matches property type kind', () => {
+    const { graph, propTypeId } = setupGraph();
+
+    const result = validatePropertyByType(graph, propTypeId, 42);
+
+    expect(result.valid).toBe(true);
+    expect(result.errors.length).toBe(0);
+  });
+
+  it('returns valid: false when value does not match property type kind', () => {
+    const { graph, propTypeId } = setupGraph();
+
+    const result = validatePropertyByType(graph, propTypeId, 'forty-two');
+
+    expect(result.valid).toBe(false);
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]?.message).toContain("expected type 'number'");
+  });
+
+  it('returns error when PropertyType node is missing', () => {
+    const { graph } = setupGraph();
+    const missingId = asNodeId('missing-prop-type');
+
+    const result = validatePropertyByType(graph, missingId, 42);
+
+    expect(result.valid).toBe(false);
+    expect(result.errors[0]?.message).toContain(`PropertyType node '${missingId}' not found`);
+  });
+
+  it('returns error when PropertyType node is missing valueKind', () => {
+    let g = unwrap(createGraph(createGraphId(), 'Test Graph'));
+
+    const invalidPropType = createNode({
+      id: asNodeId('prop-invalid'),
+      type: asTypeId('system:nodetype:property-type'),
+      properties: {
+        name: 'invalidProp',
+        namespace: 'user',
+      },
+    });
+    g = unwrap(addNode(g, invalidPropType, { deviceId: DEVICE })).graph;
+
+    const result = validatePropertyByType(g, invalidPropType.id, 'some string');
+
+    expect(result.valid).toBe(false);
+    expect(result.errors[0]?.message).toContain(`missing 'valueKind' property`);
+  });
+
+  it('handles array values correctly', () => {
+    let g = unwrap(createGraph(createGraphId(), 'Test Graph'));
+    const listPropType = createNode({
+      id: asNodeId('prop-list'),
+      type: asTypeId('system:nodetype:property-type'),
+      properties: { name: 'items', valueKind: 'list' },
+    });
+    g = unwrap(addNode(g, listPropType, { deviceId: DEVICE })).graph;
+
+    expect(validatePropertyByType(g, listPropType.id, ['a', 'b']).valid).toBe(true);
+    expect(validatePropertyByType(g, listPropType.id, 'not-a-list').valid).toBe(false);
   });
 });
 
