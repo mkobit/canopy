@@ -160,8 +160,12 @@ describe('createBatch', () => {
 
     expect(batch).toHaveLength(2);
 
-    const firstEvent = batch[0] as GraphEvent;
-    const secondEvent = batch[1] as GraphEvent;
+    const firstEvent = batch[0];
+    const secondEvent = batch[1];
+
+    if (!firstEvent || !secondEvent) {
+      throw new Error('Batch should have 2 events');
+    }
 
     expect(firstEvent.batchId).toBeDefined();
     expect(firstEvent.timestamp).toBeDefined();

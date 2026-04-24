@@ -8,6 +8,8 @@ import type {
   ValidationError,
   PropertyDefinition,
   PropertyValue,
+  PropertyValueKind,
+  NodeId,
   TypeId,
 } from '@canopy/types';
 import { asTypeId, asNodeId, fromThrowable } from '@canopy/types';
@@ -241,6 +243,56 @@ export function matchesCondition(payload: Record<string, any>, conditionJson: st
   return Object.entries(conditionRecord).every(([key, value]) => payload[key] === value);
 }
 
+export function validatePropertyByType(
+  graph: Graph,
+  propertyTypeId: NodeId,
+  value: PropertyValue,
+): ValidationResult {
+  const defNode = graph.nodes.get(propertyTypeId);
+  if (!defNode) {
+    return failure([
+      { path: [propertyTypeId], message: `PropertyType node '${propertyTypeId}' not found` },
+    ]);
+  }
+
+  const nameProp = defNode.properties.get('name');
+  const name = typeof nameProp === 'string' ? nameProp : 'unknown';
+
+  const valueKindProp = defNode.properties.get('valueKind');
+  if (typeof valueKindProp !== 'string') {
+    return failure([
+      {
+        path: [name],
+        message: `PropertyType node '${propertyTypeId}' missing 'valueKind' property`,
+      },
+    ]);
+  }
+
+  const def: PropertyDefinition = {
+    name,
+    valueKind: valueKindProp as PropertyValueKind,
+    required: true,
+    description: undefined,
+  };
+
+  const errors = validateValue(value, def);
+  if (errors.length > 0) {
+    return failure(errors);
+  }
+
+  return SUCCESS;
+}
+
+export function isEdgeCompatible(
+  def: EdgeTypeDefinition,
+  sourceType: TypeId,
+  targetType: TypeId,
+): boolean {
+  const sourceOk = def.sourceTypes.length === 0 || def.sourceTypes.includes(sourceType);
+  const targetOk = def.targetTypes.length === 0 || def.targetTypes.includes(targetType);
+  return sourceOk && targetOk;
+}
+
 // Validate edge constraints from the node type side (validOutgoingEdges / validIncomingEdges)
 function validateNodeTypeEdgeConstraints(graph: Graph, edge: Edge): readonly ValidationError[] {
   const sourceNode = graph.nodes.get(edge.source);
@@ -281,16 +333,6 @@ function validateNodeTypeEdgeConstraints(graph: Graph, edge: Edge): readonly Val
   })();
 
   return [...sourceErrors, ...targetErrors];
-}
-
-export function isEdgeCompatible(
-  def: EdgeTypeDefinition,
-  sourceType: TypeId,
-  targetType: TypeId,
-): boolean {
-  const sourceMatches = def.sourceTypes.length === 0 || def.sourceTypes.includes(sourceType);
-  const targetMatches = def.targetTypes.length === 0 || def.targetTypes.includes(targetType);
-  return sourceMatches && targetMatches;
 }
 
 export function validateEdge(graph: Graph, edge: Edge): ValidationResult {
