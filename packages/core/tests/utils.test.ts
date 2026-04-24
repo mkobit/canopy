@@ -1,7 +1,14 @@
 import { describe, it, expect } from 'bun:test';
-import { findNode, generateExecutionId } from '../src/utils';
-import { asNodeId, asTypeId, createInstant, createGraphId, asDeviceId } from '@canopy/types';
-import type { Graph, Node } from '@canopy/types';
+import { findNode, generateExecutionId, createBatch } from '../src/utils';
+import {
+  asNodeId,
+  asTypeId,
+  createInstant,
+  createGraphId,
+  asDeviceId,
+  asEventId,
+} from '@canopy/types';
+import type { Graph, Node, GraphEvent } from '@canopy/types';
 
 describe('generateExecutionId', () => {
   it('returns a valid UUIDv7 format', () => {
@@ -124,5 +131,53 @@ describe('findNode', () => {
 
     expect(found).toBe(node2);
     expect(visitedIds).toEqual([node1.id, node2.id]);
+  });
+});
+
+describe('createBatch', () => {
+  const SYSTEM_DEVICE_ID = asDeviceId('00000000-0000-0000-0000-000000000000');
+
+  it('assigns the same batchId and timestamp to all events', () => {
+    const events: readonly Partial<GraphEvent>[] = [
+      {
+        type: 'NodeCreated',
+        eventId: asEventId('e1'),
+        id: asNodeId('n1'),
+        nodeType: asTypeId('test'),
+        properties: new Map(),
+        deviceId: SYSTEM_DEVICE_ID,
+      },
+      {
+        type: 'NodePropertiesUpdated',
+        eventId: asEventId('e2'),
+        id: asNodeId('n1'),
+        changes: new Map([['name', 'Alice']]),
+        deviceId: SYSTEM_DEVICE_ID,
+      },
+    ];
+
+    const batch = createBatch(events);
+
+    expect(batch).toHaveLength(2);
+
+    const firstEvent = batch[0] as GraphEvent;
+    const secondEvent = batch[1] as GraphEvent;
+
+    expect(firstEvent.batchId).toBeDefined();
+    expect(firstEvent.timestamp).toBeDefined();
+
+    expect(firstEvent.batchId).toBe(secondEvent.batchId);
+    expect(firstEvent.timestamp).toBe(secondEvent.timestamp);
+
+    // Verify existing properties are preserved
+    expect(firstEvent.type).toBe('NodeCreated');
+    expect(firstEvent.eventId).toBe('e1');
+    expect(secondEvent.type).toBe('NodePropertiesUpdated');
+    expect(secondEvent.eventId).toBe('e2');
+  });
+
+  it('returns an empty array when given an empty array', () => {
+    const batch = createBatch([]);
+    expect(batch).toEqual([]);
   });
 });
