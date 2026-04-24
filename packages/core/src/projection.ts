@@ -288,6 +288,10 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
             });
           }
 
+          case 'WorkflowStarted':
+          case 'WorkflowCompleted': {
+            return ok(graph);
+          }
           default: {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             return err(new Error(`Unknown event type: ${(event as any).type}`));
