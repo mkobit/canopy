@@ -111,6 +111,26 @@ describe('Query Engine', () => {
     expect(result.nodes[0].properties.get('name')).toBe('Alice');
   });
 
+  it('queries nodes with starts-with operator', () => {
+    const q = pipe(query(), nodes('Person'), where('name', 'starts-with', 'Al'));
+    const result = unwrap(executeQuery(graph, q));
+    expect(result.nodes).toHaveLength(1);
+    expect(result.nodes[0].properties.get('name')).toBe('Alice');
+  });
+
+  it('queries nodes with ends-with operator', () => {
+    const q = pipe(query(), nodes('Person'), where('name', 'ends-with', 'ice'));
+    const result = unwrap(executeQuery(graph, q));
+    expect(result.nodes).toHaveLength(1);
+    expect(result.nodes[0].properties.get('name')).toBe('Alice');
+  });
+
+  it('returns false when applying text operators to non-string properties', () => {
+    const q = pipe(query(), nodes('Person'), where('age', 'starts-with', '3'));
+    const result = unwrap(executeQuery(graph, q));
+    expect(result.nodes).toHaveLength(0);
+  });
+
   it('queries nodes with comparison operators', () => {
     const q = pipe(query(), nodes('Person'), where('age', 'gt', 28));
     const result = unwrap(executeQuery(graph, q));

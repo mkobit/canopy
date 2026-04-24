@@ -147,6 +147,18 @@ function applyFilter(items: readonly GraphItem[], predicate: Filter): readonly G
         }
         return false;
       }
+      case 'starts-with': {
+        if (typeof pVal === 'string' && typeof value === 'string') {
+          return pVal.startsWith(value);
+        }
+        return false;
+      }
+      case 'ends-with': {
+        if (typeof pVal === 'string' && typeof value === 'string') {
+          return pVal.endsWith(value);
+        }
+        return false;
+      }
       case 'exists': {
         return pVal !== undefined && pVal !== null;
       }
