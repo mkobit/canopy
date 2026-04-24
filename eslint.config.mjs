@@ -7,8 +7,9 @@ import functional from 'eslint-plugin-functional';
 import importPlugin from 'eslint-plugin-import';
 import unicorn from 'eslint-plugin-unicorn';
 import stylistic from '@stylistic/eslint-plugin';
-import eslintPluginJsonc from 'eslint-plugin-jsonc';
-import * as jsoncParser from 'jsonc-eslint-parser';
+import reactPlugin from 'eslint-plugin-react';
+import reactHooksPlugin from 'eslint-plugin-react-hooks';
+
 import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
 
@@ -211,6 +212,14 @@ export default tseslint.config(
           name: 'Date',
           message: 'Use Temporal instead of Date.',
         },
+        {
+          name: 'alert',
+          message: 'Use custom alert components or notifications instead of standard alert().',
+        },
+        {
+          name: 'prompt',
+          message: 'Use custom modals or inputs instead of standard prompt().',
+        },
       ],
       '@typescript-eslint/no-restricted-types': [
         'error',
@@ -226,25 +235,47 @@ export default tseslint.config(
     },
   },
 
-  // JSON files
-  ...eslintPluginJsonc.configs['flat/recommended-with-jsonc'],
   {
-    files: ['**/*.json'],
+    plugins: {
+      react: reactPlugin,
+      'react-hooks': reactHooksPlugin,
+    },
+    files: ['packages/ui/**/*.tsx', 'packages/ui/**/*.ts', 'apps/web/**/*.tsx', 'apps/web/**/*.ts'],
     languageOptions: {
-      parser: jsoncParser,
+      parserOptions: {
+        ecmaFeatures: {
+          jsx: true,
+        },
+      },
     },
     rules: {
-      'jsonc/sort-keys': 'error',
-      'jsonc/array-bracket-newline': 'off',
-      'jsonc/array-bracket-spacing': 'off',
-      'jsonc/comma-style': 'off',
-      'jsonc/indent': 'off',
-      'jsonc/key-spacing': 'off',
-      'jsonc/object-curly-newline': 'off',
-      'jsonc/object-curly-spacing': 'off',
-      'jsonc/object-property-newline': 'off',
+      ...reactPlugin.configs.recommended.rules,
+      ...reactHooksPlugin.configs.recommended.rules,
+      'react/react-in-jsx-scope': 'off', // Not needed for React 17+
+      'react/prop-types': 'off', // We use TypeScript
+      'no-restricted-globals': [
+        'error',
+        {
+          name: 'alert',
+          message: 'Use custom alert components or notifications instead of standard alert().',
+        },
+        {
+          name: 'prompt',
+          message: 'Use custom modals or inputs instead of standard prompt().',
+        },
+        {
+          name: 'Date',
+          message: 'Use Temporal instead of Date.',
+        },
+      ],
+    },
+    settings: {
+      react: {
+        version: '18.2.0',
+      },
     },
   },
+
   // === Specific Overrides (Must come last to win) ===
 
   // Unicorn Overrides (Global)

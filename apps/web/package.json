@@ -1,4 +1,14 @@
 {
+  "name": "@canopy/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc && vite build",
+    "dev": "vite",
+    "typecheck": "tsc -p tsconfig.check.json",
+    "test": "bun test ./src --preload ./src/test/setup.ts"
+  },
   "dependencies": {
     "@canopy/core": "workspace:*",
     "@canopy/query": "workspace:*",
@@ -34,15 +44,5 @@
     "tailwindcss": "^4.2.2",
     "typescript": "6.0.2",
     "vite": "^8.0.7"
-  },
-  "name": "@canopy/web",
-  "private": true,
-  "scripts": {
-    "build": "tsc && vite build",
-    "dev": "vite",
-    "test": "bun test ./src --preload ./src/test/setup.ts",
-    "typecheck": "tsc -p tsconfig.check.json"
-  },
-  "type": "module",
-  "version": "0.0.0"
+  }
 }

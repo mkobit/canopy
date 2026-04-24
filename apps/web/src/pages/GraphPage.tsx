@@ -27,7 +27,7 @@ export const GraphPage = () => {
       loadGraph(asGraphId(graphId));
     }
     return undefined;
-  }, [graphId]);
+  }, [graphId, loadGraph]);
 
   const handleRunQuery = (query: string) => {
     // Dummy selection to show the inspector works

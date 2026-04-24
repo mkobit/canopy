@@ -1,15 +1,15 @@
 {
+  "extends": "./tsconfig.json",
   "compilerOptions": {
     "composite": false,
     "noEmit": true,
     "paths": {
+      "@canopy/schema": ["../../packages/schema/src/index.ts"],
       "@canopy/core": ["../../packages/core/src/index.ts"],
       "@canopy/query": ["../../packages/query/src/index.ts"],
-      "@canopy/schema": ["../../packages/schema/src/index.ts"],
       "@canopy/storage": ["../../packages/storage/src/index.ts"],
       "@canopy/sync": ["../../packages/sync/src/index.ts"],
       "@canopy/types": ["../../packages/types/src/index.ts"]
     }
-  },
-  "extends": "./tsconfig.json"
+  }
 }

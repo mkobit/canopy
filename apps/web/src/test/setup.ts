@@ -9,6 +9,8 @@ globalThis.matchMedia = mock((query) => ({
   matches: false,
   media: query,
   onchange: null,
+  addListener: mock(), // deprecated
+  removeListener: mock(), // deprecated
   addEventListener: mock(),
   removeEventListener: mock(),
   dispatchEvent: mock(),

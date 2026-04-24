@@ -6,6 +6,7 @@ import { NodeView, PropertyInput, DocumentRenderer } from '../components';
 import type { Node, NodeId, PropertyValue } from '@canopy/types';
 import { ArrowLeft, Save, Trash, Link as LinkIcon } from 'lucide-react';
 import { filter, map } from 'remeda';
+import { showAlert, showConfirm } from '../utils/dialogs';
 
 // eslint-disable-next-line max-lines-per-function
 export const NodePage = () => {
@@ -19,25 +20,17 @@ export const NodePage = () => {
   // Subscribe/Fetch node from graph
   useEffect(() => {
     if (graph && nodeId) {
-      const node = graph.nodes.get(nodeId as NodeId);
-      setCurrentNode(node);
-      if (node) {
-        setEditedProps(new Map(node.properties));
-      }
+      // eslint-disable-next-line functional/no-return-void
+      Promise.resolve().then(() => {
+        const node = graph.nodes.get(nodeId as NodeId);
+        setCurrentNode(node);
+        if (node) {
+          setEditedProps(new Map(node.properties));
+        }
+      });
     }
     return undefined;
   }, [graph, nodeId]);
-
-  if (!currentNode) {
-    return (
-      <div className="p-8 text-center">
-        <p>Node not found</p>
-        <button onClick={() => navigate('..')} className="mt-4 text-blue-600 hover:underline">
-          Go back
-        </button>
-      </div>
-    );
-  }
 
   const handleSave = async () => {
     if (!syncEngine || !currentNode) return undefined;
@@ -48,7 +41,7 @@ export const NodePage = () => {
 
     if (!updateResult.ok) {
       console.error('Failed to update node in store', updateResult.error);
-      alert('Failed to save changes');
+      showAlert('Failed to save changes');
       return undefined;
     }
 
@@ -70,7 +63,7 @@ export const NodePage = () => {
 
   const handleDelete = async () => {
     if (!syncEngine || !currentNode) return undefined;
-    if (!confirm('Delete this node?')) return undefined;
+    if (!showConfirm('Delete this node?')) return undefined;
 
     const deleteResult = syncEngine.store.deleteNode(currentNode.id);
     if (!deleteResult.ok) {
@@ -97,6 +90,17 @@ export const NodePage = () => {
       (edge) => edge.source === currentNode.id || edge.target === currentNode.id,
     );
   }, [graph, currentNode]);
+
+  if (!currentNode) {
+    return (
+      <div className="p-8 text-center">
+        <p>Node not found</p>
+        <button onClick={() => navigate('..')} className="mt-4 text-blue-600 hover:underline">
+          Go back
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-3xl mx-auto bg-white min-h-full shadow-sm border-x border-gray-100 flex flex-col">

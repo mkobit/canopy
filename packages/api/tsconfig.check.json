@@ -1,14 +1,14 @@
 {
+  "extends": "./tsconfig.json",
   "compilerOptions": {
     "composite": false,
     "noEmit": true,
+    "rootDir": "../..",
     "paths": {
+      "@canopy/types": ["../../packages/types/src/index.ts"],
       "@canopy/core": ["../../packages/core/src/index.ts"],
-      "@canopy/schema": ["../../packages/schema/src/index.ts"],
       "@canopy/storage": ["../../packages/storage/src/index.ts"],
-      "@canopy/types": ["../../packages/types/src/index.ts"]
-    },
-    "rootDir": "../.."
-  },
-  "extends": "./tsconfig.json"
+      "@canopy/schema": ["../../packages/schema/src/index.ts"]
+    }
+  }
 }

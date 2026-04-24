@@ -1,5 +1,6 @@
 import React from 'react';
 import { cn } from '../../utils/cn';
+import { showPrompt } from '../../utils/dialogs';
 
 interface BlockEditorData {
   readonly value: string;
@@ -75,7 +76,7 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({ value, onChange, class
         <button
           className="px-2 py-1 hover:bg-gray-200 rounded text-sm text-blue-600"
           onClick={() => {
-            const url = prompt('Enter URL');
+            const url = showPrompt('Enter URL');
             if (url) exec('createLink', url);
             return undefined;
           }}

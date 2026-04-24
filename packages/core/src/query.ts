@@ -1,4 +1,4 @@
-import type { Graph, Node, Edge, NodeId, EdgeId, TypeId } from '@canopy/types';
+import type { Graph, Node, Edge, NodeId, EdgeId } from '@canopy/types';
 import { filter } from 'remeda';
 
 /**
@@ -13,13 +13,6 @@ export function getNode(graph: Graph, id: NodeId): Node | undefined {
  */
 export function getEdge(graph: Graph, id: EdgeId): Edge | undefined {
   return graph.edges.get(id);
-}
-
-/**
- * Retrieves all nodes of a given type.
- */
-export function getNodesByType(graph: Graph, type: TypeId): readonly Node[] {
-  return filter([...graph.nodes.values()], (node) => node.type === type);
 }
 
 /**

@@ -1,4 +1,5 @@
 import type { Result } from '@canopy/types';
+import { showAlert } from './dialogs';
 
 export const toHandler = <A extends unknown[]>(
   fn: (...args: A) => unknown,
@@ -20,8 +21,7 @@ export const withResultAlert = <A extends unknown[], T, E extends Error>(
     const result = await fn(...args);
     if (!result.ok) {
       console.error(errorMessage, result.error);
-
-      alert(errorMessage + (result.error.message ? ': ' + result.error.message : ''));
+      showAlert(errorMessage + (result.error.message ? ': ' + result.error.message : ''));
     } else if (onSuccess) {
       onSuccess(result.value);
     }

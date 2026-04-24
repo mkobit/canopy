@@ -2,3 +2,6 @@
 # minimumReleaseAge is in seconds
 minimumReleaseAge = 1209600
 ignoreScripts = true
+
+[test]
+preload = ["./apps/web/src/test/setup.ts"]
