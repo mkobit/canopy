@@ -95,7 +95,7 @@ export function removeNode(
   newNodes.delete(nodeId);
 
   // Remove connected edges and track events
-  // eslint-disable-next-line functional/immutable-data
+
   const edgesToRemove: Edge[] = [];
   const newEdges = new Map(graph.edges);
 

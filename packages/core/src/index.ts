@@ -8,3 +8,4 @@ export * from './projection';
 export * from './namespace';
 export * from './settings';
 export * from './event-bus';
+export * from './workflow-engine';
