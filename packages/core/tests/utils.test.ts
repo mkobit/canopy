@@ -160,8 +160,8 @@ describe('createBatch', () => {
 
     expect(batch).toHaveLength(2);
 
-    const firstEvent = batch[0]!;
-    const secondEvent = batch[1]!;
+    const firstEvent = batch[0] as GraphEvent;
+    const secondEvent = batch[1] as GraphEvent;
 
     expect(firstEvent.batchId).toBeDefined();
     expect(firstEvent.timestamp).toBeDefined();
