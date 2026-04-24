@@ -77,6 +77,12 @@ export const eventToStorable = (event: GraphEvent): StorableGraphEvent => {
     case 'EdgeDeleted': {
       return { ...event };
     }
+    case 'WorkflowStarted': {
+      return { ...event };
+    }
+    case 'WorkflowCompleted': {
+      return { ...event };
+    }
   }
 };
 
@@ -111,6 +117,12 @@ export const storableToEvent = (storable: unknown): GraphEvent => {
       };
     }
     case 'EdgeDeleted': {
+      return { ...e };
+    }
+    case 'WorkflowStarted': {
+      return { ...e };
+    }
+    case 'WorkflowCompleted': {
       return { ...e };
     }
   }
