@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'bun:test';
 import { createGraph } from '../src/graph';
-import { addNode, updateNode } from '../src/ops/index';
+import { addNode, updateNode, createEdgeAction } from '../src/ops/index';
 import { SYSTEM_IDS } from '../src/system';
 import {
   createNodeId,
@@ -203,5 +203,94 @@ describe('ops with validation', () => {
     const event = result.events[0];
     const changes = (event as NodePropertiesUpdated).changes;
     expect(changes.size).toBe(0);
+  });
+});
+
+describe('createEdgeAction', () => {
+  it('successfully creates an edge and returns the graph and event', () => {
+    let graph = unwrap(createGraph(createGraphId(), 'Test Graph'));
+
+    const sourceNode = createNode({
+      id: asNodeId('n1'),
+      type: SYSTEM_IDS.NODE_TYPE,
+      properties: {},
+    });
+
+    const targetNode = createNode({
+      id: asNodeId('n2'),
+      type: SYSTEM_IDS.NODE_TYPE,
+      properties: {},
+    });
+
+    graph = unwrap(
+      addNode(graph, sourceNode, { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') }),
+    ).graph;
+    graph = unwrap(
+      addNode(graph, targetNode, { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') }),
+    ).graph;
+
+    const result = createEdgeAction(graph, {
+      source: asNodeId('n1'),
+      target: asNodeId('n2'),
+      type: asTypeId('test-edge'),
+    });
+
+    expect(isOk(result)).toBe(true);
+    if (isOk(result)) {
+      expect(result.value.event.type).toBe('EdgeCreated');
+      expect(result.value.event.source).toBe(asNodeId('n1'));
+      expect(result.value.event.target).toBe(asNodeId('n2'));
+      expect(result.value.graph.edges.has(result.value.event.id)).toBe(true);
+    }
+  });
+
+  it('fails if the source node is missing', () => {
+    let graph = unwrap(createGraph(createGraphId(), 'Test Graph'));
+
+    const targetNode = createNode({
+      id: asNodeId('n2'),
+      type: SYSTEM_IDS.NODE_TYPE,
+      properties: {},
+    });
+
+    graph = unwrap(
+      addNode(graph, targetNode, { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') }),
+    ).graph;
+
+    const result = createEdgeAction(graph, {
+      source: asNodeId('n1'), // n1 is not in the graph
+      target: asNodeId('n2'),
+      type: asTypeId('test-edge'),
+    });
+
+    expect(isErr(result)).toBe(true);
+    if (isErr(result)) {
+      expect(result.error.message).toMatch(/Source node n1 not found/);
+    }
+  });
+
+  it('fails if the target node is missing', () => {
+    let graph = unwrap(createGraph(createGraphId(), 'Test Graph'));
+
+    const sourceNode = createNode({
+      id: asNodeId('n1'),
+      type: SYSTEM_IDS.NODE_TYPE,
+      properties: {},
+    });
+
+    graph = unwrap(
+      addNode(graph, sourceNode, { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') }),
+    ).graph;
+
+    const result = createEdgeAction(graph, {
+      source: asNodeId('n1'),
+      target: asNodeId('n2'), // n2 is not in the graph
+      type: asTypeId('test-edge'),
+    });
+
+    expect(isErr(result)).toBe(true);
+    if (isErr(result)) {
+      expect(result.error.message).toMatch(/Target node n2 not found/);
+    }
   });
 });
