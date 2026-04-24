@@ -7,8 +7,11 @@ import type {
   GraphEvent,
   DeviceId,
   PropertyValue,
+  NodeId,
+  TypeId,
+  EdgeCreated,
 } from '@canopy/types';
-import { createInstant, createEventId, ok, err } from '@canopy/types';
+import { createInstant, createEventId, ok, err, createEdgeId } from '@canopy/types';
 import { validateEdge } from '../validation';
 
 export type EdgeOperationOptions = Readonly<{
@@ -17,6 +20,44 @@ export type EdgeOperationOptions = Readonly<{
   batchId?: string;
   migrationId?: string;
 }>;
+
+/**
+ * Creates an edge between two nodes and returns the resulting graph and EdgeCreated event.
+ * Returns Error if source or target nodes do not exist.
+ */
+export function createEdgeAction(
+  graph: Graph,
+  params: Readonly<{ source: NodeId; target: NodeId; type: TypeId }>,
+): Result<Readonly<{ graph: Graph; event: EdgeCreated }>, Error> {
+  const edge: Edge = {
+    id: createEdgeId(),
+    type: params.type,
+    source: params.source,
+    target: params.target,
+    properties: new Map(),
+    metadata: {
+      created: createInstant(),
+      modified: createInstant(),
+      modifiedBy: graph.metadata.modifiedBy,
+    },
+  };
+
+  const addResult = addEdge(graph, edge, {
+    deviceId: graph.metadata.modifiedBy,
+  });
+
+  if (!addResult.ok) {
+    return addResult;
+  }
+
+  const newGraph = addResult.value.graph;
+  const event = addResult.value.events[0] as EdgeCreated;
+
+  return ok({
+    graph: newGraph,
+    event,
+  });
+}
 
 /**
  * Adds an edge to the graph.
