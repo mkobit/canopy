@@ -1,4 +1,13 @@
+import { v7 as uuidv7 } from 'uuid';
 import type { Graph, Node } from '@canopy/types';
+
+/**
+ * Generates a stable UUIDv7 string for workflow execution contexts.
+ * This ID is used as the batchId for all events produced within a single workflow execution to ensure atomicity.
+ */
+export function generateExecutionId(): string {
+  return uuidv7();
+}
 
 /**
  * Iterates over graph nodes and finds the first node matching the predicate.

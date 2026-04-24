@@ -1,7 +1,27 @@
 import { describe, it, expect } from 'bun:test';
-import { findNode } from '../src/utils';
+import { findNode, generateExecutionId } from '../src/utils';
 import { asNodeId, asTypeId, createInstant, createGraphId, asDeviceId } from '@canopy/types';
 import type { Graph, Node } from '@canopy/types';
+
+describe('generateExecutionId', () => {
+  it('returns a valid UUIDv7 format', () => {
+    const id = generateExecutionId();
+    // UUIDv7 format check: 8-4-4-4-12 hex digits, with version 7
+    expect(id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
+  });
+
+  it('generates unique IDs', () => {
+    const id1 = generateExecutionId();
+    const id2 = generateExecutionId();
+    expect(id1).not.toBe(id2);
+  });
+
+  it('generates IDs that maintain sort order (time-based)', () => {
+    const ids = Array.from({ length: 100 }, () => generateExecutionId());
+    const sortedIds = [...ids].sort();
+    expect(ids).toEqual(sortedIds);
+  });
+});
 
 describe('findNode', () => {
   const SYSTEM_DEVICE_ID = asDeviceId('00000000-0000-0000-0000-000000000000');
