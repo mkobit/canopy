@@ -40,6 +40,10 @@ export const SYSTEM_IDS = {
   NODE_TYPE_CODE_BLOCK: asNodeId('system:nodetype:code-block'),
   NODE_TYPE_MARKDOWN: asNodeId('system:nodetype:markdown'),
 
+  // Workflow definitions
+  WORKFLOW_TRIGGER: asNodeId('system:nodetype:workflow-trigger'),
+  WORKFLOW_DEFINITION: asNodeId('system:nodetype:workflow-definition'),
+
   // Edge Type Definitions (nodes that define edge types)
   EDGE_CHILD_OF: asNodeId('system:edgetype:child-of'),
   EDGE_DEFINES: asNodeId('edge:type:defines'),

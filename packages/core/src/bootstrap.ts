@@ -545,6 +545,43 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
         },
       ],
     },
+    {
+      id: SYSTEM_IDS.WORKFLOW_TRIGGER,
+      name: 'WorkflowTrigger',
+      description: 'A trigger for a workflow execution.',
+      properties: [
+        {
+          name: 'name',
+          valueKind: 'text',
+          required: true,
+          description: 'Trigger name',
+        },
+        {
+          name: 'eventType',
+          valueKind: 'text',
+          required: true,
+          description: 'Type of event that fires this trigger',
+        },
+        {
+          name: 'condition',
+          valueKind: 'text',
+          required: false,
+          description: 'Condition expression (JSON)',
+        },
+        {
+          name: 'workflowRef',
+          valueKind: 'reference',
+          required: true,
+          description: 'Workflow to trigger',
+        },
+      ],
+    },
+    {
+      id: SYSTEM_IDS.WORKFLOW_DEFINITION,
+      name: 'WorkflowDefinition',
+      description: 'A definition of a workflow.',
+      properties: [],
+    },
   ] as const;
 
   // 5. Core Edge Types
