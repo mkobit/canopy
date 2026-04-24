@@ -7,6 +7,7 @@ import {
   getNodesOfType,
   getEdgesOfType,
   getEdgesFrom,
+  findInverseEdgeType,
 } from './queries';
 import { bootstrap } from './bootstrap';
 import { createGraphId, asTypeId, asNodeId, asDeviceId, unwrap } from '@canopy/types';
@@ -198,6 +199,123 @@ describe('Graph Queries', () => {
     test('returns empty array for non-existent node', () => {
       const edges = getEdgesFrom(graph, asNodeId('non-existent-node'));
       expect(edges.length).toBe(0);
+    });
+  });
+  describe('findInverseEdgeType', () => {
+    test('returns ok(undefined) if edge type has no inverse', () => {
+      // EDGE_PREREQUISITE doesn't have an inverse defined
+      const result = findInverseEdgeType(graph, asTypeId(SYSTEM_IDS.EDGE_PREREQUISITE));
+      expect(result.ok).toBeTrue();
+      if (result.ok) {
+        expect(result.value).toBeUndefined();
+      }
+    });
+
+    test('returns ok(Node) if edge type has a valid inverse', () => {
+      // Bootstrap doesn't set inverse for built-in edge types right now.
+      // Let's create two custom edge types and make them inverses of each other.
+      const parentOfId = asNodeId('custom:edgetype:parent-of');
+      const childOfId = asNodeId('custom:edgetype:child-of');
+
+      const parentOfNode: Node = {
+        id: parentOfId,
+        type: SYSTEM_IDS.EDGE_TYPE,
+        metadata: { created: createInstant(), modified: createInstant(), modifiedBy: DEVICE_ID },
+        properties: new Map([['inverse', 'custom:edgetype:child-of']]),
+      };
+
+      const childOfNode: Node = {
+        id: childOfId,
+        type: SYSTEM_IDS.EDGE_TYPE,
+        metadata: { created: createInstant(), modified: createInstant(), modifiedBy: DEVICE_ID },
+        properties: new Map([['inverse', 'custom:edgetype:parent-of']]),
+      };
+
+      const mutableNodes = new Map(graph.nodes);
+      mutableNodes.set(parentOfId, parentOfNode);
+      mutableNodes.set(childOfId, childOfNode);
+      const testGraph = { ...graph, nodes: mutableNodes };
+
+      const result = findInverseEdgeType(testGraph, asTypeId('custom:edgetype:parent-of'));
+      expect(result.ok).toBeTrue();
+      if (result.ok) {
+        expect(result.value).toBeDefined();
+        expect(result.value?.id).toBe(childOfId);
+      }
+    });
+
+    test('returns err if inverse property is not a string', () => {
+      const brokenId = asNodeId('custom:edgetype:broken');
+      const brokenNode: Node = {
+        id: brokenId,
+        type: SYSTEM_IDS.EDGE_TYPE,
+        metadata: { created: createInstant(), modified: createInstant(), modifiedBy: DEVICE_ID },
+        properties: new Map([['inverse', 123]]), // Invalid inverse
+      };
+      const mutableNodes = new Map(graph.nodes);
+      mutableNodes.set(brokenId, brokenNode);
+      const testGraph = { ...graph, nodes: mutableNodes };
+
+      const result = findInverseEdgeType(testGraph, asTypeId('custom:edgetype:broken'));
+      expect(result.ok).toBeFalse();
+      if (!result.ok) {
+        expect(result.error.message).toContain('must be a string');
+      }
+    });
+
+    test('returns err if edge type node is missing', () => {
+      const result = findInverseEdgeType(graph, asTypeId('missing:edgetype:foo'));
+      expect(result.ok).toBeFalse();
+      if (!result.ok) {
+        expect(result.error.message).toContain('Edge type node not found');
+      }
+    });
+
+    test('returns err if edge type is not an EDGE_TYPE node', () => {
+      // Use a node type node instead of an edge type
+      const result = findInverseEdgeType(graph, asTypeId(SYSTEM_IDS.NODE_TYPE_TEXT_BLOCK));
+      expect(result.ok).toBeFalse();
+      if (!result.ok) {
+        expect(result.error.message).toContain('is not an edge type');
+      }
+    });
+
+    test('returns err if inverse reference is broken', () => {
+      const brokenId = asNodeId('custom:edgetype:broken2');
+      const brokenNode: Node = {
+        id: brokenId,
+        type: SYSTEM_IDS.EDGE_TYPE,
+        metadata: { created: createInstant(), modified: createInstant(), modifiedBy: DEVICE_ID },
+        properties: new Map([['inverse', 'missing:edgetype:bar']]), // Broken ref
+      };
+      const mutableNodes = new Map(graph.nodes);
+      mutableNodes.set(brokenId, brokenNode);
+      const testGraph = { ...graph, nodes: mutableNodes };
+
+      const result = findInverseEdgeType(testGraph, asTypeId('custom:edgetype:broken2'));
+      expect(result.ok).toBeFalse();
+      if (!result.ok) {
+        expect(result.error.message).toContain('Broken reference');
+      }
+    });
+
+    test('returns err if inverse reference is not an edge type', () => {
+      const brokenId = asNodeId('custom:edgetype:broken3');
+      const brokenNode: Node = {
+        id: brokenId,
+        type: SYSTEM_IDS.EDGE_TYPE,
+        metadata: { created: createInstant(), modified: createInstant(), modifiedBy: DEVICE_ID },
+        properties: new Map([['inverse', SYSTEM_IDS.NODE_TYPE_TEXT_BLOCK]]), // Refers to a node type
+      };
+      const mutableNodes = new Map(graph.nodes);
+      mutableNodes.set(brokenId, brokenNode);
+      const testGraph = { ...graph, nodes: mutableNodes };
+
+      const result = findInverseEdgeType(testGraph, asTypeId('custom:edgetype:broken3'));
+      expect(result.ok).toBeFalse();
+      if (!result.ok) {
+        expect(result.error.message).toContain('is not an edge type');
+      }
     });
   });
 });
