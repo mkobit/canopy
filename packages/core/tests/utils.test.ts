@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'bun:test';
-import { findNode, generateExecutionId, createBatch } from '../src/utils';
+import { findNode, generateExecutionId, createBatch, EventDeduplicator } from '../src/utils';
 import {
   asNodeId,
   asTypeId,
@@ -183,5 +183,29 @@ describe('createBatch', () => {
   it('returns an empty array when given an empty array', () => {
     const batch = createBatch([]);
     expect(batch).toEqual([]);
+  });
+});
+
+describe('EventDeduplicator', () => {
+  it('adds new items and returns true', () => {
+    const deduplicator = new EventDeduplicator();
+    expect(deduplicator.add(asEventId('event-1'))).toBe(true);
+    expect(deduplicator.add(asEventId('event-2'))).toBe(true);
+  });
+
+  it('detects duplicate items and returns false', () => {
+    const deduplicator = new EventDeduplicator();
+    deduplicator.add(asEventId('event-1'));
+    expect(deduplicator.add(asEventId('event-1'))).toBe(false);
+  });
+
+  it('evicts the oldest entry (FIFO) when capacity is exceeded', () => {
+    const deduplicator = new EventDeduplicator(2);
+    deduplicator.add(asEventId('event-1'));
+    deduplicator.add(asEventId('event-2'));
+    deduplicator.add(asEventId('event-3')); // Should evict 'event-1'
+
+    expect(deduplicator.add(asEventId('event-1'))).toBe(true); // 'event-1' is treated as new again
+    expect(deduplicator.add(asEventId('event-2'))).toBe(true); // 'event-2' was evicted by 'event-1'
   });
 });
