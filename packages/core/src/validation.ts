@@ -261,7 +261,10 @@ export function validatePropertyByType(
   const valueKindProp = defNode.properties.get('valueKind');
   if (typeof valueKindProp !== 'string') {
     return failure([
-      { path: [name], message: `PropertyType node '${propertyTypeId}' missing 'valueKind' property` },
+      {
+        path: [name],
+        message: `PropertyType node '${propertyTypeId}' missing 'valueKind' property`,
+      },
     ]);
   }
 
