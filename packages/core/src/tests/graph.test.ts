@@ -9,7 +9,7 @@ import {
   removeEdge,
   getNode,
   getEdge,
-  getNodesByType,
+  getNodesOfType,
   getEdgesFrom,
   getEdgesTo,
 } from '../index';
@@ -225,9 +225,9 @@ describe('Core Graph Engine', () => {
     expect(getNode(g, nodeId1)).toBe(node1);
     expect(getEdge(g, edgeId)).toBe(edge);
 
-    // getNodesByType should find the 2 people we added.
+    // getNodesOfType should find the 2 people we added.
     // It should NOT find bootstrap nodes unless they have type 'person' (which they don't).
-    const people = getNodesByType(g, asTypeId('person'));
+    const people = getNodesOfType(g, asTypeId('person'));
     expect(people).toHaveLength(2);
     expect(people.map((p) => p.id)).toContain(nodeId1);
     expect(people.map((p) => p.id)).toContain(nodeId2);
