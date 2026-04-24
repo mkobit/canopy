@@ -1,7 +1,13 @@
 import { describe, it, expect } from 'bun:test';
 import { createGraph } from '../src/graph';
 import { addNode } from '../src/ops';
-import { validateNode, validateEdge, matchesCondition, isEdgeCompatible, validatePropertyByType } from '../src/validation';
+import {
+  validateNode,
+  validateEdge,
+  matchesCondition,
+  isEdgeCompatible,
+  validatePropertyByType,
+} from '../src/validation';
 import type { EdgeTypeDefinition } from '@canopy/types';
 import { SYSTEM_IDS } from '../src/system';
 import {
