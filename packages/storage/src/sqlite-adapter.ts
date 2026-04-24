@@ -34,6 +34,10 @@ const serializeEvent = (event: GraphEvent): unknown => {
     case 'EdgeDeleted': {
       return event;
     }
+    case 'WorkflowStarted':
+    case 'WorkflowCompleted': {
+      return event;
+    }
   }
 };
 

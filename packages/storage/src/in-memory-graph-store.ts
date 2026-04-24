@@ -82,6 +82,7 @@ export const createInMemoryGraphStore = (): GraphStore => {
       });
     },
 
+    // eslint-disable-next-line max-lines-per-function
     applyEvents: (events: readonly GraphEvent[]): Result<void, Error> => {
       // eslint-disable-next-line functional/no-loop-statements
       for (const event of events) {
@@ -176,6 +177,11 @@ export const createInMemoryGraphStore = (): GraphStore => {
             edges.delete(event.id);
             break;
           }
+
+          case 'WorkflowStarted':
+          case 'WorkflowCompleted': {
+            break;
+          } // No state change needed for workflow events here
         }
         lastEventId = event.eventId;
       }

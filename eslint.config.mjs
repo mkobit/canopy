@@ -148,6 +148,18 @@ export default tseslint.config(
       // Import plugin rules
       'import/extensions': ['error', 'never', { json: 'always' }],
       'import/no-unresolved': 'off', // TypeScript handles this
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['**/index', '**/index.ts', '**/index.tsx'],
+              message:
+                'Importing from barrel files (index.ts) is restricted to avoid circular dependencies.',
+            },
+          ],
+        },
+      ],
 
       // Unicorn plugin rules
       'unicorn/numeric-separators-style': 'error',

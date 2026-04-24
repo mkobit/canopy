@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'bun:test';
 import { createGraph } from '../src/graph';
-import { addNode, updateNode, createEdgeAction } from '../src/ops/index';
+import { addNode, updateNode } from '../src/ops/node';
+import { createEdgeAction } from '../src/ops/edge';
+
 import { SYSTEM_IDS } from '../src/system';
 import {
   createNodeId,
