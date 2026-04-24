@@ -265,7 +265,12 @@ export const createSQLiteAdapter = (
           params.push(options.before);
         }
 
-        query += ` ORDER BY event_id ${options.reverse ? 'DESC' : 'ASC'}`;
+        // eslint-disable-next-line unicorn/prefer-ternary
+        if (options.reverse) {
+          query += ' ORDER BY event_id DESC';
+        } else {
+          query += ' ORDER BY event_id ASC';
+        }
 
         if (options.limit) {
           query += ' LIMIT ?';
