@@ -2,10 +2,17 @@ import type { Graph, Node, Namespace } from '@canopy/types';
 import { getNodeType } from './queries';
 
 /**
+ * Returns all nodes whose effective namespace matches the given namespace.
+ */
+export function getNodesInNamespace(graph: Readonly<Graph>, namespace: Namespace): readonly Node[] {
+  return [...graph.nodes.values()].filter((node) => resolveNamespace(graph, node) === namespace);
+}
+
+/**
  * Resolves the effective namespace for a node.
  * Resolution order: node property override > type definition namespace > 'user' default.
  */
-export function resolveNamespace(graph: Graph, node: Node): Namespace {
+export function resolveNamespace(graph: Readonly<Graph>, node: Node): Namespace {
   const override = node.properties.get('namespace');
   if (
     override === 'system' ||
