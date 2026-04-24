@@ -222,6 +222,25 @@ export function validateNode(graph: Graph, node: Node): ValidationResult {
   return SUCCESS;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function matchesCondition(payload: Record<string, any>, conditionJson: string): boolean {
+  const result = fromThrowable(() => JSON.parse(conditionJson));
+
+  if (!result.ok) {
+    return false;
+  }
+
+  const condition = result.value;
+
+  if (typeof condition !== 'object' || condition === null || Array.isArray(condition)) {
+    return false;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const conditionRecord = condition as Record<string, any>;
+  return Object.entries(conditionRecord).every(([key, value]) => payload[key] === value);
+}
+
 // Validate edge constraints from the node type side (validOutgoingEdges / validIncomingEdges)
 function validateNodeTypeEdgeConstraints(graph: Graph, edge: Edge): readonly ValidationError[] {
   const sourceNode = graph.nodes.get(edge.source);

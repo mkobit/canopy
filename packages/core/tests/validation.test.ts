@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'bun:test';
 import { createGraph } from '../src/graph';
 import { addNode } from '../src/ops';
-import { validateNode, validateEdge } from '../src/validation';
+import { validateNode, validateEdge, matchesCondition } from '../src/validation';
 import { SYSTEM_IDS } from '../src/system';
 import {
   asNodeId,
@@ -453,6 +453,50 @@ describe('validOutgoingEdges / validIncomingEdges', () => {
 
     const result = validateEdge(g, edge);
     expect(result.valid).toBe(true);
+  });
+});
+
+describe('matchesCondition', () => {
+  it('returns true for a full match', () => {
+    const payload = { a: 1, b: 'two', c: true };
+    const condition = JSON.stringify({ a: 1, b: 'two' });
+    expect(matchesCondition(payload, condition)).toBe(true);
+  });
+
+  it('returns true for an empty condition', () => {
+    const payload = { a: 1 };
+    const condition = JSON.stringify({});
+    expect(matchesCondition(payload, condition)).toBe(true);
+  });
+
+  it('returns false for a partial match (missing key in payload)', () => {
+    const payload = { a: 1 };
+    const condition = JSON.stringify({ a: 1, b: 'two' });
+    expect(matchesCondition(payload, condition)).toBe(false);
+  });
+
+  it('returns false for a partial match (mismatched value)', () => {
+    const payload = { a: 1, b: 'three' };
+    const condition = JSON.stringify({ a: 1, b: 'two' });
+    expect(matchesCondition(payload, condition)).toBe(false);
+  });
+
+  it('returns false for malformed JSON string', () => {
+    const payload = { a: 1 };
+    const condition = '{ a: 1, b: "two" '; // Missing closing brace and quotes around keys
+    expect(matchesCondition(payload, condition)).toBe(false);
+  });
+
+  it('returns false for condition that parses to an array', () => {
+    const payload = { a: 1 };
+    const condition = JSON.stringify([1, 2, 3]);
+    expect(matchesCondition(payload, condition)).toBe(false);
+  });
+
+  it('returns false for condition that parses to null', () => {
+    const payload = { a: 1 };
+    const condition = JSON.stringify(null);
+    expect(matchesCondition(payload, condition)).toBe(false);
   });
 });
 
