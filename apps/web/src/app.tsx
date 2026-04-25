@@ -1,13 +1,13 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { Layout } from './components/Layout';
-import { HomePage } from './pages/HomePage';
-import { GraphPage } from './pages/GraphPage';
-import { NodePage } from './pages/NodePage';
-import { SearchPage } from './pages/SearchPage';
-import { StorageProvider } from './context/StorageContext';
-import { GraphProvider } from './context/GraphContext';
-import { ViewPage } from './pages/ViewPage';
+import { Layout } from './components/layout';
+import { HomePage } from './pages/home-page';
+import { GraphPage } from './pages/graph-page';
+import { NodePage } from './pages/node-page';
+import { SearchPage } from './pages/search-page';
+import { StorageProvider } from './context/storage-context';
+import { GraphProvider } from './context/graph-context';
+import { ViewPage } from './pages/view-page';
 
 const App = () => {
   return (

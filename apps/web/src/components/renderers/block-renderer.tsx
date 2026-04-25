@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
 import type { Graph, Node } from '@canopy/types';
-import { MarkdownRenderer } from './MarkdownRenderer';
-import { TextBlockRenderer } from './TextBlockRenderer';
-import { CodeBlockRenderer } from './CodeBlockRenderer';
+import { MarkdownRenderer } from './markdown-renderer';
+import { TextBlockRenderer } from './text-block-renderer';
+import { CodeBlockRenderer } from './code-block-renderer';
 
 export interface BlockRendererProps {
   node: Node;

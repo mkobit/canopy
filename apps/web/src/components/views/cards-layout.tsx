@@ -1,6 +1,6 @@
 import React from 'react';
 import type { Node } from '@canopy/types';
-import { NodeView } from '../graph/NodeView';
+import { NodeView } from '../graph/node-view';
 
 export interface CardsLayoutData {
   readonly nodes: readonly Node[];

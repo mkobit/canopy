@@ -3,16 +3,16 @@ export {
   type TableLayoutProps,
   type TableLayoutData,
   type TableLayoutEvents,
-} from './TableLayout';
+} from './table-layout';
 export {
   ListLayout,
   type ListLayoutProps,
   type ListLayoutData,
   type ListLayoutEvents,
-} from './ListLayout';
+} from './list-layout';
 export {
   CardsLayout,
   type CardsLayoutProps,
   type CardsLayoutData,
   type CardsLayoutEvents,
-} from './CardsLayout';
+} from './cards-layout';

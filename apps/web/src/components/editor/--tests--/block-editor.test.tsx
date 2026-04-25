@@ -1,7 +1,7 @@
 import { describe, it, expect, jest } from 'bun:test';
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { BlockEditor } from '../BlockEditor';
+import { BlockEditor } from '../block-editor';
 
 const noop = jest.fn();
 

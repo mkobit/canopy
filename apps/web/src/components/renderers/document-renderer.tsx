@@ -1,6 +1,6 @@
 import React from 'react';
 import type { Graph, Node } from '@canopy/types';
-import { BlockRenderer } from './BlockRenderer';
+import { BlockRenderer } from './block-renderer';
 
 export interface DocumentRendererProps {
   rootNode: Node;

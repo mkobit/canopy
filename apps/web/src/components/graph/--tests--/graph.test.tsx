@@ -1,8 +1,8 @@
 import { describe, it, expect, jest } from 'bun:test';
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { NodeView } from '../NodeView';
-import { GraphCanvas } from '../GraphCanvas';
+import { NodeView } from '../node-view';
+import { GraphCanvas } from '../graph-canvas';
 import { Node, asDeviceId } from '@canopy/types';
 import { asNodeId, asTypeId, createInstant } from '@canopy/types';
 

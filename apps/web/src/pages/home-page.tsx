@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useStorage } from '../context/StorageContext';
+import { useStorage } from '../context/storage-context';
 import { showPrompt, showConfirm } from '../utils/dialogs';
 import { useNavigate } from 'react-router-dom';
 import { createGraphId } from '@canopy/types';
@@ -31,8 +31,9 @@ export const HomePage = () => {
 
   useEffect(() => {
     if (storage) {
-      // eslint-disable-next-line functional/prefer-tacit
-      Promise.resolve().then(() => loadGraphs());
+      Promise.resolve()
+        .then(() => loadGraphs())
+        .catch(console.error);
     }
     return undefined;
   }, [storage, loadGraphs]);
