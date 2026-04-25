@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useGraph } from '../context/graph-context';
 import { Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import type { PropertyValue, Node } from '@canopy/types';
+import type { Node } from '@canopy/types';
 import { filter, map } from 'remeda';
 import { executeStoredQuery } from '@canopy/query';
 import { SYSTEM_IDS } from '@canopy/core';
