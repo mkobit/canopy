@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Outlet, useNavigate, useOutlet } from 'react-router-dom';
-import { useGraph } from '../context/GraphContext';
+import { useGraph } from '../context/graph-context';
 import { asGraphId } from '@canopy/types';
 import { toHandler, withResultAlert } from '../utils/handlers';
 import {
@@ -10,7 +10,7 @@ import {
   type InspectorNodeData,
   QuickEntryOverlay,
 } from '../components';
-import { InteractiveGraphView } from '../components/graph/InteractiveGraphView';
+import { InteractiveGraphView } from '../components/graph/interactive-graph-view';
 import { ReactFlowProvider } from '@xyflow/react';
 
 export const GraphPage = () => {

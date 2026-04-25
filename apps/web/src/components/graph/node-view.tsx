@@ -1,7 +1,7 @@
 import React from 'react';
 import type { Node } from '@canopy/types';
 import { cn } from '../../utils/cn';
-import { PropertyDisplay } from '../properties/PropertyDisplay';
+import { PropertyDisplay } from '../properties/property-display';
 
 export interface NodeViewData {
   readonly node: Node;

@@ -10,12 +10,12 @@ import {
 } from '@xyflow/react';
 import type { Connection } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { useGraph } from '../../context/GraphContext';
+import { useGraph } from '../../context/graph-context';
 import { showPrompt } from '../../utils/dialogs';
 import { useNavigate, useParams } from 'react-router-dom';
 import { withResultAlert } from '../../utils/handlers';
-import { CustomNode } from './CustomNode';
-import { CustomEdge } from './CustomEdge';
+import { CustomNode } from './custom-node';
+import { CustomEdge } from './custom-edge';
 import type { NodeId } from '@canopy/types';
 
 const nodeTypes = {

@@ -1,8 +1,8 @@
 import { describe, it, expect, jest } from 'bun:test';
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { PropertyDisplay } from '../PropertyDisplay';
-import { PropertyInput } from '../PropertyInput';
+import { PropertyDisplay } from '../property-display';
+import { PropertyInput } from '../property-input';
 
 describe('PropertyDisplay', () => {
   it('renders text value', () => {

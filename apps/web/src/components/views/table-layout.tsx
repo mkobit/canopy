@@ -1,6 +1,6 @@
 import React from 'react';
 import type { Node } from '@canopy/types';
-import { PropertyDisplay } from '../properties/PropertyDisplay';
+import { PropertyDisplay } from '../properties/property-display';
 
 export interface TableLayoutData {
   readonly nodes: readonly Node[];

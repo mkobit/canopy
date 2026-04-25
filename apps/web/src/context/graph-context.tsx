@@ -12,7 +12,7 @@ import type {
   Result,
 } from '@canopy/types';
 import { asInstant, ok, err, fromThrowable, fromAsyncThrowable } from '@canopy/types';
-import { useStorage } from './StorageContext';
+import { useStorage } from './storage-context';
 import { z } from 'zod';
 import { TypeIdSchema } from '@canopy/schema';
 import type { TypeId } from '@canopy/types';

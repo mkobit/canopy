@@ -2,9 +2,9 @@ import { describe, it, expect, jest } from 'bun:test';
 import { render, screen } from '@testing-library/react';
 import React from 'react';
 import { BrowserRouter } from 'react-router-dom';
-import { HomePage } from './pages/HomePage';
-import { StorageProvider } from './context/StorageContext';
-import { GraphProvider } from './context/GraphContext';
+import { HomePage } from './pages/home-page';
+import { StorageProvider } from './context/storage-context';
+import { GraphProvider } from './context/graph-context';
 import 'fake-indexeddb/auto';
 
 // Mock matchMedia for testing-library

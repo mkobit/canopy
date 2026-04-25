@@ -9,6 +9,8 @@ import unicorn from 'eslint-plugin-unicorn';
 import stylistic from '@stylistic/eslint-plugin';
 import reactPlugin from 'eslint-plugin-react';
 import reactHooksPlugin from 'eslint-plugin-react-hooks';
+import promisePlugin from 'eslint-plugin-promise';
+import checkFilePlugin from 'eslint-plugin-check-file';
 
 import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
@@ -30,6 +32,7 @@ export default tseslint.config(
   eslint.configs.recommended,
   ...tseslint.configs.strict,
   ...tseslint.configs.stylistic,
+  promisePlugin.configs['flat/recommended'],
   unicorn.configs['flat/recommended'],
   stylistic.configs.customize({
     flat: true,
@@ -289,6 +292,24 @@ export default tseslint.config(
   },
 
   // === Specific Overrides (Must come last to win) ===
+
+  {
+    plugins: {
+      'check-file': checkFilePlugin,
+    },
+    files: ['packages/**/*', 'apps/**/*'],
+    rules: {
+      'check-file/filename-naming-convention': [
+        'error',
+        {
+          '**/*.{ts,tsx,js,jsx}': 'KEBAB_CASE',
+        },
+        {
+          ignoreMiddleExtensions: true,
+        },
+      ],
+    },
+  },
 
   // Unicorn Overrides (Global)
   {

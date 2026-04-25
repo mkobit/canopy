@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useGraph } from '../context/GraphContext';
+import { useGraph } from '../context/graph-context';
 import { executeView } from '@canopy/query';
 import { TableLayout, ListLayout, CardsLayout } from '../components';
 import type { Node, NodeId } from '@canopy/types';
