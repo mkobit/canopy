@@ -9,7 +9,7 @@ import type {
 } from '@canopy/types';
 import { ok, err } from '@canopy/types';
 import type { Query, Filter, Sort, QueryStep } from './model';
-import { reduce, filter, unique, flatMap } from 'remeda';
+import { reduce, filter, unique, flatMap, map } from 'remeda';
 
 type GraphItem = Node | Edge;
 
@@ -18,6 +18,7 @@ interface Accumulator {
   readonly items: readonly GraphItem[];
   readonly isNodeContext: boolean;
   readonly error?: Error;
+  readonly rows?: readonly Readonly<Record<string, unknown>>[];
 }
 
 export function executeQuery(graph: Graph, query: Query): Result<QueryResult, Error> {
@@ -70,6 +71,21 @@ export function executeQuery(graph: Graph, query: Query): Result<QueryResult, Er
             items: acc.items.slice(0, step.limit),
           };
         }
+        case 'project': {
+          const rows = map(acc.items, (item) => {
+            return reduce(
+              step.properties,
+              (row, prop) => {
+                return { ...row, [prop]: getItemFieldValue(item, prop) };
+              },
+              {} as Readonly<Record<string, unknown>>,
+            );
+          });
+          return {
+            ...acc,
+            rows,
+          };
+        }
         default: {
           return acc;
         }
@@ -82,9 +98,11 @@ export function executeQuery(graph: Graph, query: Query): Result<QueryResult, Er
     return err(result.error);
   }
 
-  return result.isNodeContext
-    ? ok({ nodes: result.items as readonly Node[], edges: [] })
-    : ok({ nodes: [], edges: result.items as readonly Edge[] });
+  const baseResult = result.isNodeContext
+    ? { nodes: result.items as readonly Node[], edges: [] }
+    : { nodes: [], edges: result.items as readonly Edge[] };
+
+  return ok(result.rows === undefined ? baseResult : { ...baseResult, rows: result.rows });
 }
 
 function scanNodes(graph: Graph, type?: string): readonly Node[] {
