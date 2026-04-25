@@ -34,7 +34,8 @@ export type QueryStep =
   | Readonly<{ kind: 'filter'; predicate: Filter }> // Filter current set
   | Readonly<{ kind: 'traversal'; edgeType?: string | undefined; direction: 'out' | 'in' | 'both' }> // Map nodes to connected nodes
   | Readonly<{ kind: 'sort'; sort: Sort }>
-  | Readonly<{ kind: 'limit'; limit: number }>;
+  | Readonly<{ kind: 'limit'; limit: number }>
+  | Readonly<{ kind: 'project'; properties: readonly string[] }>;
 
 export interface Query {
   readonly steps: readonly QueryStep[];

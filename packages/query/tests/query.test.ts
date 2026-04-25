@@ -15,7 +15,17 @@ import {
   ScalarValue,
 } from '@canopy/types';
 import { pipe } from 'remeda';
-import { query, nodes, edges, where, orderBy, limit, traverse, from } from '../src/pipeline';
+import {
+  query,
+  nodes,
+  edges,
+  where,
+  orderBy,
+  limit,
+  traverse,
+  from,
+  returns,
+} from '../src/pipeline';
 import { executeQuery } from '../src/engine';
 import { map, sort } from 'remeda';
 
@@ -193,5 +203,17 @@ describe('Query Engine', () => {
     const q = pipe(query(), nodes('Person'), limit(2));
     const result = unwrap(executeQuery(graph, q));
     expect(result.nodes).toHaveLength(2);
+  });
+
+  it('projects specific properties into rows', () => {
+    const q = pipe(query(), nodes('Person'), orderBy('age', 'asc'), returns(['name', 'age']));
+    const result = unwrap(executeQuery(graph, q));
+    expect(result.nodes).toHaveLength(3); // Nodes are still returned
+    expect(result.rows).toBeDefined();
+    expect(result.rows).toEqual([
+      { name: 'Bob', age: 25 },
+      { name: 'Alice', age: 30 },
+      { name: 'Charlie', age: 35 },
+    ]);
   });
 });

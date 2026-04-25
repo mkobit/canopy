@@ -21,4 +21,5 @@ export type Graph = Readonly<{
 export type QueryResult = Readonly<{
   nodes: readonly Node[];
   edges: readonly Edge[];
+  rows?: readonly Readonly<Record<string, unknown>>[];
 }>;

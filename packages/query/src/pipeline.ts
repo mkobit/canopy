@@ -46,6 +46,13 @@ export function traverse(edgeType?: string, direction: 'out' | 'in' | 'both' = '
   });
 }
 
+export function returns(properties: readonly string[]) {
+  return (q: Query): Query => ({
+    ...q,
+    steps: [...q.steps, { kind: 'project', properties }],
+  });
+}
+
 export function from(nodeId: string) {
   return (q: Query): Query => ({
     ...q,
