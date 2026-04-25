@@ -10,6 +10,7 @@ import type {
 } from '@canopy/types';
 import { fromThrowable, asTypeId, createInstant, createEdgeId, err } from '@canopy/types';
 import { addEdge } from './ops/edge';
+import { updateNode } from './ops/node';
 
 // eslint-disable-next-line functional/no-classes
 export class WorkflowEngine {
@@ -21,6 +22,9 @@ export class WorkflowEngine {
       source?: NodeId;
       target?: NodeId;
       properties?: ReadonlyMap<string, PropertyValue>;
+      nodeId?: NodeId;
+      key?: string;
+      value?: PropertyValue;
     }>,
   ): Result<GraphResult<Graph>, Error> {
     if (action === 'create-edge') {
@@ -44,6 +48,26 @@ export class WorkflowEngine {
       return addEdge(graph, edge, {
         deviceId: graph.metadata.modifiedBy,
       });
+    }
+
+    if (action === 'set-property') {
+      if (!params.nodeId || !params.key || params.value === undefined) {
+        return err(new Error("Missing required parameters for 'set-property' action"));
+      }
+
+      return updateNode(
+        graph,
+        params.nodeId,
+        (node) => {
+          const properties = new Map(node.properties);
+          properties.set(params.key as string, params.value as PropertyValue);
+          return {
+            ...node,
+            properties,
+          };
+        },
+        { deviceId: graph.metadata.modifiedBy },
+      );
     }
 
     return err(new Error(`Unknown action: ${action}`));
