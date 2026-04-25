@@ -1,3 +1,4 @@
+import '../../../test/setup';
 import { describe, it, expect, jest } from 'bun:test';
 import React from 'react';
 import { render, screen } from '@testing-library/react';
