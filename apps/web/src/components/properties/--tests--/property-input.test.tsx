@@ -2,7 +2,7 @@ import '../../../test/setup';
 import { describe, it, expect, jest } from 'bun:test';
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { PropertyInput } from '../PropertyInput';
+import { PropertyInput } from '../property-input';
 
 describe('PropertyInput', () => {
   it('updates text value', () => {

@@ -1,5 +1,7 @@
 import React, { useMemo } from 'react';
-import type { Graph, Node } from '@canopy/types';
+import type { Graph, Node, NodeId } from '@canopy/types';
+import { resolveSetting, resolveNamespace, SYSTEM_IDS } from '@canopy/core';
+import { getSystemRenderer } from './renderer-registry';
 import { MarkdownRenderer } from './markdown-renderer';
 import { TextBlockRenderer } from './text-block-renderer';
 import { CodeBlockRenderer } from './code-block-renderer';
@@ -36,8 +38,28 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({ node, graph, depth
       .filter((n): n is Node => n !== undefined);
   }, [graph, node.id]);
 
-  // Determine specific renderer
-  const content = (() => {
+  // Meta-circular renderer resolution
+  const content = useMemo(() => {
+    const namespace = resolveNamespace(graph, node);
+    const rendererId = resolveSetting(graph, 'default-renderer', node.id, node.type, namespace) as
+      | NodeId
+      | undefined;
+
+    if (rendererId) {
+      const rendererNode = graph.nodes.get(rendererId);
+      if (rendererNode && rendererNode.type === SYSTEM_IDS.RENDERER) {
+        const entryPoint = rendererNode.properties.get('entryPoint');
+        if (typeof entryPoint === 'string') {
+          const RendererComponent = getSystemRenderer(entryPoint);
+          if (RendererComponent) {
+            // eslint-disable-next-line react-hooks/static-components
+            return <RendererComponent node={node} graph={graph} />;
+          }
+        }
+      }
+    }
+
+    // Fallback to current hardcoded logic
     switch (node.type) {
       case NODE_TYPE_TEXT_BLOCK: {
         return <TextBlockRenderer node={node} />;
@@ -49,11 +71,10 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({ node, graph, depth
         return <MarkdownRenderer node={node} />;
       }
       default: {
-        // Fallback for unknown block types
         return <div className="text-gray-400 italic">Unknown block type: {node.type}</div>;
       }
     }
-  })();
+  }, [node, graph]);
 
   const hasChildren = children.length > 0;
 

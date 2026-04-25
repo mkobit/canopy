@@ -12,6 +12,7 @@ export { BlockEditor } from './editor/block-editor';
 
 // Renderers
 export { MarkdownRenderer, type MarkdownRendererProps } from './renderers/markdown-renderer';
+export { getSystemRenderer } from './renderers/renderer-registry';
 
 // Views
 export { TableLayout, type TableLayoutProps } from './views/table-layout';
