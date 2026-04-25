@@ -4,6 +4,8 @@ import { Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { PropertyValue, Node } from '@canopy/types';
 import { filter, map } from 'remeda';
+import { executeStoredQuery } from '@canopy/query';
+import { SYSTEM_IDS } from '@canopy/core';
 
 export const SearchPage = () => {
   const { graph } = useGraph();
@@ -11,17 +13,21 @@ export const SearchPage = () => {
 
   if (!graph) return <div>Loading...</div>;
 
-  const results = filter([...graph.nodes.values()], (node: Node) => {
+  const queryResult = executeStoredQuery(graph, SYSTEM_IDS.QUERY_ALL_NODES);
+  const sourceNodes = queryResult.ok ? queryResult.value.nodes : [];
+
+  const results = filter(sourceNodes, (node: Node) => {
     if (!query) return false;
     const q = query.toLowerCase();
 
-    const properties = [...node.properties.values()];
-    return properties.some((val: PropertyValue) => {
-      if (typeof val === 'string') {
-        return val.toLowerCase().includes(q);
-      }
-      return false;
-    });
+    if (node.id.toLowerCase().includes(q)) return true;
+
+    const nameProp = node.properties.get('name');
+    if (typeof nameProp === 'string' && nameProp.toLowerCase().includes(q)) {
+      return true;
+    }
+
+    return false;
   });
 
   return (
