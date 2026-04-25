@@ -1,8 +1,8 @@
-import '../../test/setup';
+import '../../../test/setup';
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { expect, test, describe } from 'bun:test';
-import { PropertyDisplay } from './PropertyDisplay';
+import { PropertyDisplay } from '../PropertyDisplay';
 
 describe('PropertyDisplay', () => {
   test('renders string correctly', () => {
