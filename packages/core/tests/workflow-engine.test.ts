@@ -138,4 +138,70 @@ describe('WorkflowEngine', () => {
       expect(result.error.message).toBe("Missing required parameters for 'create-edge' action");
     }
   });
+
+  it('should update node property when set-property action is executed', () => {
+    const engine = new WorkflowEngine();
+    const nodeId = asNodeId('test-node');
+
+    const graphWithNode: Graph = {
+      ...mockGraph,
+      nodes: new Map([
+        [
+          nodeId,
+          {
+            id: nodeId,
+            type: asTypeId('node-type'),
+            properties: new Map([['status', 'draft']]),
+            metadata: mockGraph.metadata,
+          },
+        ],
+      ]),
+    };
+
+    const result = engine.executeAction(graphWithNode, 'set-property', {
+      nodeId,
+      key: 'status',
+      value: 'published',
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const newGraph = result.value.graph;
+      const updatedNode = newGraph.nodes.get(nodeId);
+      expect(updatedNode).toBeDefined();
+      expect(updatedNode?.properties.get('status')).toBe('published');
+    }
+  });
+
+  it('should return error for set-property action missing required params', () => {
+    const engine = new WorkflowEngine();
+    const nodeId = asNodeId('test-node');
+
+    const result = engine.executeAction(mockGraph, 'set-property', {
+      nodeId,
+      key: 'status',
+      // missing value
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.message).toBe("Missing required parameters for 'set-property' action");
+    }
+  });
+
+  it('should return error when attempting to set property on non-existent node', () => {
+    const engine = new WorkflowEngine();
+    const nodeId = asNodeId('missing-node');
+
+    const result = engine.executeAction(mockGraph, 'set-property', {
+      nodeId,
+      key: 'status',
+      value: 'published',
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.message).toBe(`Node with ID ${nodeId} not found`);
+    }
+  });
 });
