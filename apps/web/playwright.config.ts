@@ -4,6 +4,7 @@ import { defineConfig, devices } from '@playwright/test';
  * See https://playwright.dev/docs/test-configuration.
  */
 export default defineConfig({
+  testMatch: '**/*.e2e.ts', // Only match .e2e.ts files to avoid bun:test imports
   testDir: './e2e',
   /* Run tests in files in parallel */
   fullyParallel: true,
