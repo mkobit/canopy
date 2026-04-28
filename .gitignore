@@ -5,3 +5,9 @@ dist/
 coverage/
 *.tsbuildinfo
 .claude/settings.local.json
+
+# Playwright artifacts
+test-results/
+playwright-report/
+playwright/.cache/
+blob-report/
