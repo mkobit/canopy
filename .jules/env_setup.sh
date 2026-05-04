@@ -14,7 +14,7 @@ echo "Git Commit: $(git rev-parse --short HEAD) ($(git log -1 --format=%cI))"
 if ! command -v mise &> /dev/null; then
     echo "Installing mise..."
     # Pin to specific version for security and convergence
-    MISE_VERSION="v2025.1.0"
+    MISE_VERSION="v2026.5.0"
     curl -L "https://github.com/jdx/mise/releases/download/${MISE_VERSION}/mise-${MISE_VERSION}-linux-x64" > ~/.local/bin/mise
     chmod +x ~/.local/bin/mise
     export PATH="$HOME/.local/bin:$PATH"
