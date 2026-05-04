@@ -54,8 +54,8 @@ updates:
           - '@effect/*'
       openspec-and-beads:
         patterns:
-          - 'openspec'
-          - 'beads'
+          - '@fission-ai/openspec'
+          - '@beads/bd'
       other:
         patterns:
           - '*'
