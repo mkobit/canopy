@@ -52,6 +52,10 @@ updates:
           - 'remeda'
           - 'effect'
           - '@effect/*'
+      openspec-and-beads:
+        patterns:
+          - '@fission-ai/openspec'
+          - '@beads/bd'
       other:
         patterns:
           - '*'
