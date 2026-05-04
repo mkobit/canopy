@@ -52,6 +52,10 @@ updates:
           - 'remeda'
           - 'effect'
           - '@effect/*'
+      openspec-and-beads:
+        patterns:
+          - 'openspec'
+          - 'beads'
       other:
         patterns:
           - '*'
