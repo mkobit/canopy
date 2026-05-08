@@ -40,8 +40,23 @@ else
     exit 1
 fi
 
+if command -v bd &> /dev/null; then
+    echo "Beads version: $(bd --version)"
+else
+    echo "Error: bd not found after mise install"
+    exit 1
+fi
+
 # Install dependencies
 echo "Installing dependencies..."
 bun install --frozen-lockfile
 
-echo "Environment ready (dependencies installed)"
+# Verify openspec is available
+if bunx openspec --version &> /dev/null; then
+    echo "OpenSpec version: $(bunx openspec --version)"
+else
+    echo "Error: openspec not found after bun install"
+    exit 1
+fi
+
+echo "Environment ready (bun, bd, openspec installed)"

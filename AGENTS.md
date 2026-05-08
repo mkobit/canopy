@@ -80,3 +80,20 @@ Documentation in `AGENTS.md` files must follow the one-sentence-per-line rule.
 
 If `bun install` fails due to a package being too new (we enforce a minimum release age for newly published packages), do not retry the installation of the same version.
 Instead, find and install an older, established version of the package that meets the release age requirement.
+
+## Issue tracking
+
+This project uses `bd` (beads) for issue tracking.
+Run `bd prime` for full workflow context before creating or updating any issues.
+Key commands: `bd ready` (unblocked work), `bd create "Title" --type task` (new issue), `bd close <id>` (complete).
+
+## Specs
+
+This project uses OpenSpec for spec-driven development.
+Run `bunx openspec list` to see current changes and their status.
+Use `/opsx:propose`, `/opsx:apply`, `/opsx:archive` slash commands to work with specs.
+Specs live in `openspec/changes/` and follow the `proposal → design → tasks` artifact flow.
+
+## Jules agents
+
+See `.jules/AGENTS.md`.
