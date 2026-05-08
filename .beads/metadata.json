@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "embedded",
+  "dolt_database": "canopy",
+  "project_id": "82bc9dc8-dcac-45fc-8919-c1d95079d88e"
+}
