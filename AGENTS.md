@@ -96,7 +96,4 @@ Specs live in `openspec/changes/` and follow the `proposal → design → tasks`
 
 ## Jules agents
 
-Jules is a scheduled autonomous agent.
-**Jules must read its task prompt from `.jules/prompts/<prompt-name>.md` at the start of every session and execute only what that file describes.**
-Available maintenance prompts: `backlog-pruner`, `openspec-housekeeping`, `issue-enricher`, `dependency-linker`, `automation-health`, `jules-tuner`.
-Jules must not take actions outside the scope defined in its prompt file for that session.
+See `.jules/AGENTS.md`.
