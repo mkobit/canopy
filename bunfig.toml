@@ -1,3 +1,9 @@
+telemetry = false
+
+# Disable automatic .env file loading
+[run]
+env = false
+
 [install]
 # minimumReleaseAge is in seconds
 minimumReleaseAge = 1209600
