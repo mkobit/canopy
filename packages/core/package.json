@@ -11,7 +11,7 @@
   "dependencies": {
     "@canopy/schema": "workspace:*",
     "@canopy/types": "workspace:*",
-    "remeda": "^2.33.7",
+    "remeda": "^2.34.0",
     "uuid": "^14.0.0"
   },
   "devDependencies": {
