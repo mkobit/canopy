@@ -36,13 +36,13 @@
     "@testing-library/react": "^16.3.1",
     "@types/react": "^19.2.8",
     "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.1",
+    "@vitejs/plugin-react": "^6.0.2",
     "autoprefixer": "^10.5.0",
     "fake-indexeddb": "^6.2.5",
     "happy-dom": "^20.4.0",
     "postcss": "^8.5.14",
     "tailwindcss": "^4.2.2",
     "typescript": "6.0.3",
-    "vite": "^8.0.10"
+    "vite": "^8.0.13"
   }
 }
