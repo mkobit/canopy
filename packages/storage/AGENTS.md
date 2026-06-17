@@ -1,9 +1,15 @@
 # @canopy/storage
 
-## Architectural Invariants
+Persistence adapters: in-memory, SQLite, IndexedDB.
+Implements the `EventLogStore` port defined in `@canopy/graph`.
 
-- Storage adapters must implement the `StorageAdapter` interface.
-- Storage operations should be asynchronous and return Promises.
-- The storage package should not depend on core graph logic, only on raw data formats (Uint8Array snapshots).
-- Metadata is stored alongside snapshots to facilitate listing without loading full documents.
-- Persistence is handled by the adapter; SQLite adapter supports pluggable persistence layers (file system or IndexedDB/OPFS).
+## Allowed dependencies
+
+`@canopy/graph`, `@canopy/sync`.
+External: `idb`, `sql.js`.
+
+## Forbidden
+
+- No React, no UI concerns.
+- Do not redefine `EventLogStore` or `EventLogQueryOptions` — re-export them from `@canopy/graph`.
+- Storage adapters are async and return `Promise<Result<…, Error>>`; never throw.

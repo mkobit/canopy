@@ -8,13 +8,14 @@
 ## 2. Audit and fix violations
 
 - [ ] 2.1 Run `bun run lint` and capture the full violation list
-- [ ] 2.2 Fix `prefer-immutable-types` violations in `packages/types/`
-- [ ] 2.3 Fix `prefer-immutable-types` violations in `packages/schema/`
-- [ ] 2.4 Fix `prefer-immutable-types` violations in `packages/core/`
-- [ ] 2.5 Fix `prefer-immutable-types` violations in `packages/query/`
-- [ ] 2.6 Fix `prefer-immutable-types` violations in `apps/web/`
-- [ ] 2.7 Fix `no-non-null-assertion` violations across all packages
-- [ ] 2.8 Fix `ban-ts-comment` violations across all packages
+- [ ] 2.2 Fix `prefer-immutable-types` violations in `packages/graph/`
+- [ ] 2.3 Fix `prefer-immutable-types` violations in `packages/queries/`
+- [ ] 2.4 Fix `prefer-immutable-types` violations in `packages/settings/`
+- [ ] 2.5 Fix `prefer-immutable-types` violations in `packages/storage/`
+- [ ] 2.6 Fix `prefer-immutable-types` violations in `packages/sync/`
+- [ ] 2.7 Fix `prefer-immutable-types` violations in `apps/web/`
+- [ ] 2.8 Fix `no-non-null-assertion` violations across all packages
+- [ ] 2.9 Fix `ban-ts-comment` violations across all packages
 
 ## 3. Verify
 

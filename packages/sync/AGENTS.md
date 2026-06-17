@@ -1,9 +1,14 @@
 # @canopy/sync
 
-The `sync` package manages the lifecycle of Yjs documents, synchronization providers, and presence/awareness.
+Yjs/CRDT integration: `SyncEngine`, `GraphStore` (Yjs ↔ Canopy converters), `SyncProvider` abstraction, awareness.
 
-## Architectural Invariants
+## Allowed dependencies
 
-- **GraphStore** maps Canopy's domain objects to Yjs data types (`Y.Map`), handling serialization and deserialization.
-- **SyncEngine** serves as the main entry point, owning `Y.Doc` and `Awareness` instances.
-- **SyncProvider** interface abstracts synchronization backends (WebSocket, WebRTC, etc.).
+`@canopy/graph` only.
+External: `yjs`, `y-protocols`.
+
+## Forbidden
+
+- Yjs imports live only in this package.
+No other package may import `yjs` directly.
+- No React, no DOM.
