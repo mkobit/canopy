@@ -1,13 +1,5 @@
-import type {
-  Result,
-  GraphEvent,
-  EventId,
-  Node,
-  Edge,
-  NodeId,
-  EdgeId,
-  TypeId,
-} from '@canopy/types';
+import type { Result, GraphEvent, Node, Edge, NodeId, EdgeId, TypeId } from '@canopy/graph';
+export type { EventLogStore, EventLogQueryOptions } from '@canopy/graph';
 
 export interface NodeFilter {
   readonly type?: TypeId;
@@ -85,22 +77,4 @@ export interface StorageAdapter {
    * List all stored graphs.
    */
   readonly list: () => Promise<Result<readonly GraphStorageMetadata[], Error>>;
-}
-
-export interface EventLogQueryOptions {
-  readonly after?: EventId;
-  readonly before?: EventId;
-  readonly limit?: number;
-  readonly reverse?: boolean;
-}
-
-export interface EventLogStore {
-  readonly appendEvents: (
-    graphId: string,
-    events: readonly GraphEvent[],
-  ) => Promise<Result<void, Error>>;
-  readonly getEvents: (
-    graphId: string,
-    options?: EventLogQueryOptions,
-  ) => Promise<Result<readonly GraphEvent[], Error>>;
 }

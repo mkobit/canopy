@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Node } from '@canopy/types';
+import type { Node } from '@canopy/graph';
 import { PropertyDisplay } from '../properties/property-display';
 
 export interface TableLayoutData {

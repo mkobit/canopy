@@ -7,7 +7,7 @@ import {
   asTypeId,
   asDeviceId,
   createInstant,
-} from '@canopy/types';
+} from '@canopy/graph';
 import type {
   NodeCreated,
   NodePropertiesUpdated,
@@ -15,7 +15,7 @@ import type {
   EdgeCreated,
   EdgePropertiesUpdated,
   EdgeDeleted,
-} from '@canopy/types';
+} from '@canopy/graph';
 import { createInMemoryGraphStore } from './in-memory-graph-store';
 
 describe('InMemoryGraphStore', () => {

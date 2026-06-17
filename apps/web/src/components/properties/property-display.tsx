@@ -1,8 +1,8 @@
 import React from 'react';
-import type { PropertyValue, PropertyValueKind, ScalarValue } from '@canopy/types';
+import type { PropertyValue, PropertyValueKind, ScalarValue } from '@canopy/graph';
 import { cn } from '../../utils/cn';
 import { Temporal } from 'temporal-polyfill';
-import { fromThrowable } from '@canopy/types';
+import { fromThrowable } from '@canopy/graph';
 
 interface PropertyDisplayProps {
   readonly value: PropertyValue;

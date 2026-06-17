@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Edge } from '@canopy/types';
+import type { Edge } from '@canopy/graph';
 import { NodeView } from './node-view';
 import type { GraphNode } from './edge-view';
 import { EdgeView } from './edge-view';

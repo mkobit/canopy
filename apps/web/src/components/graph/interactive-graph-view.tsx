@@ -16,7 +16,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { withResultAlert } from '../../utils/handlers';
 import { CustomNode } from './custom-node';
 import { CustomEdge } from './custom-edge';
-import type { NodeId } from '@canopy/types';
+import type { NodeId } from '@canopy/graph';
 
 const nodeTypes = {
   customNode: CustomNode,

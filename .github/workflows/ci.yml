@@ -41,7 +41,7 @@ jobs:
         uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151
         with:
           version: v2026.5.1
-          cache: "true"
+          cache: 'true'
 
       - name: Install dependencies
         id: install

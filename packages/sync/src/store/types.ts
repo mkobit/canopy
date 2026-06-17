@@ -9,14 +9,14 @@ import type {
   EdgeId,
   Instant,
   DeviceId,
-} from '@canopy/types';
-import { asNodeId, asEdgeId, asTypeId, asEventId } from '@canopy/types';
+} from '@canopy/graph';
+import { asNodeId, asEdgeId, asTypeId, asEventId } from '@canopy/graph';
 import {
   PropertyValueSchema,
   TemporalMetadataSchema,
   InstantSchema,
   DeviceIdSchema,
-} from '@canopy/schema';
+} from '@canopy/graph';
 
 // Helper types for storage (Plain Objects)
 export type StorableProperties = Record<string, PropertyValue>;

@@ -2,8 +2,8 @@ import * as Y from 'yjs';
 import { Awareness } from 'y-protocols/awareness';
 import { createGraphStore, type GraphStore } from './store/graph-store';
 import type { SyncProvider, SyncEngineOptions } from './types';
-import type { Result } from '@canopy/types';
-import { fromThrowable } from '@canopy/types';
+import type { Result } from '@canopy/graph';
+import { fromThrowable } from '@canopy/graph';
 
 export interface SyncEngine {
   readonly doc: Y.Doc;

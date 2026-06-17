@@ -2,8 +2,8 @@ import * as Y from 'yjs';
 import type { Awareness } from 'y-protocols/awareness';
 import * as AwarenessProtocol from 'y-protocols/awareness';
 import type { SyncProvider } from '../types';
-import type { Result } from '@canopy/types';
-import { fromThrowable } from '@canopy/types';
+import type { Result } from '@canopy/graph';
+import { fromThrowable } from '@canopy/graph';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type EventHandler = (...args: any[]) => unknown;

@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Node } from '@canopy/types';
+import type { Node } from '@canopy/graph';
 import { reduce } from 'remeda';
 
 export interface ListLayoutData {

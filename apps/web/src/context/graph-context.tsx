@@ -1,4 +1,4 @@
-import { asDeviceId } from '@canopy/types';
+import { asDeviceId } from '@canopy/graph';
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { createSyncEngine, type SyncEngine } from '@canopy/sync';
 import type {
@@ -10,12 +10,12 @@ import type {
   Node,
   Edge,
   Result,
-} from '@canopy/types';
-import { asInstant, ok, err, fromThrowable, fromAsyncThrowable } from '@canopy/types';
+} from '@canopy/graph';
+import { asInstant, ok, err, fromThrowable, fromAsyncThrowable } from '@canopy/graph';
 import { useStorage } from './storage-context';
 import { z } from 'zod';
-import { TypeIdSchema } from '@canopy/schema';
-import type { TypeId } from '@canopy/types';
+import { TypeIdSchema } from '@canopy/graph';
+import type { TypeId } from '@canopy/graph';
 import { Temporal } from 'temporal-polyfill';
 
 interface GraphContextState {

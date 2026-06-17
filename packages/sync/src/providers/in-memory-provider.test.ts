@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'bun:test';
 import { createSyncEngine } from '../sync-engine';
 import { createInMemoryProvider } from './in-memory-provider';
-import { asTypeId, unwrap } from '@canopy/types';
+import { asTypeId, unwrap } from '@canopy/graph';
 
 describe('InMemoryProvider', () => {
   it('should sync changes between two engines using InMemoryProvider', () => {

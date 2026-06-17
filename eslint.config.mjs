@@ -255,7 +255,7 @@ export default tseslint.config(
       react: reactPlugin,
       'react-hooks': reactHooksPlugin,
     },
-    files: ['packages/ui/**/*.tsx', 'packages/ui/**/*.ts', 'apps/web/**/*.tsx', 'apps/web/**/*.ts'],
+    files: ['apps/web/**/*.tsx', 'apps/web/**/*.ts'],
     languageOptions: {
       parserOptions: {
         ecmaFeatures: {
@@ -340,7 +340,7 @@ export default tseslint.config(
   },
   // Override for Zod schemas using .map() which confuses Unicorn
   {
-    files: ['packages/schema/src/schemas.ts'],
+    files: ['packages/graph/src/schemas.ts'],
     rules: {
       'unicorn/no-array-callback-reference': 'off',
       'unicorn/no-array-method-this-argument': 'off',
@@ -348,7 +348,7 @@ export default tseslint.config(
   },
 
   {
-    files: ['packages/ui/**/*.tsx', 'packages/ui/**/*.ts', 'apps/web/**/*.tsx', 'apps/web/**/*.ts'],
+    files: ['apps/web/**/*.tsx', 'apps/web/**/*.ts'],
     rules: {
       'functional/prefer-immutable-types': 'off',
       'functional/type-declaration-immutability': 'off',

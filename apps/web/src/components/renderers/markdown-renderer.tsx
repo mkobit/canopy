@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
-import type { Node } from '@canopy/types';
+import type { Node } from '@canopy/graph';
 
 export interface MarkdownRendererProps {
   node: Node;

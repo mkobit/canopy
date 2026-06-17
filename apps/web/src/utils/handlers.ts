@@ -1,4 +1,4 @@
-import type { Result } from '@canopy/types';
+import type { Result } from '@canopy/graph';
 import { showAlert } from './dialogs';
 
 export const toHandler = <A extends unknown[]>(

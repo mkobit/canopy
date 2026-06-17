@@ -6,8 +6,8 @@ import type {
   EventLogStore,
   EventLogQueryOptions,
 } from './types';
-import type { Result, GraphEvent } from '@canopy/types';
-import { ok, err, fromAsyncThrowable } from '@canopy/types';
+import type { Result, GraphEvent } from '@canopy/graph';
+import { ok, err, fromAsyncThrowable } from '@canopy/graph';
 
 export interface SQLitePersistence {
   readonly read: () => Promise<Uint8Array | null>;

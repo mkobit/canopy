@@ -9,7 +9,7 @@ import {
   GraphEvent,
   unwrap,
   asDeviceId,
-} from '@canopy/types';
+} from '@canopy/graph';
 
 describe('GraphStore Event Log', () => {
   let document: Y.Doc;

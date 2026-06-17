@@ -17,7 +17,7 @@ Scope: read and write prompt files in `.jules/prompts/` only. Do not modify sour
    - Scope section explicitly forbids out-of-bounds actions.
    - Steps reference exact commands with flags, not vague instructions.
    - "One session only" constraint is present.
-   If a prompt fails a criterion, improve it in place.
+     If a prompt fails a criterion, improve it in place.
 
 4. Review the full set of prompts and identify any maintenance concern that recurs but has no prompt:
    - Examples: orphaned bd issues, openspec changes with no linked bd issues, issues stuck in `in_progress` for too long.

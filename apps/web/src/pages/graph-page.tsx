@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Outlet, useNavigate, useOutlet } from 'react-router-dom';
 import { useGraph } from '../context/graph-context';
-import { asGraphId } from '@canopy/types';
+import { asGraphId } from '@canopy/graph';
 import { toHandler, withResultAlert } from '../utils/handlers';
 import {
   TopAppBar,

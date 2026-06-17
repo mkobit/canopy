@@ -1,5 +1,5 @@
 import type * as Y from 'yjs';
-import type { Node, NodeId, Result } from '@canopy/types';
+import type { Node, NodeId, Result } from '@canopy/graph';
 import {
   createNodeId,
   createInstant,
@@ -8,8 +8,8 @@ import {
   err,
   asDeviceId,
   fromThrowable,
-} from '@canopy/types';
-import { NodeSchema } from '@canopy/schema';
+} from '@canopy/graph';
+import { NodeSchema } from '@canopy/graph';
 import { map } from 'remeda';
 import { nodeToStorable, storableToNode } from '../converters';
 

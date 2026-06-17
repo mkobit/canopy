@@ -1,5 +1,5 @@
-import type { GraphEvent, Result } from '@canopy/types';
-import { ok } from '@canopy/types';
+import type { GraphEvent, Result } from '@canopy/graph';
+import { ok } from '@canopy/graph';
 import type { EventLogStore, EventLogQueryOptions } from './types';
 
 export const createInMemoryEventStore = (): EventLogStore => {

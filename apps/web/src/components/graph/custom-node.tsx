@@ -2,7 +2,7 @@ import React from 'react';
 import { Handle, Position } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
 import { PropertyDisplay } from '..';
-import type { Node as GraphNode, PropertyValue } from '@canopy/types';
+import type { Node as GraphNode, PropertyValue } from '@canopy/graph';
 
 export const CustomNode = ({ data, selected }: NodeProps) => {
   const node = data.node as GraphNode | undefined;

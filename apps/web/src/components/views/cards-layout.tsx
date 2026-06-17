@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Node } from '@canopy/types';
+import type { Node } from '@canopy/graph';
 import { NodeView } from '../graph/node-view';
 
 export interface CardsLayoutData {

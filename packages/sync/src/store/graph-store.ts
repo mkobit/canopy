@@ -1,6 +1,6 @@
 import type * as Y from 'yjs';
-import type { Node, Edge, Result, GraphEvent } from '@canopy/types';
-import { fromThrowable } from '@canopy/types';
+import type { Node, Edge, Result, GraphEvent } from '@canopy/graph';
+import { fromThrowable } from '@canopy/graph';
 import * as NodeOps from './ops/node';
 import * as EdgeOps from './ops/edge';
 import { eventToStorable, storableToEvent } from './converters';

@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { useGraph } from '../context/graph-context';
 import { Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import type { Node } from '@canopy/types';
+import type { Node } from '@canopy/graph';
 import { filter, map } from 'remeda';
-import { executeStoredQuery } from '@canopy/query';
-import { SYSTEM_IDS } from '@canopy/core';
+import { executeStoredQuery } from '@canopy/queries';
+import { SYSTEM_IDS } from '@canopy/graph';
 
 export const SearchPage = () => {
   const { graph } = useGraph();
