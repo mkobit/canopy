@@ -5,10 +5,8 @@
     "rootDir": "./src"
   },
   "include": ["src/**/*"],
+  "exclude": ["src/**/*.test.ts"],
   "references": [
-    {
-      "path": "../sync/tsconfig.build.json"
-    },
     {
       "path": "../graph/tsconfig.build.json"
     }
