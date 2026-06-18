@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
-import type { Graph, Node } from '@canopy/types';
+import type { Graph, Node } from '@canopy/graph';
+import { SYSTEM_IDS, SYSTEM_EDGE_TYPES } from '@canopy/graph';
 import { MarkdownRenderer } from './markdown-renderer';
 import { TextBlockRenderer } from './text-block-renderer';
 import { CodeBlockRenderer } from './code-block-renderer';
@@ -10,18 +11,11 @@ export interface BlockRendererProps {
   depth?: number;
 }
 
-// Ensure these constants match `@canopy/core` without importing to avoid circular dependencies
-// or hardcode for now as they are system IDs.
-const SYSTEM_EDGE_TYPES_CHILD_OF = 'system:edgetype:child-of';
-const NODE_TYPE_TEXT_BLOCK = 'system:nodetype:text-block';
-const NODE_TYPE_CODE_BLOCK = 'system:nodetype:code-block';
-const NODE_TYPE_MARKDOWN = 'system:nodetype:markdown';
-
 export const BlockRenderer: React.FC<BlockRendererProps> = ({ node, graph, depth = 0 }) => {
   // Find and sort children
   const children = useMemo(() => {
     const childEdges = [...graph.edges.values()].filter(
-      (e) => e.target === node.id && e.type === SYSTEM_EDGE_TYPES_CHILD_OF,
+      (e) => e.target === node.id && e.type === SYSTEM_EDGE_TYPES.CHILD_OF,
     );
 
     // Sort by fractional index position
@@ -39,13 +33,13 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({ node, graph, depth
   // Determine specific renderer
   const content = (() => {
     switch (node.type) {
-      case NODE_TYPE_TEXT_BLOCK: {
+      case SYSTEM_IDS.TYPE_TEXT_BLOCK: {
         return <TextBlockRenderer node={node} />;
       }
-      case NODE_TYPE_CODE_BLOCK: {
+      case SYSTEM_IDS.TYPE_CODE_BLOCK: {
         return <CodeBlockRenderer node={node} />;
       }
-      case NODE_TYPE_MARKDOWN: {
+      case SYSTEM_IDS.TYPE_MARKDOWN: {
         return <MarkdownRenderer node={node} />;
       }
       default: {

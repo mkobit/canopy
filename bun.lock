@@ -49,10 +49,8 @@
         "canopy": "./dist/index.js",
       },
       "dependencies": {
-        "@canopy/core": "workspace:*",
-        "@canopy/schema": "workspace:*",
+        "@canopy/graph": "workspace:*",
         "@canopy/storage": "workspace:*",
-        "@canopy/types": "workspace:*",
         "@effect/cli": "^0.75.1",
         "@effect/platform": "^0.96.1",
         "@effect/platform-node": "^0.106.0",
@@ -66,12 +64,11 @@
       "name": "@canopy/web",
       "version": "0.0.0",
       "dependencies": {
-        "@canopy/core": "workspace:*",
-        "@canopy/query": "workspace:*",
-        "@canopy/schema": "workspace:*",
+        "@canopy/graph": "workspace:*",
+        "@canopy/queries": "workspace:*",
+        "@canopy/settings": "workspace:*",
         "@canopy/storage": "workspace:*",
         "@canopy/sync": "workspace:*",
-        "@canopy/types": "workspace:*",
         "@xyflow/react": "^12.11.0",
         "clsx": "^2.1.1",
         "lucide-react": "^1.17.0",
@@ -102,39 +99,25 @@
         "vite": "^8.0.13",
       },
     },
-    "packages/api": {
-      "name": "@canopy/api",
+    "packages/graph": {
+      "name": "@canopy/graph",
       "version": "0.0.0",
       "dependencies": {
-        "@canopy/core": "workspace:*",
-        "@canopy/storage": "workspace:*",
-        "@canopy/types": "workspace:*",
+        "remeda": "^2.34.1",
         "temporal-polyfill": "^0.3.2",
-      },
-      "devDependencies": {
-        "typescript": "6.0.3",
-      },
-    },
-    "packages/core": {
-      "name": "@canopy/core",
-      "version": "0.0.0",
-      "dependencies": {
-        "@canopy/schema": "workspace:*",
-        "@canopy/types": "workspace:*",
-        "remeda": "^2.37.0",
         "uuid": "^14.0.0",
+        "zod": "^4.4.1",
       },
       "devDependencies": {
         "@types/uuid": "^11.0.0",
+        "typescript": "6.0.3",
       },
     },
-    "packages/query": {
-      "name": "@canopy/query",
+    "packages/queries": {
+      "name": "@canopy/queries",
       "version": "0.0.0",
       "dependencies": {
-        "@canopy/core": "workspace:*",
-        "@canopy/schema": "workspace:*",
-        "@canopy/types": "workspace:*",
+        "@canopy/graph": "workspace:*",
         "remeda": "^2.37.0",
       },
       "devDependencies": {
@@ -142,13 +125,11 @@
         "yjs": "^13.6.30",
       },
     },
-    "packages/schema": {
-      "name": "@canopy/schema",
+    "packages/settings": {
+      "name": "@canopy/settings",
       "version": "0.0.0",
       "dependencies": {
-        "@canopy/types": "workspace:*",
-        "temporal-polyfill": "^0.3.2",
-        "zod": "^4.4.1",
+        "@canopy/graph": "workspace:*",
       },
       "devDependencies": {
         "typescript": "6.0.3",
@@ -158,8 +139,8 @@
       "name": "@canopy/storage",
       "version": "0.0.0",
       "dependencies": {
+        "@canopy/graph": "workspace:*",
         "@canopy/sync": "workspace:*",
-        "@canopy/types": "workspace:*",
         "@types/sql.js": "^1.4.11",
         "idb": "^8.0.3",
         "sql.js": "^1.14.1",
@@ -173,25 +154,12 @@
       "name": "@canopy/sync",
       "version": "0.0.0",
       "dependencies": {
-        "@canopy/schema": "workspace:*",
-        "@canopy/types": "workspace:*",
+        "@canopy/graph": "workspace:*",
         "remeda": "^2.37.0",
         "uuid": "^14.0.0",
         "y-protocols": "^1.0.7",
         "yjs": "^13.6.30",
         "zod": "^4.4.1",
-      },
-      "devDependencies": {
-        "@types/uuid": "^11.0.0",
-        "typescript": "6.0.3",
-      },
-    },
-    "packages/types": {
-      "name": "@canopy/types",
-      "version": "0.0.0",
-      "dependencies": {
-        "temporal-polyfill": "^0.3.2",
-        "uuid": "^14.0.0",
       },
       "devDependencies": {
         "@types/uuid": "^11.0.0",
@@ -243,23 +211,19 @@
 
     "@babel/types": ["@babel/types@7.29.0", "", { "dependencies": { "@babel/helper-string-parser": "^7.27.1", "@babel/helper-validator-identifier": "^7.28.5" } }, "sha512-LwdZHpScM4Qz8Xw2iKSzS+cfglZzJGvofQICy7W7v4caru4EaAmyUuO6BGrbyQ2mYV11W0U8j5mBhd14dd3B0A=="],
 
-    "@canopy/api": ["@canopy/api@workspace:packages/api"],
-
     "@canopy/cli": ["@canopy/cli@workspace:apps/cli"],
 
-    "@canopy/core": ["@canopy/core@workspace:packages/core"],
+    "@canopy/graph": ["@canopy/graph@workspace:packages/graph"],
 
-    "@canopy/query": ["@canopy/query@workspace:packages/query"],
+    "@canopy/queries": ["@canopy/queries@workspace:packages/queries"],
 
-    "@canopy/schema": ["@canopy/schema@workspace:packages/schema"],
+    "@canopy/settings": ["@canopy/settings@workspace:packages/settings"],
 
     "@canopy/storage": ["@canopy/storage@workspace:packages/storage"],
 
     "@canopy/sync": ["@canopy/sync@workspace:packages/sync"],
 
     "@canopy/tools": ["@canopy/tools@workspace:tools"],
-
-    "@canopy/types": ["@canopy/types@workspace:packages/types"],
 
     "@canopy/web": ["@canopy/web@workspace:apps/web"],
 

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useStorage } from '../context/storage-context';
 import { showPrompt, showConfirm } from '../utils/dialogs';
 import { useNavigate } from 'react-router-dom';
-import { createGraphId } from '@canopy/types';
+import { createGraphId } from '@canopy/graph';
 import { Plus, Trash2, FolderOpen } from 'lucide-react';
 import type { GraphStorageMetadata } from '@canopy/storage';
 import { Temporal } from 'temporal-polyfill';

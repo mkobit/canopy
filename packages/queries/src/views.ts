@@ -1,0 +1,216 @@
+import type {
+  Graph,
+  Node,
+  NodeId,
+  PropertyValue,
+  ScalarValue,
+  Result,
+  DeviceId,
+} from '@canopy/graph';
+import { executeQuery } from './engine';
+import {
+  createNodeId,
+  createInstant,
+  ok,
+  err,
+  fromThrowable,
+  asNodeId,
+  asDeviceId,
+  SYSTEM_IDS,
+  addNode,
+} from '@canopy/graph';
+import type { Query, Sort } from './model';
+import { getQueryDefinition } from './stored';
+
+export interface ViewDefinition {
+  readonly name: string;
+  readonly description?: string;
+  readonly queryRef: NodeId;
+  readonly layout: string;
+  readonly sort?: readonly Sort[];
+  readonly groupBy?: string;
+  readonly displayProperties?: readonly string[];
+  readonly pageSize?: number;
+}
+
+export type SaveViewOptions = Readonly<{
+  deviceId: DeviceId;
+  batchId?: string;
+  migrationId?: string;
+}>;
+
+export interface ResolvedView {
+  readonly definition: ViewDefinition;
+  readonly query: Query;
+}
+
+// Helper to wrap a scalar value
+function scalar(val: string | number | boolean): Result<ScalarValue, Error> {
+  return ok(val);
+}
+
+// Helper to create a reference value
+function reference(target: NodeId): PropertyValue {
+  return target;
+}
+
+// Helper to create a list property
+function list(items: readonly string[]): PropertyValue {
+  return items;
+}
+
+export function saveViewDefinition(
+  graph: Graph,
+  view: ViewDefinition,
+  options: SaveViewOptions,
+): Result<{ graph: Graph; nodeId: NodeId }, Error> {
+  const nodeId = createNodeId();
+
+  const nameVal = scalar(view.name);
+  if (!nameVal.ok) return err(nameVal.error);
+
+  const layoutVal = scalar(view.layout);
+  if (!layoutVal.ok) return err(layoutVal.error);
+
+  const descriptionVal = view.description ? scalar(view.description) : ok(undefined);
+  if (!descriptionVal.ok) return err(descriptionVal.error);
+
+  const sortVal =
+    view.sort && view.sort.length > 0 ? scalar(JSON.stringify(view.sort)) : ok(undefined);
+  if (!sortVal.ok) return err(sortVal.error);
+
+  const groupByVal = view.groupBy ? scalar(view.groupBy) : ok(undefined);
+  if (!groupByVal.ok) return err(groupByVal.error);
+
+  const pageSizeVal = view.pageSize ? scalar(view.pageSize) : ok(undefined);
+  if (!pageSizeVal.ok) return err(pageSizeVal.error);
+
+  const properties = new Map([
+    ['name', nameVal.value],
+    ['queryRef', reference(view.queryRef)],
+    ['layout', layoutVal.value],
+    ...(descriptionVal.value ? [['description', descriptionVal.value] as const] : []),
+    ...(sortVal.value ? [['sort', sortVal.value] as const] : []),
+    ...(groupByVal.value ? [['groupBy', groupByVal.value] as const] : []),
+    ...(view.displayProperties && view.displayProperties.length > 0
+      ? [['displayProperties', list(view.displayProperties)] as const]
+      : []),
+    ...(pageSizeVal.value ? [['pageSize', pageSizeVal.value] as const] : []),
+  ]);
+
+  const node: Node = {
+    id: nodeId,
+    type: SYSTEM_IDS.VIEW_DEFINITION,
+    properties,
+    metadata: {
+      created: createInstant(),
+      modified: createInstant(),
+      modifiedBy: asDeviceId('00000000-0000-0000-0000-000000000000'),
+    },
+  };
+
+  const newGraphResult = addNode(graph, node, {
+    deviceId: options.deviceId,
+    ...(options.batchId === undefined ? {} : { batchId: options.batchId }),
+    ...(options.migrationId === undefined ? {} : { migrationId: options.migrationId }),
+  });
+  if (!newGraphResult.ok) return err(newGraphResult.error);
+
+  return ok({ graph: newGraphResult.value.graph, nodeId });
+}
+
+export function getViewDefinition(graph: Graph, nodeId: NodeId): Result<ViewDefinition, Error> {
+  const node = graph.nodes.get(nodeId);
+  if (!node) {
+    return err(new Error(`View definition node ${nodeId} not found`));
+  }
+
+  if (node.type !== SYSTEM_IDS.VIEW_DEFINITION) {
+    return err(new Error(`Node ${nodeId} is not a View Definition`));
+  }
+
+  const nameProp = node.properties.get('name');
+  if (typeof nameProp !== 'string') return err(new Error('Invalid view name'));
+
+  const queryRefProp = node.properties.get('queryRef');
+  if (typeof queryRefProp !== 'string') return err(new Error('Invalid view queryRef'));
+
+  const layoutProp = node.properties.get('layout');
+  if (typeof layoutProp !== 'string') return err(new Error('Invalid view layout'));
+
+  const description = node.properties.get('description');
+  const sortProp = node.properties.get('sort');
+  const groupBy = node.properties.get('groupBy');
+  const displayProperties = node.properties.get('displayProperties');
+  const pageSize = node.properties.get('pageSize');
+
+  const sort: readonly Sort[] | undefined = (() => {
+    if (typeof sortProp === 'string') {
+      const parsed = fromThrowable(() => JSON.parse(sortProp) as readonly Sort[]);
+      if (parsed.ok) return parsed.value;
+    }
+    return;
+  })();
+
+  const displayPropertiesList = Array.isArray(displayProperties)
+    ? displayProperties
+        .filter((i) => typeof i === 'string')
+        .map((i) => i as string)
+        .filter((s) => s !== '')
+    : undefined;
+
+  return ok({
+    name: nameProp,
+    queryRef: asNodeId(queryRefProp),
+    layout: layoutProp,
+    ...(typeof description === 'string' ? { description: description } : {}),
+    ...(sort ? { sort } : {}),
+    ...(typeof groupBy === 'string' ? { groupBy: groupBy } : {}),
+    ...(displayPropertiesList ? { displayProperties: displayPropertiesList } : {}),
+    ...(typeof pageSize === 'number' ? { pageSize: pageSize } : {}),
+  });
+}
+
+export function listViewDefinitions(graph: Graph): readonly Node[] {
+  return [...graph.nodes.values()].filter((node) => node.type === SYSTEM_IDS.VIEW_DEFINITION);
+}
+
+const SYSTEM_ID_PREFIXES = [
+  'node:type:',
+  'edge:type:',
+  'meta:',
+  'query:system:',
+  'view:system:',
+  'system:',
+] as const;
+
+export function isSystemNode(node: Node): boolean {
+  return SYSTEM_ID_PREFIXES.some((prefix) => node.id.startsWith(prefix));
+}
+
+export function executeView(
+  graph: Graph,
+  viewNodeId: NodeId,
+): Result<Readonly<{ definition: ViewDefinition; nodes: readonly Node[] }>, Error> {
+  const resolved = resolveView(graph, viewNodeId);
+  if (!resolved.ok) return err(resolved.error);
+
+  const queryResult = executeQuery(graph, resolved.value.query);
+  if (!queryResult.ok) return err(queryResult.error);
+
+  const nodes = queryResult.value.nodes.filter((node) => !isSystemNode(node));
+  return ok({ definition: resolved.value.definition, nodes });
+}
+
+export function resolveView(graph: Graph, viewNodeId: NodeId): Result<ResolvedView, Error> {
+  const viewDef = getViewDefinition(graph, viewNodeId);
+  if (!viewDef.ok) return err(viewDef.error);
+
+  const queryDef = getQueryDefinition(graph, viewDef.value.queryRef);
+  if (!queryDef.ok) return err(queryDef.error);
+
+  return ok({
+    definition: viewDef.value,
+    query: queryDef.value,
+  });
+}

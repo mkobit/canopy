@@ -1,46 +1,42 @@
-# Graph Model Architecture
+# Graph model
 
-## Overview
+Canonical reference: `docs/design/2026-02-06-core-data-model.md`.
+Package layout: `docs/architecture/bounded-contexts.md`.
 
-The graph engine is built on top of [Yjs](https://github.com/yjs/yjs), a CRDT library, to ensure offline-first capabilities and eventual consistency across distributed clients.
+## Primitives
 
-## Data Model
+- `Node` — `{ id, type, properties, metadata }`.
+- `Edge` — `{ id, type, source, target, properties, metadata }`.
+- `Graph` — aggregate root holding `nodes` and `edges` maps.
 
-### Primitives
+All primitives live in `@canopy/graph` and are immutable.
 
-- **Node**: The fundamental unit. Contains `id`, `type`, `properties`, `created`, `modified`.
-- **Edge**: Connects two nodes. Contains `id`, `source`, `target`, `type`, `properties`, `created`, `modified`.
+## Meta-circular type system
 
-### Meta-circular Type System
+Type definitions are themselves nodes.
+A `NodeTypeDefinition` node has `type = SYSTEM_IDS.NODE_TYPE` and its `properties` map describes the schema for nodes of that type.
+The same pattern applies to `EdgeTypeDefinition`.
+This lets the schema evolve through the same event stream as data.
 
-The type system is stored within the graph itself.
+## Event sourcing
 
-- **NodeType**: A special Node with `type="NodeType"`. Its properties define the schema for other nodes.
-- **EdgeType**: A special Node (conceptually) or Edge definition that defines schema for edges.
+The graph is a projection over an append-only event log.
+Events live in `@canopy/graph/events.ts` (`NodeCreated`, `NodePropertiesUpdated`, `NodeDeleted`, `EdgeCreated`, `EdgePropertiesUpdated`, `EdgeDeleted`, `WorkflowStarted`, `WorkflowCompleted`).
+The projection (`applyEvent`, `projectGraph`) is deterministic and pure.
+LWW conflict resolution uses `(timestamp, deviceId)` ordering.
 
-This allows the schema to evolve over time using the same sync mechanisms as the data.
+## Validation
 
-## Storage Layer
+Two layers, both in `@canopy/graph`:
 
-`packages/core` implements `GraphStore`, which wraps a `Y.Doc`.
+1. Structural validity via Zod (`schemas.ts`).
+2. Type-aware validity against the `NodeTypeDefinition` / `EdgeTypeDefinition` resolved from the graph (`validation.ts`).
 
-- Nodes are stored in a `Y.Map<Node>` named `nodes`.
-- Edges are stored in a `Y.Map<Edge>` named `edges`.
+Ops accept an opt-in `validate` flag.
+Callers may also run validation explicitly.
 
-### Validation
+## Persistence
 
-Validation happens at runtime in `GraphStore` methods (`addNode`, `updateNode`, etc.).
-It checks:
-
-1. **Zod Schema**: Structural validity (UUIDs, required fields).
-2. **Type Definition**: Validates properties against the `NodeType`/`EdgeType` defined in the graph.
-
-## Query Layer
-
-`packages/query` provides a basic `GraphQuery` class for:
-
-- Finding nodes by type/properties.
-- Finding edges.
-- Traversing the graph (outgoing/incoming edges).
-
-It operates directly on the `GraphStore` data structures.
+Persistence is out of scope for `@canopy/graph`.
+The `EventLogStore` port (defined in `graph/event-log.ts`) is implemented by adapters in `@canopy/storage`.
+CRDT-based replication lives in `@canopy/sync`.

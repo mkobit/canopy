@@ -39,7 +39,7 @@ Canopy's dynamic, user-defined schema would need to be mapped to `@codemix/graph
 import { Graph, GraphSchema, InMemoryGraphStorage } from '@codemix/graph';
 import { z } from 'zod';
 // Hypothetical Canopy imports
-import { CanopySchemaProvider, NodeTypeId, EdgeTypeId } from '@canopy/core';
+import { CanopySchemaProvider, NodeTypeId, EdgeTypeId } from '@canopy/graph';
 
 // Hypothetical function to translate Canopy's schema definitions
 function buildCodemixSchema(canopySchema: CanopySchemaProvider): GraphSchema {
@@ -81,7 +81,7 @@ We could build a `CodemixStorageAdapter` that implements the required methods fo
 ```typescript
 import { Graph } from '@codemix/graph';
 // Hypothetical Canopy imports
-import { StorageAdapter, Result, NodeId, ViewDefinition, SaveViewOptions } from '@canopy/types';
+import { StorageAdapter, Result, NodeId, ViewDefinition, SaveViewOptions } from '@canopy/graph';
 
 export class CodemixStorageAdapter implements StorageAdapter {
   constructor(private graph: Graph) {}

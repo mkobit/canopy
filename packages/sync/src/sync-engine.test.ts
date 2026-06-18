@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'bun:test';
 import { createSyncEngine } from './sync-engine';
-import { createNodeId, asTypeId, PropertyValue, unwrap } from '@canopy/types';
+import { createNodeId, asTypeId, PropertyValue, unwrap } from '@canopy/graph';
 import * as Y from 'yjs';
 
 // Helpers

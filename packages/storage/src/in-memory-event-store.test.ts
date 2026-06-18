@@ -6,8 +6,8 @@ import {
   asTypeId,
   asDeviceId,
   createInstant,
-} from '@canopy/types';
-import type { GraphEvent } from '@canopy/types';
+} from '@canopy/graph';
+import type { GraphEvent } from '@canopy/graph';
 import { createInMemoryEventStore } from './in-memory-event-store';
 
 describe('InMemoryEventStore', () => {

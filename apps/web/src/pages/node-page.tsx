@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { withResultAlert } from '../utils/handlers';
 import { useGraph } from '../context/graph-context';
 import { NodeView, PropertyInput, DocumentRenderer } from '../components';
-import type { Node, NodeId, PropertyValue } from '@canopy/types';
+import type { Node, NodeId, PropertyValue } from '@canopy/graph';
 import { ArrowLeft, Save, Trash, Link as LinkIcon } from 'lucide-react';
 import { filter, map } from 'remeda';
 import { showAlert, showConfirm } from '../utils/dialogs';

@@ -4,8 +4,8 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { NodeView } from '../node-view';
 import { GraphCanvas } from '../graph-canvas';
-import { Node, asDeviceId } from '@canopy/types';
-import { asNodeId, asTypeId, createInstant } from '@canopy/types';
+import { Node, asDeviceId } from '@canopy/graph';
+import { asNodeId, asTypeId, createInstant } from '@canopy/graph';
 
 // Mocks
 const mockNodeId = asNodeId('node-1');

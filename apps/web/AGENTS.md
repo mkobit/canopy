@@ -1,12 +1,19 @@
 # apps/web
 
-## Architectural Invariants
+Vite + React + xyflow frontend for Canopy.
 
-- **StorageContext** initializes the `StorageAdapter` (SQLite/IDB).
-- **GraphContext** manages the lifecycle of the active `SyncEngine` and `Graph`.
-- **UI State**: React local state is used for transients; global application state (current graph) is in `GraphContext`.
+## Allowed dependencies
+
+`@canopy/graph`, `@canopy/queries`, `@canopy/settings`, `@canopy/storage`, `@canopy/sync`.
+
+## Architectural invariants
+
+- `StorageContext` initializes the `StorageAdapter` (SQLite/IDB).
+- `GraphContext` owns the active `SyncEngine` and projected `Graph`.
+- UI components are stateless and props-driven.
+React local state is allowed for transients; global state lives in context.
 
 ## Verification
 
-- Ensure `bun run dev` starts the app.
-- Ensure all tests pass with `bun test`.
+`bun run dev` starts the app.
+`bun test` runs the suite.

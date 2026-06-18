@@ -14,9 +14,9 @@ Scope: link existing issues only. Do not create, close, or modify issue content.
    - Reference another issue by ID or title in their description
    - Are clearly blocked by another issue (e.g. "after X is done", "requires Y")
    - Are sub-tasks of a broader effort
-   Link them accordingly:
-   `bd link <blocked-id> <blocking-id>` (blocked depends on blocking)
-   `bd dep add <parent-id> <child-id>` for parent-child relationships
+     Link them accordingly:
+     `bd link <blocked-id> <blocking-id>` (blocked depends on blocking)
+     `bd dep add <parent-id> <child-id>` for parent-child relationships
 
 4. Run `bd graph` to visualize the dependency graph and check it makes sense.
    Look for islands (issues with no links) that clearly belong to a cluster.

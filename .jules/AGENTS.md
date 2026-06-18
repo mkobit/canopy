@@ -16,14 +16,14 @@ Update `env_setup.sh` manually whenever tooling changes substantially (new mise 
 
 ## Available prompts
 
-| File | Purpose |
-| :--- | :--- |
-| `prompts/backlog-pruner.md` | Close stale, vague, or superseded beads issues |
-| `prompts/issue-enricher.md` | Fill in missing type, priority, and descriptions |
-| `prompts/dependency-linker.md` | Link related issues and resolve duplicates |
+| File                               | Purpose                                                      |
+| :--------------------------------- | :----------------------------------------------------------- |
+| `prompts/backlog-pruner.md`        | Close stale, vague, or superseded beads issues               |
+| `prompts/issue-enricher.md`        | Fill in missing type, priority, and descriptions             |
+| `prompts/dependency-linker.md`     | Link related issues and resolve duplicates                   |
 | `prompts/openspec-housekeeping.md` | Archive complete openspec changes, validate in-progress ones |
-| `prompts/automation-health.md` | Audit commands, configs, and prompt file validity |
-| `prompts/jules-tuner.md` | Improve prompt quality and identify scheduling gaps |
+| `prompts/automation-health.md`     | Audit commands, configs, and prompt file validity            |
+| `prompts/jules-tuner.md`           | Improve prompt quality and identify scheduling gaps          |
 
 ## Constraints that apply to all Jules sessions
 

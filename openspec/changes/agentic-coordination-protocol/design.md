@@ -1,6 +1,7 @@
 ## Context
 
 The project has three agentic tools installed and bootstrapped:
+
 - **OpenSpec** — spec-driven planning: explore → propose → design → tasks
 - **Beads** — Dolt-backed issue graph with `bd ready` / `bd update --claim` for agent task pickup
 - **Jules** — async sandboxed agent that checks out `main` on a schedule, runs stored prompts from `.jules/prompts/`, and opens PRs; no shared Dolt state with local environment
@@ -56,15 +57,18 @@ The seeding step is the explicit handoff boundary. The user triggers it after re
 Labels are stamped at seeding time by the formula or the seeding script. Agents filter on these labels via `bd query` or `bd ready`.
 
 **Complexity:**
+
 - `complexity:low` — mechanical, no ambiguity, Jules-appropriate
 - `complexity:medium` — requires judgment, local interactive agent
 - `complexity:high` — requires planning session before starting; local agent + user
 
 **Nature:**
+
 - `mechanical` — pure execution, no design decisions (dependency bumps, config changes, file renames)
 - `needs-design` — task is blocked until an OpenSpec design doc exists; not claimable until cleared
 
 **Agent hint (priority signal, not hard assignment):**
+
 - `agent:jules` — ranked P3/P4; local agents skip past these naturally; Jules targets them specifically
 - No label = default P2, local agents pick up first
 
@@ -83,12 +87,14 @@ For the initial implementation, the formula is intentionally simple — a flat g
 ### Jules prompt pattern
 
 Jules prompts in `.jules/prompts/` follow a two-phase structure:
+
 1. **Discovery**: `bd ready --filter agent:jules` to find claimable tasks; if none, exit gracefully
 2. **Execution**: claim one task (`bd update --claim`), implement, open PR
 
 Jules never claims more than one task per session. This keeps PRs small and reviewable.
 
 For non-Beads prompts (OpenSpec housekeeping, dependency updates), the prompt encodes the full task directly — no Beads lookup needed. The distinction is explicit in the prompt filename convention:
+
 - `beads-*.md` — prompts that use `bd ready` for discovery
 - Direct task prompts keep their existing names (backlog-pruner, issue-enricher, etc.)
 

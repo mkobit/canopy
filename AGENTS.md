@@ -14,20 +14,31 @@ Run the following command to verify the current dependency graph:
 bun pm ls --all
 ```
 
+## Package layout
+
+See `docs/architecture/bounded-contexts.md` for the dependency graph and per-package scope.
+
+Five packages:
+
+- `@canopy/graph` — kernel (types, schemas, projection, ops, validation, bootstrap, history, `EventLogStore` port).
+- `@canopy/queries` — query DSL and executor.
+- `@canopy/settings` — settings cascade and `UserSetting` creation.
+- `@canopy/storage` — persistence adapters (in-memory, SQLite, IndexedDB).
+- `@canopy/sync` — Yjs/CRDT integration, sync providers, awareness.
+
 ## Architectural invariants
 
-1.  `@canopy/types` has zero runtime dependencies—pure TypeScript types only.
-2.  `@canopy/core` owns the graph model—other packages do not directly manipulate graph state.
-    - New graphs are automatically bootstrapped with system nodes (NodeType, EdgeType, etc.).
-    - Well-known system IDs are defined in `@canopy/core/system`.
-3.  Yjs integration lives in `@canopy/sync`, not scattered across packages.
-4.  `@canopy/query` is isolated to enable swapping Cypher for ISO GQL later.
-5.  UI components are stateless—`` receives data via props, does not fetch or mutate.
-6.  Zod schemas in `@canopy/schema` are the source of truth for runtime validation.
-    `@canopy/schema` also provides strict constructors and type guards for domain types.
-7.  All type properties are `readonly`.
-8.  No mutations—functions return new values, never modify arguments.
-9.  No raw primitives in domain types—use branded types and domain-specific wrappers.
+1. `@canopy/graph` is the leaf — no `@canopy/*` imports.
+Bootstrap, system IDs, and the `EventLogStore` port live here.
+2. Yjs integration lives only in `@canopy/sync`.
+No other package imports `yjs` directly.
+3. Storage adapters implement `EventLogStore` (defined in `@canopy/graph`); they do not redefine the port.
+4. UI components are stateless; they receive data via props and do not fetch or mutate.
+5. Zod schemas in `@canopy/graph` are the source of truth for runtime validation.
+6. All type properties are `readonly`.
+No mutations — functions return new values, never modify arguments.
+7. No raw primitives in domain types — use branded IDs and domain wrappers.
+8. Errors are returned as `Result<T, E>`, not thrown.
 
 ## Development workflow
 

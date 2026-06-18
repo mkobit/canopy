@@ -1,5 +1,5 @@
 import type * as Y from 'yjs';
-import type { Edge, EdgeId, Result } from '@canopy/types';
+import type { Edge, EdgeId, Result } from '@canopy/graph';
 import {
   createEdgeId,
   createInstant,
@@ -8,8 +8,8 @@ import {
   err,
   asDeviceId,
   fromThrowable,
-} from '@canopy/types';
-import { EdgeSchema } from '@canopy/schema';
+} from '@canopy/graph';
+import { EdgeSchema } from '@canopy/graph';
 import { map } from 'remeda';
 import { edgeToStorable, storableToEdge } from '../converters';
 

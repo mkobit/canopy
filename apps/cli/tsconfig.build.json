@@ -12,16 +12,10 @@
   "include": ["src/**/*"],
   "references": [
     {
-      "path": "../../packages/core/tsconfig.build.json"
-    },
-    {
-      "path": "../../packages/schema/tsconfig.build.json"
+      "path": "../../packages/graph/tsconfig.build.json"
     },
     {
       "path": "../../packages/storage/tsconfig.build.json"
-    },
-    {
-      "path": "../../packages/types/tsconfig.build.json"
     }
   ]
 }

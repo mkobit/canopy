@@ -10,12 +10,11 @@
     "test": "bun test ./src --preload ./src/test/setup.ts"
   },
   "dependencies": {
-    "@canopy/core": "workspace:*",
-    "@canopy/query": "workspace:*",
-    "@canopy/schema": "workspace:*",
+    "@canopy/graph": "workspace:*",
+    "@canopy/queries": "workspace:*",
+    "@canopy/settings": "workspace:*",
     "@canopy/storage": "workspace:*",
     "@canopy/sync": "workspace:*",
-    "@canopy/types": "workspace:*",
     "@xyflow/react": "^12.11.0",
     "clsx": "^2.1.1",
     "lucide-react": "^1.17.0",

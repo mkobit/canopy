@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
 import { createSQLiteAdapter } from './sqlite-adapter';
 import { createIndexedDBAdapter } from './indexeddb-adapter';
 import { GraphStorageMetadata, StorageAdapter } from './types';
-import { unwrap } from '@canopy/types';
+import { unwrap } from '@canopy/graph';
 import 'fake-indexeddb/auto';
 
 // Mock data

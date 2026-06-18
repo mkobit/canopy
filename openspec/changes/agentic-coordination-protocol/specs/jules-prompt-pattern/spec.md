@@ -3,6 +3,7 @@
 ### Requirement: Jules prompts follow a two-phase structure
 
 Every Jules prompt in `.jules/prompts/` that uses Beads for task discovery SHALL follow a two-phase structure:
+
 1. **Discovery phase**: query `bd ready` with appropriate filters
 2. **Execution phase**: claim one task, implement it, open a PR
 

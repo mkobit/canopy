@@ -1,5 +1,5 @@
-import type { Node, Edge, NodeId, EdgeId, TypeId, GraphEvent, Result } from '@canopy/types';
-import { ok } from '@canopy/types';
+import type { Node, Edge, NodeId, EdgeId, TypeId, GraphEvent, Result } from '@canopy/graph';
+import { ok } from '@canopy/graph';
 import type { GraphStore, GraphStoreSnapshot, NodeFilter, EdgeFilter } from './types';
 
 // eslint-disable-next-line max-lines-per-function

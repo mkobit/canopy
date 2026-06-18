@@ -1,9 +1,9 @@
 import React, { useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useGraph } from '../context/graph-context';
-import { executeView } from '@canopy/query';
+import { executeView } from '@canopy/queries';
 import { TableLayout, ListLayout, CardsLayout } from '../components';
-import type { Node, NodeId } from '@canopy/types';
+import type { Node, NodeId } from '@canopy/graph';
 
 export const ViewPage = () => {
   const { viewId, graphId } = useParams<Readonly<{ viewId: string; graphId: string }>>();

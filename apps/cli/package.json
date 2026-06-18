@@ -12,10 +12,8 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@canopy/core": "workspace:*",
-    "@canopy/schema": "workspace:*",
+    "@canopy/graph": "workspace:*",
     "@canopy/storage": "workspace:*",
-    "@canopy/types": "workspace:*",
     "@effect/cli": "^0.75.1",
     "@effect/platform-node": "^0.106.0",
     "@effect/platform": "^0.96.1",

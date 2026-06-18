@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
 import { createSQLiteAdapter } from './sqlite-adapter';
 import type { StorageAdapter, EventLogStore } from './types';
-import { unwrap, asNodeId, asTypeId, asEventId, asInstant, asDeviceId } from '@canopy/types';
-import type { NodeCreated, GraphEvent } from '@canopy/types';
+import { unwrap, asNodeId, asTypeId, asEventId, asInstant, asDeviceId } from '@canopy/graph';
+import type { NodeCreated, GraphEvent } from '@canopy/graph';
 
 const mockGraphId = 'test-graph-id';
 

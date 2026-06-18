@@ -1,6 +1,6 @@
 import React from 'react';
-import type { PropertyValue, PropertyValueKind, ScalarValue } from '@canopy/types';
-import { asInstant, asPlainDate, asNodeId, asGraphId } from '@canopy/types';
+import type { PropertyValue, PropertyValueKind, ScalarValue } from '@canopy/graph';
+import { asInstant, asPlainDate, asNodeId, asGraphId } from '@canopy/graph';
 import { Temporal } from 'temporal-polyfill';
 import { cn } from '../../utils/cn';
 

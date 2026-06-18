@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'bun:test';
 import * as Y from 'yjs';
 import { createGraphStore, type GraphStore } from './graph-store';
-import { asTypeId, asNodeId, unwrap, isErr } from '@canopy/types';
+import { asTypeId, asNodeId, unwrap, isErr } from '@canopy/graph';
 
 describe('GraphStore', () => {
   let document: Y.Doc;

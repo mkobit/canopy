@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { StorageAdapter } from '@canopy/storage';
 import { createIndexedDBAdapter } from '@canopy/storage';
-import { fromAsyncThrowable } from '@canopy/types';
+import { fromAsyncThrowable } from '@canopy/graph';
 
 interface StorageContextType {
   readonly storage: StorageAdapter | null;
