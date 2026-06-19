@@ -11,3 +11,5 @@ ignoreScripts = true
 
 [test]
 preload = ["./apps/web/src/test/setup.ts"]
+coverageReporter = ["text", "lcov"]
+coverageDir = "coverage"
