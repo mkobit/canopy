@@ -54,3 +54,9 @@
 # - github.repo
 
 # git.length: 8
+
+export.git-add: false
+
+export.auto: false
+
+backup.enabled: false
