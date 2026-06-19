@@ -27,7 +27,8 @@ Update `env_setup.sh` manually whenever tooling changes substantially (new mise 
 
 ## Constraints that apply to all Jules sessions
 
-- Do not push to git remotes (`git push`, `bd dolt push`).
+- Do not push to git remotes (`git push`).
+beads is local-only in this repo (no Dolt remote, no JSONL committed) so there is nothing to push.
 - Do not modify source code unless the prompt explicitly permits it.
 - Do not create beads issues or openspec changes unless the prompt explicitly permits it.
 - Stop at the end of the steps defined in the prompt — do not continue into adjacent work.
