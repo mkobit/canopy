@@ -74,9 +74,9 @@ const deserializeEvent = (storable: unknown): GraphEvent => {
 export const createSQLiteAdapter = (
   persistence?: SQLitePersistence,
 ): StorageAdapter & EventLogStore => {
-  let db: Database | null = null;
+  let db = null as Database | null;
 
-  let SQL: SqlJsStatic | null = null;
+  let SQL = null as SqlJsStatic | null;
 
   const initSchema = () => {
     if (!db) return; // Should not happen if called from init
@@ -145,9 +145,10 @@ export const createSQLiteAdapter = (
       metadata: GraphStorageMetadata,
     ): Promise<Result<void, Error>> => {
       if (!db) return err(new Error('Database not initialized'));
+      const dbInstance = db;
 
       return fromAsyncThrowable(async () => {
-        const stmt = db!.prepare(`
+        const stmt = dbInstance.prepare(`
           REPLACE INTO graphs (id, name, snapshot, created_at, updated_at)
           VALUES (?, ?, ?, ?, ?)
         `);
@@ -162,9 +163,10 @@ export const createSQLiteAdapter = (
 
     load: async (graphId: string): Promise<Result<Uint8Array | null, Error>> => {
       if (!db) return err(new Error('Database not initialized'));
+      const dbInstance = db;
 
       return fromAsyncThrowable(async () => {
-        const stmt = db!.prepare('SELECT snapshot FROM graphs WHERE id = ?');
+        const stmt = dbInstance.prepare('SELECT snapshot FROM graphs WHERE id = ?');
         stmt.bind([graphId]);
 
         if (stmt.step()) {
@@ -180,10 +182,11 @@ export const createSQLiteAdapter = (
 
     delete: async (graphId: string): Promise<Result<void, Error>> => {
       if (!db) return err(new Error('Database not initialized'));
+      const dbInstance = db;
 
       return fromAsyncThrowable(async () => {
-        db!.run('DELETE FROM graphs WHERE id = ?', [graphId]);
-        db!.run('DELETE FROM events WHERE graph_id = ?', [graphId]);
+        dbInstance.run('DELETE FROM graphs WHERE id = ?', [graphId]);
+        dbInstance.run('DELETE FROM events WHERE graph_id = ?', [graphId]);
         await persist();
         return;
       });
@@ -191,11 +194,12 @@ export const createSQLiteAdapter = (
 
     list: async (): Promise<Result<readonly GraphStorageMetadata[], Error>> => {
       if (!db) return err(new Error('Database not initialized'));
+      const dbInstance = db;
 
       return fromAsyncThrowable(async () => {
-        const result: GraphStorageMetadata[] = [];
+        const result = [] as GraphStorageMetadata[];
 
-        const stmt = db!.prepare('SELECT id, name, created_at, updated_at FROM graphs');
+        const stmt = dbInstance.prepare('SELECT id, name, created_at, updated_at FROM graphs');
 
         // eslint-disable-next-line functional/no-loop-statements
         while (stmt.step()) {
@@ -252,10 +256,11 @@ export const createSQLiteAdapter = (
       options: EventLogQueryOptions = {},
     ): Promise<Result<readonly GraphEvent[], Error>> => {
       if (!db) return err(new Error('Database not initialized'));
+      const dbInstance = db;
 
       return fromAsyncThrowable(async () => {
         let query = 'SELECT payload FROM events WHERE graph_id = ?';
-        const params: (string | number | null)[] = [graphId];
+        const params = [graphId] as (string | number | null)[];
 
         if (options.after) {
           query += ' AND event_id > ?';
@@ -282,10 +287,10 @@ export const createSQLiteAdapter = (
           params.push(options.limit);
         }
 
-        const stmt = db!.prepare(query);
+        const stmt = dbInstance.prepare(query);
         stmt.bind(params);
 
-        const events: GraphEvent[] = [];
+        const events = [] as GraphEvent[];
 
         // eslint-disable-next-line functional/no-loop-statements
         while (stmt.step()) {

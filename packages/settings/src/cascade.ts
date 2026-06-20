@@ -19,7 +19,7 @@ export function resolveSetting(
   if (!schema) return undefined;
 
   // 2. Check each scope level in order
-  const scopes: { scopeType: ScopeType; scopeTarget?: string }[] = [
+  const scopes: readonly Readonly<{ scopeType: ScopeType; scopeTarget?: string }>[] = [
     { scopeType: 'node', scopeTarget: nodeId },
     { scopeType: 'type', scopeTarget: nodeType },
     { scopeType: 'namespace', scopeTarget: nodeNamespace },

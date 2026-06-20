@@ -154,8 +154,9 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
 
   const saveGraph = useCallback(async (): Promise<Result<void, Error>> => {
     if (syncEngineRef.current && storage && currentGraphId && graph) {
+      const syncEngine = syncEngineRef.current;
       return fromAsyncThrowable(async () => {
-        const snapshot = syncEngineRef.current!.getSnapshot();
+        const snapshot = syncEngine.getSnapshot();
         const createdAt = graph.metadata.created || Temporal.Now.instant().toString();
         const result = await storage.save(currentGraphId, snapshot, {
           id: currentGraphId,
@@ -191,6 +192,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
       properties: Record<string, unknown> = {},
     ): Promise<Result<NodeId, Error>> => {
       if (!syncEngineRef.current) return err(new Error('SyncEngine not initialized'));
+      const syncEngine = syncEngineRef.current;
 
       return fromAsyncThrowable(async () => {
         // Validate inputs
@@ -212,7 +214,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
           entries as Iterable<readonly [string, PropertyValue]>,
         );
 
-        const newNodeResult = syncEngineRef.current!.store.addNode({
+        const newNodeResult = syncEngine.store.addNode({
           type: typeId,
           properties: propsMap,
         });
@@ -245,6 +247,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
       properties: Record<string, unknown> = {},
     ): Promise<Result<EdgeId, Error>> => {
       if (!syncEngineRef.current) return err(new Error('SyncEngine not initialized'));
+      const syncEngine = syncEngineRef.current;
 
       return fromAsyncThrowable(async () => {
         const input = CreateEdgeInputSchema.parse({ type, source, target, properties });
@@ -260,7 +263,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
           entries as Iterable<readonly [string, PropertyValue]>,
         );
 
-        const newEdgeResult = syncEngineRef.current!.store.addEdge({
+        const newEdgeResult = syncEngine.store.addEdge({
           type: typeId,
           source: source,
           target: target,

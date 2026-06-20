@@ -46,6 +46,7 @@ export function createBatch(events: readonly Partial<GraphEvent>[]): readonly Gr
 
 // eslint-disable-next-line functional/no-classes
 export class EventDeduplicator {
+  // eslint-disable-next-line functional/prefer-immutable-types -- internal mutable Set is the whole point of dedup
   private readonly seen: Set<EventId>;
   private readonly maxSize: number;
 

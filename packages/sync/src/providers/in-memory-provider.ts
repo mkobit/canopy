@@ -6,10 +6,10 @@ import type { Result } from '@canopy/graph';
 import { fromThrowable } from '@canopy/graph';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type EventHandler = (...args: any[]) => unknown;
+type EventHandler = (...args: readonly any[]) => unknown;
 
 // Shared state for all instances to simulate network
-const networks: Map<
+const networks = new Map<
   string,
   Set<
     SyncProvider & {
@@ -20,7 +20,7 @@ const networks: Map<
       readonly emit: (event: string, data: unknown) => void;
     }
   >
-> = new Map();
+>();
 
 // eslint-disable-next-line max-lines-per-function
 export const createInMemoryProvider = (
@@ -29,7 +29,7 @@ export const createInMemoryProvider = (
   awareness: Awareness,
 ): SyncProvider => {
   let connected = false;
-  const handlers: Map<string, EventHandler[]> = new Map();
+  const handlers = new Map<string, EventHandler[]>();
 
   const handleDocUpdate = (update: Uint8Array, origin: unknown) => {
     if (origin !== provider && connected) {
@@ -97,13 +97,14 @@ export const createInMemoryProvider = (
 
     connect: (): Result<void, Error> => {
       return fromThrowable(() => {
-        if (!networks.has(roomName)) {
-          networks.set(roomName, new Set());
+        const existing = networks.get(roomName);
+        const network = existing ?? new Set<typeof provider>();
+        if (!existing) {
+          networks.set(roomName, network);
         }
-        networks.get(roomName)!.add(provider);
+        network.add(provider);
         connected = true;
 
-        const network = networks.get(roomName);
         if (network) {
           // eslint-disable-next-line functional/no-loop-statements
           for (const peer of network) {

@@ -21,13 +21,9 @@ import {
 // Helper types for storage (Plain Objects)
 export type StorableProperties = Record<string, PropertyValue>;
 
-export interface StorableNode extends Omit<Node, 'properties'> {
-  readonly properties: StorableProperties;
-}
+export type StorableNode = Readonly<Omit<Node, 'properties'> & { properties: StorableProperties }>;
 
-export interface StorableEdge extends Omit<Edge, 'properties'> {
-  readonly properties: StorableProperties;
-}
+export type StorableEdge = Readonly<Omit<Edge, 'properties'> & { properties: StorableProperties }>;
 
 // Storable Events
 export interface StorableNodeCreated {

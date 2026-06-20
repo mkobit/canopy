@@ -135,21 +135,11 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
             // eslint-disable-next-line functional/immutable-data
             newNodes.delete(event.id);
 
-            const edgesToRemove: Edge['id'][] = [];
-            // eslint-disable-next-line functional/no-loop-statements
-            for (const edge of graph.edges.values()) {
-              if (edge.source === event.id || edge.target === event.id) {
-                // eslint-disable-next-line functional/immutable-data
-                edgesToRemove.push(edge.id);
-              }
-            }
-
-            const newEdges = new Map(graph.edges);
-            // eslint-disable-next-line functional/no-loop-statements
-            for (const edgeId of edgesToRemove) {
-              // eslint-disable-next-line functional/immutable-data
-              newEdges.delete(edgeId);
-            }
+            const newEdges = new Map(
+              [...graph.edges].filter(
+                ([, edge]) => edge.source !== event.id && edge.target !== event.id,
+              ),
+            );
 
             return ok({
               ...graph,

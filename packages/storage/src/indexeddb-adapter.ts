@@ -16,7 +16,7 @@ interface CanopyDB extends DBSchema {
 }
 
 export const createIndexedDBAdapter = (dbName = 'canopy-storage'): StorageAdapter => {
-  let db: IDBPDatabase<CanopyDB> | null = null;
+  let db = null as IDBPDatabase<CanopyDB> | null;
 
   return {
     init: async (): Promise<Result<void, Error>> => {
@@ -50,8 +50,9 @@ export const createIndexedDBAdapter = (dbName = 'canopy-storage'): StorageAdapte
       metadata: GraphStorageMetadata,
     ): Promise<Result<void, Error>> => {
       if (!db) return err(new Error('Database not initialized'));
+      const dbInstance = db;
       return fromAsyncThrowable(async () => {
-        await db!.put('graphs', {
+        await dbInstance.put('graphs', {
           id: graphId,
           snapshot,
           metadata,
@@ -62,24 +63,27 @@ export const createIndexedDBAdapter = (dbName = 'canopy-storage'): StorageAdapte
 
     load: async (graphId: string): Promise<Result<Uint8Array | null, Error>> => {
       if (!db) return err(new Error('Database not initialized'));
+      const dbInstance = db;
       return fromAsyncThrowable(async () => {
-        const result = await db!.get('graphs', graphId);
+        const result = await dbInstance.get('graphs', graphId);
         return result ? result.snapshot : null;
       });
     },
 
     delete: async (graphId: string): Promise<Result<void, Error>> => {
       if (!db) return err(new Error('Database not initialized'));
+      const dbInstance = db;
       return fromAsyncThrowable(async () => {
-        await db!.delete('graphs', graphId);
+        await dbInstance.delete('graphs', graphId);
         return;
       });
     },
 
     list: async (): Promise<Result<readonly GraphStorageMetadata[], Error>> => {
       if (!db) return err(new Error('Database not initialized'));
+      const dbInstance = db;
       return fromAsyncThrowable(async () => {
-        const all = await db!.getAll('graphs');
+        const all = await dbInstance.getAll('graphs');
         return all.map((item) => item.metadata);
       });
     },

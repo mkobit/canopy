@@ -60,11 +60,14 @@ export const TableLayout: React.FC<TableLayoutProps> = ({
               </td>
               {columns.map((col) => (
                 <td key={col} className="px-4 py-3 text-gray-700">
-                  {node.properties.has(col) ? (
-                    <PropertyDisplay value={node.properties.get(col)!} />
-                  ) : (
-                    <span className="text-gray-300">—</span>
-                  )}
+                  {(() => {
+                    const value = node.properties.get(col);
+                    return value === undefined ? (
+                      <span className="text-gray-300">—</span>
+                    ) : (
+                      <PropertyDisplay value={value} />
+                    );
+                  })()}
                 </td>
               ))}
             </tr>
