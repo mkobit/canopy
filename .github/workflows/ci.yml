@@ -52,6 +52,12 @@ jobs:
         id: install
         run: bun install --frozen-lockfile
 
+      # Build first: prefer-immutable-types resolves cross-package
+      # types via each package's published dist/index.d.ts.
+      - name: Build
+        if: "!cancelled() && steps.install.outcome == 'success'"
+        run: bun run build
+
       - name: Lint
         if: "!cancelled() && steps.install.outcome == 'success'"
         run: bun run lint
@@ -59,10 +65,6 @@ jobs:
       - name: Typecheck
         if: "!cancelled() && steps.install.outcome == 'success'"
         run: bun run typecheck
-
-      - name: Build
-        if: "!cancelled() && steps.install.outcome == 'success'"
-        run: bun run build
 
       - name: Test
         if: "!cancelled() && steps.install.outcome == 'success'"
