@@ -5,7 +5,7 @@ import type { EventLogStore, EventLogQueryOptions } from './types';
 export const createInMemoryEventStore = (): EventLogStore => {
   // Internal mutable state - keyed by graphId, each value is an array of events
   // Events within each array are ordered by eventId (UUIDv7 = time-ordered)
-  const graphs: Map<string, GraphEvent[]> = new Map();
+  const graphs = new Map<string, GraphEvent[]>();
 
   return {
     appendEvents: (
@@ -44,12 +44,13 @@ export const createInMemoryEventStore = (): EventLogStore => {
       let filteredEvents = [...events];
 
       if (options) {
-        if (options.after) {
-          filteredEvents = filteredEvents.filter((e) => e.eventId > options.after!);
+        const { after, before } = options;
+        if (after) {
+          filteredEvents = filteredEvents.filter((e) => e.eventId > after);
         }
 
-        if (options.before) {
-          filteredEvents = filteredEvents.filter((e) => e.eventId < options.before!);
+        if (before) {
+          filteredEvents = filteredEvents.filter((e) => e.eventId < before);
         }
 
         if (options.reverse) {

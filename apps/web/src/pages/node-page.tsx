@@ -93,7 +93,7 @@ export const NodePage = () => {
     );
   }, [graph, currentNode]);
 
-  if (!currentNode) {
+  if (!currentNode || !graph) {
     return (
       <div className="p-8 text-center">
         <p>Node not found</p>
@@ -189,7 +189,7 @@ export const NodePage = () => {
                 Document Projection
               </div>
               <div className="max-h-[80vh] overflow-y-auto">
-                <DocumentRenderer rootNode={currentNode} graph={graph!} />
+                <DocumentRenderer rootNode={currentNode} graph={graph} />
               </div>
             </div>
 

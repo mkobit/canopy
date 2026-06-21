@@ -206,5 +206,5 @@ export function generateKeyBetween(a: string | null, b: string | null): string {
     break;
   }
 
-  return b!; // Should not reach here
+  throw new Error('generateKeyBetween: unreachable');
 }

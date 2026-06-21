@@ -35,10 +35,21 @@ The catch-all pattern was likely added as a temporary workaround when violations
 Replace it with a specific allowlist of pattern prefixes that are genuinely read-only variants or come from third-party APIs where we can't control mutability annotations:
 
 ```
-'ignoreTypePattern': ['^Readonly', '^ReadonlyMap', '^ReadonlySet', '^ReadonlyArray']
+'ignoreTypePattern': [
+  '^Readonly',        // Readonly, ReadonlyMap, ReadonlySet, ReadonlyArray
+  '^Zod', '^z\\.Zod', // Zod schema instances are mutable third-party classes
+  '^Y\\.',            // Yjs CRDT types are mutable by design
+  '^Awareness$',      // y-protocols Awareness class
+  '^Error$',          // built-in JS Error class
+  '^FC<', '^React\\.', // React function components and event/element types
+  '^EdgeProps', '^NodeProps', // xyflow component prop types
+  '^Connection$',     // xyflow Connection type
+]
 ```
 
-This is the minimal set — if new legitimate cases arise during violation triage, add them with a comment explaining why.
+The list grew during violation triage to cover third-party types we cannot annotate as readonly.
+Each pattern has a one-line comment explaining the source.
+If new legitimate cases arise, add them with a comment.
 
 **Considered:** keeping `'.*'` and marking the rule as `'warn'` first, then escalating to `'error'`.
 **Rejected:** warn mode produces noise without blocking merges; a clean fix-then-enforce cycle is cleaner.
@@ -71,7 +82,8 @@ If a suppression is genuinely needed, `@ts-expect-error` with a description is t
 
 Any violations surfaced by the tightened rules are addressed in the same PR.
 This avoids creating a backlog of known-bad code behind a `// eslint-disable` wall.
-The fix scope is constrained: violations in `packages/storage` and `packages/sync` are already guarded by explicit overrides for legitimate mutation zones; only violations in other packages need remediation.
+The fix scope covers all packages and `apps/web`.
+`packages/storage` and `packages/sync` have overrides for legitimate internal mutation (`functional/immutable-data`, `functional/no-let`), but `functional/prefer-immutable-types` stays on so adapter public signatures remain immutable.
 
 ## Risks / Trade-offs
 

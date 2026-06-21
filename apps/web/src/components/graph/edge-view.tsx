@@ -1,10 +1,12 @@
 import React from 'react';
 import type { Edge, Node } from '@canopy/graph';
 
-export interface GraphNode extends Node {
-  // Extend basic node with UI state (position)
-  readonly position: Readonly<{ x: number; y: number }>;
-}
+export type GraphNode = Readonly<
+  Node & {
+    // Extend basic node with UI state (position)
+    position: Readonly<{ x: number; y: number }>;
+  }
+>;
 
 export interface EdgeViewProps {
   readonly edge: Edge;

@@ -65,7 +65,10 @@ export function insertBlock(
   const { prevPos, nextPos } = prevBlockId
     ? (() => {
         const prevEdgeIndex = siblings.findIndex((e) => e.source === prevBlockId);
-        const prevEdge = siblings[prevEdgeIndex]!;
+        const prevEdge = siblings[prevEdgeIndex];
+        if (!prevEdge) {
+          return { prevPos: null, nextPos: null };
+        }
         const nextEdge = siblings[prevEdgeIndex + 1];
         return {
           prevPos: (prevEdge.properties.get('position') as string) || null,

@@ -143,9 +143,9 @@ export default tseslint.config(
           fixStyle: 'separate-type-imports',
         },
       ],
-      '@typescript-eslint/ban-ts-comment': 'warn',
+      '@typescript-eslint/ban-ts-comment': 'error',
       '@typescript-eslint/prefer-ts-expect-error': 'off',
-      '@typescript-eslint/no-non-null-assertion': 'off',
+      '@typescript-eslint/no-non-null-assertion': 'error',
       '@typescript-eslint/no-var-requires': 'off',
 
       // Import plugin rules
@@ -201,21 +201,25 @@ export default tseslint.config(
           enforcement: 'ReadonlyShallow',
           ignoreClasses: false,
           ignoreInferredTypes: true,
-          // Explicitly allow ReadonlyMap and similar standard types that might be considered "Unknown" or mutable by default if not wrapped
+          // Allowlist for types we can't make readonly:
+          // - Readonly* — already-readonly variants
+          // - Zod* — Zod schema classes (third-party, mutable internals)
+          // - Y\. — Yjs CRDT types (mutable by design)
+          // - Error — built-in JS Error class
+          // - FC, React\.FC — React function-component types
+          // - EdgeProps, NodeProps — xyflow component prop types
           ignoreTypePattern: [
-            'ReadonlyMap',
-            'ReadonlySet',
-            'ReadonlyArray',
-            'Graph',
-            'Node',
-            'Edge',
-            '^ReadonlyMap',
-            '^ReadonlySet',
-            '^ReadonlyArray',
-            '^Graph',
-            '^Node',
-            '^Edge',
-            '.*',
+            '^Readonly',
+            '^Zod',
+            String.raw`^z\.Zod`,
+            String.raw`^Y\.`,
+            '^Awareness$',
+            '^Error$',
+            '^FC<',
+            String.raw`^React\.`,
+            '^EdgeProps',
+            '^NodeProps',
+            '^Connection$',
           ],
         },
       ],
@@ -347,11 +351,14 @@ export default tseslint.config(
     },
   },
 
+  // React/UI: disable only the FP rules that React's model is inherently incompatible with
+  // (effectful event handlers, void returns, mixed prop types). Immutability rules stay on.
   {
     files: ['apps/web/**/*.tsx', 'apps/web/**/*.ts'],
     rules: {
-      'functional/prefer-immutable-types': 'off',
-      'functional/type-declaration-immutability': 'off',
+      'functional/no-expression-statements': 'off',
+      'functional/no-return-void': 'off',
+      'functional/no-mixed-types': 'off',
     },
   },
   // Workaround for crashing rule in typescript-eslint v8.54.0
@@ -361,7 +368,9 @@ export default tseslint.config(
       '@typescript-eslint/consistent-generic-constructors': 'off',
     },
   },
-  // Exceptions for mutable state in adapters/stores (since they encapsulate it behind pure interfaces)
+  // Exceptions for mutable state in adapters/stores (since they encapsulate it behind pure interfaces).
+  // Note: prefer-immutable-types and type-declaration-immutability remain ON — public signatures
+  // accept immutable types even when implementations mutate encapsulated fields.
   {
     files: ['packages/storage/src/**/*.ts', 'packages/sync/src/**/*.ts'],
     rules: {

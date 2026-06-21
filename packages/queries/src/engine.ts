@@ -205,25 +205,19 @@ function traverse(
       const sourceMatches = nodeIds.has(edge.source);
       const targetMatches = nodeIds.has(edge.target);
 
+      const targetNode = graph.nodes.get(edge.target);
+      const sourceNode = graph.nodes.get(edge.source);
       switch (direction) {
         case 'out': {
-          return sourceMatches && graph.nodes.has(edge.target)
-            ? [graph.nodes.get(edge.target)!]
-            : [];
+          return sourceMatches && targetNode ? [targetNode] : [];
         }
         case 'in': {
-          return targetMatches && graph.nodes.has(edge.source)
-            ? [graph.nodes.get(edge.source)!]
-            : [];
+          return targetMatches && sourceNode ? [sourceNode] : [];
         }
         case 'both': {
           return [
-            ...(sourceMatches && graph.nodes.has(edge.target)
-              ? [graph.nodes.get(edge.target)!]
-              : []),
-            ...(targetMatches && graph.nodes.has(edge.source)
-              ? [graph.nodes.get(edge.source)!]
-              : []),
+            ...(sourceMatches && targetNode ? [targetNode] : []),
+            ...(targetMatches && sourceNode ? [sourceNode] : []),
           ];
         }
         default: {

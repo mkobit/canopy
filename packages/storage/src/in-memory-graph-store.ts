@@ -4,9 +4,9 @@ import type { GraphStore, GraphStoreSnapshot, NodeFilter, EdgeFilter } from './t
 
 // eslint-disable-next-line max-lines-per-function
 export const createInMemoryGraphStore = (): GraphStore => {
-  let nodes: Map<NodeId, Node> = new Map();
+  let nodes = new Map<NodeId, Node>();
 
-  let edges: Map<EdgeId, Edge> = new Map();
+  let edges = new Map<EdgeId, Edge>();
 
   let lastEventId: string | undefined = undefined;
 
