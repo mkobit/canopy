@@ -50,6 +50,10 @@ No mutations — functions return new values, never modify arguments.
 | Lint codebase        | `bun run lint`      |
 | Type check           | `bun run typecheck` |
 
+Run `bun run build` before `bun run lint` on a fresh checkout.
+The `functional/prefer-immutable-types` rule resolves cross-package types through each package's `dist/index.d.ts`; without those the rule reports `actual: Unknown` and fails ~185 checks.
+CI runs Build → Lint → Typecheck → Test for this reason.
+
 ## Environment setup
 
 We use `mise` to align local tool versions (Node.js) with CI.
@@ -65,6 +69,14 @@ Use `readonly` modifiers on all type properties and prefer `ReadonlyArray<T>` or
 Build domain types from the bottom up, avoiding `any` or `Record<string, unknown>`.
 Strict typing is enforced; use branded types for identifiers and `unknown` instead of `any` where appropriate.
 Documentation in `AGENTS.md` files must follow the one-sentence-per-line rule.
+
+### Linting rules — escape hatches
+
+`eslint-plugin-functional` is on by default for every package and `apps/web`.
+When a third-party type triggers `functional/prefer-immutable-types` (e.g. Zod, Yjs, React, xyflow), add a narrow pattern to `ignoreTypePattern` in `eslint.config.mjs` with a one-line source comment.
+Do NOT disable `prefer-immutable-types` or `type-declaration-immutability` per-package — adapter public signatures must stay immutable even when the implementation mutates encapsulated state.
+For genuinely unreplaceable single-line cases (e.g. React 18 `createRoot(document.querySelector('#root')!)`), use a localized `// eslint-disable-next-line <rule> -- <reason>`.
+Banned: `@ts-ignore` (use `@ts-expect-error <description>`), non-null assertions `!`, and the `.*` catch-all in `ignoreTypePattern`.
 
 ## Landing the Plane (Session Completion)
 
