@@ -201,25 +201,23 @@ export default tseslint.config(
           enforcement: 'ReadonlyShallow',
           ignoreClasses: false,
           ignoreInferredTypes: true,
-          // Allowlist for types we can't make readonly:
-          // - Readonly* — already-readonly variants
-          // - Zod* — Zod schema classes (third-party, mutable internals)
-          // - Y\. — Yjs CRDT types (mutable by design)
-          // - Error — built-in JS Error class
-          // - FC, React\.FC — React function-component types
-          // - EdgeProps, NodeProps — xyflow component prop types
+          // Allowlist for third-party class types we cannot annotate as readonly.
+          // Rule: NEVER widen the allowlist with `.*` and NEVER disable this rule per-package.
+          // When a new third-party type causes false positives, add a narrow pattern here with
+          // a one-line source comment. For internal-only mutation, prefer a single-line
+          // `eslint-disable-next-line` at the call site with a reason.
           ignoreTypePattern: [
-            '^Readonly',
-            '^Zod',
-            String.raw`^z\.Zod`,
-            String.raw`^Y\.`,
-            '^Awareness$',
-            '^Error$',
-            '^FC<',
-            String.raw`^React\.`,
-            '^EdgeProps',
-            '^NodeProps',
-            '^Connection$',
+            '^Readonly', // Readonly, ReadonlyMap, ReadonlySet, ReadonlyArray
+            '^Zod', // Zod schema instances (mutable internals)
+            String.raw`^z\.Zod`, // namespaced Zod refs (z.ZodType, z.ZodObject)
+            String.raw`^Y\.`, // Yjs CRDT types (mutable by design)
+            '^Awareness$', // y-protocols Awareness class
+            '^Error$', // built-in JS Error class
+            '^FC<', // React.FC unaliased
+            String.raw`^React\.`, // React.MouseEvent, React.ReactElement, React.FC, etc.
+            '^EdgeProps', // xyflow edge props
+            '^NodeProps', // xyflow node props
+            '^Connection$', // xyflow Connection
           ],
         },
       ],
