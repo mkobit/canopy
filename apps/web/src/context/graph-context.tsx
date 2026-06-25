@@ -206,13 +206,11 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
 
         const entries = input.properties
           ? Object.entries(input.properties)
-              .filter(([_, value]) => typeof value === 'string')
-              .map(([key, value]) => [key, { kind: 'text', value: value }] as const)
+              .filter((entry): entry is [string, string] => typeof entry[1] === 'string')
+              .map(([key, value]) => [key, value] as const)
           : [];
 
-        const propsMap = new Map<string, PropertyValue>(
-          entries as Iterable<readonly [string, PropertyValue]>,
-        );
+        const propsMap = new Map<string, PropertyValue>(entries);
 
         const newNodeResult = syncEngine.store.addNode({
           type: typeId,
@@ -255,13 +253,11 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
 
         const entries = input.properties
           ? Object.entries(input.properties)
-              .filter(([_, value]) => typeof value === 'string')
-              .map(([key, value]) => [key, { kind: 'text', value: value }] as const)
+              .filter((entry): entry is [string, string] => typeof entry[1] === 'string')
+              .map(([key, value]) => [key, value] as const)
           : [];
 
-        const propsMap = new Map<string, PropertyValue>(
-          entries as Iterable<readonly [string, PropertyValue]>,
-        );
+        const propsMap = new Map<string, PropertyValue>(entries);
 
         const newEdgeResult = syncEngine.store.addEdge({
           type: typeId,
