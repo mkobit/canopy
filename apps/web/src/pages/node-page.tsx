@@ -3,7 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { withResultAlert } from '../utils/handlers';
 import { useGraph } from '../context/graph-context';
 import { NodeView, PropertyInput, DocumentRenderer } from '../components';
-import type { Node, NodeId, PropertyValue } from '@canopy/graph';
+import { asNodeId } from '@canopy/graph';
+import type { Node, PropertyValue } from '@canopy/graph';
 import { ArrowLeft, Save, Trash, Link as LinkIcon } from 'lucide-react';
 import { filter, map } from 'remeda';
 import { showAlert, showConfirm } from '../utils/dialogs';
@@ -22,7 +23,7 @@ export const NodePage = () => {
     if (graph && nodeId) {
       Promise.resolve()
         .then(() => {
-          const node = graph.nodes.get(nodeId as NodeId);
+          const node = graph.nodes.get(asNodeId(nodeId));
           setCurrentNode(node);
           if (node) {
             setEditedProps(new Map(node.properties));

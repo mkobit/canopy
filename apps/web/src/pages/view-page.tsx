@@ -3,7 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useGraph } from '../context/graph-context';
 import { executeView } from '@canopy/queries';
 import { TableLayout, ListLayout, CardsLayout } from '../components';
-import type { Node, NodeId } from '@canopy/graph';
+import { asNodeId } from '@canopy/graph';
+import type { Node } from '@canopy/graph';
 
 export const ViewPage = () => {
   const { viewId, graphId } = useParams<Readonly<{ viewId: string; graphId: string }>>();
@@ -12,7 +13,7 @@ export const ViewPage = () => {
 
   const viewResult = useMemo(() => {
     if (!graph || !viewId) return undefined;
-    return executeView(graph, viewId as NodeId);
+    return executeView(graph, asNodeId(viewId));
   }, [graph, viewId]);
 
   const handleNodeClick = (node: Node) => {

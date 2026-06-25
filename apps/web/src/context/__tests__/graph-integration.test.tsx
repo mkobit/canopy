@@ -48,10 +48,10 @@ describe('graph round-trip', () => {
     });
 
     expect(nodeId).toBeDefined();
-    expect(result.current.graph?.nodes.has(nodeId as NodeId)).toBe(true);
-    expect(result.current.graph?.nodes.get(nodeId as NodeId)?.properties.get('content')).toBe(
-      'hello',
-    );
+    if (nodeId === undefined) return;
+
+    expect(result.current.graph?.nodes.has(nodeId)).toBe(true);
+    expect(result.current.graph?.nodes.get(nodeId)?.properties.get('content')).toBe('hello');
 
     // Simulate page reload — unmount providers and remount fresh
     unmount();
@@ -66,6 +66,6 @@ describe('graph round-trip', () => {
       expect(res.ok).toBe(true);
     });
 
-    expect(result2.current.graph?.nodes.has(nodeId as NodeId)).toBe(true);
+    expect(result2.current.graph?.nodes.has(nodeId)).toBe(true);
   });
 });

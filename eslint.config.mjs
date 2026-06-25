@@ -105,6 +105,16 @@ export default tseslint.config(
       },
     },
   },
+  // Enforce no unsafe type assertions across all apps/web files (including test files,
+  // excluding the matchMedia polyfill in test/setup.ts which requires `as any`).
+  // Core packages are excluded until they receive a systematic audit.
+  {
+    files: ['apps/web/**/*.ts', 'apps/web/**/*.tsx'],
+    ignores: ['apps/web/src/test/setup.ts'],
+    rules: {
+      '@typescript-eslint/no-unsafe-type-assertion': 'error',
+    },
+  },
   {
     plugins: {
       functional,

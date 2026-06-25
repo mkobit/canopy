@@ -16,7 +16,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { withResultAlert } from '../../utils/handlers';
 import { CustomNode } from './custom-node';
 import { CustomEdge } from './custom-edge';
-import type { NodeId } from '@canopy/graph';
+import { asNodeId } from '@canopy/graph';
 
 const nodeTypes = {
   customNode: CustomNode,
@@ -100,8 +100,8 @@ export const InteractiveGraphView = () => {
       const edgeType = showPrompt('Enter edge type (e.g., RelatedTo, HasAuthor):', 'RelatedTo');
       if (!edgeType || !params.source || !params.target) return undefined;
 
-      const sourceId = params.source as unknown as NodeId;
-      const targetId = params.target as unknown as NodeId;
+      const sourceId = asNodeId(params.source);
+      const targetId = asNodeId(params.target);
 
       void withResultAlert(
         () => createEdge(edgeType, sourceId, targetId),

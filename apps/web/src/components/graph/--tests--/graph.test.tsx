@@ -47,7 +47,8 @@ describe('NodeView', () => {
     const onClick = jest.fn();
     const { container } = render(<NodeView node={mockNode} onClick={onClick} />);
     // Click the main container
-    fireEvent.click(container.firstChild as Element);
+    if (!container.firstChild) throw new Error('container must have a child');
+    fireEvent.click(container.firstChild);
     expect(onClick).toHaveBeenCalledWith(mockNode);
   });
 });
@@ -65,7 +66,8 @@ describe('GraphCanvas', () => {
       <GraphCanvas nodes={[]} edges={[]} onBackgroundClick={onBgClick} />,
     );
     // Click the main div
-    fireEvent.click(container.firstChild as Element);
+    if (!container.firstChild) throw new Error('container must have a child');
+    fireEvent.click(container.firstChild);
     expect(onBgClick).toHaveBeenCalled();
   });
 });
