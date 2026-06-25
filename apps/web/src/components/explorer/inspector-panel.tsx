@@ -1,4 +1,5 @@
 import React from 'react';
+import { useGraph } from '../../context/graph-context';
 
 export interface InspectorNodeData {
   readonly id?: string;
@@ -17,6 +18,7 @@ export const InspectorPanel = ({
   selectedNode,
   onClose,
 }: Readonly<InspectorPanelProps>): React.ReactElement => {
+  const { graph } = useGraph();
   return (
     <div className="absolute right-6 top-24 bottom-6 w-80 bg-surface-container-highest/80 backdrop-blur-xl border border-outline-variant/20 rounded-lg shadow-[0_20px_40px_rgba(0,0,0,0.6)] flex flex-col z-20">
       <div className="p-4 border-b border-outline-variant/10 flex justify-between items-center">
@@ -36,13 +38,13 @@ export const InspectorPanel = ({
             <span className="text-[10px] text-on-surface-variant font-display uppercase tracking-wider mb-2">
               Nodes
             </span>
-            <span className="text-xl font-mono text-primary">13</span>
+            <span className="text-xl font-mono text-primary">{graph?.nodes.size ?? 0}</span>
           </div>
           <div className="bg-surface-container-low p-3 rounded flex flex-col justify-between">
             <span className="text-[10px] text-on-surface-variant font-display uppercase tracking-wider mb-2">
               Relationships
             </span>
-            <span className="text-xl font-mono text-tertiary">13</span>
+            <span className="text-xl font-mono text-tertiary">{graph?.edges.size ?? 0}</span>
           </div>
         </div>
 
