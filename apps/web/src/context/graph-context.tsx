@@ -15,7 +15,6 @@ import { asInstant, ok, err, fromThrowable, fromAsyncThrowable } from '@canopy/g
 import { useStorage } from './storage-context';
 import { z } from 'zod';
 import { TypeIdSchema } from '@canopy/graph';
-import type { TypeId } from '@canopy/graph';
 import { Temporal } from 'temporal-polyfill';
 
 interface GraphContextState {
@@ -198,11 +197,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
         // Validate inputs
         const input = CreateNodeInputSchema.parse({ type, properties });
 
-        // Force cast because Zod schema is separate from type definition
-        const typeId = input.type as unknown as TypeId;
-
-        // Safer mapping using Type Checking or explicit conversion
-        // We only accept strings as text properties for now, similar to before but explicit
+        const typeId = input.type;
 
         const entries = input.properties
           ? Object.entries(input.properties)
@@ -249,7 +244,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
 
       return fromAsyncThrowable(async () => {
         const input = CreateEdgeInputSchema.parse({ type, source, target, properties });
-        const typeId = input.type as unknown as TypeId;
+        const typeId = input.type;
 
         const entries = input.properties
           ? Object.entries(input.properties)

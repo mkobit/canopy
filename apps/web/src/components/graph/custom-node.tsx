@@ -1,11 +1,13 @@
 import React from 'react';
 import { Handle, Position } from '@xyflow/react';
-import type { NodeProps } from '@xyflow/react';
+import type { NodeProps, Node } from '@xyflow/react';
 import { PropertyDisplay } from '..';
 import type { Node as GraphNode, PropertyValue } from '@canopy/graph';
 
-export const CustomNode = ({ data, selected }: NodeProps) => {
-  const node = data.node as GraphNode | undefined;
+type CustomNodeType = Node<Readonly<{ node?: GraphNode }>>;
+
+export const CustomNode = ({ data, selected }: NodeProps<CustomNodeType>) => {
+  const node = data.node;
 
   if (!node) return null;
 

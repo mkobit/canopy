@@ -10,8 +10,12 @@ interface PropertyDisplayProps {
   readonly kind?: PropertyValueKind; // Optional override or context
 }
 
+function isScalar(v: PropertyValue): v is ScalarValue {
+  return !Array.isArray(v);
+}
+
 export const PropertyDisplay: React.FC<PropertyDisplayProps> = ({ value, className, kind }) => {
-  if (Array.isArray(value)) {
+  if (!isScalar(value)) {
     return (
       <ul className={cn('list-disc pl-4', className)}>
         {value.map((item, index) => (
@@ -25,7 +29,7 @@ export const PropertyDisplay: React.FC<PropertyDisplayProps> = ({ value, classNa
 
   return (
     <div className={className}>
-      <ScalarDisplay value={value as ScalarValue} {...(kind ? { kind } : {})} />
+      <ScalarDisplay value={value} {...(kind ? { kind } : {})} />
     </div>
   );
 };

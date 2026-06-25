@@ -21,7 +21,7 @@ export const DocumentRenderer: React.FC<DocumentRendererProps> = ({
       {/* Document Header */}
       <div className="mb-12">
         <h1 className="text-4xl font-bold tracking-tight text-gray-900 leading-tight">
-          {title as string}
+          {String(title)}
         </h1>
         <div className="text-sm text-gray-400 mt-2 font-mono">ID: {rootNode.id}</div>
       </div>

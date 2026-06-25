@@ -20,8 +20,8 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({ node, graph, depth
 
     // Sort by fractional index position
     const sortedEdges = childEdges.toSorted((a, b) => {
-      const posA = (a.properties.get('position') as string) || '';
-      const posB = (b.properties.get('position') as string) || '';
+      const posA = String(a.properties.get('position') ?? '');
+      const posB = String(b.properties.get('position') ?? '');
       return posA < posB ? -1 : posA > posB ? 1 : 0;
     });
 

@@ -51,64 +51,72 @@ const getDefaultItem = (kind?: PropertyValueKind): ScalarValue => {
   }
 };
 
+function isScalar(v: PropertyValue): v is ScalarValue {
+  return !Array.isArray(v);
+}
+
 export const PropertyInput: React.FC<PropertyInputProps> = ({
   value,
   onChange,
   className,
   kind,
 }) => {
-  if (Array.isArray(value)) {
+  if (isScalar(value)) {
     return (
-      <div className={cn('space-y-2', className)}>
-        {value.map((item, index) => (
-          <div key={index} className="flex gap-2">
-            <ScalarInput
-              value={item}
-              {...(kind && kind !== 'list' ? { kind } : {})}
-              onChange={(newItem) => {
-                const newItems = [...value];
-                // eslint-disable-next-line functional/immutable-data
-                newItems[index] = newItem;
-                onChange(newItems);
-                return undefined;
-              }}
-            />
-            <button
-              onClick={() => {
-                const newItems = value.filter((_, i) => i !== index);
-                onChange(newItems);
-                return undefined;
-              }}
-              className="text-red-500 hover:bg-red-50 px-2 rounded"
-            >
-              Remove
-            </button>
-          </div>
-        ))}
-        <button
-          onClick={() => {
-            // Infer item kind from existing items or default to text
-            const itemKind =
-              kind && kind !== 'list' ? kind : value.length > 0 ? inferKind(value[0]) : 'text';
-            const newItem = getDefaultItem(itemKind);
-            onChange([...value, newItem]);
-            return undefined;
-          }}
-          className="text-blue-500 hover:bg-blue-50 px-2 py-1 rounded text-sm border border-dashed border-blue-200 w-full"
-        >
-          + Add Item
-        </button>
-      </div>
+      <ScalarInput
+        value={value}
+        onChange={onChange}
+        className={className}
+        {...(kind ? { kind } : {})}
+      />
     );
   }
 
   return (
-    <ScalarInput
-      value={value as ScalarValue}
-      onChange={onChange}
-      className={className}
-      {...(kind ? { kind } : {})}
-    />
+    <div className={cn('space-y-2', className)}>
+      {value.map((item, index) => (
+        <div key={index} className="flex gap-2">
+          <ScalarInput
+            value={item}
+            {...(kind && kind !== 'list' ? { kind } : {})}
+            onChange={(newItem) => {
+              const newItems = [...value];
+              // eslint-disable-next-line functional/immutable-data
+              newItems[index] = newItem;
+              onChange(newItems);
+              return undefined;
+            }}
+          />
+          <button
+            onClick={() => {
+              const newItems = value.filter((_, i) => i !== index);
+              onChange(newItems);
+              return undefined;
+            }}
+            className="text-red-500 hover:bg-red-50 px-2 rounded"
+          >
+            Remove
+          </button>
+        </div>
+      ))}
+      <button
+        onClick={() => {
+          const firstItem = value[0];
+          const itemKind =
+            kind && kind !== 'list'
+              ? kind
+              : firstItem === undefined
+                ? 'text'
+                : inferKind(firstItem);
+          const newItem = getDefaultItem(itemKind);
+          onChange([...value, newItem]);
+          return undefined;
+        }}
+        className="text-blue-500 hover:bg-blue-50 px-2 py-1 rounded text-sm border border-dashed border-blue-200 w-full"
+      >
+        + Add Item
+      </button>
+    </div>
   );
 };
 
