@@ -6,7 +6,6 @@ import { GraphProvider, useGraph } from '../graph-context';
 import { asGraphId, SYSTEM_IDS, createGraph } from '@canopy/graph';
 import { createSyncEngine } from '@canopy/sync';
 import { executeStoredQuery, executeView } from '@canopy/queries';
-import { Temporal } from 'temporal-polyfill';
 import type { NodeId } from '@canopy/graph';
 import type { ReactNode } from 'react';
 

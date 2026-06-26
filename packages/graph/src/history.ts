@@ -7,7 +7,6 @@ import { projectGraph } from './projection';
 import { createGraph } from './create-graph';
 import { asGraphId } from './factories';
 import { fromAsyncThrowable } from './result';
-import { Temporal } from 'temporal-polyfill';
 
 export type TimeTravelTarget = Readonly<{ timestamp: Instant }> | Readonly<{ eventId: EventId }>;
 

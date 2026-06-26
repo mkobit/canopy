@@ -6,7 +6,6 @@ import { createGraphId, createGraph } from '@canopy/graph';
 import { createSyncEngine } from '@canopy/sync';
 import { Plus, Trash2, FolderOpen } from 'lucide-react';
 import type { GraphStorageMetadata } from '@canopy/storage';
-import { Temporal } from 'temporal-polyfill';
 
 // eslint-disable-next-line max-lines-per-function
 export const HomePage = () => {

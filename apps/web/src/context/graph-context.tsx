@@ -15,7 +15,6 @@ import { asInstant, ok, err, fromThrowable, fromAsyncThrowable } from '@canopy/g
 import { useStorage } from './storage-context';
 import { z } from 'zod';
 import { TypeIdSchema } from '@canopy/graph';
-import { Temporal } from 'temporal-polyfill';
 
 interface GraphContextState {
   readonly graph: Graph | null;

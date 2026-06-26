@@ -24,7 +24,7 @@
     "react-router-dom": "^7.16.0",
     "remeda": "^2.37.0",
     "tailwind-merge": "^3.6.0",
-    "temporal-polyfill": "^0.3.2",
+
     "yjs": "^13.6.30",
     "zod": "^4.4.1"
   },

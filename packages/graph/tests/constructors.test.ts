@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'bun:test';
 import { createNodeId, createTypeId, createInstant, createPlainDate } from '../src/constructors';
 import { unwrap, isErr } from '@canopy/graph';
-import { Temporal } from 'temporal-polyfill';
 
 describe('Constructors', () => {
   it('should create valid NodeId from valid UUID', () => {

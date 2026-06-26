@@ -5,7 +5,7 @@ Graph kernel: event log, projection, ops, validation, bootstrap, type-aware quer
 ## Allowed dependencies
 
 This package is a leaf — no `@canopy/*` imports.
-External runtime deps: `remeda`, `temporal-polyfill`, `uuid`, `zod`.
+External runtime deps: `remeda`, `uuid`, `zod`.
 
 ## Forbidden
 

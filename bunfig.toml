@@ -10,6 +10,6 @@ minimumReleaseAge = 1209600
 ignoreScripts = true
 
 [test]
-preload = ["./apps/web/src/test/setup.ts"]
+preload = ["./apps/web/src/test/setup.ts", "./packages/graph/tests/setup.ts"]
 coverageReporter = ["text", "lcov"]
 coverageDir = "coverage"

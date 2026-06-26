@@ -16,3 +16,4 @@ globalThis.matchMedia = mock((query) => ({
   dispatchEvent: mock(),
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 })) as any;
+import 'temporal-polyfill/global';

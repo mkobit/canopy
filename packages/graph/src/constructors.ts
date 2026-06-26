@@ -13,7 +13,6 @@ import {
   createGraphId as generateGraphId,
 } from './factories';
 import { ok, err, fromThrowable } from './result';
-import { Temporal } from 'temporal-polyfill';
 
 // UUID regex (generic)
 const UUID_REGEX = /^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i;

@@ -1,5 +1,4 @@
 import { v7 as uuidv7 } from 'uuid';
-import { Temporal } from 'temporal-polyfill';
 import type { NodeId, EdgeId, TypeId, GraphId, EventId, DeviceId } from './identifiers';
 import type { Instant, PlainDate } from './temporal';
 import type { Result } from './result';

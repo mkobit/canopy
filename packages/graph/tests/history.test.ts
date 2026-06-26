@@ -13,7 +13,6 @@ import {
   type Instant,
   type EventId,
 } from '@canopy/graph';
-import { Temporal } from 'temporal-polyfill';
 
 const mockGraphId = 'test-graph-id';
 
