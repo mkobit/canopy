@@ -2,6 +2,7 @@ import React from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { SideNavBar } from '.';
 import { useGraph } from '../context/graph-context';
+import { SYSTEM_IDS } from '@canopy/graph';
 import { withResultAlert } from '../utils/handlers';
 import { showAlert, showPrompt } from '../utils/dialogs';
 
@@ -24,7 +25,7 @@ export const Layout = () => {
     if (!text) return undefined;
 
     return withResultAlert(
-      () => createNode('Note', { name: text }),
+      () => createNode(SYSTEM_IDS.TYPE_MARKDOWN, { name: text }),
       'Failed to create node',
       (val) => navigate(`/graph/${graph.id}/node/${val}`),
     )();
@@ -34,7 +35,11 @@ export const Layout = () => {
   // Tailwind configured to expect 'dark' class. We'll set it on this main container.
   return (
     <div className="dark h-screen w-full bg-background text-on-surface font-body overflow-hidden flex">
-      <SideNavBar onNewNode={handleNewNode} onLogout={handleLogout} />
+      <SideNavBar
+        onNewNode={handleNewNode}
+        onLogout={handleLogout}
+        {...(graph === null ? {} : { graphId: graph.id })}
+      />
       <main className="flex-1 ml-64 h-full relative overflow-hidden flex flex-col bg-surface">
         <Outlet />
       </main>

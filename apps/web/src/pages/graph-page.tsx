@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Outlet, useNavigate, useOutlet } from 'react-router-dom';
 import { useGraph } from '../context/graph-context';
-import { asGraphId } from '@canopy/graph';
+import { asGraphId, SYSTEM_IDS } from '@canopy/graph';
 import { toHandler, withResultAlert } from '../utils/handlers';
 import {
   TopAppBar,
@@ -49,7 +49,7 @@ export const GraphPage = () => {
   const outlet = useOutlet();
 
   const handleQuickEntry = withResultAlert(
-    (text: string) => createNode('RawNode', { name: text }),
+    (text: string) => createNode(SYSTEM_IDS.TYPE_MARKDOWN, { name: text }),
     'Failed to capture thought',
   );
 

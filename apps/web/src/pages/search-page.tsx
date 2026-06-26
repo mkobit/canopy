@@ -54,7 +54,7 @@ export const SearchPage = () => {
           return (
             <Link
               key={node.id}
-              to={`/node/${node.id}`}
+              to={`node/${node.id}`}
               className="block p-4 border rounded-lg hover:border-blue-400 hover:shadow-sm transition-all bg-white"
             >
               <div className="flex justify-between items-start">

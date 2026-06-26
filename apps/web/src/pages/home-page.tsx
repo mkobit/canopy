@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useStorage } from '../context/storage-context';
 import { showPrompt, showConfirm } from '../utils/dialogs';
 import { useNavigate } from 'react-router-dom';
-import { createGraphId } from '@canopy/graph';
+import { createGraphId, createGraph } from '@canopy/graph';
+import { createSyncEngine } from '@canopy/sync';
 import { Plus, Trash2, FolderOpen } from 'lucide-react';
 import type { GraphStorageMetadata } from '@canopy/storage';
 import { Temporal } from 'temporal-polyfill';
@@ -46,10 +47,24 @@ export const HomePage = () => {
     const id = createGraphId();
     const now = Temporal.Now.instant().toString();
 
-    // Use a minimal empty state if required, though Y.js might not like 0-byte arrays,
-    // passing new Uint8Array() was already what it was doing,
-    // let's put it back to avoid TS error
-    const result = await storage.save(id, new Uint8Array(), {
+    const graphResult = createGraph(id, name);
+    if (!graphResult.ok) {
+      console.error('Failed to bootstrap graph', graphResult.error);
+      return undefined;
+    }
+    const bootstrapped = graphResult.value;
+
+    if (bootstrapped.edges.size > 0) {
+      console.warn('Bootstrap produced edges — bridge does not persist them');
+    }
+
+    const engine = createSyncEngine({});
+    [...bootstrapped.nodes.values()].map((node) =>
+      engine.store.addNode({ id: node.id, type: node.type, properties: node.properties }),
+    );
+
+    const snapshot = engine.getSnapshot();
+    const result = await storage.save(id, snapshot, {
       id,
       name,
       createdAt: now,
