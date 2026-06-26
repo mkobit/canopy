@@ -21,8 +21,9 @@ import {
 // Helpers to transform strings to branded types using the "as" casters from types.
 // We rely on Zod's validation (regex/datetime) before casting.
 
-export const NodeIdSchema = z.string().uuid().transform(asNodeId);
-export const EdgeIdSchema = z.string().uuid().transform(asEdgeId);
+// Node and edge IDs are non-empty strings; user-created IDs are UUIDs but system IDs are semantic (e.g. 'query:system:all-nodes').
+export const NodeIdSchema = z.string().min(1).transform(asNodeId);
+export const EdgeIdSchema = z.string().min(1).transform(asEdgeId);
 export const TypeIdSchema = z.string().min(1).transform(asTypeId);
 export const GraphIdSchema = z.string().uuid().transform(asGraphId);
 export const DeviceIdSchema = z.string().uuid().transform(asDeviceId);
