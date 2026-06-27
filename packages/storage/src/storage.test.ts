@@ -3,6 +3,7 @@ import { createSQLiteAdapter } from './sqlite-adapter';
 import { createIndexedDBAdapter } from './indexeddb-adapter';
 import { GraphStorageMetadata, StorageAdapter } from './types';
 import { unwrap } from '@canopy/graph';
+import { Temporal } from 'temporal-polyfill';
 import 'fake-indexeddb/auto';
 
 // Mock data
@@ -11,8 +12,8 @@ const mockSnapshot = new Uint8Array([1, 2, 3, 4, 5]);
 const mockMetadata: GraphStorageMetadata = {
   id: mockGraphId,
   name: 'Test Graph',
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
+  createdAt: Temporal.Now.instant().toString(),
+  updatedAt: Temporal.Now.instant().toString(),
 };
 
 describe('SQLiteAdapter', () => {

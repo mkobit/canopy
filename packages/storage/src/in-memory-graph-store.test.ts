@@ -16,6 +16,7 @@ import type {
   EdgePropertiesUpdated,
   EdgeDeleted,
 } from '@canopy/graph';
+import { Temporal } from 'temporal-polyfill';
 import { createInMemoryGraphStore } from './in-memory-graph-store';
 
 describe('InMemoryGraphStore', () => {
@@ -67,7 +68,7 @@ describe('InMemoryGraphStore', () => {
     const store = createInMemoryGraphStore();
     const createEvent = createNodeEvent();
 
-    setSystemTime(new Date(Date.now() + 1000));
+    setSystemTime(Temporal.Now.instant().add({ seconds: 1 }).epochMilliseconds);
     const updateEvent: NodePropertiesUpdated = {
       type: 'NodePropertiesUpdated',
       eventId: createEventId(),
@@ -135,7 +136,7 @@ describe('InMemoryGraphStore', () => {
     const store = createInMemoryGraphStore();
     const createEvent = createEdgeEvent();
 
-    setSystemTime(new Date(Date.now() + 1000));
+    setSystemTime(Temporal.Now.instant().add({ seconds: 1 }).epochMilliseconds);
     const updateEvent: EdgePropertiesUpdated = {
       type: 'EdgePropertiesUpdated',
       eventId: createEventId(),
