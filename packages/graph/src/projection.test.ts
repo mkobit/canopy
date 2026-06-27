@@ -12,6 +12,7 @@ import {
   type NodeCreated,
   type NodePropertiesUpdated,
 } from '@canopy/graph';
+import { Temporal } from 'temporal-polyfill';
 
 describe('projection / LWW sync', () => {
   const deviceA = asDeviceId('00000000-0000-0000-0000-00000000000A');
@@ -20,7 +21,7 @@ describe('projection / LWW sync', () => {
   it('sorts events by eventId correctly in projectGraph', () => {
     const g = unwrap(createGraph(createGraphId(), 'test-graph'));
 
-    setSystemTime(new Date('2024-01-01T10:00:00Z'));
+    setSystemTime(Temporal.Instant.from('2024-01-01T10:00:00Z').epochMilliseconds);
     const t1 = createInstant();
     const id1 = createNodeId();
     const e1: NodeCreated = {
@@ -33,7 +34,7 @@ describe('projection / LWW sync', () => {
       deviceId: deviceA,
     };
 
-    setSystemTime(new Date('2024-01-01T11:00:00Z'));
+    setSystemTime(Temporal.Instant.from('2024-01-01T11:00:00Z').epochMilliseconds);
     const t2 = createInstant();
     const e2: NodePropertiesUpdated = {
       type: 'NodePropertiesUpdated',

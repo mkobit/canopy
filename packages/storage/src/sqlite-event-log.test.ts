@@ -3,6 +3,7 @@ import { createSQLiteAdapter } from './sqlite-adapter';
 import type { StorageAdapter, EventLogStore } from './types';
 import { unwrap, asNodeId, asTypeId, asEventId, asInstant, asDeviceId } from '@canopy/graph';
 import type { NodeCreated, GraphEvent } from '@canopy/graph';
+import { Temporal } from 'temporal-polyfill';
 
 const mockGraphId = 'test-graph-id';
 
@@ -13,7 +14,9 @@ const createEvent = (i: number): NodeCreated => ({
   id: asNodeId(`node-${i}`),
   nodeType: asTypeId('test-type'),
   properties: new Map(),
-  timestamp: asInstant(new Date(2024, 0, 1, 10, i).toISOString()),
+  timestamp: asInstant(
+    Temporal.Instant.from(`2024-01-01T10:${String(i).padStart(2, '0')}:00.000Z`).toString(),
+  ),
   deviceId: asDeviceId('00000000-0000-0000-0000-000000000000'),
 });
 

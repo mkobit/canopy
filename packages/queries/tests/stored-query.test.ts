@@ -17,6 +17,7 @@ import {
   asDeviceId,
 } from '@canopy/graph';
 import { pipe } from 'remeda';
+import { Temporal } from 'temporal-polyfill';
 import { query, nodes, where } from '../src/pipeline';
 
 describe('Stored Queries', () => {
@@ -68,8 +69,8 @@ describe('Stored Queries', () => {
             ['priority', 'high'],
           ]),
           metadata: {
-            created: createInstant(new Date('2023-01-01T00:00:00Z')),
-            modified: createInstant(new Date('2023-01-01T00:00:00Z')),
+            created: createInstant(Temporal.Instant.from('2023-01-01T00:00:00Z')),
+            modified: createInstant(Temporal.Instant.from('2023-01-01T00:00:00Z')),
           },
         },
         { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') },
@@ -87,8 +88,8 @@ describe('Stored Queries', () => {
             ['priority', 'low'],
           ]),
           metadata: {
-            created: createInstant(new Date('2023-01-01T00:00:00Z')),
-            modified: createInstant(new Date('2023-01-01T00:00:00Z')),
+            created: createInstant(Temporal.Instant.from('2023-01-01T00:00:00Z')),
+            modified: createInstant(Temporal.Instant.from('2023-01-01T00:00:00Z')),
           },
         },
         { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') },

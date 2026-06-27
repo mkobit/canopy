@@ -303,6 +303,31 @@ export default tseslint.config(
     },
   },
 
+  // Ban `Date` global in test files too — Temporal everywhere, including fixtures.
+  // The main config block above (with `no-restricted-globals` banning Date) excludes test files;
+  // this re-applies the Date ban specifically so tests can't drift back to `new Date()` / `Date.now()`.
+  {
+    files: [
+      '**/*.test.ts',
+      '**/*.spec.ts',
+      '**/tests/**/*.ts',
+      '**/__tests__/**/*.ts',
+      '**/*.test.tsx',
+      '**/*.spec.tsx',
+      '**/tests/**/*.tsx',
+      '**/__tests__/**/*.tsx',
+    ],
+    rules: {
+      'no-restricted-globals': [
+        'error',
+        {
+          name: 'Date',
+          message: 'Use Temporal instead of Date.',
+        },
+      ],
+    },
+  },
+
   // === Specific Overrides (Must come last to win) ===
 
   {

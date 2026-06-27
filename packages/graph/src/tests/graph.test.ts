@@ -23,6 +23,7 @@ import {
   asDeviceId,
 } from '@canopy/graph';
 import type { Node, Edge } from '@canopy/graph';
+import { Temporal } from 'temporal-polyfill';
 
 describe('Core Graph Engine', () => {
   const graphId = createGraphId();
@@ -105,7 +106,7 @@ describe('Core Graph Engine', () => {
 
     // Use a fixed future time to ensure the update timestamp differs from
     // the original node creation timestamp (which uses the real system time).
-    setSystemTime(new Date('2030-01-01T00:00:00Z'));
+    setSystemTime(Temporal.Instant.from('2030-01-01T00:00:00Z').epochMilliseconds);
     const r2 = unwrap(
       updateNode(
         g1,

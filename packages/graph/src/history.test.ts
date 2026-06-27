@@ -85,7 +85,7 @@ describe('time-travel', () => {
     const deviceId = asDeviceId('00000000-0000-0000-0000-000000000000');
 
     const createEvent = (i: number): NodeCreated => {
-      const timestamp = unwrap(parseInstant(new Date(2024, 0, 1, 10, i).toISOString()));
+      const timestamp = unwrap(parseInstant(`2024-01-01T10:${String(i).padStart(2, '0')}:00.000Z`));
       const epochMs = Temporal.Instant.from(timestamp).epochMilliseconds;
       const hex = epochMs.toString(16).padStart(12, '0');
       const part1 = hex.slice(0, 8);
