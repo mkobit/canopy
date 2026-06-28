@@ -24,6 +24,7 @@ export { cn } from '../utils/cn';
 // Explorer
 export { SideNavBar, type SideNavBarProps } from './layout/side-nav-bar';
 export { TopAppBar, type TopAppBarProps } from './layout/top-app-bar';
+export { NewNodeDialog, type NewNodeDialogProps } from './layout/new-node-dialog';
 export { InspectorPanel, type InspectorPanelProps } from './explorer/inspector-panel';
 export {
   GraphExplorerCanvas,
