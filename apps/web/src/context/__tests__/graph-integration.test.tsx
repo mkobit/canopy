@@ -9,6 +9,7 @@ import { executeStoredQuery, executeView } from '@canopy/queries';
 import { Temporal } from 'temporal-polyfill';
 import type { NodeId } from '@canopy/graph';
 import type { ReactNode } from 'react';
+import { listAllowedNodeTypes } from '../../utils/node-types';
 
 function useTestContext() {
   const { storage, isLoading: storageLoading } = useStorage();
@@ -211,5 +212,44 @@ describe('bootstrap bridge — context integration', () => {
 
     expect(viewResult.value.nodes.every((n) => n.id === nodeId)).toBe(true);
     expect(viewResult.value.nodes).toHaveLength(1);
+  });
+
+  it('listAllowedNodeTypes on a loaded graph exposes Markdown + CodeBlock only', async () => {
+    const id = asGraphId('test-list-allowed');
+    const { result } = renderHook(() => useTestContext(), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current.storageReady).toBe(true);
+    });
+
+    const graphResult = createGraph(id, 'Allowed Types Test');
+    expect(graphResult.ok).toBe(true);
+    if (!graphResult.ok) return;
+
+    const engine = createSyncEngine({});
+    [...graphResult.value.nodes.values()].map((node) =>
+      engine.store.addNode({ id: node.id, type: node.type, properties: node.properties }),
+    );
+
+    await act(async () => {
+      await result.current.storage?.save(id, engine.getSnapshot(), {
+        id,
+        name: 'Allowed Types Test',
+        createdAt: Temporal.Now.instant().toString(),
+        updatedAt: Temporal.Now.instant().toString(),
+      });
+    });
+
+    await act(async () => {
+      await result.current.loadGraph(id);
+    });
+
+    const graph = result.current.graph;
+    expect(graph).not.toBeNull();
+    if (!graph) return;
+
+    const types = listAllowedNodeTypes(graph);
+    const ids = types.map((t) => t.id).toSorted();
+    expect(ids).toEqual([SYSTEM_IDS.TYPE_CODE_BLOCK, SYSTEM_IDS.TYPE_MARKDOWN].toSorted());
   });
 });

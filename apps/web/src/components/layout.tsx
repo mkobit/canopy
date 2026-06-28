@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
-import { SideNavBar } from '.';
+import { SideNavBar, NewNodeDialog } from '.';
 import { useGraph } from '../context/graph-context';
-import { SYSTEM_IDS } from '@canopy/graph';
+import type { PropertyValue, TypeId } from '@canopy/graph';
 import { withResultAlert } from '../utils/handlers';
-import { showAlert, showPrompt } from '../utils/dialogs';
+import { showAlert } from '../utils/dialogs';
+import { listAllowedNodeTypes } from '../utils/node-types';
 
 const handleLogout = () => {
   showAlert('Logout clicked');
@@ -14,21 +15,34 @@ const handleLogout = () => {
 export const Layout = () => {
   const { createNode, graph } = useGraph();
   const navigate = useNavigate();
+  const [isNewNodeOpen, setIsNewNodeOpen] = useState(false);
 
-  const handleNewNode = async () => {
+  const availableTypes = useMemo(() => (graph ? listAllowedNodeTypes(graph) : []), [graph]);
+
+  const handleNewNode = () => {
     if (!graph) {
       showAlert('Open a graph first.');
       return undefined;
     }
+    setIsNewNodeOpen(true);
+    return undefined;
+  };
 
-    const text = showPrompt('New Node Name:');
-    if (!text) return undefined;
-
+  const handleSubmitNewNode = (type: TypeId, properties: Record<string, PropertyValue>) => {
+    if (!graph) return undefined;
     return withResultAlert(
-      () => createNode(SYSTEM_IDS.TYPE_MARKDOWN, { name: text }),
+      () => createNode(type, properties),
       'Failed to create node',
-      (val) => navigate(`/graph/${graph.id}/node/${val}`),
+      (val) => {
+        setIsNewNodeOpen(false);
+        navigate(`/graph/${graph.id}/node/${val}`);
+      },
     )();
+  };
+
+  const handleCancelNewNode = () => {
+    setIsNewNodeOpen(false);
+    return undefined;
   };
 
   // Add the `dark` class to html/body implicitly via container, or manually update index.html.
@@ -39,6 +53,12 @@ export const Layout = () => {
         onNewNode={handleNewNode}
         onLogout={handleLogout}
         {...(graph === null ? {} : { graphId: graph.id })}
+      />
+      <NewNodeDialog
+        open={isNewNodeOpen}
+        nodeTypes={availableTypes}
+        onSubmit={handleSubmitNewNode}
+        onCancel={handleCancelNewNode}
       />
       <main className="flex-1 ml-64 h-full relative overflow-hidden flex flex-col bg-surface">
         <Outlet />
