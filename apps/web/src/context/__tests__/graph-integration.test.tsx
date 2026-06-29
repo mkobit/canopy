@@ -72,6 +72,59 @@ describe('graph round-trip', () => {
 
     expect(result2.current.graph?.nodes.has(nodeId)).toBe(true);
   });
+
+  it('persists a TextBlock node with list content through save and load', async () => {
+    const testGraphId = asGraphId('test-graph-text-block');
+
+    const { result, unmount } = renderHook(() => useTestContext(), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current.storageReady).toBe(true);
+    });
+
+    await act(async () => {
+      const res = await result.current.loadGraph(testGraphId);
+      expect(res.ok).toBe(true);
+    });
+
+    expect(result.current.graph).not.toBeNull();
+
+    let nodeId: NodeId | undefined;
+    await act(async () => {
+      const res = await result.current.createNode(SYSTEM_IDS.TYPE_TEXT_BLOCK, {
+        content: ['block-1', 'block-2'],
+      });
+      if (res.ok) nodeId = res.value;
+    });
+
+    expect(nodeId).toBeDefined();
+    if (nodeId === undefined) return;
+
+    expect(result.current.graph?.nodes.has(nodeId)).toBe(true);
+    expect(result.current.graph?.nodes.get(nodeId)?.properties.get('content')).toEqual([
+      'block-1',
+      'block-2',
+    ]);
+
+    // Simulate page reload — unmount providers and remount fresh
+    unmount();
+    const { result: result2 } = renderHook(() => useTestContext(), { wrapper });
+
+    await waitFor(() => {
+      expect(result2.current.storageReady).toBe(true);
+    });
+
+    await act(async () => {
+      const res = await result2.current.loadGraph(testGraphId);
+      expect(res.ok).toBe(true);
+    });
+
+    expect(result2.current.graph?.nodes.has(nodeId)).toBe(true);
+    expect(result2.current.graph?.nodes.get(nodeId)?.properties.get('content')).toEqual([
+      'block-1',
+      'block-2',
+    ]);
+  });
 });
 
 describe('bootstrap bridge — context integration', () => {
@@ -214,7 +267,7 @@ describe('bootstrap bridge — context integration', () => {
     expect(viewResult.value.nodes).toHaveLength(1);
   });
 
-  it('listAllowedNodeTypes on a loaded graph exposes Markdown + CodeBlock only', async () => {
+  it('listAllowedNodeTypes on a loaded graph exposes Markdown, CodeBlock, and TextBlock', async () => {
     const id = asGraphId('test-list-allowed');
     const { result } = renderHook(() => useTestContext(), { wrapper });
 
@@ -250,6 +303,8 @@ describe('bootstrap bridge — context integration', () => {
 
     const types = listAllowedNodeTypes(graph);
     const ids = types.map((t) => t.id).toSorted();
-    expect(ids).toEqual([SYSTEM_IDS.TYPE_CODE_BLOCK, SYSTEM_IDS.TYPE_MARKDOWN].toSorted());
+    expect(ids).toEqual(
+      [SYSTEM_IDS.TYPE_CODE_BLOCK, SYSTEM_IDS.TYPE_MARKDOWN, SYSTEM_IDS.TYPE_TEXT_BLOCK].toSorted(),
+    );
   });
 });

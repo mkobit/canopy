@@ -14,7 +14,7 @@ import type {
 import { asInstant, ok, err, fromThrowable, fromAsyncThrowable } from '@canopy/graph';
 import { useStorage } from './storage-context';
 import { z } from 'zod';
-import { TypeIdSchema } from '@canopy/graph';
+import { TypeIdSchema, PropertyValueSchema } from '@canopy/graph';
 import { Temporal } from 'temporal-polyfill';
 
 interface GraphContextState {
@@ -41,6 +41,18 @@ interface GraphContextActions {
 }
 
 type GraphContextType = GraphContextState & GraphContextActions;
+
+const CreateNodeInputSchema = z.object({
+  type: TypeIdSchema,
+  properties: z.record(z.string(), PropertyValueSchema).optional(),
+});
+
+const CreateEdgeInputSchema = z.object({
+  type: TypeIdSchema,
+  source: z.string(),
+  target: z.string(),
+  properties: z.record(z.string(), PropertyValueSchema).optional(),
+});
 
 const GraphContext = createContext<GraphContextType>({
   graph: null,
@@ -176,15 +188,6 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
     return ok(undefined);
   }, [storage, currentGraphId, graph]);
 
-  // Schema for validating inputs to createNode
-  // Note: We need to specify the output type explicitly because Zod's inference sometimes
-  // struggles with branded types across packages if not careful, but here TypeIdSchema
-  // should already return TypeId.
-  const CreateNodeInputSchema = z.object({
-    type: TypeIdSchema,
-    properties: z.record(z.string(), z.unknown()).optional(),
-  });
-
   const createNode = useCallback(
     async (
       type: string,
@@ -199,13 +202,9 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
 
         const typeId = input.type;
 
-        const entries = input.properties
-          ? Object.entries(input.properties)
-              .filter((entry): entry is [string, string] => typeof entry[1] === 'string')
-              .map(([key, value]) => [key, value] as const)
-          : [];
-
-        const propsMap = new Map<string, PropertyValue>(entries);
+        const propsMap = new Map<string, PropertyValue>(
+          input.properties ? Object.entries(input.properties) : [],
+        );
 
         const newNodeResult = syncEngine.store.addNode({
           type: typeId,
@@ -225,13 +224,6 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
     [saveGraph],
   );
 
-  const CreateEdgeInputSchema = z.object({
-    type: TypeIdSchema,
-    source: z.string(),
-    target: z.string(),
-    properties: z.record(z.string(), z.unknown()).optional(),
-  });
-
   const createEdge = useCallback(
     async (
       type: string,
@@ -246,13 +238,9 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
         const input = CreateEdgeInputSchema.parse({ type, source, target, properties });
         const typeId = input.type;
 
-        const entries = input.properties
-          ? Object.entries(input.properties)
-              .filter((entry): entry is [string, string] => typeof entry[1] === 'string')
-              .map(([key, value]) => [key, value] as const)
-          : [];
-
-        const propsMap = new Map<string, PropertyValue>(entries);
+        const propsMap = new Map<string, PropertyValue>(
+          input.properties ? Object.entries(input.properties) : [],
+        );
 
         const newEdgeResult = syncEngine.store.addEdge({
           type: typeId,

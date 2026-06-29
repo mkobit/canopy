@@ -19,6 +19,7 @@ export interface NodeTypeOption {
 const ALLOWED_TYPE_DEF_IDS: ReadonlySet<string> = new Set([
   SYSTEM_IDS.NODE_TYPE_MARKDOWN,
   SYSTEM_IDS.NODE_TYPE_CODE_BLOCK,
+  SYSTEM_IDS.NODE_TYPE_TEXT_BLOCK,
 ]);
 
 const PropertyDefinitionsSchema = z.array(PropertyDefinitionSchema);
