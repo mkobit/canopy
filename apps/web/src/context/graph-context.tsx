@@ -77,7 +77,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
   const [error, setError] = useState<Error | null>(null);
   const [currentGraphId, setCurrentGraphId] = useState<GraphId | null>(null);
 
-  const updateGraphFromStore = (engine: SyncEngine, graphId: GraphId) => {
+  const updateGraphFromStore = (engine: SyncEngine, graphId: GraphId, name?: string) => {
     const nodes = new Map<NodeId, Node>(
       [...engine.store.getAllNodes()].map((node) => [node.id, node]),
     );
@@ -86,16 +86,19 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
     );
 
     const now = asInstant(Temporal.Now.instant().toString());
-    setGraph({
-      id: graphId,
-      name: 'Graph', // We should load this
-      metadata: {
-        created: now,
-        modified: now,
-        modifiedBy: asDeviceId('00000000-0000-0000-0000-000000000000'),
-      }, // Placeholder
-      nodes,
-      edges,
+    setGraph((prevGraph) => {
+      const activeName = name ?? prevGraph?.name ?? 'Graph';
+      return {
+        id: graphId,
+        name: activeName,
+        metadata: {
+          created: now,
+          modified: now,
+          modifiedBy: asDeviceId('00000000-0000-0000-0000-000000000000'),
+        }, // Placeholder
+        nodes,
+        edges,
+      };
     });
     return undefined;
   };
@@ -119,6 +122,13 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
         if (!snapshotResult.ok) throw snapshotResult.error;
         const snapshot = snapshotResult.value;
 
+        // Load graph name from metadata list
+        const listResult = await storage.list();
+        const matchedMeta = listResult.ok
+          ? listResult.value.find((g) => g.id === graphId)
+          : undefined;
+        const graphName = matchedMeta?.name ?? 'Graph';
+
         // 2. Initialize SyncEngine
         // If snapshot is undefined (new graph), we pass undefined, SyncEngine creates new Doc.
         const engine = createSyncEngine(snapshot ? { initialSnapshot: snapshot } : {});
@@ -128,11 +138,11 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
         setCurrentGraphId(graphId);
 
         // Initial graph state
-        updateGraphFromStore(engine, graphId);
+        updateGraphFromStore(engine, graphId, graphName);
 
         // Subscribe to updates
         engine.doc.on('update', () => {
-          updateGraphFromStore(engine, graphId);
+          updateGraphFromStore(engine, graphId, graphName);
           return undefined;
         });
 

@@ -11,5 +11,6 @@ ignoreScripts = true
 
 [test]
 preload = ["./apps/web/src/test/setup.ts"]
+exclude = ["**/e2e/**"]
 coverageReporter = ["text", "lcov"]
 coverageDir = "coverage"
