@@ -120,3 +120,12 @@ Specs live in `openspec/changes/` and follow the `proposal → design → tasks`
 ## Jules agents
 
 See `.jules/AGENTS.md`.
+
+## Agent constraints and quality control
+
+To prevent agent sprawl, inconsistent code, and high token costs:
+- Avoid adding new files or scripts to the project root unless absolutely necessary.
+- Follow the package layout and bounded contexts.
+- Keep components and context provider files focused and modular.
+- Refactor and split files if they grow too large (e.g. over 300 lines of code).
+- Before creating a new background or automated script, ensure it fits under existing tooling or `.jules/` prompt files.
