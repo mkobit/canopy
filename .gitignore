@@ -10,3 +10,7 @@ coverage/
 .dolt/
 *.db
 .beads-credential-key
+
+# Playwright
+playwright-report/
+test-results/
