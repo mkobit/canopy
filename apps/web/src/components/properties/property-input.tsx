@@ -88,6 +88,7 @@ export const PropertyInput: React.FC<PropertyInputProps> = ({
             }}
           />
           <button
+            type="button"
             onClick={() => {
               const newItems = value.filter((_, i) => i !== index);
               onChange(newItems);
@@ -100,6 +101,7 @@ export const PropertyInput: React.FC<PropertyInputProps> = ({
         </div>
       ))}
       <button
+        type="button"
         onClick={() => {
           const firstItem = value[0];
           const itemKind =

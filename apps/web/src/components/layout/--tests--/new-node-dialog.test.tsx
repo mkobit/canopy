@@ -39,6 +39,15 @@ const codeBlockOption: NodeTypeOption = {
   ],
 };
 
+const textBlockOption: NodeTypeOption = {
+  id: SYSTEM_IDS.TYPE_TEXT_BLOCK,
+  label: 'TextBlock',
+  description: 'A block of text content.',
+  properties: [
+    { name: 'content', valueKind: 'list', required: true, description: 'Content segments' },
+  ],
+};
+
 describe('NewNodeDialog', () => {
   it('renders type options and a property field for the initial type', () => {
     render(
@@ -130,5 +139,39 @@ describe('NewNodeDialog', () => {
   it('renders an empty-state when no node types are available', () => {
     render(<NewNodeDialog open={true} nodeTypes={[]} onSubmit={jest.fn()} onCancel={jest.fn()} />);
     expect(screen.getByText(/no node types available/i)).toBeDefined();
+  });
+
+  it('submits with list value for list-typed properties (TextBlock)', () => {
+    const onSubmit = jest.fn();
+    render(
+      <NewNodeDialog
+        open={true}
+        nodeTypes={[textBlockOption]}
+        onSubmit={onSubmit}
+        onCancel={jest.fn()}
+      />,
+    );
+
+    // Click "+ Add Item" to add an item to the list
+    const addButton = screen.getByText('+ Add Item');
+    fireEvent.click(addButton);
+
+    // Now a textbox should be rendered for the list item
+    const textboxes = screen.getAllByRole('textbox') as readonly HTMLInputElement[];
+    expect(textboxes).toHaveLength(1);
+    const firstTextbox = textboxes[0];
+    expect(firstTextbox).toBeDefined();
+    if (firstTextbox === undefined) return;
+    fireEvent.change(firstTextbox, { target: { value: 'segment-1' } });
+
+    // The create button should now be enabled
+    const createButton = screen.getByRole('button', { name: /create/i }) as HTMLButtonElement;
+    expect(createButton.disabled).toBe(false);
+
+    fireEvent.click(createButton);
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    expect(onSubmit).toHaveBeenCalledWith(SYSTEM_IDS.TYPE_TEXT_BLOCK, {
+      content: ['segment-1'],
+    });
   });
 });
