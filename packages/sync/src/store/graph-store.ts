@@ -10,6 +10,7 @@ export interface GraphStore {
   readonly nodes: Y.Map<unknown>;
   readonly edges: Y.Map<unknown>;
   readonly events: Y.Map<unknown>;
+  readonly texts: Y.Map<unknown>;
 
   readonly addNode: (
     data: Omit<Node, 'id' | 'metadata'> &
@@ -47,12 +48,14 @@ export const createGraphStore = (doc: Y.Doc): GraphStore => {
   const nodes = doc.getMap('nodes');
   const edges = doc.getMap('edges');
   const events = doc.getMap('events');
+  const texts = doc.getMap('texts');
 
   return {
     doc,
     nodes,
     edges,
     events,
+    texts,
 
     addNode: (
       data: Omit<Node, 'id' | 'metadata'> &
@@ -60,16 +63,16 @@ export const createGraphStore = (doc: Y.Doc): GraphStore => {
           id?: string;
         }>,
     ): Result<Node, Error> => {
-      return NodeOps.addNode(nodes, data);
+      return NodeOps.addNode(nodes, texts, data);
     },
 
     getNode: (id: string): Node | undefined => {
-      const result = NodeOps.getNode(nodes, id);
+      const result = NodeOps.getNode(nodes, texts, id);
       return result.ok ? result.value : undefined;
     },
 
     getAllNodes: (): IterableIterator<Node> => {
-      const result = NodeOps.getAllNodes(nodes);
+      const result = NodeOps.getAllNodes(nodes, texts);
       if (result.ok) {
         return result.value;
       }
@@ -81,11 +84,11 @@ export const createGraphStore = (doc: Y.Doc): GraphStore => {
       id: string,
       partial: Partial<Omit<Node, 'id' | 'metadata'>>,
     ): Result<Node, Error> => {
-      return NodeOps.updateNode(nodes, id, partial);
+      return NodeOps.updateNode(nodes, texts, id, partial);
     },
 
     deleteNode: (id: string): Result<void, Error> => {
-      return NodeOps.deleteNode(nodes, id);
+      return NodeOps.deleteNode(nodes, texts, id);
     },
 
     addEdge: (
