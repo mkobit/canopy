@@ -66,6 +66,48 @@ describe('GraphStore', () => {
       const result = store.updateNode('fake-id', {});
       expect(isErr(result)).toBe(true);
     });
+
+    it('should manage collaborative text content in texts map', () => {
+      const node = unwrap(
+        store.addNode({
+          type: asTypeId('system:nodetype:markdown'),
+          properties: new Map([['content', 'Hello World']]),
+        }),
+      );
+
+      // Verify the returned node projects the content correctly.
+      expect(node.properties.get('content')).toBe('Hello World');
+
+      // Verify the content is stored in Y.Text in the texts map.
+      const ytext = store.texts.get(node.id) as Y.Text;
+      expect(ytext).toBeDefined();
+      expect(ytext.toString()).toBe('Hello World');
+
+      // Verify the content was stripped from the storable properties.
+      const storedNode = store.nodes.get(node.id) as {
+        readonly properties: Record<string, unknown>;
+      };
+      expect(storedNode).toBeDefined();
+      expect(storedNode.properties.content).toBeUndefined();
+
+      // Retrieve the node from store and confirm it reconstructs the content correctly.
+      const retrieved = store.getNode(node.id);
+      expect(retrieved).toBeDefined();
+      expect(retrieved?.properties.get('content')).toBe('Hello World');
+
+      // Update the content and verify the update.
+      const updated = unwrap(
+        store.updateNode(node.id, {
+          properties: new Map([['content', 'Hello Unified Sync']]),
+        }),
+      );
+      expect(updated.properties.get('content')).toBe('Hello Unified Sync');
+      expect(ytext.toString()).toBe('Hello Unified Sync');
+
+      // Delete the node and confirm Y.Text is deleted too.
+      unwrap(store.deleteNode(node.id));
+      expect(store.texts.get(node.id)).toBeUndefined();
+    });
   });
 
   describe('Edges', () => {

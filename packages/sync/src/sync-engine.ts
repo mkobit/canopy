@@ -9,6 +9,7 @@ export interface SyncEngine {
   readonly doc: Y.Doc;
   readonly store: GraphStore;
   readonly awareness: Awareness;
+  readonly undoManager: Y.UndoManager;
 
   readonly setProvider: (provider: SyncProvider) => Result<void, Error>;
   readonly disconnectProvider: () => Result<void, Error>;
@@ -54,6 +55,7 @@ export const createSyncEngine = (options: SyncEngineOptions = {}): SyncEngine =>
 
   const store = createGraphStore(doc);
   const awareness = new Awareness(doc);
+  const undoManager = new Y.UndoManager(store.texts, { captureTimeout: 500 });
 
   let provider: SyncProvider | null = null;
 
@@ -61,6 +63,7 @@ export const createSyncEngine = (options: SyncEngineOptions = {}): SyncEngine =>
     doc,
     store,
     awareness,
+    undoManager,
 
     setProvider: (newProvider: SyncProvider): Result<void, Error> => {
       return fromThrowable(() => {

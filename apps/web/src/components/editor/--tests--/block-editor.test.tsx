@@ -1,19 +1,17 @@
 import '../../../test/setup';
-import { describe, it, expect, jest } from 'bun:test';
+import { describe, it, expect } from 'bun:test';
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { BlockEditor } from '../block-editor';
-
-const noop = jest.fn();
+import * as Y from 'yjs';
 
 describe('BlockEditor', () => {
-  // Note: contentEditable is hard to test in JSDOM environment fully, but we can test rendering and basic interactions.
-  it('renders initial value', () => {
-    render(<BlockEditor value="<b>Hello</b>" onChange={noop} />);
-    // Check if innerHTML is set. screen.getByText might not match bold exactly if it parses.
-    // However, text content "Hello" should be there.
+  it('renders initial value from Y.Text', () => {
+    const doc = new Y.Doc();
+    const ytext = doc.getText('test');
+    ytext.insert(0, '<b>Hello</b>');
+
+    render(<BlockEditor ytext={ytext} />);
     expect(screen.getAllByText('Hello').length).toBeGreaterThan(0);
   });
-
-  // More complex tests for execCommand are tricky in JSDOM as it's not fully supported.
 });

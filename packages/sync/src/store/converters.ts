@@ -1,3 +1,4 @@
+import type * as Y from 'yjs';
 import type { Node, Edge, PropertyValue, GraphEvent } from '@canopy/graph';
 import type { StorableProperties, StorableNode, StorableEdge, StorableGraphEvent } from './types';
 import { StorableNodeSchema, StorableEdgeSchema, StorableGraphEventSchema } from './types';
@@ -15,18 +16,33 @@ export const storableToProperties = (
 };
 
 export const nodeToStorable = (node: Node): StorableNode => {
+  const props = new Map(node.properties);
+  const content = props.get('content');
+  if (typeof content === 'string') {
+    props.delete('content');
+  }
   return {
     ...node,
-    properties: propertiesToStorable(node.properties),
+    properties: propertiesToStorable(props),
   };
 };
 
-export const storableToNode = (storable: unknown): Node => {
+export const storableToNode = (storable: unknown, texts?: Y.Map<unknown>): Node => {
   // Validate that the stored object matches the expected schema
   const n = StorableNodeSchema.parse(storable);
+  const baseProperties = storableToProperties(n.properties);
+  const properties = new Map(baseProperties);
+
+  if (texts) {
+    const ytext = texts.get(n.id);
+    if (ytext instanceof Y.Text) {
+      properties.set('content', ytext.toString());
+    }
+  }
+
   return {
     ...n,
-    properties: storableToProperties(n.properties),
+    properties,
   };
 };
 
