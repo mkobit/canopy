@@ -1,4 +1,4 @@
-import type * as Y from 'yjs';
+import * as Y from 'yjs';
 import type { Node, Edge, PropertyValue, GraphEvent } from '@canopy/graph';
 import type { StorableProperties, StorableNode, StorableEdge, StorableGraphEvent } from './types';
 import { StorableNodeSchema, StorableEdgeSchema, StorableGraphEventSchema } from './types';
