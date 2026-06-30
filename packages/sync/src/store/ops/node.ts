@@ -115,8 +115,10 @@ export function updateNode(
     if (typeof content === 'string') {
       const ytext = texts.get(id);
       if (ytext && ytext instanceof Y.Text) {
-        ytext.delete(0, ytext.length);
-        ytext.insert(0, content);
+        if (ytext.toString() !== content) {
+          ytext.delete(0, ytext.length);
+          ytext.insert(0, content);
+        }
       } else {
         const newYText = new Y.Text();
         newYText.insert(0, content);

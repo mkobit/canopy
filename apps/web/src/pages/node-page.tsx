@@ -2,7 +2,8 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { withResultAlert } from '../utils/handlers';
 import { useGraph } from '../context/graph-context';
-import { NodeView, PropertyInput, DocumentRenderer } from '../components';
+import { NodeView, PropertyInput, DocumentRenderer, BlockEditor } from '../components';
+import * as Y from 'yjs';
 import { asNodeId } from '@canopy/graph';
 import type { Node, PropertyValue } from '@canopy/graph';
 import { ArrowLeft, Save, Trash, Link as LinkIcon } from 'lucide-react';
@@ -17,6 +18,24 @@ export const NodePage = () => {
   const [currentNode, setCurrentNode] = useState<Node | undefined>();
   const [isEditing, setIsEditing] = useState(false);
   const [editedProps, setEditedProps] = useState<ReadonlyMap<string, PropertyValue>>(new Map());
+
+  const ytext = useMemo(() => {
+    if (!syncEngine || !nodeId) return undefined;
+    const txt = syncEngine.store.texts.get(nodeId);
+    if (!txt) {
+      const newTxt = new Y.Text();
+      syncEngine.store.texts.set(nodeId, newTxt);
+      return newTxt;
+    }
+    if (txt instanceof Y.Text) {
+      return txt;
+    }
+    return undefined;
+  }, [syncEngine, nodeId]);
+
+  const propertiesToEdit = useMemo(() => {
+    return new Map([...editedProps.entries()].filter(([key]) => key !== 'content'));
+  }, [editedProps]);
 
   // Subscribe/Fetch node from graph
   useEffect(() => {
@@ -38,8 +57,12 @@ export const NodePage = () => {
   const handleSave = async () => {
     if (!syncEngine || !currentNode) return undefined;
 
+    const propertiesToSave = ytext
+      ? new Map([...editedProps.entries(), ['content', ytext.toString()]])
+      : new Map(editedProps);
+
     const updateResult = syncEngine.store.updateNode(currentNode.id, {
-      properties: new Map(editedProps),
+      properties: propertiesToSave,
     });
 
     if (!updateResult.ok) {
@@ -166,20 +189,32 @@ export const NodePage = () => {
               </div>
             </div>
 
+            {currentNode.properties.has('content') &&
+              typeof currentNode.properties.get('content') === 'string' &&
+              ytext && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-500">Content</label>
+                  <BlockEditor ytext={ytext} />
+                </div>
+              )}
+
             <div className="space-y-4">
               <h3 className="font-semibold text-gray-900">Properties</h3>
-              {map([...editedProps.entries()], ([key, val]: readonly [string, PropertyValue]) => (
-                <div key={key} className="space-y-1">
-                  <label className="text-sm text-gray-600">{key}</label>
-                  <PropertyInput
-                    value={val}
-                    onChange={(newVal) => {
-                      handlePropertyChange(key, newVal);
-                      return undefined;
-                    }}
-                  />
-                </div>
-              ))}
+              {map(
+                [...propertiesToEdit.entries()],
+                ([key, val]: readonly [string, PropertyValue]) => (
+                  <div key={key} className="space-y-1">
+                    <label className="text-sm text-gray-600">{key}</label>
+                    <PropertyInput
+                      value={val}
+                      onChange={(newVal) => {
+                        handlePropertyChange(key, newVal);
+                        return undefined;
+                      }}
+                    />
+                  </div>
+                ),
+              )}
             </div>
           </div>
         ) : (
