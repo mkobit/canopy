@@ -146,6 +146,48 @@ const edgeTypeProperties: readonly PropertyDefinition[] = [
   },
 ];
 
+const namespaceProperties: readonly PropertyDefinition[] = [
+  {
+    name: 'name',
+    valueKind: 'text',
+    required: true,
+    description: 'Unique name identifying this namespace.',
+  },
+  {
+    name: 'description',
+    valueKind: 'text',
+    required: false,
+    description: 'A description of the namespace.',
+  },
+  {
+    name: 'kind',
+    valueKind: 'text',
+    required: true,
+    description: 'Open classification of this namespace (e.g. system, user, imported).',
+  },
+];
+
+const propertyTypeProperties: readonly PropertyDefinition[] = [
+  {
+    name: 'name',
+    valueKind: 'text',
+    required: true,
+    description: 'The name of the property.',
+  },
+  {
+    name: 'valueKind',
+    valueKind: 'text',
+    required: true,
+    description: 'The value kind this property holds.',
+  },
+  {
+    name: 'description',
+    valueKind: 'text',
+    required: false,
+    description: 'A description of the property type.',
+  },
+];
+
 // Helper to reduce results safely using recursion to avoid loops
 function reduceResult<T, R>(
   items: readonly T[],
@@ -263,6 +305,42 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
               {
                 namespace: text('system'),
                 properties: text(JSON.stringify(edgeTypeProperties)),
+              },
+            ),
+          ),
+
+    // Ensure Namespace metatype definition exists
+    (g) =>
+      g.nodes.has(SYSTEM_IDS.NAMESPACE_DEF)
+        ? ok(g)
+        : addNodeGraph(
+            g,
+            createBootstrapNode(
+              SYSTEM_IDS.NAMESPACE_DEF,
+              SYSTEM_IDS.NODE_TYPE,
+              'Namespace',
+              "Defines a logical partition within the graph's identity space.",
+              {
+                namespace: text('system'),
+                properties: text(JSON.stringify(namespaceProperties)),
+              },
+            ),
+          ),
+
+    // Ensure PropertyType metatype definition exists
+    (g) =>
+      g.nodes.has(SYSTEM_IDS.PROPERTY_TYPE_DEF)
+        ? ok(g)
+        : addNodeGraph(
+            g,
+            createBootstrapNode(
+              SYSTEM_IDS.PROPERTY_TYPE_DEF,
+              SYSTEM_IDS.NODE_TYPE,
+              'Property Type',
+              'Defines a reusable property shape that a NodeType or EdgeType can reference.',
+              {
+                namespace: text('system'),
+                properties: text(JSON.stringify(propertyTypeProperties)),
               },
             ),
           ),
