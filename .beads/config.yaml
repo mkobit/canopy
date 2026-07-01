@@ -60,3 +60,5 @@ export.git-add: false
 export.auto: false
 
 backup.enabled: false
+
+sync.remote: "git+ssh://git@github.com/mkobit/canopy.git"
