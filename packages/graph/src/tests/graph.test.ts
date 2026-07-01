@@ -33,8 +33,8 @@ describe('Core Graph Engine', () => {
     expect(emptyGraph.id).toBe(graphId);
     expect(emptyGraph.name).toBe('Test Graph');
     // Bootstrap adds system nodes (NodeTypes, EdgeTypes, Queries, Views, Settings, Workflow)
-    // 25 nodes total (8 Defs + 5 Core Node Types + 4 Core Edge Types + 3 Queries + 3 Views + 2 Settings schemas)
-    expect(emptyGraph.nodes.size).toBe(25);
+    // 27 nodes total (10 Defs + 5 Core Node Types + 4 Core Edge Types + 3 Queries + 3 Views + 2 Settings schemas)
+    expect(emptyGraph.nodes.size).toBe(27);
     expect(emptyGraph.edges.size).toBe(0);
   });
 
@@ -67,9 +67,9 @@ describe('Core Graph Engine', () => {
       addNode(emptyGraph, node1, { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') }),
     );
     const g1 = r1.graph;
-    expect(g1.nodes.size).toBe(26); // 25 bootstrap + 1 new
+    expect(g1.nodes.size).toBe(28); // 27 bootstrap + 1 new
     expect(g1.nodes.get(nodeId1)).toBe(node1);
-    expect(emptyGraph.nodes.size).toBe(25); // Original unmodified (bootstrap nodes)
+    expect(emptyGraph.nodes.size).toBe(27); // Original unmodified (bootstrap nodes)
 
     expect(r1.events).toHaveLength(1);
     expect(r1.events[0]).toMatchObject({
@@ -84,9 +84,9 @@ describe('Core Graph Engine', () => {
       addNode(g1, node2, { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') }),
     );
     const g2 = r2.graph;
-    expect(g2.nodes.size).toBe(27); // 25 bootstrap + 2 new
+    expect(g2.nodes.size).toBe(29); // 27 bootstrap + 2 new
     expect(g2.nodes.get(nodeId2)).toBe(node2);
-    expect(g1.nodes.size).toBe(26); // Previous version unmodified
+    expect(g1.nodes.size).toBe(28); // Previous version unmodified
 
     expect(r2.events).toHaveLength(1);
     expect(r2.events[0]).toMatchObject({
@@ -174,11 +174,11 @@ describe('Core Graph Engine', () => {
       removeNode(g, nodeId1, { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') }),
     );
     const gRemoved = rRemoved.graph;
-    expect(gRemoved.nodes.size).toBe(26); // 25 bootstrap + 1 remaining node
+    expect(gRemoved.nodes.size).toBe(28); // 27 bootstrap + 1 remaining node
     expect(gRemoved.nodes.has(nodeId1)).toBe(false);
     expect(gRemoved.edges.size).toBe(0); // Edge should be removed
 
-    expect(g.nodes.size).toBe(27); // 25 bootstrap + 2 nodes
+    expect(g.nodes.size).toBe(29); // 27 bootstrap + 2 nodes
     expect(g.edges.size).toBe(1);
 
     // Verify events: 1 node deleted, 1 edge deleted

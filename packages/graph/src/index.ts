@@ -53,6 +53,7 @@ export type { Result } from './result';
 export { ok, err, isOk, isErr, unwrap, fromThrowable, fromAsyncThrowable } from './result';
 
 export type { Namespace } from './namespace';
+export { RESTRICTED_NAMESPACE_KINDS } from './namespace';
 
 export {
   createNodeId,

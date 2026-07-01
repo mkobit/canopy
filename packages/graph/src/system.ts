@@ -4,6 +4,8 @@ export const SYSTEM_IDS = {
   // Types
   NODE_TYPE: asTypeId('node:type:node-type'),
   EDGE_TYPE: asTypeId('node:type:edge-type'),
+  NAMESPACE: asTypeId('node:type:namespace'),
+  PROPERTY_TYPE: asTypeId('node:type:property-type'),
   QUERY_DEFINITION: asTypeId('node:type:query-definition'),
   VIEW_DEFINITION: asTypeId('node:type:view-definition'),
   TEMPLATE: asTypeId('node:type:template'),
@@ -12,6 +14,8 @@ export const SYSTEM_IDS = {
   // Node Type Definitions (these nodes define the types above)
   NODE_TYPE_DEF: asNodeId('node:type:node-type'),
   EDGE_TYPE_DEF: asNodeId('node:type:edge-type'),
+  NAMESPACE_DEF: asNodeId('node:type:namespace'),
+  PROPERTY_TYPE_DEF: asNodeId('node:type:property-type'),
   QUERY_DEFINITION_DEF: asNodeId('node:type:query-definition'),
   VIEW_DEFINITION_DEF: asNodeId('node:type:view-definition'),
   TEMPLATE_DEF: asNodeId('node:type:template'),

@@ -30,6 +30,30 @@ describe('Meta-circular bootstrap', () => {
     expect(rendererDef?.properties.get('name')).toEqual('Renderer');
     expect(rendererDef?.properties.get('namespace')).toEqual('system');
 
+    // Check Namespace definition (self-describing metatype for the Namespace node shape)
+    const namespaceDef = graph.nodes.get(SYSTEM_IDS.NAMESPACE_DEF);
+    expect(namespaceDef).toBeDefined();
+    expect(namespaceDef?.type).toBe(SYSTEM_IDS.NODE_TYPE);
+    expect(namespaceDef?.properties.get('name')).toEqual('Namespace');
+    expect(namespaceDef?.properties.get('namespace')).toEqual('system');
+    expect(
+      JSON.parse(namespaceDef?.properties.get('properties') as string).map(
+        (p: { name: string }) => p.name,
+      ),
+    ).toEqual(['name', 'description', 'kind']);
+
+    // Check PropertyType definition
+    const propertyTypeDef = graph.nodes.get(SYSTEM_IDS.PROPERTY_TYPE_DEF);
+    expect(propertyTypeDef).toBeDefined();
+    expect(propertyTypeDef?.type).toBe(SYSTEM_IDS.NODE_TYPE);
+    expect(propertyTypeDef?.properties.get('name')).toEqual('Property Type');
+    expect(propertyTypeDef?.properties.get('namespace')).toEqual('system');
+    expect(
+      JSON.parse(propertyTypeDef?.properties.get('properties') as string).map(
+        (p: { name: string }) => p.name,
+      ),
+    ).toEqual(['name', 'valueKind', 'description']);
+
     // Check Core Edge Types
     const childOf = graph.nodes.get(SYSTEM_IDS.EDGE_CHILD_OF);
     expect(childOf).toBeDefined();
@@ -91,6 +115,8 @@ describe('Meta-circular bootstrap', () => {
     // So getNodeTypes returns [NODE_TYPE_DEF, EDGE_TYPE_DEF].
     expect(nodeTypes.find((n) => n.id === SYSTEM_IDS.NODE_TYPE_DEF)).toBeDefined();
     expect(nodeTypes.find((n) => n.id === SYSTEM_IDS.EDGE_TYPE_DEF)).toBeDefined();
+    expect(nodeTypes.find((n) => n.id === SYSTEM_IDS.NAMESPACE_DEF)).toBeDefined();
+    expect(nodeTypes.find((n) => n.id === SYSTEM_IDS.PROPERTY_TYPE_DEF)).toBeDefined();
     expect(nodeTypes.length).toBeGreaterThanOrEqual(2);
 
     const edgeTypes = getEdgeTypes(graph);
