@@ -4,9 +4,9 @@ Jules is a scheduled autonomous agent for maintenance tasks.
 
 ## How Jules sessions work
 
-Each Jules session is triggered manually on a schedule by the maintainer typing a prompt in the Jules UI.
-The prompt instructs Jules to read a specific file from `.jules/prompts/` and execute it.
-Jules must not take actions outside the scope defined in that prompt file for the session.
+Recurring maintenance sessions are triggered manually on a schedule by the maintainer typing a prompt in the Jules UI, instructing Jules to read a specific file from `.jules/prompts/` and execute it.
+One-off sessions (e.g. a single mechanical fix) can also be dispatched programmatically via the `jules` CLI (`jules session create --prompt ... --source mkobit/canopy`) from a Claude Code session — these pass their task inline via `--prompt` rather than through a `.jules/prompts/` file.
+Either way, Jules must not take actions outside the scope defined in its prompt for the session.
 
 ## Environment setup
 
@@ -27,8 +27,8 @@ Update `env_setup.sh` manually whenever tooling changes substantially (new mise 
 
 ## Constraints that apply to all Jules sessions
 
-- Do not push to git remotes (`git push`).
-beads is local-only in this repo (no Dolt remote, no JSONL committed) so there is nothing to push.
+- Do not push to git remotes (`git push`) — rely on `--auto-pr` / the PR flow instead.
+- Do not run `bd dolt push`. bd has a Dolt remote configured (crash recovery only, since 2026-07-01) — syncing it is the interactive session's job at session close, not a Jules session's.
 - Do not modify source code unless the prompt explicitly permits it.
 - Do not create beads issues or openspec changes unless the prompt explicitly permits it.
 - Stop at the end of the steps defined in the prompt — do not continue into adjacent work.
