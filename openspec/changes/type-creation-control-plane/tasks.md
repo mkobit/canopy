@@ -13,11 +13,11 @@
 
 ## 3. Type-authoring ops
 
-- [ ] 3.1 Implement `createNamespace(graph, input)` in `packages/graph/src/ops/`: rejects duplicate `name`, rejects `kind: "system"` (or any kind in `RESTRICTED_NAMESPACE_KINDS`)
-- [ ] 3.2 Implement `createNodeType(graph, input)`: resolves `namespace` against an existing `Namespace` node, rejects restricted-kind targets, accepts mixed inline/referenced `properties` list
-- [ ] 3.3 Implement `createEdgeType(graph, input)`: same namespace/restriction check, `sourceTypes`/`targetTypes` stored as best-effort metadata only
-- [ ] 3.4 Implement `createPropertyType(graph, input)`: validates `valueKind` against `PropertyValueKind`, wires into existing `validatePropertyByType` (`validation.ts:241`)
-- [ ] 3.5 Unit tests for all 4 ops: success path, duplicate-name rejection, restricted-namespace rejection, malformed property lists
+- [x] 3.1 Implement `createNamespace(graph, input)` in `packages/graph/src/ops/`: rejects duplicate `name`, rejects `kind: "system"` (or any kind in `RESTRICTED_NAMESPACE_KINDS`)
+- [x] 3.2 Implement `createNodeType(graph, input)`: resolves `namespace` against an existing `Namespace` node, rejects restricted-kind targets, accepts mixed inline/referenced `properties` list
+- [x] 3.3 Implement `createEdgeType(graph, input)`: same namespace/restriction check, `sourceTypes`/`targetTypes` stored as best-effort metadata only
+- [x] 3.4 Implement `createPropertyType(graph, input)`: validates `valueKind` against `PropertyValueKind`, wires into existing `validatePropertyByType` (`validation.ts:241`)
+- [x] 3.5 Unit tests for all 4 ops: success path, duplicate-name rejection, restricted-namespace rejection, malformed property lists
 
 ## 4. Bootstrap and validation tests
 
