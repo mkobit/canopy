@@ -4,12 +4,16 @@ import {
   asGraphId,
   asNodeId,
   asTypeId,
+  createGraph,
+  createGraphId,
   createInstant,
   type Graph,
   type Node,
   asDeviceId,
+  unwrap,
 } from '@canopy/graph';
 import { SYSTEM_IDS } from './system';
+import { createNamespace, removeNode } from './ops';
 
 describe('resolveNamespace', () => {
   const dummyMetadata = {
@@ -167,5 +171,23 @@ describe('parseNamespace', () => {
     // format-valid string that merely resembles the id should still fail.
     const result = parseNamespace(graph, 'namespace-user');
     expect(result.ok).toBe(false);
+  });
+
+  it('fails for a Namespace node that has been deleted', () => {
+    const bootstrapped = unwrap(createGraph(createGraphId(), 'test-graph'));
+    const deviceId = asDeviceId('00000000-0000-0000-0000-000000000000');
+
+    const created = unwrap(
+      createNamespace(bootstrapped, { name: 'research', kind: 'user' }, { deviceId }),
+    );
+    expect(parseNamespace(created.graph, 'research').ok).toBe(true);
+
+    const namespaceNodeId = [...created.graph.nodes.values()].find(
+      (node) => node.type === SYSTEM_IDS.NAMESPACE && node.properties.get('name') === 'research',
+    )?.id;
+    if (namespaceNodeId === undefined) throw new Error('expected created Namespace node');
+
+    const afterDelete = unwrap(removeNode(created.graph, namespaceNodeId, { deviceId }));
+    expect(parseNamespace(afterDelete.graph, 'research').ok).toBe(false);
   });
 });

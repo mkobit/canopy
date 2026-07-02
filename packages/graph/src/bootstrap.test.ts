@@ -4,6 +4,7 @@ import { asGraphId, unwrap } from '@canopy/graph';
 import { SYSTEM_IDS } from './system';
 import { getNodeTypes, getEdgeTypes, getNodeType } from './queries';
 import { parseNamespace } from './resolve-namespace';
+import { RESTRICTED_NAMESPACE_KINDS } from './namespace';
 import { bootstrap } from './bootstrap';
 
 describe('Meta-circular bootstrap', () => {
@@ -110,6 +111,31 @@ describe('Meta-circular bootstrap', () => {
     expect(parseNamespace(graph, 'imported').ok).toBe(true);
     expect(parseNamespace(graph, 'user-settings').ok).toBe(true);
     expect(parseNamespace(graph, 'not-a-real-namespace').ok).toBe(false);
+  });
+
+  it('gives each migrated namespace the kind matching its restriction status', () => {
+    const graph = unwrap(createGraph(asGraphId('test-graph'), 'Test Graph'));
+
+    const kindOf = (id: (typeof SYSTEM_IDS)[keyof typeof SYSTEM_IDS]): unknown =>
+      graph.nodes.get(id)?.properties.get('kind');
+
+    // 'system' is the only migrated namespace RESTRICTED_NAMESPACE_KINDS blocks writes to --
+    // its kind must match, and the other 3 must not collide with a restricted kind.
+    expect(kindOf(SYSTEM_IDS.NAMESPACE_SYSTEM)).toBe('system');
+    expect(RESTRICTED_NAMESPACE_KINDS.has(kindOf(SYSTEM_IDS.NAMESPACE_SYSTEM) as string)).toBe(
+      true,
+    );
+
+    expect(kindOf(SYSTEM_IDS.NAMESPACE_USER)).toBe('user');
+    expect(kindOf(SYSTEM_IDS.NAMESPACE_IMPORTED)).toBe('imported');
+    expect(kindOf(SYSTEM_IDS.NAMESPACE_USER_SETTINGS)).toBe('user-settings');
+    for (const id of [
+      SYSTEM_IDS.NAMESPACE_USER,
+      SYSTEM_IDS.NAMESPACE_IMPORTED,
+      SYSTEM_IDS.NAMESPACE_USER_SETTINGS,
+    ]) {
+      expect(RESTRICTED_NAMESPACE_KINDS.has(kindOf(id) as string)).toBe(false);
+    }
   });
 
   it('is idempotent', () => {
