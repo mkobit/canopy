@@ -21,8 +21,8 @@
 
 ## 4. Bootstrap and validation tests
 
-- [ ] 4.1 Unit tests asserting the 4 migrated namespaces resolve correctly post-migration
-- [ ] 4.2 Unit tests for the rewritten namespace validity check (valid name, unknown name, deleted `Namespace` node)
+- [x] 4.1 Unit tests asserting the 4 migrated namespaces resolve correctly post-migration
+- [x] 4.2 Unit tests for the rewritten namespace validity check (valid name, unknown name, deleted `Namespace` node)
 
 ## 5. Schema UI
 
