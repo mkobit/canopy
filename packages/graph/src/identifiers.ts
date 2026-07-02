@@ -4,6 +4,7 @@ export declare const typeIdBrand: unique symbol;
 export declare const graphIdBrand: unique symbol;
 export declare const eventIdBrand: unique symbol;
 export declare const deviceIdBrand: unique symbol;
+export declare const namespaceBrand: unique symbol;
 
 /**
  * Unique identifier for a node within a graph.
@@ -34,3 +35,9 @@ export type EventId = string & Readonly<{ [eventIdBrand]: never }>;
  * Unique identifier for a device originating an event.
  */
 export type DeviceId = string & Readonly<{ [deviceIdBrand]: never }>;
+
+/**
+ * Name of a logical partition within a graph's identity space.
+ * Restricted to URI path-segment characters (RFC 3986 unreserved: ALPHA / DIGIT / "-" / "." / "_" / "~").
+ */
+export type Namespace = string & Readonly<{ [namespaceBrand]: never }>;

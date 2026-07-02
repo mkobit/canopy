@@ -31,6 +31,12 @@ export const SYSTEM_IDS = {
   VIEW_BY_TYPE: asNodeId('view:system:by-type'),
   VIEW_RECENT: asNodeId('view:system:recent'),
 
+  // Namespace instance nodes (migrated from the old 4-literal enum)
+  NAMESPACE_SYSTEM: asNodeId('namespace:system'),
+  NAMESPACE_USER: asNodeId('namespace:user'),
+  NAMESPACE_IMPORTED: asNodeId('namespace:imported'),
+  NAMESPACE_USER_SETTINGS: asNodeId('namespace:user-settings'),
+
   // Settings type definitions
   SETTINGS_SCHEMA_DEF: asNodeId('system:nodetype:settings-schema'),
   USER_SETTING_DEF: asNodeId('system:nodetype:user-setting'),

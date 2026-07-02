@@ -1,15 +1,15 @@
 ## 1. Namespace and PropertyType metatypes
 
-- [ ] 1.1 Add `NAMESPACE_DEF`/`NAMESPACE` and `PROPERTY_TYPE_DEF`/`PROPERTY_TYPE` entries to `packages/graph/src/system.ts`, following the existing self-describing `NODE_TYPE`/`EDGE_TYPE` pattern
-- [ ] 1.2 Define the `Namespace` node shape (`name`, `description`, `kind`) and `PropertyType` node shape (`name`, `valueKind`, `description`) as NodeType definitions in bootstrap, validated by the existing `validateNode`/`extractNodeTypeDefinition` machinery
-- [ ] 1.3 Add `RESTRICTED_NAMESPACE_KINDS` (initially `{"system"}`) to `packages/graph/src/namespace.ts`
+- [x] 1.1 Add `NAMESPACE_DEF`/`NAMESPACE` and `PROPERTY_TYPE_DEF`/`PROPERTY_TYPE` entries to `packages/graph/src/system.ts`, following the existing self-describing `NODE_TYPE`/`EDGE_TYPE` pattern
+- [x] 1.2 Define the `Namespace` node shape (`name`, `description`, `kind`) and `PropertyType` node shape (`name`, `valueKind`, `description`) as NodeType definitions in bootstrap, validated by the existing `validateNode`/`extractNodeTypeDefinition` machinery
+- [x] 1.3 Add `RESTRICTED_NAMESPACE_KINDS` (initially `{"system"}`) to `packages/graph/src/namespace.ts`
 
 ## 2. Bootstrap migration
 
-- [ ] 2.1 Add a bootstrap migration step emitting `NodeCreated` events for 4 `Namespace` nodes: `system` (kind: `"system"`), `user`, `imported`, `user-settings` (non-restricted kind), tagged with migration metadata per the existing bootstrap convention
-- [ ] 2.2 Audit all call sites in `namespace.ts`, `resolve-namespace.ts`, and any cross-package usage (`@canopy/settings`, `@canopy/storage`) that reference the 4 namespace strings, confirming none special-case the literal union type itself (only the string values)
-- [ ] 2.3 Rewrite namespace validity checks in `validation.ts`/`resolve-namespace.ts` to look up a non-deleted `Namespace` node by `name`, replacing the old 4-literal enum check
-- [ ] 2.4 Remove the old closed `Namespace` string-union type once nothing references it
+- [x] 2.1 Add a bootstrap migration step emitting `NodeCreated` events for 4 `Namespace` nodes: `system` (kind: `"system"`), `user`, `imported`, `user-settings` (non-restricted kind), tagged with migration metadata per the existing bootstrap convention
+- [x] 2.2 Audit all call sites in `namespace.ts`, `resolve-namespace.ts`, and any cross-package usage (`@canopy/settings`, `@canopy/storage`) that reference the 4 namespace strings, confirming none special-case the literal union type itself (only the string values)
+- [x] 2.3 Rewrite namespace validity checks in `validation.ts`/`resolve-namespace.ts` to look up a non-deleted `Namespace` node by `name`, replacing the old 4-literal enum check
+- [x] 2.4 Remove the old closed `Namespace` string-union type once nothing references it
 
 ## 3. Type-authoring ops
 

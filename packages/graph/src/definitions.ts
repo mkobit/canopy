@@ -1,6 +1,5 @@
-import type { TypeId } from './identifiers';
+import type { TypeId, Namespace } from './identifiers';
 import type { PropertyDefinition } from './properties';
-import type { Namespace } from './namespace';
 
 /**
  * Defines a node type in the meta-circular type system.

@@ -10,8 +10,11 @@ import { SYSTEM_IDS, SYSTEM_EDGE_TYPES } from './system';
 
 export const SYSTEM_DEVICE_ID = asDeviceId('00000000-0000-0000-0000-000000000000');
 
-function addNodeGraph(graph: Graph, node: Node): Result<Graph, Error> {
-  const result = addNode(graph, node, { deviceId: SYSTEM_DEVICE_ID });
+function addNodeGraph(graph: Graph, node: Node, migrationId?: string): Result<Graph, Error> {
+  const result = addNode(graph, node, {
+    deviceId: SYSTEM_DEVICE_ID,
+    ...(migrationId === undefined ? {} : { migrationId }),
+  });
   if (result.ok) {
     return ok(result.value.graph);
   }
@@ -502,6 +505,35 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
           ),
   ];
 
+  // Migration: the 4 previously-hardcoded namespace strings become real Namespace nodes.
+  const NAMESPACE_MIGRATION_ID = 'migrate-hardcoded-namespaces-to-nodes';
+  const namespaceMigrations = [
+    {
+      id: SYSTEM_IDS.NAMESPACE_SYSTEM,
+      name: 'system',
+      kind: 'system',
+      description: 'Namespace for system-owned definitions and metadata.',
+    },
+    {
+      id: SYSTEM_IDS.NAMESPACE_USER,
+      name: 'user',
+      kind: 'user',
+      description: 'Default namespace for user-created content.',
+    },
+    {
+      id: SYSTEM_IDS.NAMESPACE_IMPORTED,
+      name: 'imported',
+      kind: 'imported',
+      description: 'Namespace for content imported from external sources.',
+    },
+    {
+      id: SYSTEM_IDS.NAMESPACE_USER_SETTINGS,
+      name: 'user-settings',
+      kind: 'user-settings',
+      description: 'Namespace for user setting override nodes.',
+    },
+  ] as const;
+
   // 4. Core Node Types (Content Blocks and Settings)
   const coreNodeTypes = [
     {
@@ -777,6 +809,21 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
   // Chain everything
   const allSteps: readonly ((g: Graph) => Result<Graph, Error>)[] = [
     ...steps,
+    (g) =>
+      reduceResult(
+        namespaceMigrations,
+        (cg, def) =>
+          cg.nodes.has(def.id)
+            ? ok(cg)
+            : addNodeGraph(
+                cg,
+                createBootstrapNode(def.id, SYSTEM_IDS.NAMESPACE, def.name, def.description, {
+                  kind: text(def.kind),
+                }),
+                NAMESPACE_MIGRATION_ID,
+              ),
+        g,
+      ),
     (g) =>
       reduceResult(
         coreNodeTypes,
