@@ -5,12 +5,14 @@ export type {
   graphIdBrand,
   eventIdBrand,
   deviceIdBrand,
+  namespaceBrand,
   NodeId,
   EdgeId,
   TypeId,
   GraphId,
   EventId,
   DeviceId,
+  Namespace,
 } from './identifiers';
 
 export type {
@@ -52,7 +54,6 @@ export type { ValidationResult, ValidationError } from './validation-types';
 export type { Result } from './result';
 export { ok, err, isOk, isErr, unwrap, fromThrowable, fromAsyncThrowable } from './result';
 
-export type { Namespace } from './namespace';
 export { RESTRICTED_NAMESPACE_KINDS } from './namespace';
 
 export {
@@ -72,6 +73,7 @@ export {
   asEventId,
   createDeviceId,
   asDeviceId,
+  asNamespace,
 } from './factories';
 
 export * from './schemas';

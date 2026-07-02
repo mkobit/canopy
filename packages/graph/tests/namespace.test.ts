@@ -6,6 +6,7 @@ import { SYSTEM_IDS } from '../src/system';
 import {
   createNodeId,
   asTypeId,
+  asNamespace,
   createInstant,
   PropertyValue,
   Node,
@@ -77,25 +78,25 @@ describe('namespace utilities', () => {
       addNode(graph, node4, { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') }),
     ).graph;
 
-    const importedNodes = getNodesInNamespace(graph, 'imported');
+    const importedNodes = getNodesInNamespace(graph, asNamespace('imported'));
     expect(importedNodes.length).toBe(3); // The type definition itself, node1, and node3
     expect(importedNodes.map((n) => n.id).toSorted()).toEqual(
       [importedType.id, node1.id, node3.id].toSorted(),
     );
 
-    const userSettingsNodes = getNodesInNamespace(graph, 'user-settings').filter((n) =>
+    const userSettingsNodes = getNodesInNamespace(graph, asNamespace('user-settings')).filter((n) =>
       [importedType.id, normalType.id, node1.id, node2.id, node3.id, node4.id].includes(n.id),
     );
     expect(userSettingsNodes.length).toBe(1);
     expect(userSettingsNodes[0].id).toBe(node2.id);
 
-    const userNodes = getNodesInNamespace(graph, 'user').filter((n) =>
+    const userNodes = getNodesInNamespace(graph, asNamespace('user')).filter((n) =>
       [importedType.id, normalType.id, node1.id, node2.id, node3.id, node4.id].includes(n.id),
     );
     expect(userNodes.length).toBe(1); // node4 defaults to user
     expect(userNodes[0].id).toBe(node4.id);
 
-    const systemNodes = getNodesInNamespace(graph, 'system').filter((n) =>
+    const systemNodes = getNodesInNamespace(graph, asNamespace('system')).filter((n) =>
       [importedType.id, normalType.id, node1.id, node2.id, node3.id, node4.id].includes(n.id),
     );
     expect(systemNodes.length).toBe(1); // normalType definition resolves to system because its type is NODE_TYPE which has 'system' namespace

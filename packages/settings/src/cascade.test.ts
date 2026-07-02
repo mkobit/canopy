@@ -4,6 +4,7 @@ import {
   asGraphId,
   asNodeId,
   asTypeId,
+  asNamespace,
   unwrap,
   createInstant,
   SYSTEM_IDS,
@@ -32,7 +33,7 @@ describe('Settings Resolver', () => {
     const nodeId = asNodeId('test:node');
     const typeId = asTypeId('test:type');
 
-    const value = resolveSetting(graph, 'unknown-setting-key', nodeId, typeId, 'user');
+    const value = resolveSetting(graph, 'unknown-setting-key', nodeId, typeId, asNamespace('user'));
     expect(value).toBeUndefined();
   });
 
@@ -42,7 +43,7 @@ describe('Settings Resolver', () => {
     const typeId = asTypeId('test:type');
 
     // Default value for display-density is "comfortable"
-    const value = resolveSetting(graph, 'display-density', nodeId, typeId, 'user');
+    const value = resolveSetting(graph, 'display-density', nodeId, typeId, asNamespace('user'));
     expect(value).toBe('comfortable');
   });
 
@@ -70,7 +71,7 @@ describe('Settings Resolver', () => {
     const nodeId = asNodeId('test:node');
     const typeId = asTypeId('test:type');
 
-    const value = resolveSetting(graph, 'display-density', nodeId, typeId, 'user');
+    const value = resolveSetting(graph, 'display-density', nodeId, typeId, asNamespace('user'));
     expect(value).toBe('compact');
   });
 
@@ -116,11 +117,11 @@ describe('Settings Resolver', () => {
     const typeId = asTypeId('test:type');
 
     // user namespace should hit namespace setting
-    let value = resolveSetting(graph, 'default-renderer', nodeId, typeId, 'user');
+    let value = resolveSetting(graph, 'default-renderer', nodeId, typeId, asNamespace('user'));
     expect(value).toBe('namespace-renderer');
 
     // system namespace should fallback to global setting
-    value = resolveSetting(graph, 'default-renderer', nodeId, typeId, 'system');
+    value = resolveSetting(graph, 'default-renderer', nodeId, typeId, asNamespace('system'));
     expect(value).toBe('global-renderer');
   });
 
@@ -165,12 +166,12 @@ describe('Settings Resolver', () => {
     const nodeId = asNodeId('test:node');
 
     // Specific type should hit type setting
-    let value = resolveSetting(graph, 'default-renderer', nodeId, typeId, 'user');
+    let value = resolveSetting(graph, 'default-renderer', nodeId, typeId, asNamespace('user'));
     expect(value).toBe('type-renderer');
 
     // Other type should fallback to namespace setting
     const otherTypeId = asTypeId('test:other-type');
-    value = resolveSetting(graph, 'default-renderer', nodeId, otherTypeId, 'user');
+    value = resolveSetting(graph, 'default-renderer', nodeId, otherTypeId, asNamespace('user'));
     expect(value).toBe('namespace-renderer');
   });
 
@@ -214,12 +215,12 @@ describe('Settings Resolver', () => {
     graph = unwrap(addNode(graph, nodeSetting, { deviceId: SYSTEM_DEVICE_ID })).graph;
 
     // Specific node should hit node setting
-    let value = resolveSetting(graph, 'default-renderer', nodeId, typeId, 'user');
+    let value = resolveSetting(graph, 'default-renderer', nodeId, typeId, asNamespace('user'));
     expect(value).toBe('node-renderer');
 
     // Other node should fallback to type setting
     const otherNodeId = asNodeId('test:other-node');
-    value = resolveSetting(graph, 'default-renderer', otherNodeId, typeId, 'user');
+    value = resolveSetting(graph, 'default-renderer', otherNodeId, typeId, asNamespace('user'));
     expect(value).toBe('type-renderer');
   });
 });

@@ -3,6 +3,7 @@ import { createGraph } from './create-graph';
 import { asGraphId, unwrap } from '@canopy/graph';
 import { SYSTEM_IDS } from './system';
 import { getNodeTypes, getEdgeTypes, getNodeType } from './queries';
+import { parseNamespace } from './resolve-namespace';
 import { bootstrap } from './bootstrap';
 
 describe('Meta-circular bootstrap', () => {
@@ -42,6 +43,28 @@ describe('Meta-circular bootstrap', () => {
       ),
     ).toEqual(['name', 'description', 'kind']);
 
+    // Check migrated Namespace instance nodes
+    const systemNs = graph.nodes.get(SYSTEM_IDS.NAMESPACE_SYSTEM);
+    expect(systemNs).toBeDefined();
+    expect(systemNs?.type).toBe(SYSTEM_IDS.NAMESPACE);
+    expect(systemNs?.properties.get('name')).toEqual('system');
+    expect(systemNs?.properties.get('kind')).toEqual('system');
+
+    const userNs = graph.nodes.get(SYSTEM_IDS.NAMESPACE_USER);
+    expect(userNs).toBeDefined();
+    expect(userNs?.type).toBe(SYSTEM_IDS.NAMESPACE);
+    expect(userNs?.properties.get('name')).toEqual('user');
+
+    const importedNs = graph.nodes.get(SYSTEM_IDS.NAMESPACE_IMPORTED);
+    expect(importedNs).toBeDefined();
+    expect(importedNs?.type).toBe(SYSTEM_IDS.NAMESPACE);
+    expect(importedNs?.properties.get('name')).toEqual('imported');
+
+    const userSettingsNs = graph.nodes.get(SYSTEM_IDS.NAMESPACE_USER_SETTINGS);
+    expect(userSettingsNs).toBeDefined();
+    expect(userSettingsNs?.type).toBe(SYSTEM_IDS.NAMESPACE);
+    expect(userSettingsNs?.properties.get('name')).toEqual('user-settings');
+
     // Check PropertyType definition
     const propertyTypeDef = graph.nodes.get(SYSTEM_IDS.PROPERTY_TYPE_DEF);
     expect(propertyTypeDef).toBeDefined();
@@ -77,6 +100,16 @@ describe('Meta-circular bootstrap', () => {
     const displayDensity = graph.nodes.get(SYSTEM_IDS.SETTING_DISPLAY_DENSITY);
     expect(displayDensity).toBeDefined();
     expect(displayDensity?.type).toBe(SYSTEM_IDS.SETTINGS_SCHEMA);
+  });
+
+  it('migrates the 4 previously-hardcoded namespaces so they resolve as valid', () => {
+    const graph = unwrap(createGraph(asGraphId('test-graph'), 'Test Graph'));
+
+    expect(parseNamespace(graph, 'system').ok).toBe(true);
+    expect(parseNamespace(graph, 'user').ok).toBe(true);
+    expect(parseNamespace(graph, 'imported').ok).toBe(true);
+    expect(parseNamespace(graph, 'user-settings').ok).toBe(true);
+    expect(parseNamespace(graph, 'not-a-real-namespace').ok).toBe(false);
   });
 
   it('is idempotent', () => {

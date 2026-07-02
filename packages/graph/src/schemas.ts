@@ -6,7 +6,7 @@ import type { Node } from './node';
 import type { Edge } from './edge';
 import type { NodeTypeDefinition, EdgeTypeDefinition } from './definitions';
 import type { Graph } from './graph';
-import type { NodeId, EdgeId } from './identifiers';
+import type { NodeId, EdgeId, Namespace } from './identifiers';
 
 import {
   asNodeId,
@@ -16,6 +16,7 @@ import {
   asInstant,
   asPlainDate,
   asDeviceId,
+  asNamespace,
 } from './factories';
 
 // Helpers to transform strings to branded types using the "as" casters from types.
@@ -28,7 +29,13 @@ export const TypeIdSchema = z.string().min(1).transform(asTypeId);
 export const GraphIdSchema = z.string().uuid().transform(asGraphId);
 export const DeviceIdSchema = z.string().uuid().transform(asDeviceId);
 
-export const NamespaceSchema = z.enum(['system', 'user', 'imported', 'user-settings']);
+export const NamespaceSchema: z.ZodType<Namespace, unknown> = z
+  .string()
+  .regex(
+    /^[A-Za-z0-9._~-]+$/,
+    'Namespace must be a valid URI path segment (unreserved characters only)',
+  )
+  .transform(asNamespace);
 
 export const InstantSchema: z.ZodType<Instant, unknown> = z
   .string()

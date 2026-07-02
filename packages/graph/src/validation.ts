@@ -4,12 +4,12 @@ import type { Edge } from './edge';
 import type { NodeTypeDefinition, EdgeTypeDefinition } from './definitions';
 import type { ValidationResult, ValidationError } from './validation-types';
 import type { PropertyDefinition, PropertyValue, PropertyValueKind } from './properties';
-import type { NodeId, TypeId } from './identifiers';
-import type { Namespace } from './namespace';
-import { asTypeId, asNodeId } from './factories';
+import type { NodeId, TypeId, Namespace } from './identifiers';
+import { asTypeId, asNodeId, asNamespace } from './factories';
 import { fromThrowable } from './result';
 import { PropertyDefinitionSchema } from './schemas';
 import { getNodeType } from './queries';
+import { parseNamespace } from './resolve-namespace';
 import { SYSTEM_IDS } from './system';
 import { pipe, map, flatMap, filter } from 'remeda';
 
@@ -60,18 +60,22 @@ function extractTypeIdList(val: PropertyValue | undefined): readonly TypeId[] {
   return [];
 }
 
-function extractEdgeTypeDefinition(node: Node): EdgeTypeDefinition | undefined {
+// Resolves a raw 'namespace' property value against known Namespace nodes, defaulting to 'user'.
+function extractNamespace(graph: Graph, namespaceProp: PropertyValue | undefined): Namespace {
+  if (typeof namespaceProp === 'string') {
+    const parsed = parseNamespace(graph, namespaceProp);
+    if (parsed.ok) {
+      return parsed.value;
+    }
+  }
+  return asNamespace('user');
+}
+
+function extractEdgeTypeDefinition(graph: Graph, node: Node): EdgeTypeDefinition | undefined {
   const name = node.properties.get('name');
   const description = node.properties.get('description');
 
-  const namespaceProp = node.properties.get('namespace');
-  const namespace: Namespace =
-    namespaceProp === 'system' ||
-    namespaceProp === 'user' ||
-    namespaceProp === 'imported' ||
-    namespaceProp === 'user-settings'
-      ? (namespaceProp as Namespace)
-      : 'user';
+  const namespace = extractNamespace(graph, node.properties.get('namespace'));
 
   const properties = extractProperties(node);
 
@@ -97,20 +101,13 @@ function extractEdgeTypeDefinition(node: Node): EdgeTypeDefinition | undefined {
   };
 }
 
-function extractNodeTypeDefinition(node: Node): NodeTypeDefinition {
+function extractNodeTypeDefinition(graph: Graph, node: Node): NodeTypeDefinition {
   const properties = extractProperties(node);
 
   const name = node.properties.get('name');
   const description = node.properties.get('description');
 
-  const namespaceProp = node.properties.get('namespace');
-  const namespace: Namespace =
-    namespaceProp === 'system' ||
-    namespaceProp === 'user' ||
-    namespaceProp === 'imported' ||
-    namespaceProp === 'user-settings'
-      ? (namespaceProp as Namespace)
-      : 'user';
+  const namespace = extractNamespace(graph, node.properties.get('namespace'));
 
   const validOutgoingEdges = extractTypeIdList(node.properties.get('validOutgoingEdges'));
   const validIncomingEdges = extractTypeIdList(node.properties.get('validIncomingEdges'));
@@ -207,7 +204,7 @@ export function validateNode(graph: Graph, node: Node): ValidationResult {
     return SUCCESS;
   }
 
-  const def = extractNodeTypeDefinition(defNode);
+  const def = extractNodeTypeDefinition(graph, defNode);
 
   // 2. Validate properties
   const errors = validateProperties(node.properties, def.properties);
@@ -297,7 +294,7 @@ function validateNodeTypeEdgeConstraints(graph: Graph, edge: Edge): readonly Val
     if (!sourceNode) return [];
     const sourceTypeDef = getNodeTypeDefinition(graph, sourceNode.type);
     if (!sourceTypeDef) return [];
-    const sourceDef = extractNodeTypeDefinition(sourceTypeDef);
+    const sourceDef = extractNodeTypeDefinition(graph, sourceTypeDef);
     if (sourceDef.validOutgoingEdges.length === 0) return [];
     if (sourceDef.validOutgoingEdges.includes(edge.type)) return [];
     return [
@@ -314,7 +311,7 @@ function validateNodeTypeEdgeConstraints(graph: Graph, edge: Edge): readonly Val
     if (!targetNode) return [];
     const targetTypeDef = getNodeTypeDefinition(graph, targetNode.type);
     if (!targetTypeDef) return [];
-    const targetDef = extractNodeTypeDefinition(targetTypeDef);
+    const targetDef = extractNodeTypeDefinition(graph, targetTypeDef);
     if (targetDef.validIncomingEdges.length === 0) return [];
     if (targetDef.validIncomingEdges.includes(edge.type)) return [];
     return [
@@ -339,7 +336,7 @@ export function validateEdge(graph: Graph, edge: Edge): ValidationResult {
   // 2. Validate edge-type-level constraints (source/target types, properties)
   const edgeTypeErrors: readonly ValidationError[] = (() => {
     if (!defNode) return [];
-    const def = extractEdgeTypeDefinition(defNode);
+    const def = extractEdgeTypeDefinition(graph, defNode);
     if (!def) return [];
 
     const sourceErrors = pipe(

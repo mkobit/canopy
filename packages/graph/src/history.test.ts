@@ -107,8 +107,8 @@ describe('time-travel', () => {
       const result = await getGraphAt(store, graphId, { eventId: createEventId() });
       const graph = unwrap(result);
 
-      // An empty graph has 27 bootstrap nodes, so it is not completely empty.
-      expect(graph.nodes.size).toBe(27);
+      // An empty graph has 31 bootstrap nodes, so it is not completely empty.
+      expect(graph.nodes.size).toBe(31);
     });
 
     it('returns a graph with nodes created up to a specific eventId', async () => {
@@ -129,8 +129,8 @@ describe('time-travel', () => {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       expect(graph.nodes.has(events[2]!.id)).toBe(false);
 
-      // 27 bootstrap + 2 new
-      expect(graph.nodes.size).toBe(29);
+      // 31 bootstrap + 2 new
+      expect(graph.nodes.size).toBe(33);
     });
 
     it('returns a graph with nodes created up to a specific timestamp', async () => {
@@ -151,8 +151,8 @@ describe('time-travel', () => {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       expect(graph.nodes.has(events[2]!.id)).toBe(false);
 
-      // 27 bootstrap + 2 new
-      expect(graph.nodes.size).toBe(29);
+      // 31 bootstrap + 2 new
+      expect(graph.nodes.size).toBe(33);
     });
 
     it('returns a graph with all nodes when given the last eventId', async () => {
@@ -173,8 +173,8 @@ describe('time-travel', () => {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       expect(graph.nodes.has(events[2]!.id)).toBe(true);
 
-      // 27 bootstrap + 3 new
-      expect(graph.nodes.size).toBe(30);
+      // 31 bootstrap + 3 new
+      expect(graph.nodes.size).toBe(34);
     });
   });
 });

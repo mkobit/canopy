@@ -1,6 +1,6 @@
 import { v7 as uuidv7 } from 'uuid';
 import { Temporal } from 'temporal-polyfill';
-import type { NodeId, EdgeId, TypeId, GraphId, EventId, DeviceId } from './identifiers';
+import type { NodeId, EdgeId, TypeId, GraphId, EventId, DeviceId, Namespace } from './identifiers';
 import type { Instant, PlainDate } from './temporal';
 import type { Result } from './result';
 import { err, fromThrowable } from './result';
@@ -97,4 +97,10 @@ export function asNodeId(id: string): NodeId {
 
 export function asEdgeId(id: string): EdgeId {
   return id as EdgeId;
+}
+
+// Trusted cast for already-known-good values (e.g. after NamespaceSchema/parseNamespace validation).
+// Format validation lives in NamespaceSchema (schemas.ts) and parseNamespace (resolve-namespace.ts).
+export function asNamespace(name: string): Namespace {
+  return name as Namespace;
 }

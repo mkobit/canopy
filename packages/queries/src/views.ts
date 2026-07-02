@@ -182,6 +182,7 @@ const SYSTEM_ID_PREFIXES = [
   'query:system:',
   'view:system:',
   'system:',
+  'namespace:',
 ] as const;
 
 export function isSystemNode(node: Node): boolean {
