@@ -308,3 +308,162 @@ describe('bootstrap bridge — context integration', () => {
     );
   });
 });
+
+async function loadBootstrappedGraph(id: ReturnType<typeof asGraphId>, name: string) {
+  const { result } = renderHook(() => useTestContext(), { wrapper });
+
+  await waitFor(() => {
+    expect(result.current.storageReady).toBe(true);
+  });
+
+  const graphResult = createGraph(id, name);
+  expect(graphResult.ok).toBe(true);
+  if (!graphResult.ok) throw graphResult.error;
+
+  const engine = createSyncEngine({});
+  [...graphResult.value.nodes.values()].map((node) =>
+    engine.store.addNode({ id: node.id, type: node.type, properties: node.properties }),
+  );
+
+  await act(async () => {
+    await result.current.storage?.save(id, engine.getSnapshot(), {
+      id,
+      name,
+      createdAt: Temporal.Now.instant().toString(),
+      updatedAt: Temporal.Now.instant().toString(),
+    });
+  });
+
+  await act(async () => {
+    await result.current.loadGraph(id);
+  });
+
+  return result;
+}
+
+describe('type-authoring bridge — context integration', () => {
+  it('createNamespace persists a Namespace node reachable after save/load', async () => {
+    const id = asGraphId('test-type-authoring-namespace');
+    const result = await loadBootstrappedGraph(id, 'Namespace Test');
+
+    let namespaceId: NodeId | undefined;
+    await act(async () => {
+      const res = await result.current.createNamespace({ name: 'my-namespace', kind: 'user' });
+      expect(res.ok).toBe(true);
+      if (res.ok) namespaceId = res.value;
+    });
+
+    expect(namespaceId).toBeDefined();
+    if (!namespaceId) return;
+    expect(result.current.graph?.nodes.get(namespaceId)?.properties.get('name')).toBe(
+      'my-namespace',
+    );
+  });
+
+  it('createNamespace rejects a restricted kind and creates nothing', async () => {
+    const id = asGraphId('test-type-authoring-namespace-restricted');
+    const result = await loadBootstrappedGraph(id, 'Namespace Restricted Test');
+
+    const beforeCount = result.current.graph?.nodes.size;
+
+    await act(async () => {
+      const res = await result.current.createNamespace({ name: 'sneaky', kind: 'system' });
+      expect(res.ok).toBe(false);
+    });
+
+    expect(result.current.graph?.nodes.size).toBe(beforeCount);
+  });
+
+  it('createNodeType in a restricted namespace is rejected', async () => {
+    const id = asGraphId('test-type-authoring-nodetype-restricted');
+    const result = await loadBootstrappedGraph(id, 'NodeType Restricted Test');
+
+    await act(async () => {
+      const res = await result.current.createNodeType({
+        name: 'sneaky-type',
+        namespace: 'system',
+        properties: [],
+      });
+      expect(res.ok).toBe(false);
+    });
+  });
+
+  it('createPropertyType then createNodeType referencing it resolves an inline PropertyDefinition', async () => {
+    const id = asGraphId('test-type-authoring-property-reference');
+    const result = await loadBootstrappedGraph(id, 'Property Reference Test');
+
+    let propertyTypeId: NodeId | undefined;
+    await act(async () => {
+      const res = await result.current.createPropertyType({
+        name: 'priority',
+        namespace: 'user',
+        valueKind: 'number',
+      });
+      expect(res.ok).toBe(true);
+      if (res.ok) propertyTypeId = res.value;
+    });
+
+    expect(propertyTypeId).toBeDefined();
+    if (!propertyTypeId) return;
+    const referencedPropertyTypeId = propertyTypeId;
+
+    let nodeTypeId: NodeId | undefined;
+    await act(async () => {
+      const res = await result.current.createNodeType({
+        name: 'task',
+        namespace: 'user',
+        properties: [
+          { kind: 'reference', propertyTypeId: referencedPropertyTypeId, required: true },
+        ],
+      });
+      expect(res.ok).toBe(true);
+      if (res.ok) nodeTypeId = res.value;
+    });
+
+    expect(nodeTypeId).toBeDefined();
+    if (!nodeTypeId) return;
+    const raw = result.current.graph?.nodes.get(nodeTypeId)?.properties.get('properties');
+    if (typeof raw !== 'string') throw new Error('expected properties to be a JSON string');
+    const parsed: unknown = JSON.parse(raw);
+    expect(parsed).toEqual([
+      { name: 'priority', valueKind: 'number', required: true, description: undefined },
+    ]);
+  });
+
+  it('createEdgeType persists sourceTypes/targetTypes', async () => {
+    const id = asGraphId('test-type-authoring-edgetype');
+    const result = await loadBootstrappedGraph(id, 'EdgeType Test');
+
+    await act(async () => {
+      const res = await result.current.createNodeType({
+        name: 'task',
+        namespace: 'user',
+        properties: [],
+      });
+      expect(res.ok).toBe(true);
+    });
+
+    const taskType = [...(result.current.graph?.nodes.values() ?? [])].find(
+      (n) => n.properties.get('name') === 'task',
+    );
+    expect(taskType).toBeDefined();
+    if (!taskType) return;
+
+    await act(async () => {
+      const res = await result.current.createEdgeType({
+        name: 'blocks',
+        namespace: 'user',
+        properties: [],
+        sourceTypes: [taskType.id],
+        targetTypes: [taskType.id],
+      });
+      expect(res.ok).toBe(true);
+    });
+
+    const edgeType = [...(result.current.graph?.nodes.values() ?? [])].find(
+      (n) => n.properties.get('name') === 'blocks',
+    );
+    expect(edgeType?.properties.get('sourceTypes')).toEqual([taskType.id]);
+    expect(edgeType?.properties.get('targetTypes')).toEqual([taskType.id]);
+  });
+});

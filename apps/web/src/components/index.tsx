@@ -39,3 +39,13 @@ export { DocumentRenderer, type DocumentRendererProps } from './renderers/docume
 
 // Quick Entry
 export { QuickEntryOverlay, type QuickEntryOverlayProps } from './graph/quick-entry-overlay';
+
+// Schema
+export { PropertyListEditor, type PropertyListEditorProps } from './schema/property-list-editor';
+export { NamespaceCreateForm, type NamespaceCreateFormProps } from './schema/namespace-create-form';
+export { NodeTypeCreateForm, type NodeTypeCreateFormProps } from './schema/node-type-create-form';
+export { EdgeTypeCreateForm, type EdgeTypeCreateFormProps } from './schema/edge-type-create-form';
+export {
+  PropertyTypeCreateForm,
+  type PropertyTypeCreateFormProps,
+} from './schema/property-type-create-form';

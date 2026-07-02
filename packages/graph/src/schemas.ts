@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { Instant, PlainDate, TemporalMetadata } from './temporal';
+import { PROPERTY_VALUE_KINDS } from './properties';
 import type { PropertyValue, PropertyDefinition, PropertyValueKind } from './properties';
 import type { ScalarValue } from './scalars';
 import type { Node } from './node';
@@ -73,16 +74,8 @@ export const PropertyValueSchema: z.ZodType<PropertyValue, unknown> = z.union([
   z.array(ScalarValueSchema),
 ]);
 
-export const PropertyValueKindSchema: z.ZodType<PropertyValueKind, unknown> = z.enum([
-  'text',
-  'number',
-  'boolean',
-  'instant',
-  'plain-date',
-  'reference',
-  'external-reference',
-  'list',
-]);
+export const PropertyValueKindSchema: z.ZodType<PropertyValueKind, unknown> =
+  z.enum(PROPERTY_VALUE_KINDS);
 
 export const PropertyDefinitionSchema: z.ZodType<PropertyDefinition, unknown> = z
   .object({

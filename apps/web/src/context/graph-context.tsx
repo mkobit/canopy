@@ -10,12 +10,59 @@ import type {
   Node,
   Edge,
   Result,
+  GraphEvent,
+  GraphResult,
+  NodeCreated,
+  ValidationError,
+  CreateNamespaceInput,
+  CreateNodeTypeInput,
+  CreateEdgeTypeInput,
+  CreatePropertyTypeInput,
 } from '@canopy/graph';
 import { asInstant, ok, err, fromThrowable, fromAsyncThrowable } from '@canopy/graph';
+import {
+  createNamespace as createNamespaceOp,
+  createNodeType as createNodeTypeOp,
+  createEdgeType as createEdgeTypeOp,
+  createPropertyType as createPropertyTypeOp,
+} from '@canopy/graph';
 import { useStorage } from './storage-context';
 import { z } from 'zod';
 import { TypeIdSchema, PropertyValueSchema } from '@canopy/graph';
 import { Temporal } from 'temporal-polyfill';
+
+const PLACEHOLDER_DEVICE_ID = asDeviceId('00000000-0000-0000-0000-000000000000');
+
+function validationErrorToError(validationError: ValidationError): Error {
+  return new Error(
+    validationError.path.length > 0
+      ? `${validationError.path.join('.')}: ${validationError.message}`
+      : validationError.message,
+  );
+}
+
+function isNodeCreated(event: GraphEvent): event is NodeCreated {
+  return event.type === 'NodeCreated';
+}
+
+// Type-authoring ops compute against the pure `Graph` snapshot; apply here by replaying
+// the NodeCreated event onto the Yjs-backed store, the app's actual persistence path.
+function applyCreatedNode(
+  engine: SyncEngine,
+  graphResult: GraphResult<Graph>,
+): Result<NodeId, Error> {
+  const createdEvent = graphResult.events.find(isNodeCreated);
+  if (!createdEvent) {
+    return err(new Error('Expected op to produce a NodeCreated event'));
+  }
+  const addResult = engine.store.addNode({
+    id: createdEvent.id,
+    type: createdEvent.nodeType,
+    properties: createdEvent.properties,
+  });
+  if (!addResult.ok) return err(addResult.error);
+  return ok(createdEvent.id);
+}
 
 interface GraphContextState {
   readonly graph: Graph | null;
@@ -38,6 +85,10 @@ interface GraphContextActions {
     target: NodeId,
     properties?: Record<string, unknown>,
   ) => Promise<Result<EdgeId, Error>>;
+  readonly createNamespace: (input: CreateNamespaceInput) => Promise<Result<NodeId, Error>>;
+  readonly createNodeType: (input: CreateNodeTypeInput) => Promise<Result<NodeId, Error>>;
+  readonly createEdgeType: (input: CreateEdgeTypeInput) => Promise<Result<NodeId, Error>>;
+  readonly createPropertyType: (input: CreatePropertyTypeInput) => Promise<Result<NodeId, Error>>;
 }
 
 type GraphContextType = GraphContextState & GraphContextActions;
@@ -64,6 +115,10 @@ const GraphContext = createContext<GraphContextType>({
   saveGraph: async () => ok(undefined),
   createNode: async () => err(new Error('Not initialized')),
   createEdge: async () => err(new Error('Not initialized')),
+  createNamespace: async () => err(new Error('Not initialized')),
+  createNodeType: async () => err(new Error('Not initialized')),
+  createEdgeType: async () => err(new Error('Not initialized')),
+  createPropertyType: async () => err(new Error('Not initialized')),
 });
 
 // eslint-disable-next-line max-lines-per-function
@@ -271,6 +326,82 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
     [saveGraph],
   );
 
+  const createNamespace = useCallback(
+    async (input: CreateNamespaceInput): Promise<Result<NodeId, Error>> => {
+      if (!graph) return err(new Error('No graph loaded'));
+      if (!syncEngineRef.current) return err(new Error('SyncEngine not initialized'));
+
+      const opResult = createNamespaceOp(graph, input, { deviceId: PLACEHOLDER_DEVICE_ID });
+      if (!opResult.ok) return err(validationErrorToError(opResult.error));
+
+      const applied = applyCreatedNode(syncEngineRef.current, opResult.value);
+      if (!applied.ok) return applied;
+
+      const saveResult = await saveGraph();
+      if (!saveResult.ok) return saveResult;
+
+      return applied;
+    },
+    [graph, saveGraph],
+  );
+
+  const createNodeType = useCallback(
+    async (input: CreateNodeTypeInput): Promise<Result<NodeId, Error>> => {
+      if (!graph) return err(new Error('No graph loaded'));
+      if (!syncEngineRef.current) return err(new Error('SyncEngine not initialized'));
+
+      const opResult = createNodeTypeOp(graph, input, { deviceId: PLACEHOLDER_DEVICE_ID });
+      if (!opResult.ok) return err(validationErrorToError(opResult.error));
+
+      const applied = applyCreatedNode(syncEngineRef.current, opResult.value);
+      if (!applied.ok) return applied;
+
+      const saveResult = await saveGraph();
+      if (!saveResult.ok) return saveResult;
+
+      return applied;
+    },
+    [graph, saveGraph],
+  );
+
+  const createEdgeType = useCallback(
+    async (input: CreateEdgeTypeInput): Promise<Result<NodeId, Error>> => {
+      if (!graph) return err(new Error('No graph loaded'));
+      if (!syncEngineRef.current) return err(new Error('SyncEngine not initialized'));
+
+      const opResult = createEdgeTypeOp(graph, input, { deviceId: PLACEHOLDER_DEVICE_ID });
+      if (!opResult.ok) return err(validationErrorToError(opResult.error));
+
+      const applied = applyCreatedNode(syncEngineRef.current, opResult.value);
+      if (!applied.ok) return applied;
+
+      const saveResult = await saveGraph();
+      if (!saveResult.ok) return saveResult;
+
+      return applied;
+    },
+    [graph, saveGraph],
+  );
+
+  const createPropertyType = useCallback(
+    async (input: CreatePropertyTypeInput): Promise<Result<NodeId, Error>> => {
+      if (!graph) return err(new Error('No graph loaded'));
+      if (!syncEngineRef.current) return err(new Error('SyncEngine not initialized'));
+
+      const opResult = createPropertyTypeOp(graph, input, { deviceId: PLACEHOLDER_DEVICE_ID });
+      if (!opResult.ok) return err(validationErrorToError(opResult.error));
+
+      const applied = applyCreatedNode(syncEngineRef.current, opResult.value);
+      if (!applied.ok) return applied;
+
+      const saveResult = await saveGraph();
+      if (!saveResult.ok) return saveResult;
+
+      return applied;
+    },
+    [graph, saveGraph],
+  );
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -293,6 +424,10 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
         saveGraph,
         createNode,
         createEdge,
+        createNamespace,
+        createNodeType,
+        createEdgeType,
+        createPropertyType,
       }}
     >
       {children}
