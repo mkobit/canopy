@@ -8,6 +8,8 @@ import { SearchPage } from './pages/search-page';
 import { StorageProvider } from './context/storage-context';
 import { GraphProvider } from './context/graph-context';
 import { ViewPage } from './pages/view-page';
+import { SchemaPage } from './pages/schema-page';
+import { SchemaNamespacePage } from './pages/schema-namespace-page';
 
 const App = () => {
   return (
@@ -20,6 +22,8 @@ const App = () => {
               <Route path="graph/:graphId" element={<GraphPage />}>
                 <Route path="node/:nodeId" element={<NodePage />} />
                 <Route path="view/:viewId" element={<ViewPage />} />
+                <Route path="schema" element={<SchemaPage />} />
+                <Route path="schema/:namespaceName" element={<SchemaNamespacePage />} />
                 {/* Default graph view: could be a dashboard or redirect to search/last node */}
                 <Route index element={<SearchPage />} />
               </Route>

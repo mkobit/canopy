@@ -24,11 +24,11 @@ const ALLOWED_TYPE_DEF_IDS: ReadonlySet<string> = new Set([
 
 const PropertyDefinitionsSchema = z.array(PropertyDefinitionSchema);
 
-function readString(value: unknown): string | undefined {
+export function readString(value: unknown): string | undefined {
   return typeof value === 'string' ? value : undefined;
 }
 
-function parseProperties(raw: unknown): readonly PropertyDefinition[] {
+export function parseProperties(raw: unknown): readonly PropertyDefinition[] {
   const text = readString(raw);
   if (text === undefined) return [];
   const parsedJson = fromThrowable(() => JSON.parse(text) as unknown);

@@ -16,6 +16,7 @@ const navLinkClass = ({ isActive }: Readonly<{ isActive: boolean }>) =>
       : 'text-[#d9e6fd]/40 hover:bg-[#121a25]/50 hover:text-[#d9e6fd] hover:translate-x-1'
   }`;
 
+// eslint-disable-next-line max-lines-per-function
 export const SideNavBar: React.FC<SideNavBarProps> = ({ onNewNode, onLogout, graphId }) => {
   return (
     <aside className="flex flex-col fixed left-0 top-0 h-full z-40 bg-[#0a0e14] border-r border-[#1a2637]/15 font-display text-xs uppercase tracking-wider w-64">
@@ -54,6 +55,19 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({ onNewNode, onLogout, gra
             <span>Search</span>
           </NavLink>
         </nav>
+
+        {graphId !== undefined && (
+          <div className="mt-6">
+            <nav className="space-y-1">
+              <NavLink to={`/graph/${graphId}/schema`} className={navLinkClass}>
+                <span className="material-symbols-outlined" data-icon="schema">
+                  schema
+                </span>
+                <span>Schema</span>
+              </NavLink>
+            </nav>
+          </div>
+        )}
 
         {graphId !== undefined && (
           <div className="mt-6">

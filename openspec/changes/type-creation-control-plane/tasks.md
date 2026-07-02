@@ -26,14 +26,14 @@
 
 ## 5. Schema UI
 
-- [ ] 5.1 Add "Schema" section/route to `apps/web`, wired to the existing `GraphProvider` context
-- [ ] 5.2 Namespace list view + create form (kind picker excludes restricted kinds)
-- [ ] 5.3 Per-namespace NodeType/EdgeType/PropertyType list views
-- [ ] 5.4 Shared `PropertyListEditor` component (inline property rows + reference-existing-PropertyType rows), used by both NodeType and EdgeType create forms
-- [ ] 5.5 NodeType create form
-- [ ] 5.6 EdgeType create form, including optional source/target NodeType multi-selects
-- [ ] 5.7 PropertyType create form
-- [ ] 5.8 Error handling: surface failed `Result`s (e.g. restricted-namespace rejection) in the UI without creating a definition
+- [x] 5.1 Add "Schema" section/route to `apps/web`, wired to the existing `GraphProvider` context
+- [x] 5.2 Namespace list view + create form (kind picker excludes restricted kinds)
+- [x] 5.3 Per-namespace NodeType/EdgeType/PropertyType list views
+- [x] 5.4 Shared `PropertyListEditor` component (inline property rows + reference-existing-PropertyType rows), used by both NodeType and EdgeType create forms
+- [x] 5.5 NodeType create form
+- [x] 5.6 EdgeType create form, including optional source/target NodeType multi-selects
+- [x] 5.7 PropertyType create form
+- [x] 5.8 Error handling: surface failed `Result`s (e.g. restricted-namespace rejection) in the UI without creating a definition
 
 ## 6. End-to-end verification
 

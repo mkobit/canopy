@@ -86,7 +86,7 @@ export const GraphPage = () => {
 
       <GraphExplorerCanvas>
         {outlet ? (
-          <div className="absolute inset-0 z-10 p-4 pointer-events-none">
+          <div className="absolute inset-0 z-10 p-4 overflow-y-auto pointer-events-auto">
             <Outlet context={{ setSelectedNode, setIsInspectorOpen }} />
           </div>
         ) : (

@@ -31,6 +31,7 @@ export type {
   PropertyDefinition,
   PropertyMap,
 } from './properties';
+export { PROPERTY_VALUE_KINDS } from './properties';
 
 export type { Node } from './node';
 export type { Edge } from './edge';
