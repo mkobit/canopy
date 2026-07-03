@@ -37,6 +37,6 @@
 
 ## 6. End-to-end verification
 
-- [ ] 6.1 Playwright e2e: create a namespace → create a NodeType in it → create a PropertyType and reference it from a NodeType → verify a restricted-namespace (`system`) create attempt is blocked in the UI, matching the existing e2e pattern from PR #321
-- [ ] 6.2 `bun run typecheck` / `bun run lint` / `bun test` clean across all packages
-- [ ] 6.3 Update `docs/design/2026-02-06-core-data-model.md` section 10 to mark open question #6 ("Namespace representation") as resolved, pointing at this change
+- [x] 6.1 Playwright e2e: create a namespace → create a NodeType in it → create a PropertyType and reference it from a NodeType → verify a restricted-namespace (`system`) create attempt is blocked in the UI, matching the existing e2e pattern from PR #321
+- [x] 6.2 `bun run typecheck` / `bun run lint` / `bun test` clean across all packages
+- [x] 6.3 Update `docs/design/2026-02-06-core-data-model.md` section 10 to mark open question #6 ("Namespace representation") as resolved, pointing at this change

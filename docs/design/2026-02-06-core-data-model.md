@@ -416,10 +416,10 @@ Tracked here for resolution in future design iterations:
 3. Namespace import mechanics: how external vocabularies and type systems are imported.
 4. Constraint validation on PropertyTypes: what validation rules are supported and when they run.
 5. External reference URI schemes: `canopy://`, `https://`, and resolution behavior.
-6. Namespace representation: whether namespaces are nodes in the graph, string conventions, or both.
 
 ### Resolved questions
 
 - **Top-level container terminology**: the term is "vault." Used consistently across all design docs.
 - **Batch event semantics**: individual events with a shared `batchId`, no wrapper type. See [event system](2026-02-08-event-system.md), section 5.
 - **Yjs / event log integration**: the sync model does not depend on Yjs or any CRDT library. See [sync](2026-02-08-sync.md), section 7. Real-time collaborative text editing is not a current goal.
+- **Namespace representation**: namespaces are nodes in the graph (a `Namespace` node shape with `name`, `description`, `kind`), not a closed string union. `RESTRICTED_NAMESPACE_KINDS` (initially `{"system"}`) gates which kinds users can create into. See the [type-creation control plane](../../openspec/changes/type-creation-control-plane/design.md) change, which replaced the old 4-literal namespace enum with a bootstrap-migrated `Namespace` node lookup.
