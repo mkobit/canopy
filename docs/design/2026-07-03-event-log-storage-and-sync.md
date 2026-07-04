@@ -68,6 +68,9 @@ createGraphSession(eventLog: EventLogStore, graphId, deviceId)
 ```
 
 Reads come from the projected `Graph`; there is no separate materialized store in the browser initially.
+The projected graph is a *live* projection: `subscribe` fires after each merge, and the notification carries both the updated `Graph` and the delta (the events applied in that merge).
+Incremental projection computes that delta anyway, and exposing it is what lets future live queries and reactive views (event lifecycle step 7 in the event system doc) refresh incrementally instead of re-scanning the graph — the queries layer stays a consumer of deltas, not a projection participant.
+Session events are stamped with a real, stable per-installation deviceId (provisioned and persisted by the app); the current placeholder zero deviceId in `apps/web` breaks LWW tiebreaking the moment two devices exist, so it dies with the cutover.
 A persisted projection snapshot (fast-start cache per the storage doc, section 4) is deferred: replaying a personal vault's log (thousands of events) through `projectGraph` is milliseconds-scale, so the optimization is not yet justified.
 The design keeps the door open; nothing below assumes snapshots exist.
 
