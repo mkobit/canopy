@@ -10,7 +10,7 @@
 
 - [ ] 2.1 Extend incremental projection in `@canopy/graph` with merge metadata: per entity per property last-writer eventId (removals tracked as writes), additive edges keyed by EdgeId, permanent idempotent tombstones
 - [ ] 2.2 Implement the pending buffer: park events with unsatisfied references or incomplete batches keyed by missing dependency, drain on arrival, age-threshold warnings
-- [ ] 2.3 Implement `createGraphSession(eventLog, graphId, deviceId)`: `load` (read log, project), `commit` (validate → append → merge → notify), `graph()`, `subscribe`
+- [ ] 2.3 Implement `createGraphSession(eventLog, graphId, deviceId)`: `load` (read log, project), `commit` (validate → append → merge → notify), `graph()`, `subscribe` — notifications carry the updated graph plus the applied-event delta (parked events appear in a delta only when they drain)
 - [ ] 2.4 Property-based convergence test: generated multi-device event sets, assert `incremental(shuffle(E)) === projectGraph(sort(E))` across random permutations and partitions
 - [ ] 2.5 Unit tests for session commit failure paths (validation rejection leaves log and projection untouched) and load-equals-fold
 
@@ -20,7 +20,8 @@
 - [ ] 3.2 Rewire `GraphProvider` (`apps/web/src/context/graph-context.tsx`) and `storage-context` from `SyncEngine` + snapshot save to `GraphSession` + `@canopy/storage-indexeddb`, running the import on first load of a legacy vault
 - [ ] 3.3 Route all node/edge/type-authoring creation paths through `session.commit` (ops already produce events; delete the `applyCreatedNode` Yjs replay shim)
 - [ ] 3.4 Rewrite the block editor (`apps/web/src/components/editor/block-editor.tsx`, `node-page.tsx`): local state editing, debounced `text` property commits (idle ~1s, blur, navigation flush), no `Y.Text`
-- [ ] 3.5 Update unit/integration tests for the new wiring; verify Playwright e2e flows (node creation, schema authoring, text editing survive reload)
+- [ ] 3.5 Provision a stable per-installation deviceId (generated once, persisted in the browser profile) and replace every `PLACEHOLDER_DEVICE_ID` / zero-deviceId use in `apps/web`
+- [ ] 3.6 Update unit/integration tests for the new wiring; verify Playwright e2e flows (node creation, schema authoring, text editing survive reload)
 
 ## 4. Yjs removal + docs
 

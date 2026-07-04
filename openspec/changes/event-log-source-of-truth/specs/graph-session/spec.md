@@ -6,7 +6,26 @@ Every graph mutation SHALL flow commit → validation → event log append → i
 
 #### Scenario: Committing op events updates the projected graph and notifies subscribers
 - **WHEN** a session commits the events produced by a `@canopy/graph` op
-- **THEN** the events SHALL be validated, appended to the `EventLogStore`, merged into the projected `Graph`, and subscribers SHALL be notified once with the updated graph
+- **THEN** the events SHALL be validated, appended to the `EventLogStore`, merged into the projected `Graph`, and subscribers SHALL be notified once with the updated graph and the applied-event delta
+
+### Requirement: Change notifications carry the applied delta
+Subscriber notifications SHALL include the events applied in that merge (the delta) alongside the updated `Graph`, so consumers (live queries, reactive views) can refresh incrementally without re-scanning graph state.
+Events parked in the pending buffer SHALL NOT appear in a delta until they are actually applied.
+
+#### Scenario: Remote ingest notifies with only the applied events
+- **WHEN** a batch of remote events is ingested and some are parked pending a missing dependency
+- **THEN** the notification's delta SHALL contain exactly the applied events, and a later notification SHALL carry the parked events once they drain
+
+### Requirement: Committed events carry a real device identity
+Events committed through a session SHALL be stamped with the deviceId the session was created with, and applications SHALL provision a stable per-installation deviceId — the zero/placeholder deviceId SHALL NOT appear in persisted events.
+
+#### Scenario: Device identity survives restart
+- **WHEN** the web app is reloaded and commits a new event
+- **THEN** the event's deviceId SHALL equal the deviceId used before the reload
+
+#### Scenario: Two devices produce distinguishable events
+- **WHEN** sessions on two installations commit events
+- **THEN** the events SHALL carry different deviceIds, giving LWW a deterministic tiebreak
 
 #### Scenario: Invalid events never reach the log
 - **WHEN** a commit contains an event that fails structural, referential, type, or namespace validation
