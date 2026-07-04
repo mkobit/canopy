@@ -11,7 +11,7 @@ import { ok, err, fromThrowable, unwrap } from './result';
  * Returns true if the incoming event should win over the current state.
  * Uses timestamp as primary sort key, deviceId as tiebreaker (lexicographic).
  */
-function lwwWins(
+export function lwwWins(
   incomingTimestamp: Instant,
   incomingDeviceId: DeviceId,
   currentTimestamp: Instant,

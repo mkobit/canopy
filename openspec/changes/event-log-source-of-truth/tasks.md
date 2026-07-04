@@ -8,11 +8,11 @@
 
 ## 2. Graph session + convergent projection
 
-- [ ] 2.1 Extend incremental projection in `@canopy/graph` with merge metadata: per entity per property last-writer eventId (removals tracked as writes), additive edges keyed by EdgeId, permanent idempotent tombstones
-- [ ] 2.2 Implement the pending buffer: park events with unsatisfied references or incomplete batches keyed by missing dependency, drain on arrival, age-threshold warnings
-- [ ] 2.3 Implement `createGraphSession(eventLog, graphId, deviceId)`: `load` (read log, project), `commit` (validate → append → merge → notify), `graph()`, `subscribe` — notifications carry the updated graph plus the applied-event delta (parked events appear in a delta only when they drain)
-- [ ] 2.4 Property-based convergence test: generated multi-device event sets, assert `incremental(shuffle(E)) === projectGraph(sort(E))` across random permutations and partitions
-- [ ] 2.5 Unit tests for session commit failure paths (validation rejection leaves log and projection untouched) and load-equals-fold
+- [x] 2.1 Extend incremental projection in `@canopy/graph` with merge metadata: per entity per property last-writer eventId (removals tracked as writes), additive edges keyed by EdgeId, permanent idempotent tombstones
+- [x] 2.2 Implement the pending buffer: park events with unsatisfied references or incomplete batches keyed by missing dependency, drain on arrival, age-threshold warnings
+- [x] 2.3 Implement `createGraphSession(eventLog, graphId, deviceId)`: `load` (read log, project), `commit` (validate → append → merge → notify), `graph()`, `subscribe` — notifications carry the updated graph plus the applied-event delta (parked events appear in a delta only when they drain)
+- [x] 2.4 Property-based convergence test: generated multi-device event sets, assert `incremental(shuffle(E)) === projectGraph(sort(E))` across random permutations and partitions
+- [x] 2.5 Unit tests for session commit failure paths (validation rejection leaves log and projection untouched) and load-equals-fold
 
 ## 3. Web app cutover
 
