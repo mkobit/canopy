@@ -4,10 +4,9 @@
 > Scope: event storage, materialized view storage, adapter interface, snapshot strategy
 > Depends on: [2026-02-06-core-data-model.md](2026-02-06-core-data-model.md), [2026-02-08-event-system.md](2026-02-08-event-system.md), [2026-02-08-sync.md](2026-02-08-sync.md)
 
-> **Implementation note (2026-07-03)**: the shipped storage adapters (`@canopy/storage`, in-memory/SQLite/IndexedDB) persist Yjs CRDT snapshots, not an event log.
-> This document's event-log-as-source-of-truth model has not been reconciled with that.
-> Tracked in bead `canopy-1q5` (epic) / `canopy-1q5.1` (the reconciliation decision, needs a dedicated design session).
-> Do not build new backends against this document's interfaces until that decision lands.
+> **Resolution (2026-07-03)**: the divergence flagged here is decided — the event log wins and the Yjs-snapshot adapters are being replaced.
+> See [2026-07-03-event-log-storage-and-sync.md](2026-07-03-event-log-storage-and-sync.md) for the reconciliation design (per-backend packages, IndexedDB event log, migration path) and the openspec change `event-log-source-of-truth` for implementation tracking (beads `canopy-1q5.5`–`.8`).
+> New backends implement the `EventLogStore` port in their own package per that design.
 
 ---
 
