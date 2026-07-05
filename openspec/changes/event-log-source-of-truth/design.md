@@ -86,3 +86,18 @@ Rollback: groups 1–2 are additive; group 3 retains the legacy Yjs snapshot rec
 - Sealing thresholds, manifest cadence, and multi-process locking for the file backend — deferred to the `canopy-1q5.3`/`.4` follow-on (design doc sections 5 and 9).
 - Whether `GraphStore` (materialized-view interface in `@canopy/storage/types.ts`) has any post-cutover consumer; delete in group 4 if not.
 - Undo depth/UX in the block editor once `Y.UndoManager` is gone — local editor concern, decided at implementation.
+
+## Amendments (2026-07-05, during group 3 implementation)
+
+**The legacy Yjs vault import (task 3.1) was dropped, not implemented.**
+No real vaults exist pre-1.0 — all dogfood data is fabricated and disposable — so there is nothing to migrate.
+The deprecated `StorageAdapter`/`createIndexedDBAdapter`/`GraphStorageMetadata` in `@canopy/storage`/`@canopy/storage-indexeddb` are left untouched for group 4 to delete; nothing in the cutover reads them anymore.
+This also removes the "rollback: group 3 retains the legacy snapshot" safety net above as a non-concern — there's no real data to protect, so group 4 (Yjs removal) doesn't need to wait for a soak period either.
+
+**A graph registry was added — an unplanned but required piece.**
+Cutting `apps/web` over to `EventLogStore` removed the only thing that let `home-page.tsx` list/create/delete named graphs: the deprecated `StorageAdapter`'s `list()`/`save()`/`delete()`, which was really a metadata side-table, not snapshot storage.
+`EventLogStore` is intentionally scoped to a known `graphId` with no enumerate-all operation, and doesn't gain one here.
+Added `@canopy/storage-indexeddb`'s `createGraphRegistry`: a small, independent IndexedDB store of `{id, name, createdAt, updatedAt}`, with no coupling to snapshots or events. This keeps the deprecated adapter purely a should-be-deleted-in-group-4 dead end, as originally intended.
+
+**Block text/content stays on the `content` property, not `text`.**
+`content-model.md`'s naming convention (TextBlock/CodeBlock use `text`, MarkdownNode uses `content`) was never implemented in `bootstrap.ts` — all three block node types use `content` today, and rendering is a hardcoded `switch (node.type)` in `block-renderer.tsx`, not a resolution through the graph-resident `Renderer` concept (`meta:renderer`/`RENDERER_DEF`) that would make the naming convention meaningful. Renaming to match the doc is a schema/rendering change, not a storage-plumbing one — deferred to whenever the renderer-resolution work happens, if ever. The block editor and the legacy-import-that-wasn't both use `content`.

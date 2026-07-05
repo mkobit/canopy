@@ -16,12 +16,15 @@
 
 ## 3. Web app cutover
 
-- [ ] 3.1 Implement the one-time Yjs vault import in `@canopy/storage-indexeddb`: read legacy snapshot via the deprecated adapter, synthesize batch-tagged `NodeCreated`/`EdgeCreated` (fresh eventIds, importing deviceId, migration metadata), `texts` map content as the `text` property; skip if the import batch already exists in the log
-- [ ] 3.2 Rewire `GraphProvider` (`apps/web/src/context/graph-context.tsx`) and `storage-context` from `SyncEngine` + snapshot save to `GraphSession` + `@canopy/storage-indexeddb`, running the import on first load of a legacy vault
-- [ ] 3.3 Route all node/edge/type-authoring creation paths through `session.commit` (ops already produce events; delete the `applyCreatedNode` Yjs replay shim)
-- [ ] 3.4 Rewrite the block editor (`apps/web/src/components/editor/block-editor.tsx`, `node-page.tsx`): local state editing, debounced `text` property commits (idle ~1s, blur, navigation flush), no `Y.Text`
-- [ ] 3.5 Provision a stable per-installation deviceId (generated once, persisted in the browser profile) and replace every `PLACEHOLDER_DEVICE_ID` / zero-deviceId use in `apps/web`
-- [ ] 3.6 Update unit/integration tests for the new wiring; verify Playwright e2e flows (node creation, schema authoring, text editing survive reload)
+- [x] ~~3.1 Implement the one-time Yjs vault import~~ -- **skipped by decision 2026-07-05**: no real vaults exist pre-1.0 (all dogfood data is fabricated/disposable), so there is nothing to migrate. `createIndexedDBAdapter`/`StorageAdapter`/`GraphStorageMetadata` are left in place, untouched, for task 4.2 to remove.
+- [x] 3.2 Rewire `GraphProvider` (`apps/web/src/context/graph-context.tsx`) and `storage-context` from `SyncEngine` + snapshot save to `GraphSession` + `@canopy/storage-indexeddb`. No import step (see 3.1). Added an unplanned but required piece: `@canopy/storage-indexeddb`'s new `createGraphRegistry` (a small dedicated IndexedDB store for `{id, name, createdAt, updatedAt}`) backs `home-page.tsx`'s list/create/delete, since `EventLogStore` has no enumerate-all-graphs operation and the deprecated `StorageAdapter` is no longer touched at all post-3.1-skip.
+- [x] 3.3 Route all node/edge/type-authoring creation paths through `session.commit` (ops already produce events; deleted the `applyCreatedNode` Yjs replay shim). Also added `updateNodeProperties`/`deleteNode` context actions so `node-page.tsx` no longer needs direct store access.
+- [x] 3.4 Rewrite the block editor (`apps/web/src/components/editor/block-editor.tsx`, `node-page.tsx`): local (DOM-owned/uncontrolled) state editing, debounced `content` property commits (idle ~1s, blur, unmount/navigation flush), no `Y.Text`. Property key is `content`, not `text` -- see decision below.
+- [x] 3.5 Provision a stable per-installation deviceId (`apps/web/src/utils/device-id.ts`, generated once via `createDeviceId()`, persisted in `localStorage`) and replace every `PLACEHOLDER_DEVICE_ID` / zero-deviceId use in `apps/web`
+- [x] 3.6 Updated unit/integration tests for the new wiring (`graph-integration.test.tsx`, `block-editor.test.tsx`, new `graph-registry.test.ts`/`device-id.test.ts`); added a new Playwright e2e (`block-editor.e2e.ts`) covering edit -> blur-commit -> reload -> persisted content, alongside the existing node-creation and schema-authoring e2e flows. All green.
+
+**Decision (2026-07-05): block content stays on the `content` property, not `text`.**
+The design doc's `text`/`content` naming split (TextBlock/CodeBlock use `text`, MarkdownNode uses `content`) was never actually implemented in `bootstrap.ts` -- all three block node types use `content` today, and rendering is a hardcoded `switch (node.type)` in `block-renderer.tsx`, not yet resolved via the graph-resident `Renderer` concept (`meta:renderer`/`RENDERER_DEF`). Renaming to match the doc would touch `bootstrap.ts`'s type schemas and the renderers -- out of scope for this cutover, and arguably belongs with the eventual renderer-resolution work instead. Kept `content` everywhere to avoid a schema/rendering change bundled into a storage-plumbing change.
 
 ## 4. Yjs removal + docs
 

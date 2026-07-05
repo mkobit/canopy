@@ -3,35 +3,22 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { withResultAlert } from '../utils/handlers';
 import { useGraph } from '../context/graph-context';
 import { NodeView, PropertyInput, DocumentRenderer, BlockEditor } from '../components';
-import * as Y from 'yjs';
 import { asNodeId } from '@canopy/graph';
 import type { Node, PropertyValue } from '@canopy/graph';
 import { ArrowLeft, Save, Trash, Link as LinkIcon } from 'lucide-react';
 import { filter, map } from 'remeda';
-import { showAlert, showConfirm } from '../utils/dialogs';
+import { showConfirm } from '../utils/dialogs';
 
 // eslint-disable-next-line max-lines-per-function
 export const NodePage = () => {
   const { nodeId } = useParams<Readonly<{ nodeId: string }>>();
-  const { graph, syncEngine, saveGraph } = useGraph();
+  const { graph, updateNodeProperties, deleteNode } = useGraph();
   const navigate = useNavigate();
   const [currentNode, setCurrentNode] = useState<Node | undefined>();
   const [isEditing, setIsEditing] = useState(false);
   const [editedProps, setEditedProps] = useState<ReadonlyMap<string, PropertyValue>>(new Map());
 
-  const ytext = useMemo(() => {
-    if (!syncEngine || !nodeId) return undefined;
-    const txt = syncEngine.store.texts.get(nodeId);
-    if (!txt) {
-      const newTxt = new Y.Text();
-      syncEngine.store.texts.set(nodeId, newTxt);
-      return newTxt;
-    }
-    if (txt instanceof Y.Text) {
-      return txt;
-    }
-    return undefined;
-  }, [syncEngine, nodeId]);
+  const content = currentNode?.properties.get('content');
 
   const propertiesToEdit = useMemo(() => {
     return new Map([...editedProps.entries()].filter(([key]) => key !== 'content'));
@@ -55,26 +42,30 @@ export const NodePage = () => {
   }, [graph, nodeId]);
 
   const handleSave = async () => {
-    if (!syncEngine || !currentNode) return undefined;
+    if (!currentNode) return undefined;
 
-    const propertiesToSave = ytext
-      ? new Map([...editedProps.entries(), ['content', ytext.toString()]])
-      : new Map(editedProps);
+    return withResultAlert(
+      () => updateNodeProperties(currentNode.id, propertiesToEdit),
+      'Failed to save changes',
+      () => {
+        setIsEditing(false);
+        return undefined;
+      },
+    )();
+  };
 
-    const updateResult = syncEngine.store.updateNode(currentNode.id, {
-      properties: propertiesToSave,
-    });
-
-    if (!updateResult.ok) {
-      console.error('Failed to update node in store', updateResult.error);
-      showAlert('Failed to save changes');
-      return undefined;
-    }
-
-    return withResultAlert(saveGraph, 'Failed to save node', () => {
-      setIsEditing(false);
-      return undefined;
-    })();
+  const handleContentCommit = (nextContent: string) => {
+    if (!currentNode) return undefined;
+    updateNodeProperties(currentNode.id, new Map([['content', nextContent]]))
+      .then((result) => {
+        if (!result.ok) console.error('Failed to commit block content', result.error);
+        return undefined;
+      })
+      .catch((error: unknown) => {
+        console.error('Failed to commit block content', error);
+        return undefined;
+      });
+    return undefined;
   };
 
   const handlePropertyChange = (key: string, value: PropertyValue) => {
@@ -88,17 +79,11 @@ export const NodePage = () => {
   };
 
   const handleDelete = async () => {
-    if (!syncEngine || !currentNode) return undefined;
+    if (!currentNode) return undefined;
     if (!showConfirm('Delete this node?')) return undefined;
 
-    const deleteResult = syncEngine.store.deleteNode(currentNode.id);
-    if (!deleteResult.ok) {
-      console.error('Delete failed in store', deleteResult.error);
-      return undefined;
-    }
-
     return withResultAlert(
-      saveGraph,
+      () => deleteNode(currentNode.id),
       'Delete failed',
       () => {
         navigate('../');
@@ -189,14 +174,12 @@ export const NodePage = () => {
               </div>
             </div>
 
-            {currentNode.properties.has('content') &&
-              typeof currentNode.properties.get('content') === 'string' &&
-              ytext && (
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-500">Content</label>
-                  <BlockEditor ytext={ytext} />
-                </div>
-              )}
+            {typeof content === 'string' && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-500">Content</label>
+                <BlockEditor key={currentNode.id} value={content} onCommit={handleContentCommit} />
+              </div>
+            )}
 
             <div className="space-y-4">
               <h3 className="font-semibold text-gray-900">Properties</h3>

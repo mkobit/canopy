@@ -1,6 +1,4 @@
-import { asDeviceId } from '@canopy/graph';
-import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
-import { createSyncEngine, type SyncEngine } from '@canopy/sync';
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import type {
   Graph,
   GraphId,
@@ -10,17 +8,26 @@ import type {
   Node,
   Edge,
   Result,
-  GraphEvent,
   GraphResult,
-  NodeCreated,
+  GraphSession,
   ValidationError,
   CreateNamespaceInput,
   CreateNodeTypeInput,
   CreateEdgeTypeInput,
   CreatePropertyTypeInput,
 } from '@canopy/graph';
-import { asInstant, ok, err, fromThrowable, fromAsyncThrowable } from '@canopy/graph';
 import {
+  ok,
+  err,
+  fromAsyncThrowable,
+  createGraphSession,
+  createNodeId,
+  createEdgeId,
+  createInstant,
+  addNode,
+  addEdge,
+  updateNode,
+  removeNode,
   createNamespace as createNamespaceOp,
   createNodeType as createNodeTypeOp,
   createEdgeType as createEdgeTypeOp,
@@ -29,9 +36,6 @@ import {
 import { useStorage } from './storage-context';
 import { z } from 'zod';
 import { TypeIdSchema, PropertyValueSchema } from '@canopy/graph';
-import { Temporal } from 'temporal-polyfill';
-
-const PLACEHOLDER_DEVICE_ID = asDeviceId('00000000-0000-0000-0000-000000000000');
 
 function validationErrorToError(validationError: ValidationError): Error {
   return new Error(
@@ -41,32 +45,23 @@ function validationErrorToError(validationError: ValidationError): Error {
   );
 }
 
-function isNodeCreated(event: GraphEvent): event is NodeCreated {
-  return event.type === 'NodeCreated';
-}
+/** Commits a node-creating op's events and extracts the created node's id from the delta. */
+async function commitCreatedNode(
+  session: GraphSession,
+  opResult: Result<GraphResult<Graph>, ValidationError>,
+): Promise<Result<NodeId, Error>> {
+  if (!opResult.ok) return err(validationErrorToError(opResult.error));
 
-// Type-authoring ops compute against the pure `Graph` snapshot; apply here by replaying
-// the NodeCreated event onto the Yjs-backed store, the app's actual persistence path.
-function applyCreatedNode(
-  engine: SyncEngine,
-  graphResult: GraphResult<Graph>,
-): Result<NodeId, Error> {
-  const createdEvent = graphResult.events.find(isNodeCreated);
-  if (!createdEvent) {
-    return err(new Error('Expected op to produce a NodeCreated event'));
-  }
-  const addResult = engine.store.addNode({
-    id: createdEvent.id,
-    type: createdEvent.nodeType,
-    properties: createdEvent.properties,
-  });
-  if (!addResult.ok) return err(addResult.error);
-  return ok(createdEvent.id);
+  const commitResult = await session.commit(opResult.value.events);
+  if (!commitResult.ok) return commitResult;
+
+  const created = opResult.value.events.find((event) => event.type === 'NodeCreated');
+  if (!created) return err(new Error('Expected op to produce a NodeCreated event'));
+  return ok(created.id);
 }
 
 interface GraphContextState {
   readonly graph: Graph | null;
-  readonly syncEngine: SyncEngine | null;
   readonly isLoading: boolean;
   readonly error: Error | null;
 }
@@ -74,7 +69,6 @@ interface GraphContextState {
 interface GraphContextActions {
   readonly loadGraph: (graphId: GraphId) => Promise<Result<void, Error>>;
   readonly closeGraph: () => Result<void, Error>;
-  readonly saveGraph: () => Promise<Result<void, Error>>;
   readonly createNode: (
     type: string,
     properties?: Record<string, unknown>,
@@ -85,6 +79,11 @@ interface GraphContextActions {
     target: NodeId,
     properties?: Record<string, unknown>,
   ) => Promise<Result<EdgeId, Error>>;
+  readonly updateNodeProperties: (
+    nodeId: NodeId,
+    changes: ReadonlyMap<string, PropertyValue>,
+  ) => Promise<Result<void, Error>>;
+  readonly deleteNode: (nodeId: NodeId) => Promise<Result<void, Error>>;
   readonly createNamespace: (input: CreateNamespaceInput) => Promise<Result<NodeId, Error>>;
   readonly createNodeType: (input: CreateNodeTypeInput) => Promise<Result<NodeId, Error>>;
   readonly createEdgeType: (input: CreateEdgeTypeInput) => Promise<Result<NodeId, Error>>;
@@ -100,21 +99,19 @@ const CreateNodeInputSchema = z.object({
 
 const CreateEdgeInputSchema = z.object({
   type: TypeIdSchema,
-  source: z.string(),
-  target: z.string(),
   properties: z.record(z.string(), PropertyValueSchema).optional(),
 });
 
 const GraphContext = createContext<GraphContextType>({
   graph: null,
-  syncEngine: null,
   isLoading: false,
   error: null,
   loadGraph: async () => ok(undefined),
   closeGraph: () => ok(undefined),
-  saveGraph: async () => ok(undefined),
   createNode: async () => err(new Error('Not initialized')),
   createEdge: async () => err(new Error('Not initialized')),
+  updateNodeProperties: async () => err(new Error('Not initialized')),
+  deleteNode: async () => err(new Error('Not initialized')),
   createNamespace: async () => err(new Error('Not initialized')),
   createNodeType: async () => err(new Error('Not initialized')),
   createEdgeType: async () => err(new Error('Not initialized')),
@@ -123,84 +120,40 @@ const GraphContext = createContext<GraphContextType>({
 
 // eslint-disable-next-line max-lines-per-function
 export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = ({ children }) => {
-  const { storage } = useStorage();
-  const [syncEngine, setSyncEngine] = useState<SyncEngine | null>(null);
-  const syncEngineRef = useRef<SyncEngine | null>(null); // Ref to avoid dependency cycles
+  const { eventLog, deviceId } = useStorage();
+  const sessionRef = useRef<GraphSession | null>(null);
+
+  const unsubscribeRef = useRef<(() => void) | null>(null);
 
   const [graph, setGraph] = useState<Graph | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-  const [currentGraphId, setCurrentGraphId] = useState<GraphId | null>(null);
-
-  const updateGraphFromStore = (engine: SyncEngine, graphId: GraphId, name?: string) => {
-    const nodes = new Map<NodeId, Node>(
-      [...engine.store.getAllNodes()].map((node) => [node.id, node]),
-    );
-    const edges = new Map<EdgeId, Edge>(
-      [...engine.store.getAllEdges()].map((edge) => [edge.id, edge]),
-    );
-
-    const now = asInstant(Temporal.Now.instant().toString());
-    setGraph((prevGraph) => {
-      const activeName = name ?? prevGraph?.name ?? 'Graph';
-      return {
-        id: graphId,
-        name: activeName,
-        metadata: {
-          created: now,
-          modified: now,
-          modifiedBy: asDeviceId('00000000-0000-0000-0000-000000000000'),
-        }, // Placeholder
-        nodes,
-        edges,
-      };
-    });
-    return undefined;
-  };
 
   const loadGraph = useCallback(
     async (graphId: GraphId): Promise<Result<void, Error>> => {
-      if (!storage) return err(new Error('Storage not available'));
+      if (!eventLog) return err(new Error('Storage not available'));
 
       setIsLoading(true);
       setError(null);
 
       const result = await fromAsyncThrowable(async () => {
-        // Clean up previous engine if exists
-        if (syncEngineRef.current) {
-          syncEngineRef.current.disconnectProvider();
+        if (unsubscribeRef.current) {
+          unsubscribeRef.current();
+          unsubscribeRef.current = null;
         }
 
-        // 1. Load snapshot from storage
-        const snapshotResult = await storage.load(graphId);
+        const session = createGraphSession(eventLog, graphId, deviceId);
+        const loadResult = await session.load();
 
-        if (!snapshotResult.ok) throw snapshotResult.error;
-        const snapshot = snapshotResult.value;
+        if (!loadResult.ok) throw loadResult.error;
 
-        // Load graph name from metadata list
-        const listResult = await storage.list();
-        const matchedMeta = listResult.ok
-          ? listResult.value.find((g) => g.id === graphId)
-          : undefined;
-        const graphName = matchedMeta?.name ?? 'Graph';
-
-        // 2. Initialize SyncEngine
-        // If snapshot is undefined (new graph), we pass undefined, SyncEngine creates new Doc.
-        const engine = createSyncEngine(snapshot ? { initialSnapshot: snapshot } : {});
-
-        setSyncEngine(engine);
-        syncEngineRef.current = engine;
-        setCurrentGraphId(graphId);
-
-        // Initial graph state
-        updateGraphFromStore(engine, graphId, graphName);
-
-        // Subscribe to updates
-        engine.doc.on('update', () => {
-          updateGraphFromStore(engine, graphId, graphName);
+        sessionRef.current = session;
+        unsubscribeRef.current = session.subscribe((updatedGraph) => {
+          setGraph(updatedGraph);
           return undefined;
         });
 
+        setGraph(loadResult.value);
         return undefined;
       });
 
@@ -212,81 +165,51 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
       setIsLoading(false);
       return result;
     },
-    [storage],
-  ); // Removed syncEngine from dependency
+    [eventLog, deviceId],
+  );
 
   const closeGraph = useCallback((): Result<void, Error> => {
-    return fromThrowable(() => {
-      if (syncEngineRef.current) {
-        syncEngineRef.current.disconnectProvider();
-        setSyncEngine(null);
-        syncEngineRef.current = null;
-      }
-      setGraph(null);
-      setCurrentGraphId(null);
-      return undefined;
-    });
-  }, []);
-
-  const saveGraph = useCallback(async (): Promise<Result<void, Error>> => {
-    if (syncEngineRef.current && storage && currentGraphId && graph) {
-      const syncEngine = syncEngineRef.current;
-      return fromAsyncThrowable(async () => {
-        const snapshot = syncEngine.getSnapshot();
-        const createdAt = graph.metadata.created || Temporal.Now.instant().toString();
-        const result = await storage.save(currentGraphId, snapshot, {
-          id: currentGraphId,
-          name: graph.name,
-          createdAt,
-          updatedAt: Temporal.Now.instant().toString(),
-        });
-
-        if (!result.ok) throw result.error;
-        return undefined;
-      });
+    if (unsubscribeRef.current) {
+      unsubscribeRef.current();
+      unsubscribeRef.current = null;
     }
-    // If not loaded, effectively a no-op success or error?
-    // Let's return error if called without graph
-    if (!syncEngineRef.current || !currentGraphId) return err(new Error('No graph loaded'));
-    if (!storage) return err(new Error('Storage not available'));
-
+    sessionRef.current = null;
+    setGraph(null);
     return ok(undefined);
-  }, [storage, currentGraphId, graph]);
+  }, []);
 
   const createNode = useCallback(
     async (
       type: string,
       properties: Record<string, unknown> = {},
     ): Promise<Result<NodeId, Error>> => {
-      if (!syncEngineRef.current) return err(new Error('SyncEngine not initialized'));
-      const syncEngine = syncEngineRef.current;
+      const session = sessionRef.current;
+      if (!session) return err(new Error('No graph loaded'));
 
       return fromAsyncThrowable(async () => {
-        // Validate inputs
         const input = CreateNodeInputSchema.parse({ type, properties });
-
-        const typeId = input.type;
-
         const propsMap = new Map<string, PropertyValue>(
           input.properties ? Object.entries(input.properties) : [],
         );
-
-        const newNodeResult = syncEngine.store.addNode({
-          type: typeId,
+        const node: Node = {
+          id: createNodeId(),
+          type: input.type,
           properties: propsMap,
-        });
+          metadata: { created: createInstant(), modified: createInstant(), modifiedBy: deviceId },
+        };
 
-        if (!newNodeResult.ok) throw newNodeResult.error;
-        const newNode = newNodeResult.value;
+        const opResult = addNode(session.graph(), node, { deviceId });
 
-        const saveResult = await saveGraph();
+        if (!opResult.ok) throw opResult.error;
 
-        if (!saveResult.ok) throw saveResult.error;
+        const commitResult = await session.commit(opResult.value.events);
 
-        return newNode.id;
+        if (!commitResult.ok) throw commitResult.error;
+
+        return node.id;
       });
     },
-    [saveGraph],
+    [deviceId],
   );
 
   const createEdge = useCallback(
@@ -296,117 +219,116 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
       target: NodeId,
       properties: Record<string, unknown> = {},
     ): Promise<Result<EdgeId, Error>> => {
-      if (!syncEngineRef.current) return err(new Error('SyncEngine not initialized'));
-      const syncEngine = syncEngineRef.current;
+      const session = sessionRef.current;
+      if (!session) return err(new Error('No graph loaded'));
 
       return fromAsyncThrowable(async () => {
-        const input = CreateEdgeInputSchema.parse({ type, source, target, properties });
-        const typeId = input.type;
-
+        const input = CreateEdgeInputSchema.parse({ type, properties });
         const propsMap = new Map<string, PropertyValue>(
           input.properties ? Object.entries(input.properties) : [],
         );
-
-        const newEdgeResult = syncEngine.store.addEdge({
-          type: typeId,
-          source: source,
-          target: target,
+        const edge: Edge = {
+          id: createEdgeId(),
+          type: input.type,
+          source,
+          target,
           properties: propsMap,
-        });
+          metadata: { created: createInstant(), modified: createInstant(), modifiedBy: deviceId },
+        };
 
-        if (!newEdgeResult.ok) throw newEdgeResult.error;
-        const newEdge = newEdgeResult.value;
+        const opResult = addEdge(session.graph(), edge, { deviceId });
 
-        const saveResult = await saveGraph();
-        if (!saveResult.ok) throw saveResult.error;
+        if (!opResult.ok) throw opResult.error;
 
-        return newEdge.id;
+        const commitResult = await session.commit(opResult.value.events);
+
+        if (!commitResult.ok) throw commitResult.error;
+
+        return edge.id;
       });
     },
-    [saveGraph],
+    [deviceId],
+  );
+
+  const updateNodeProperties = useCallback(
+    async (
+      nodeId: NodeId,
+      changes: ReadonlyMap<string, PropertyValue>,
+    ): Promise<Result<void, Error>> => {
+      const session = sessionRef.current;
+      if (!session) return err(new Error('No graph loaded'));
+
+      const opResult = updateNode(
+        session.graph(),
+        nodeId,
+        (node) => ({ ...node, properties: new Map([...node.properties, ...changes]) }),
+        { deviceId },
+      );
+      if (!opResult.ok) return err(opResult.error);
+
+      const commitResult = await session.commit(opResult.value.events);
+      if (!commitResult.ok) return err(commitResult.error);
+      return ok(undefined);
+    },
+    [deviceId],
+  );
+
+  const deleteNode = useCallback(
+    async (nodeId: NodeId): Promise<Result<void, Error>> => {
+      const session = sessionRef.current;
+      if (!session) return err(new Error('No graph loaded'));
+
+      const opResult = removeNode(session.graph(), nodeId, { deviceId });
+      if (!opResult.ok) return err(opResult.error);
+
+      const commitResult = await session.commit(opResult.value.events);
+      if (!commitResult.ok) return err(commitResult.error);
+      return ok(undefined);
+    },
+    [deviceId],
   );
 
   const createNamespace = useCallback(
-    async (input: CreateNamespaceInput): Promise<Result<NodeId, Error>> => {
-      if (!graph) return err(new Error('No graph loaded'));
-      if (!syncEngineRef.current) return err(new Error('SyncEngine not initialized'));
-
-      const opResult = createNamespaceOp(graph, input, { deviceId: PLACEHOLDER_DEVICE_ID });
-      if (!opResult.ok) return err(validationErrorToError(opResult.error));
-
-      const applied = applyCreatedNode(syncEngineRef.current, opResult.value);
-      if (!applied.ok) return applied;
-
-      const saveResult = await saveGraph();
-      if (!saveResult.ok) return saveResult;
-
-      return applied;
+    (input: CreateNamespaceInput): Promise<Result<NodeId, Error>> => {
+      const session = sessionRef.current;
+      if (!session) return Promise.resolve(err(new Error('No graph loaded')));
+      return commitCreatedNode(session, createNamespaceOp(session.graph(), input, { deviceId }));
     },
-    [graph, saveGraph],
+    [deviceId],
   );
 
   const createNodeType = useCallback(
-    async (input: CreateNodeTypeInput): Promise<Result<NodeId, Error>> => {
-      if (!graph) return err(new Error('No graph loaded'));
-      if (!syncEngineRef.current) return err(new Error('SyncEngine not initialized'));
-
-      const opResult = createNodeTypeOp(graph, input, { deviceId: PLACEHOLDER_DEVICE_ID });
-      if (!opResult.ok) return err(validationErrorToError(opResult.error));
-
-      const applied = applyCreatedNode(syncEngineRef.current, opResult.value);
-      if (!applied.ok) return applied;
-
-      const saveResult = await saveGraph();
-      if (!saveResult.ok) return saveResult;
-
-      return applied;
+    (input: CreateNodeTypeInput): Promise<Result<NodeId, Error>> => {
+      const session = sessionRef.current;
+      if (!session) return Promise.resolve(err(new Error('No graph loaded')));
+      return commitCreatedNode(session, createNodeTypeOp(session.graph(), input, { deviceId }));
     },
-    [graph, saveGraph],
+    [deviceId],
   );
 
   const createEdgeType = useCallback(
-    async (input: CreateEdgeTypeInput): Promise<Result<NodeId, Error>> => {
-      if (!graph) return err(new Error('No graph loaded'));
-      if (!syncEngineRef.current) return err(new Error('SyncEngine not initialized'));
-
-      const opResult = createEdgeTypeOp(graph, input, { deviceId: PLACEHOLDER_DEVICE_ID });
-      if (!opResult.ok) return err(validationErrorToError(opResult.error));
-
-      const applied = applyCreatedNode(syncEngineRef.current, opResult.value);
-      if (!applied.ok) return applied;
-
-      const saveResult = await saveGraph();
-      if (!saveResult.ok) return saveResult;
-
-      return applied;
+    (input: CreateEdgeTypeInput): Promise<Result<NodeId, Error>> => {
+      const session = sessionRef.current;
+      if (!session) return Promise.resolve(err(new Error('No graph loaded')));
+      return commitCreatedNode(session, createEdgeTypeOp(session.graph(), input, { deviceId }));
     },
-    [graph, saveGraph],
+    [deviceId],
   );
 
   const createPropertyType = useCallback(
-    async (input: CreatePropertyTypeInput): Promise<Result<NodeId, Error>> => {
-      if (!graph) return err(new Error('No graph loaded'));
-      if (!syncEngineRef.current) return err(new Error('SyncEngine not initialized'));
-
-      const opResult = createPropertyTypeOp(graph, input, { deviceId: PLACEHOLDER_DEVICE_ID });
-      if (!opResult.ok) return err(validationErrorToError(opResult.error));
-
-      const applied = applyCreatedNode(syncEngineRef.current, opResult.value);
-      if (!applied.ok) return applied;
-
-      const saveResult = await saveGraph();
-      if (!saveResult.ok) return saveResult;
-
-      return applied;
+    (input: CreatePropertyTypeInput): Promise<Result<NodeId, Error>> => {
+      const session = sessionRef.current;
+      if (!session) return Promise.resolve(err(new Error('No graph loaded')));
+      return commitCreatedNode(session, createPropertyTypeOp(session.graph(), input, { deviceId }));
     },
-    [graph, saveGraph],
+    [deviceId],
   );
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (syncEngineRef.current) {
-        syncEngineRef.current.disconnectProvider();
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
       }
       return undefined;
     };
@@ -416,14 +338,14 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
     <GraphContext.Provider
       value={{
         graph,
-        syncEngine,
         isLoading,
         error,
         loadGraph,
         closeGraph,
-        saveGraph,
         createNode,
         createEdge,
+        updateNodeProperties,
+        deleteNode,
         createNamespace,
         createNodeType,
         createEdgeType,

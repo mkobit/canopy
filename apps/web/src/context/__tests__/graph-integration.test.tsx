@@ -3,18 +3,16 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 import React from 'react';
 import { StorageProvider, useStorage } from '../storage-context';
 import { GraphProvider, useGraph } from '../graph-context';
-import { asGraphId, SYSTEM_IDS, createGraph } from '@canopy/graph';
-import { createSyncEngine } from '@canopy/sync';
+import { asGraphId, SYSTEM_IDS } from '@canopy/graph';
 import { executeStoredQuery, executeView } from '@canopy/queries';
-import { Temporal } from 'temporal-polyfill';
-import type { NodeId } from '@canopy/graph';
+import type { NodeId, GraphId } from '@canopy/graph';
 import type { ReactNode } from 'react';
 import { listAllowedNodeTypes } from '../../utils/node-types';
 
 function useTestContext() {
-  const { storage, isLoading: storageLoading } = useStorage();
+  const { eventLog, isLoading: storageLoading } = useStorage();
   const graphCtx = useGraph();
-  return { storageReady: !storageLoading && storage !== null, storage, ...graphCtx };
+  return { storageReady: !storageLoading && eventLog !== null, ...graphCtx };
 }
 
 const wrapper = ({ children }: { children: ReactNode }): React.JSX.Element => (
@@ -23,8 +21,23 @@ const wrapper = ({ children }: { children: ReactNode }): React.JSX.Element => (
   </StorageProvider>
 );
 
+async function loadFreshGraph(id: GraphId) {
+  const { result } = renderHook(() => useTestContext(), { wrapper });
+
+  await waitFor(() => {
+    expect(result.current.storageReady).toBe(true);
+  });
+
+  await act(async () => {
+    const res = await result.current.loadGraph(id);
+    expect(res.ok).toBe(true);
+  });
+
+  return result;
+}
+
 describe('graph round-trip', () => {
-  it('persists a node through save and load', async () => {
+  it('persists a node through commit and reload', async () => {
     const testGraphId = asGraphId('test-graph-integration');
 
     const { result, unmount } = renderHook(() => useTestContext(), { wrapper });
@@ -42,7 +55,7 @@ describe('graph round-trip', () => {
 
     expect(result.current.graph).not.toBeNull();
 
-    // Create a node — createNode auto-saves
+    // Create a node — createNode commits through the graph session immediately.
     let nodeId: NodeId | undefined;
     await act(async () => {
       const res = await result.current.createNode(SYSTEM_IDS.TYPE_MARKDOWN, {
@@ -73,7 +86,7 @@ describe('graph round-trip', () => {
     expect(result2.current.graph?.nodes.has(nodeId)).toBe(true);
   });
 
-  it('persists a TextBlock node with list content through save and load', async () => {
+  it('persists a TextBlock node with list content through commit and reload', async () => {
     const testGraphId = asGraphId('test-graph-text-block');
 
     const { result, unmount } = renderHook(() => useTestContext(), { wrapper });
@@ -125,41 +138,61 @@ describe('graph round-trip', () => {
       'block-2',
     ]);
   });
+
+  it('updateNodeProperties commits a partial change that survives reload', async () => {
+    const testGraphId = asGraphId('test-graph-update-properties');
+    const result = await loadFreshGraph(testGraphId);
+
+    let nodeId: NodeId | undefined;
+    await act(async () => {
+      const res = await result.current.createNode(SYSTEM_IDS.TYPE_MARKDOWN, {
+        content: 'original',
+      });
+      if (res.ok) nodeId = res.value;
+    });
+    expect(nodeId).toBeDefined();
+    if (nodeId === undefined) return;
+    const createdNodeId = nodeId;
+
+    await act(async () => {
+      const res = await result.current.updateNodeProperties(
+        createdNodeId,
+        new Map([['content', 'updated']]),
+      );
+      expect(res.ok).toBe(true);
+    });
+
+    expect(result.current.graph?.nodes.get(createdNodeId)?.properties.get('content')).toBe(
+      'updated',
+    );
+  });
+
+  it('deleteNode removes the node and its edges', async () => {
+    const testGraphId = asGraphId('test-graph-delete-node');
+    const result = await loadFreshGraph(testGraphId);
+
+    let nodeId: NodeId | undefined;
+    await act(async () => {
+      const res = await result.current.createNode(SYSTEM_IDS.TYPE_MARKDOWN, { content: 'a' });
+      if (res.ok) nodeId = res.value;
+    });
+    expect(nodeId).toBeDefined();
+    if (nodeId === undefined) return;
+    const createdNodeId = nodeId;
+
+    await act(async () => {
+      const res = await result.current.deleteNode(createdNodeId);
+      expect(res.ok).toBe(true);
+    });
+
+    expect(result.current.graph?.nodes.has(createdNodeId)).toBe(false);
+  });
 });
 
 describe('bootstrap bridge — context integration', () => {
-  it('QUERY_ALL_NODES works after loading a bootstrapped graph', async () => {
+  it('QUERY_ALL_NODES works after loading a fresh graph', async () => {
     const id = asGraphId('test-bootstrap-bridge');
-    const { result } = renderHook(() => useTestContext(), { wrapper });
-
-    await waitFor(() => {
-      expect(result.current.storageReady).toBe(true);
-    });
-
-    // Simulate HomePage.handleCreateGraph bootstrap bridge
-    const graphResult = createGraph(id, 'Bootstrap Test');
-    expect(graphResult.ok).toBe(true);
-    if (!graphResult.ok) return;
-
-    const engine = createSyncEngine({});
-    [...graphResult.value.nodes.values()].map((node) =>
-      engine.store.addNode({ id: node.id, type: node.type, properties: node.properties }),
-    );
-
-    await act(async () => {
-      const saveResult = await result.current.storage?.save(id, engine.getSnapshot(), {
-        id,
-        name: 'Bootstrap Test',
-        createdAt: Temporal.Now.instant().toString(),
-        updatedAt: Temporal.Now.instant().toString(),
-      });
-      expect(saveResult?.ok).toBe(true);
-    });
-
-    await act(async () => {
-      const loadResult = await result.current.loadGraph(id);
-      expect(loadResult.ok).toBe(true);
-    });
+    const result = await loadFreshGraph(id);
 
     const graph = result.current.graph;
     expect(graph).not.toBeNull();
@@ -171,33 +204,7 @@ describe('bootstrap bridge — context integration', () => {
 
   it('user node appears in QUERY_ALL_NODES results after createNode', async () => {
     const id = asGraphId('test-bootstrap-query-user-nodes');
-    const { result } = renderHook(() => useTestContext(), { wrapper });
-
-    await waitFor(() => {
-      expect(result.current.storageReady).toBe(true);
-    });
-
-    const graphResult = createGraph(id, 'Query Test');
-    expect(graphResult.ok).toBe(true);
-    if (!graphResult.ok) return;
-
-    const engine = createSyncEngine({});
-    [...graphResult.value.nodes.values()].map((node) =>
-      engine.store.addNode({ id: node.id, type: node.type, properties: node.properties }),
-    );
-
-    await act(async () => {
-      await result.current.storage?.save(id, engine.getSnapshot(), {
-        id,
-        name: 'Query Test',
-        createdAt: Temporal.Now.instant().toString(),
-        updatedAt: Temporal.Now.instant().toString(),
-      });
-    });
-
-    await act(async () => {
-      await result.current.loadGraph(id);
-    });
+    const result = await loadFreshGraph(id);
 
     let nodeId: NodeId | undefined;
     await act(async () => {
@@ -221,33 +228,7 @@ describe('bootstrap bridge — context integration', () => {
 
   it('VIEW_ALL_NODES returns only user nodes', async () => {
     const id = asGraphId('test-bootstrap-view');
-    const { result } = renderHook(() => useTestContext(), { wrapper });
-
-    await waitFor(() => {
-      expect(result.current.storageReady).toBe(true);
-    });
-
-    const graphResult = createGraph(id, 'View Test');
-    expect(graphResult.ok).toBe(true);
-    if (!graphResult.ok) return;
-
-    const engine = createSyncEngine({});
-    [...graphResult.value.nodes.values()].map((node) =>
-      engine.store.addNode({ id: node.id, type: node.type, properties: node.properties }),
-    );
-
-    await act(async () => {
-      await result.current.storage?.save(id, engine.getSnapshot(), {
-        id,
-        name: 'View Test',
-        createdAt: Temporal.Now.instant().toString(),
-        updatedAt: Temporal.Now.instant().toString(),
-      });
-    });
-
-    await act(async () => {
-      await result.current.loadGraph(id);
-    });
+    const result = await loadFreshGraph(id);
 
     let nodeId: NodeId | undefined;
     await act(async () => {
@@ -269,33 +250,7 @@ describe('bootstrap bridge — context integration', () => {
 
   it('listAllowedNodeTypes on a loaded graph exposes Markdown, CodeBlock, and TextBlock', async () => {
     const id = asGraphId('test-list-allowed');
-    const { result } = renderHook(() => useTestContext(), { wrapper });
-
-    await waitFor(() => {
-      expect(result.current.storageReady).toBe(true);
-    });
-
-    const graphResult = createGraph(id, 'Allowed Types Test');
-    expect(graphResult.ok).toBe(true);
-    if (!graphResult.ok) return;
-
-    const engine = createSyncEngine({});
-    [...graphResult.value.nodes.values()].map((node) =>
-      engine.store.addNode({ id: node.id, type: node.type, properties: node.properties }),
-    );
-
-    await act(async () => {
-      await result.current.storage?.save(id, engine.getSnapshot(), {
-        id,
-        name: 'Allowed Types Test',
-        createdAt: Temporal.Now.instant().toString(),
-        updatedAt: Temporal.Now.instant().toString(),
-      });
-    });
-
-    await act(async () => {
-      await result.current.loadGraph(id);
-    });
+    const result = await loadFreshGraph(id);
 
     const graph = result.current.graph;
     expect(graph).not.toBeNull();
@@ -309,42 +264,10 @@ describe('bootstrap bridge — context integration', () => {
   });
 });
 
-async function loadBootstrappedGraph(id: ReturnType<typeof asGraphId>, name: string) {
-  const { result } = renderHook(() => useTestContext(), { wrapper });
-
-  await waitFor(() => {
-    expect(result.current.storageReady).toBe(true);
-  });
-
-  const graphResult = createGraph(id, name);
-  expect(graphResult.ok).toBe(true);
-  if (!graphResult.ok) throw graphResult.error;
-
-  const engine = createSyncEngine({});
-  [...graphResult.value.nodes.values()].map((node) =>
-    engine.store.addNode({ id: node.id, type: node.type, properties: node.properties }),
-  );
-
-  await act(async () => {
-    await result.current.storage?.save(id, engine.getSnapshot(), {
-      id,
-      name,
-      createdAt: Temporal.Now.instant().toString(),
-      updatedAt: Temporal.Now.instant().toString(),
-    });
-  });
-
-  await act(async () => {
-    await result.current.loadGraph(id);
-  });
-
-  return result;
-}
-
 describe('type-authoring bridge — context integration', () => {
   it('createNamespace persists a Namespace node reachable after save/load', async () => {
     const id = asGraphId('test-type-authoring-namespace');
-    const result = await loadBootstrappedGraph(id, 'Namespace Test');
+    const result = await loadFreshGraph(id);
 
     let namespaceId: NodeId | undefined;
     await act(async () => {
@@ -362,7 +285,7 @@ describe('type-authoring bridge — context integration', () => {
 
   it('createNamespace rejects a restricted kind and creates nothing', async () => {
     const id = asGraphId('test-type-authoring-namespace-restricted');
-    const result = await loadBootstrappedGraph(id, 'Namespace Restricted Test');
+    const result = await loadFreshGraph(id);
 
     const beforeCount = result.current.graph?.nodes.size;
 
@@ -376,7 +299,7 @@ describe('type-authoring bridge — context integration', () => {
 
   it('createNodeType in a restricted namespace is rejected', async () => {
     const id = asGraphId('test-type-authoring-nodetype-restricted');
-    const result = await loadBootstrappedGraph(id, 'NodeType Restricted Test');
+    const result = await loadFreshGraph(id);
 
     await act(async () => {
       const res = await result.current.createNodeType({
@@ -390,7 +313,7 @@ describe('type-authoring bridge — context integration', () => {
 
   it('createPropertyType then createNodeType referencing it resolves an inline PropertyDefinition', async () => {
     const id = asGraphId('test-type-authoring-property-reference');
-    const result = await loadBootstrappedGraph(id, 'Property Reference Test');
+    const result = await loadFreshGraph(id);
 
     let propertyTypeId: NodeId | undefined;
     await act(async () => {
@@ -432,7 +355,7 @@ describe('type-authoring bridge — context integration', () => {
 
   it('createEdgeType persists sourceTypes/targetTypes', async () => {
     const id = asGraphId('test-type-authoring-edgetype');
-    const result = await loadBootstrappedGraph(id, 'EdgeType Test');
+    const result = await loadFreshGraph(id);
 
     await act(async () => {
       const res = await result.current.createNodeType({
