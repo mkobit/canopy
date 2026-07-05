@@ -8,7 +8,7 @@
     "tools"
   ],
   "engines": {
-    "bun": "1.3.13"
+    "bun": "1.3.14"
   },
   "scripts": {
     "build": "tsc -b && bun --filter './apps/*' build",
