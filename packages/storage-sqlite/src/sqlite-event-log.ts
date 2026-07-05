@@ -1,17 +1,16 @@
 import type { Database, SqlJsStatic } from 'sql.js';
 import initSqlJs from 'sql.js';
-import type {
-  StorageAdapter,
-  GraphStorageMetadata,
-  EventLogStore,
-  EventLogQueryOptions,
-} from './types';
-import type { Result, GraphEvent } from '@canopy/graph';
+import type { Result, GraphEvent, EventLogStore, EventLogQueryOptions } from '@canopy/graph';
 import { ok, err, fromAsyncThrowable } from '@canopy/graph';
 
 export interface SQLitePersistence {
   readonly read: () => Promise<Uint8Array | null>;
   readonly write: (data: Uint8Array) => Promise<void>;
+}
+
+export interface SQLiteEventLog extends EventLogStore {
+  readonly init: () => Promise<Result<void, Error>>;
+  readonly close: () => Promise<Result<void, Error>>;
 }
 
 const serializeEvent = (event: GraphEvent): unknown => {
@@ -71,24 +70,13 @@ const deserializeEvent = (storable: unknown): GraphEvent => {
 };
 
 // eslint-disable-next-line max-lines-per-function
-export const createSQLiteAdapter = (
-  persistence?: SQLitePersistence,
-): StorageAdapter & EventLogStore => {
+export const createSQLiteEventLog = (persistence?: SQLitePersistence): SQLiteEventLog => {
   let db = null as Database | null;
 
   let SQL = null as SqlJsStatic | null;
 
   const initSchema = () => {
     if (!db) return; // Should not happen if called from init
-    db.run(`
-      CREATE TABLE IF NOT EXISTS graphs (
-        id TEXT PRIMARY KEY,
-        name TEXT,
-        snapshot BLOB,
-        created_at TEXT,
-        updated_at TEXT
-      );
-    `);
     db.run(`
       CREATE TABLE IF NOT EXISTS events (
         graph_id TEXT NOT NULL,
@@ -99,7 +87,6 @@ export const createSQLiteAdapter = (
         PRIMARY KEY (graph_id, event_id)
       );
     `);
-    // Redundant index removed
     return;
   };
 
@@ -136,85 +123,6 @@ export const createSQLiteAdapter = (
           db = null;
         }
         return;
-      });
-    },
-
-    save: async (
-      graphId: string,
-      snapshot: Uint8Array,
-      metadata: GraphStorageMetadata,
-    ): Promise<Result<void, Error>> => {
-      if (!db) return err(new Error('Database not initialized'));
-      const dbInstance = db;
-
-      return fromAsyncThrowable(async () => {
-        const stmt = dbInstance.prepare(`
-          REPLACE INTO graphs (id, name, snapshot, created_at, updated_at)
-          VALUES (?, ?, ?, ?, ?)
-        `);
-
-        stmt.run([graphId, metadata.name, snapshot, metadata.createdAt, metadata.updatedAt]);
-        stmt.free();
-
-        await persist();
-        return;
-      });
-    },
-
-    load: async (graphId: string): Promise<Result<Uint8Array | null, Error>> => {
-      if (!db) return err(new Error('Database not initialized'));
-      const dbInstance = db;
-
-      return fromAsyncThrowable(async () => {
-        const stmt = dbInstance.prepare('SELECT snapshot FROM graphs WHERE id = ?');
-        stmt.bind([graphId]);
-
-        if (stmt.step()) {
-          const result = stmt.getAsObject();
-          stmt.free();
-          return result.snapshot as Uint8Array;
-        }
-
-        stmt.free();
-        return null;
-      });
-    },
-
-    delete: async (graphId: string): Promise<Result<void, Error>> => {
-      if (!db) return err(new Error('Database not initialized'));
-      const dbInstance = db;
-
-      return fromAsyncThrowable(async () => {
-        dbInstance.run('DELETE FROM graphs WHERE id = ?', [graphId]);
-        dbInstance.run('DELETE FROM events WHERE graph_id = ?', [graphId]);
-        await persist();
-        return;
-      });
-    },
-
-    list: async (): Promise<Result<readonly GraphStorageMetadata[], Error>> => {
-      if (!db) return err(new Error('Database not initialized'));
-      const dbInstance = db;
-
-      return fromAsyncThrowable(async () => {
-        const result = [] as GraphStorageMetadata[];
-
-        const stmt = dbInstance.prepare('SELECT id, name, created_at, updated_at FROM graphs');
-
-        // eslint-disable-next-line functional/no-loop-statements
-        while (stmt.step()) {
-          const row = stmt.getAsObject();
-
-          result.push({
-            id: row.id as string,
-            name: row.name as string,
-            createdAt: row.created_at as string,
-            updatedAt: row.updated_at as string,
-          });
-        }
-
-        stmt.free();
-        return result;
       });
     },
 

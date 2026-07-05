@@ -30,6 +30,10 @@ export interface GraphStoreSnapshot {
   readonly lastEventId: string | undefined;
 }
 
+/**
+ * @deprecated Yjs-snapshot metadata. Implemented only by the deprecated
+ * `createIndexedDBAdapter` in `@canopy/storage-indexeddb`.
+ */
 export interface GraphStorageMetadata {
   readonly id: string;
   readonly name: string;
@@ -37,6 +41,11 @@ export interface GraphStorageMetadata {
   readonly updatedAt: string; // ISO string
 }
 
+/**
+ * @deprecated Yjs-snapshot storage contract, superseded by `EventLogStore`. Implemented only by
+ * the deprecated `createIndexedDBAdapter` in `@canopy/storage-indexeddb`, kept as the one-time
+ * legacy vault import's read path.
+ */
 export interface StorageAdapter {
   /**
    * Initialize the backend (e.g., open DB connection).

@@ -68,6 +68,7 @@
         "@canopy/queries": "workspace:*",
         "@canopy/settings": "workspace:*",
         "@canopy/storage": "workspace:*",
+        "@canopy/storage-indexeddb": "workspace:*",
         "@canopy/sync": "workspace:*",
         "@xyflow/react": "^12.11.0",
         "clsx": "^2.1.1",
@@ -110,6 +111,7 @@
         "zod": "^4.4.1",
       },
       "devDependencies": {
+        "@canopy/storage-sqlite": "workspace:*",
         "@types/uuid": "^11.0.0",
         "fast-check": "^3.23.2",
         "typescript": "6.0.3",
@@ -143,13 +145,35 @@
       "version": "0.0.0",
       "dependencies": {
         "@canopy/graph": "workspace:*",
-        "@canopy/sync": "workspace:*",
-        "@types/sql.js": "^1.4.11",
+      },
+      "devDependencies": {
+        "temporal-polyfill": "^0.3.2",
+        "typescript": "6.0.3",
+      },
+    },
+    "packages/storage-indexeddb": {
+      "name": "@canopy/storage-indexeddb",
+      "version": "0.0.0",
+      "dependencies": {
+        "@canopy/graph": "workspace:*",
+        "@canopy/storage": "workspace:*",
         "idb": "^8.0.3",
-        "sql.js": "^1.14.1",
       },
       "devDependencies": {
         "fake-indexeddb": "^6.2.5",
+        "temporal-polyfill": "^0.3.2",
+        "typescript": "6.0.3",
+      },
+    },
+    "packages/storage-sqlite": {
+      "name": "@canopy/storage-sqlite",
+      "version": "0.0.0",
+      "dependencies": {
+        "@canopy/graph": "workspace:*",
+        "@types/sql.js": "^1.4.11",
+        "sql.js": "^1.14.1",
+      },
+      "devDependencies": {
         "temporal-polyfill": "^0.3.2",
         "typescript": "6.0.3",
       },
@@ -224,6 +248,10 @@
     "@canopy/settings": ["@canopy/settings@workspace:packages/settings"],
 
     "@canopy/storage": ["@canopy/storage@workspace:packages/storage"],
+
+    "@canopy/storage-indexeddb": ["@canopy/storage-indexeddb@workspace:packages/storage-indexeddb"],
+
+    "@canopy/storage-sqlite": ["@canopy/storage-sqlite@workspace:packages/storage-sqlite"],
 
     "@canopy/sync": ["@canopy/sync@workspace:packages/sync"],
 

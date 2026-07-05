@@ -1,10 +1,10 @@
 ## 1. Storage split + IndexedDB event log
 
-- [ ] 1.1 Create `packages/storage-indexeddb` (`@canopy/storage-indexeddb`, dep `idb`) and `packages/storage-sqlite` (`@canopy/storage-sqlite`, dep `sql.js`); wire into workspaces, `tsconfig.build` references, and the CI package matrix
-- [ ] 1.2 Move the existing SQLite adapter and its event log into `@canopy/storage-sqlite`, dropping its Yjs-snapshot surface; move existing tests
-- [ ] 1.3 Implement `EventLogStore` in `@canopy/storage-indexeddb`: events object store keyed by `[graphId, eventId]`, idempotent `appendEvents` (dedup by eventId), `getEvents` honoring `after`/`before`/`limit`/`reverse` in eventId order
-- [ ] 1.4 Reduce `@canopy/storage` to contract re-exports plus the in-memory `EventLogStore`; keep the legacy Yjs-snapshot `StorageAdapter` and IndexedDB store temporarily (import read path for group 3), marked deprecated
-- [ ] 1.5 Unit tests for the IndexedDB adapter (idempotent append, range queries, multi-graph isolation) using the same cases as the in-memory/SQLite suites
+- [x] 1.1 Create `packages/storage-indexeddb` (`@canopy/storage-indexeddb`, dep `idb`) and `packages/storage-sqlite` (`@canopy/storage-sqlite`, dep `sql.js`); wire into workspaces, `tsconfig.build` references, and the CI package matrix
+- [x] 1.2 Move the existing SQLite adapter and its event log into `@canopy/storage-sqlite`, dropping its Yjs-snapshot surface; move existing tests
+- [x] 1.3 Implement `EventLogStore` in `@canopy/storage-indexeddb`: events object store keyed by `[graphId, eventId]`, idempotent `appendEvents` (dedup by eventId), `getEvents` honoring `after`/`before`/`limit`/`reverse` in eventId order
+- [x] 1.4 Reduce `@canopy/storage` to contract re-exports plus the in-memory `EventLogStore`; keep the legacy Yjs-snapshot `StorageAdapter` and IndexedDB store temporarily (import read path for group 3), marked deprecated
+- [x] 1.5 Unit tests for the IndexedDB adapter (idempotent append, range queries, multi-graph isolation) using the same cases as the in-memory/SQLite suites
 
 ## 2. Graph session + convergent projection
 

@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
-import { createSQLiteAdapter } from '@canopy/storage';
+import { createSQLiteEventLog } from '@canopy/storage-sqlite';
+import type { SQLiteEventLog } from '@canopy/storage-sqlite';
 import { getGraphAt } from '../src/history';
 import {
   asNodeId,
@@ -31,10 +32,10 @@ function createEventIdAt(timestamp: Instant, seq: number): EventId {
 }
 
 describe('Time Travel API', () => {
-  let adapter: SQLiteAdapter;
+  let adapter: SQLiteEventLog;
 
   beforeEach(async () => {
-    adapter = createSQLiteAdapter();
+    adapter = createSQLiteEventLog();
     await unwrap(await adapter.init());
   });
 

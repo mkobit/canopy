@@ -405,7 +405,12 @@ export default tseslint.config(
   // Note: prefer-immutable-types and type-declaration-immutability remain ON — public signatures
   // accept immutable types even when implementations mutate encapsulated fields.
   {
-    files: ['packages/storage/src/**/*.ts', 'packages/sync/src/**/*.ts'],
+    files: [
+      'packages/storage/src/**/*.ts',
+      'packages/storage-indexeddb/src/**/*.ts',
+      'packages/storage-sqlite/src/**/*.ts',
+      'packages/sync/src/**/*.ts',
+    ],
     rules: {
       'functional/no-let': 'off',
       'functional/immutable-data': 'off',
