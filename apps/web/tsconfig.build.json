@@ -25,6 +25,9 @@
       "path": "../../packages/storage/tsconfig.build.json"
     },
     {
+      "path": "../../packages/storage-indexeddb/tsconfig.build.json"
+    },
+    {
       "path": "../../packages/sync/tsconfig.build.json"
     }
   ]

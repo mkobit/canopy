@@ -15,6 +15,7 @@
     "@canopy/queries": "workspace:*",
     "@canopy/settings": "workspace:*",
     "@canopy/storage": "workspace:*",
+    "@canopy/storage-indexeddb": "workspace:*",
     "@canopy/sync": "workspace:*",
     "@xyflow/react": "^12.11.0",
     "clsx": "^2.1.1",

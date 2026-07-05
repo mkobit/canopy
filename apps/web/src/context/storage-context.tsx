@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { StorageAdapter } from '@canopy/storage';
-import { createIndexedDBAdapter } from '@canopy/storage';
+import { createIndexedDBAdapter } from '@canopy/storage-indexeddb';
 import { fromAsyncThrowable } from '@canopy/graph';
 
 interface StorageContextType {

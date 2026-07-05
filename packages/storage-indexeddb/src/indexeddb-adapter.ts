@@ -1,6 +1,6 @@
 import type { DBSchema, IDBPDatabase } from 'idb';
 import { openDB } from 'idb';
-import type { StorageAdapter, GraphStorageMetadata } from './types';
+import type { StorageAdapter, GraphStorageMetadata } from '@canopy/storage';
 import type { Result } from '@canopy/graph';
 import { ok, err, fromAsyncThrowable } from '@canopy/graph';
 
@@ -15,6 +15,10 @@ interface CanopyDB extends DBSchema {
   }>;
 }
 
+/**
+ * @deprecated Yjs-snapshot storage. Kept only as the read path for the one-time legacy vault
+ * import (see `docs/design/2026-07-03-event-log-storage-and-sync.md`); deleted once that import ships.
+ */
 export const createIndexedDBAdapter = (dbName = 'canopy-storage'): StorageAdapter => {
   let db = null as IDBPDatabase<CanopyDB> | null;
 
