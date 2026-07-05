@@ -2,24 +2,23 @@ import React, { useEffect, useState } from 'react';
 import { useStorage } from '../context/storage-context';
 import { showPrompt, showConfirm } from '../utils/dialogs';
 import { useNavigate } from 'react-router-dom';
-import { createGraphId, createGraph } from '@canopy/graph';
-import { createSyncEngine } from '@canopy/sync';
+import { createGraphId } from '@canopy/graph';
 import { Plus, Trash2, FolderOpen } from 'lucide-react';
-import type { GraphStorageMetadata } from '@canopy/storage';
+import type { GraphRegistryEntry } from '@canopy/storage-indexeddb';
 import { Temporal } from 'temporal-polyfill';
 
 // eslint-disable-next-line max-lines-per-function
 export const HomePage = () => {
-  const { storage, isLoading: storageLoading } = useStorage();
+  const { registry, isLoading: storageLoading } = useStorage();
   const navigate = useNavigate();
-  const [graphs, setGraphs] = useState<readonly GraphStorageMetadata[]>([]);
+  const [graphs, setGraphs] = useState<readonly GraphRegistryEntry[]>([]);
   const [loading, setLoading] = useState(false);
 
   const loadGraphs = React.useCallback(async () => {
-    if (!storage) return undefined;
+    if (!registry) return undefined;
     setLoading(true);
 
-    const listResult = await storage.list();
+    const listResult = await registry.list();
     if (listResult.ok) {
       setGraphs(listResult.value);
     } else {
@@ -28,49 +27,24 @@ export const HomePage = () => {
 
     setLoading(false);
     return undefined;
-  }, [storage]);
+  }, [registry]);
 
   useEffect(() => {
-    if (storage) {
-      Promise.resolve()
-        .then(() => loadGraphs())
-        .catch(console.error);
+    if (registry) {
+      Promise.resolve().then(loadGraphs).catch(console.error);
     }
     return undefined;
-  }, [storage, loadGraphs]);
+  }, [registry, loadGraphs]);
 
   const handleCreateGraph = async () => {
-    if (!storage) return undefined;
+    if (!registry) return undefined;
     const name = showPrompt('Enter graph name:');
     if (!name) return undefined;
 
     const id = createGraphId();
     const now = Temporal.Now.instant().toString();
 
-    const graphResult = createGraph(id, name);
-    if (!graphResult.ok) {
-      console.error('Failed to bootstrap graph', graphResult.error);
-      return undefined;
-    }
-    const bootstrapped = graphResult.value;
-
-    if (bootstrapped.edges.size > 0) {
-      console.warn('Bootstrap produced edges — bridge does not persist them');
-    }
-
-    const engine = createSyncEngine({});
-    [...bootstrapped.nodes.values()].map((node) =>
-      engine.store.addNode({ id: node.id, type: node.type, properties: node.properties }),
-    );
-
-    const snapshot = engine.getSnapshot();
-    const result = await storage.save(id, snapshot, {
-      id,
-      name,
-      createdAt: now,
-      updatedAt: now,
-    });
-
+    const result = await registry.upsert({ id, name, createdAt: now, updatedAt: now });
     if (result.ok) {
       await loadGraphs();
     } else {
@@ -81,10 +55,10 @@ export const HomePage = () => {
 
   const handleDeleteGraph = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!storage) return undefined;
+    if (!registry) return undefined;
     if (!showConfirm('Are you sure you want to delete this graph?')) return undefined;
 
-    const result = await storage.delete(id);
+    const result = await registry.delete(id);
     if (result.ok) {
       await loadGraphs();
     } else {
