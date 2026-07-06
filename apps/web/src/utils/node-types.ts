@@ -1,13 +1,16 @@
 import {
   SYSTEM_IDS,
+  RESTRICTED_NAMESPACE_KINDS,
   asTypeId,
   fromThrowable,
   PropertyDefinitionSchema,
   type Graph,
+  type Node,
   type PropertyDefinition,
   type TypeId,
 } from '@canopy/graph';
 import { z } from 'zod';
+import type { NamespaceOption } from './schema';
 
 export interface NodeTypeOption {
   readonly id: TypeId;
@@ -16,11 +19,19 @@ export interface NodeTypeOption {
   readonly properties: readonly PropertyDefinition[];
 }
 
-const ALLOWED_TYPE_DEF_IDS: ReadonlySet<string> = new Set([
+// TextBlock/CodeBlock/MarkdownNode are bootstrap-seeded into the restricted `system`
+// namespace (a pre-existing placement quirk, unrelated to this fix) but must stay
+// instantiable -- unlike the rest of `system`'s machinery types.
+const LEGACY_ALLOWED_TYPE_DEF_IDS: ReadonlySet<string> = new Set([
   SYSTEM_IDS.NODE_TYPE_MARKDOWN,
   SYSTEM_IDS.NODE_TYPE_CODE_BLOCK,
   SYSTEM_IDS.NODE_TYPE_TEXT_BLOCK,
 ]);
+
+// UserSetting lives in the non-restricted `user-settings` namespace despite being
+// settings-cascade machinery, not user content -- namespace restriction alone can't
+// tell the two apart, so exclude it explicitly.
+const EXCLUDED_TYPE_DEF_IDS: ReadonlySet<string> = new Set([SYSTEM_IDS.USER_SETTING_DEF]);
 
 const PropertyDefinitionsSchema = z.array(PropertyDefinitionSchema);
 
@@ -37,9 +48,21 @@ export function parseProperties(raw: unknown): readonly PropertyDefinition[] {
   return parsed.success ? parsed.data : [];
 }
 
-export function listAllowedNodeTypes(graph: Graph): readonly NodeTypeOption[] {
+function isInstantiable(node: Node, kindByNamespace: ReadonlyMap<string, string>): boolean {
+  if (LEGACY_ALLOWED_TYPE_DEF_IDS.has(node.id)) return true;
+  if (EXCLUDED_TYPE_DEF_IDS.has(node.id)) return false;
+  const namespace = readString(node.properties.get('namespace'));
+  const kind = namespace ? kindByNamespace.get(namespace) : undefined;
+  return kind !== undefined && !RESTRICTED_NAMESPACE_KINDS.has(kind);
+}
+
+export function listAllowedNodeTypes(
+  graph: Graph,
+  namespaces: readonly NamespaceOption[],
+): readonly NodeTypeOption[] {
+  const kindByNamespace = new Map<string, string>(namespaces.map((ns) => [ns.name, ns.kind]));
   return [...graph.nodes.values()]
-    .filter((node) => node.type === SYSTEM_IDS.NODE_TYPE && ALLOWED_TYPE_DEF_IDS.has(node.id))
+    .filter((node) => node.type === SYSTEM_IDS.NODE_TYPE && isInstantiable(node, kindByNamespace))
     .map((node) => ({
       id: asTypeId(node.id),
       label: readString(node.properties.get('name')) ?? node.id,

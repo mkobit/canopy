@@ -8,6 +8,7 @@ import { executeStoredQuery, executeView } from '@canopy/queries';
 import type { NodeId, GraphId } from '@canopy/graph';
 import type { ReactNode } from 'react';
 import { listAllowedNodeTypes } from '../../utils/node-types';
+import { listNamespaces } from '../../utils/schema';
 
 function useTestContext() {
   const { eventLog, isLoading: storageLoading } = useStorage();
@@ -256,7 +257,7 @@ describe('bootstrap bridge — context integration', () => {
     expect(graph).not.toBeNull();
     if (!graph) return;
 
-    const types = listAllowedNodeTypes(graph);
+    const types = listAllowedNodeTypes(graph, listNamespaces(graph));
     const ids = types.map((t) => t.id).toSorted();
     expect(ids).toEqual(
       [SYSTEM_IDS.TYPE_CODE_BLOCK, SYSTEM_IDS.TYPE_MARKDOWN, SYSTEM_IDS.TYPE_TEXT_BLOCK].toSorted(),
