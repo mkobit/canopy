@@ -16,7 +16,6 @@
     "@canopy/settings": "workspace:*",
     "@canopy/storage": "workspace:*",
     "@canopy/storage-indexeddb": "workspace:*",
-    "@canopy/sync": "workspace:*",
     "@xyflow/react": "^12.11.0",
     "clsx": "^2.1.1",
     "lucide-react": "^1.20.0",
@@ -27,7 +26,6 @@
     "remeda": "^2.39.0",
     "tailwind-merge": "^3.6.0",
     "temporal-polyfill": "^0.3.2",
-    "yjs": "^13.6.30",
     "zod": "^4.4.1"
   },
   "devDependencies": {

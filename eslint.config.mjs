@@ -220,8 +220,6 @@ export default tseslint.config(
             '^Readonly', // Readonly, ReadonlyMap, ReadonlySet, ReadonlyArray
             '^Zod', // Zod schema instances (mutable internals)
             String.raw`^z\.Zod`, // namespaced Zod refs (z.ZodType, z.ZodObject)
-            String.raw`^Y\.`, // Yjs CRDT types (mutable by design)
-            '^Awareness$', // y-protocols Awareness class
             '^Error$', // built-in JS Error class
             '^FC<', // React.FC unaliased
             String.raw`^React\.`, // React.MouseEvent, React.ReactElement, React.FC, etc.
@@ -409,7 +407,6 @@ export default tseslint.config(
       'packages/storage/src/**/*.ts',
       'packages/storage-indexeddb/src/**/*.ts',
       'packages/storage-sqlite/src/**/*.ts',
-      'packages/sync/src/**/*.ts',
     ],
     rules: {
       'functional/no-let': 'off',

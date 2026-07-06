@@ -28,8 +28,8 @@ The design doc's `text`/`content` naming split (TextBlock/CodeBlock use `text`, 
 
 ## 4. Yjs removal + docs
 
-- [ ] 4.1 Delete `packages/sync` and remove `@canopy/sync` from workspaces, CI matrix, and all references
-- [ ] 4.2 Delete the legacy `StorageAdapter` interface, the Yjs-snapshot IndexedDB store, and `GraphStore` in `@canopy/storage/types.ts` if nothing uses it post-cutover
-- [ ] 4.3 Remove `yjs` and `y-protocols` from every `package.json`; verify the lockfile has no Yjs remnants
-- [ ] 4.4 Update `docs/architecture/bounded-contexts.md` (package map, dependency diagram, `EventLogStore`/session notes)
-- [ ] 4.5 Run full quality gates (clean rebuild including `*.tsbuildinfo` removal, `bun test`, typecheck, lint, e2e)
+- [x] 4.1 Delete `packages/sync` and remove `@canopy/sync` from workspaces, CI matrix, and all references
+- [x] 4.2 Delete the legacy `StorageAdapter` interface, the Yjs-snapshot IndexedDB store, and `GraphStore` in `@canopy/storage/types.ts` if nothing uses it post-cutover. Also dropped `@canopy/storage-indexeddb`'s now-dangling `@canopy/storage` dependency (its only consumer, `indexeddb-adapter.ts`, is deleted).
+- [x] 4.3 Remove `yjs` and `y-protocols` from every `package.json`; verify the lockfile has no Yjs remnants
+- [x] 4.4 Update `docs/architecture/bounded-contexts.md` (package map, dependency diagram, `EventLogStore`/session notes). Also fixed a stale `@canopy/sync` mention in `docs/architecture/graph-model.md` (current-state doc per `docs/AGENTS.md`).
+- [x] 4.5 Run full quality gates (clean rebuild including `*.tsbuildinfo` removal, `bun test`, typecheck, lint, e2e)

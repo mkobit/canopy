@@ -15,7 +15,6 @@
   },
   "devDependencies": {
     "temporal-polyfill": "^0.3.2",
-    "typescript": "6.0.3",
-    "yjs": "^13.6.30"
+    "typescript": "6.0.3"
   }
 }

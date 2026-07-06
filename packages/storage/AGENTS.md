@@ -1,6 +1,6 @@
 # @canopy/storage
 
-Storage contract re-exports (`EventLogStore`, `StorageAdapter`, `GraphStore`) plus the
+Storage contract re-exports (`EventLogStore`, `EventLogQueryOptions`) plus the
 dependency-free in-memory `EventLogStore`.
 Per-backend implementations (SQLite, IndexedDB) live in `@canopy/storage-sqlite` and
 `@canopy/storage-indexeddb`, so this package pulls in no third-party runtime dependencies.

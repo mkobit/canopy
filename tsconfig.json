@@ -18,9 +18,6 @@
     },
     {
       "path": "./packages/storage-sqlite/tsconfig.build.json"
-    },
-    {
-      "path": "./packages/sync/tsconfig.build.json"
     }
   ]
 }
