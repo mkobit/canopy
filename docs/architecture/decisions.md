@@ -7,6 +7,13 @@ Each entry states the decision, why, and where the full reasoning lives.
 Full design proposals still live in `design/` (dated, one file per proposal).
 This log complements those files — it's where decisions made *during* implementation of an approved design get recorded, so they don't only live in a PR description or an agent's private memory.
 
+## 2026-07-05 — `apps/web`'s Playwright e2e suite binds a random port, not a fixed one
+
+`playwright.config.ts` used to hardcode `http://localhost:5173` for both `webServer` and `baseURL`.
+`reuseExistingServer: !process.env.CI` (the default locally) meant Playwright silently reused *whatever* was already listening on that port instead of verifying it was canopy's own dev server — during `canopy-1q5.8`'s quality-gate run, an unrelated project's Vite dev server already held 5173, so the suite ran against the wrong app entirely and failed for a misleading reason.
+Fixed by computing a free ephemeral port at config-load time (`node:net`, `listen(0)`) and passing it to both the `vite --port` command and `baseURL`; the port is cached in `process.env.CANOPY_E2E_PORT` so worker processes (which reload the config independently) agree with the process that started the web server, and `reuseExistingServer` is now unconditionally `false` since a random port never has anything preexisting to reuse.
+Manual `bun run dev` is untouched and keeps Vite's normal fixed default — only the automated harness needed this, since a human eyeballing a browser tab would immediately notice the wrong app, but an automated suite would not.
+
 ## 2026-07-05 — Block content stays on the `content` property, not `text`
 
 `docs/design/2026-02-06-content-model.md` prescribes a naming split: TextBlock/CodeBlock use `text` (literal content), MarkdownNode uses `content` (renderer-interpreted).

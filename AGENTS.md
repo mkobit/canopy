@@ -18,20 +18,20 @@ bun pm ls --all
 
 See `docs/architecture/bounded-contexts.md` for the dependency graph and per-package scope.
 
-Five packages:
+Six packages:
 
-- `@canopy/graph` — kernel (types, schemas, projection, ops, validation, bootstrap, history, `EventLogStore` port).
+- `@canopy/graph` — kernel (types, schemas, projection, ops, validation, bootstrap, history, event bus, `GraphSession`, `EventLogStore` port).
 - `@canopy/queries` — query DSL and executor.
 - `@canopy/settings` — settings cascade and `UserSetting` creation.
-- `@canopy/storage` — persistence adapters (in-memory, SQLite, IndexedDB).
-- `@canopy/sync` — Yjs/CRDT integration, sync providers, awareness.
+- `@canopy/storage` — storage contract re-exports plus the dependency-free in-memory `EventLogStore`.
+- `@canopy/storage-indexeddb` — `EventLogStore` over IndexedDB (`idb`) plus the graph registry.
+- `@canopy/storage-sqlite` — `EventLogStore` over SQLite (`sql.js`).
 
 ## Architectural invariants
 
 1. `@canopy/graph` is the leaf — no `@canopy/*` imports.
 Bootstrap, system IDs, and the `EventLogStore` port live here.
-2. Yjs integration lives only in `@canopy/sync`.
-No other package imports `yjs` directly.
+2. No package imports `yjs` or `y-protocols`. The event log is the sole persistence and sync mechanism.
 3. Storage adapters implement `EventLogStore` (defined in `@canopy/graph`); they do not redefine the port.
 4. UI components are stateless; they receive data via props and do not fetch or mutate.
 5. Zod schemas in `@canopy/graph` are the source of truth for runtime validation.
@@ -73,7 +73,7 @@ Documentation in `AGENTS.md` files must follow the one-sentence-per-line rule.
 ### Linting rules — escape hatches
 
 `eslint-plugin-functional` is on by default for every package and `apps/web`.
-When a third-party type triggers `functional/prefer-immutable-types` (e.g. Zod, Yjs, React, xyflow), add a narrow pattern to `ignoreTypePattern` in `eslint.config.mjs` with a one-line source comment.
+When a third-party type triggers `functional/prefer-immutable-types` (e.g. Zod, React, xyflow), add a narrow pattern to `ignoreTypePattern` in `eslint.config.mjs` with a one-line source comment.
 Do NOT disable `prefer-immutable-types` or `type-declaration-immutability` per-package — adapter public signatures must stay immutable even when the implementation mutates encapsulated state.
 For genuinely unreplaceable single-line cases (e.g. React 18 `createRoot(document.querySelector('#root')!)`), use a localized `// eslint-disable-next-line <rule> -- <reason>`.
 Banned: `@ts-ignore` (use `@ts-expect-error <description>`), non-null assertions `!`, and the `.*` catch-all in `ignoreTypePattern`.

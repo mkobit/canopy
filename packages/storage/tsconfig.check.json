@@ -5,8 +5,7 @@
     "noEmit": true,
     "rootDir": "../..",
     "paths": {
-      "@canopy/graph": ["../../packages/graph/src/index.ts"],
-      "@canopy/sync": ["../../packages/sync/src/index.ts"]
+      "@canopy/graph": ["../../packages/graph/src/index.ts"]
     }
   }
 }

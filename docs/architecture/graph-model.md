@@ -38,5 +38,5 @@ Callers may also run validation explicitly.
 ## Persistence
 
 Persistence is out of scope for `@canopy/graph`.
-The `EventLogStore` port (defined in `graph/event-log.ts`) is implemented by adapters in `@canopy/storage`.
-CRDT-based replication lives in `@canopy/sync`.
+The `EventLogStore` port (defined in `graph/event-log.ts`) is implemented by adapters in `@canopy/storage`, `@canopy/storage-indexeddb`, and `@canopy/storage-sqlite`.
+`GraphSession` (`graph/graph-session.ts`) is the single write path: validate, append to the log, project incrementally, notify subscribers.

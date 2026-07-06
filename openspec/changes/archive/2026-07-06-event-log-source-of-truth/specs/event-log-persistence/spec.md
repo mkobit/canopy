@@ -26,16 +26,3 @@ Each backend SHALL live in its own package named for the backend it owns (`@cano
 #### Scenario: Range query respects options
 - **WHEN** `getEvents` is called with an `after` eventId and a `limit`
 - **THEN** the result SHALL contain only events with eventId greater than `after`, in ascending eventId order, at most `limit` long
-
-### Requirement: One-time legacy Yjs vault import
-`@canopy/storage-indexeddb` SHALL provide a one-time import that reads a legacy Yjs snapshot's materialized state and synthesizes `NodeCreated`/`EdgeCreated` events with fresh eventIds, the importing device's deviceId, one shared batchId, and migration metadata identifying the import.
-`Y.Text` content from the legacy `texts` map SHALL become the `text` property in the corresponding node's `NodeCreated`.
-The legacy `events` Y.Map SHALL be ignored, and the legacy snapshot record SHALL be left in place after import.
-
-#### Scenario: Imported vault projects to equivalent state
-- **WHEN** a legacy vault snapshot containing nodes, edges, and text content is imported and the resulting log is projected
-- **THEN** the projected graph SHALL contain the same nodes and edges with the same types and properties, with each node's legacy text content present as its `text` property
-
-#### Scenario: Import is not re-run for an already-imported vault
-- **WHEN** a graph already has an event log containing the import batch
-- **THEN** loading the graph SHALL NOT trigger a second import
