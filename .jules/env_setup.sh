@@ -22,26 +22,7 @@ fi
 
 echo "Installing tools with mise..."
 mise trust
-
-MAX_RETRIES=5
-RETRY_DELAY=10
-
-for ((i=1; i<=MAX_RETRIES; i++)); do
-    echo "Running mise install (attempt $i of $MAX_RETRIES)..."
-    if mise install; then
-        echo "mise install succeeded."
-        break
-    else
-        if [[ $i -lt $MAX_RETRIES ]]; then
-            echo "mise install failed. Retrying in $RETRY_DELAY seconds..."
-            sleep $RETRY_DELAY
-            RETRY_DELAY=$((RETRY_DELAY * 2))
-        else
-            echo "Error: mise install failed after $MAX_RETRIES attempts."
-            exit 1
-        fi
-    fi
-done
+mise install
 
 # Activate mise
 eval "$(mise activate bash)"
