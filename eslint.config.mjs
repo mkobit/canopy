@@ -226,6 +226,8 @@ export default tseslint.config(
             '^EdgeProps', // xyflow edge props
             '^NodeProps', // xyflow node props
             '^Connection$', // xyflow Connection
+            '^Page$', // Playwright Page fixture (e2e helper function params)
+            '^Locator$', // Playwright Locator (e2e helper function params)
           ],
         },
       ],
