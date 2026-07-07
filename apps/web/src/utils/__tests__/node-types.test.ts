@@ -1,6 +1,18 @@
 import { describe, it, expect } from 'bun:test';
-import { SYSTEM_IDS, asGraphId, createGraph, unwrap } from '@canopy/graph';
+import {
+  SYSTEM_IDS,
+  asGraphId,
+  asDeviceId,
+  createGraph,
+  createNamespace,
+  createNodeType,
+  unwrap,
+} from '@canopy/graph';
+import { listNamespaces } from '../schema';
 import { listAllowedNodeTypes } from '../node-types';
+
+const DEVICE_ID = asDeviceId('00000000-0000-0000-0000-000000000000');
+const OPTIONS = { deviceId: DEVICE_ID };
 
 function bootstrappedGraph() {
   return unwrap(createGraph(asGraphId('test-node-types'), 'Test'));
@@ -9,7 +21,7 @@ function bootstrappedGraph() {
 describe('listAllowedNodeTypes', () => {
   it('returns Markdown, CodeBlock, and TextBlock from a bootstrapped graph', () => {
     const graph = bootstrappedGraph();
-    const types = listAllowedNodeTypes(graph);
+    const types = listAllowedNodeTypes(graph, listNamespaces(graph));
     const ids = types.map((t) => t.id);
     expect(ids).toContain(SYSTEM_IDS.TYPE_MARKDOWN);
     expect(ids).toContain(SYSTEM_IDS.TYPE_CODE_BLOCK);
@@ -18,7 +30,7 @@ describe('listAllowedNodeTypes', () => {
 
   it('excludes meta-types', () => {
     const graph = bootstrappedGraph();
-    const ids = listAllowedNodeTypes(graph).map((t) => t.id);
+    const ids = listAllowedNodeTypes(graph, listNamespaces(graph)).map((t) => t.id);
     expect(ids).not.toContain(SYSTEM_IDS.NODE_TYPE);
     expect(ids).not.toContain(SYSTEM_IDS.EDGE_TYPE);
     expect(ids).not.toContain(SYSTEM_IDS.QUERY_DEFINITION);
@@ -30,7 +42,8 @@ describe('listAllowedNodeTypes', () => {
   });
 
   it('parses each type’s PropertyDefinition[] from its JSON-string properties field', () => {
-    const types = listAllowedNodeTypes(bootstrappedGraph());
+    const graph = bootstrappedGraph();
+    const types = listAllowedNodeTypes(graph, listNamespaces(graph));
     const markdown = types.find((t) => t.id === SYSTEM_IDS.TYPE_MARKDOWN);
     expect(markdown).toBeDefined();
     expect(markdown?.properties).toEqual([
@@ -49,9 +62,36 @@ describe('listAllowedNodeTypes', () => {
   });
 
   it('exposes label and description from the type-def node properties', () => {
-    const types = listAllowedNodeTypes(bootstrappedGraph());
+    const graph = bootstrappedGraph();
+    const types = listAllowedNodeTypes(graph, listNamespaces(graph));
     const markdown = types.find((t) => t.id === SYSTEM_IDS.TYPE_MARKDOWN);
     expect(markdown?.label).toBe('MarkdownNode');
     expect(markdown?.description).toBe('A node containing markdown content.');
+  });
+
+  it('includes a dynamically-authored NodeType in a non-restricted namespace', () => {
+    const afterNamespace = unwrap(
+      createNamespace(bootstrappedGraph(), { name: 'content', kind: 'user' }, OPTIONS),
+    ).value;
+    const afterNodeType = unwrap(
+      createNodeType(
+        afterNamespace,
+        {
+          name: 'Task',
+          namespace: 'content',
+          properties: [{ kind: 'inline', name: 'title', valueKind: 'text', required: true }],
+        },
+        OPTIONS,
+      ),
+    ).value;
+
+    const types = listAllowedNodeTypes(afterNodeType, listNamespaces(afterNodeType));
+    expect(types.some((t) => t.label === 'Task')).toBe(true);
+  });
+
+  it('still excludes UserSetting even though its namespace (user-settings) is not restricted', () => {
+    const graph = bootstrappedGraph();
+    const ids = listAllowedNodeTypes(graph, listNamespaces(graph)).map((t) => t.id);
+    expect(ids).not.toContain(SYSTEM_IDS.USER_SETTING);
   });
 });

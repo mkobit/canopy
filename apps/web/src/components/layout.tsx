@@ -6,6 +6,7 @@ import type { PropertyValue, TypeId } from '@canopy/graph';
 import { withResultAlert } from '../utils/handlers';
 import { showAlert } from '../utils/dialogs';
 import { listAllowedNodeTypes } from '../utils/node-types';
+import { listNamespaces } from '../utils/schema';
 
 const handleLogout = () => {
   showAlert('Logout clicked');
@@ -17,7 +18,10 @@ export const Layout = () => {
   const navigate = useNavigate();
   const [isNewNodeOpen, setIsNewNodeOpen] = useState(false);
 
-  const availableTypes = useMemo(() => (graph ? listAllowedNodeTypes(graph) : []), [graph]);
+  const availableTypes = useMemo(
+    () => (graph ? listAllowedNodeTypes(graph, listNamespaces(graph)) : []),
+    [graph],
+  );
 
   const handleNewNode = () => {
     if (!graph) {
