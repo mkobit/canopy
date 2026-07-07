@@ -520,21 +520,11 @@ Insert after the EdgeType assertions from Task 4, before the closing of the test
 
 **Files:** none (verification and process only)
 
-- [ ] **Step 1: Run full quality gates from the repo root**
+- [x] **Step 1: Run full quality gates from the repo root** (done — typecheck/test passed clean; lint surfaced real `max-lines-per-function`/`functional/no-let` violations in the e2e file itself, not the stale-dist gotcha; fixed by refactoring into helper functions, commit `023f5c5`)
 
-Run: `bun run typecheck && bun run lint && bun run test`
-Expected: all pass. If `prefer-immutable-types` or another cross-package lint rule fails due to stale `dist/`, rebuild first per [[feedback_ci_build_before_lint]]: delete `dist/` and `*.tsbuildinfo` under `packages`/`apps`, then `bun run build` before re-running lint.
+- [x] **Step 2: Run the full e2e suite once more from a clean state** (done — 4 passed)
 
-- [ ] **Step 2: Run the full e2e suite once more from a clean state**
-
-Run: `cd apps/web && bun run test:e2e`
-Expected: PASS.
-
-- [ ] **Step 3: Update bd**
-
-```bash
-bd close canopy-goi --reason="Dogfooded via apps/web/e2e/domain-content-types.e2e.ts; fixed listAllowedNodeTypes allowlist gap that blocked instantiating dynamically-authored NodeTypes"
-```
+- [x] **Step 3: Update bd** (done — canopy-goi closed)
 
 - [ ] **Step 4: Push the branch and open a PR**
 
