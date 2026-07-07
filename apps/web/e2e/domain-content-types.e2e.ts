@@ -148,5 +148,32 @@ test.describe('domain content types (canopy-goi)', () => {
     const assignedToItem = page.locator('li', { hasText: 'assigned_to' });
     await expect(assignedToItem).toBeVisible();
     await expect(assignedToItem.locator('p.font-mono')).not.toContainText('any -> any');
+
+    // 10. Instantiate a real Task node via the New Node dialog -- proves the
+    //     type is usable, not just definable (also exercises the Task 1 fix).
+    // Scoped to the <dialog> element itself: the underlying `<label><span>Type</span>
+    // <select>...` markup makes the select's computed accessible name include every
+    // option's text ("TypeTextBlockCodeBlockMarkdownNodePersonProjectTask"), and an
+    // unscoped `getByLabel('Type')` substring-matches the still-mounted EdgeType
+    // form's "system/Node Type" etc. checkboxes behind the dialog -- 7-way strict
+    // mode violation without this scope.
+    await page.getByRole('button', { name: 'New Node' }).click();
+    const newNodeDialog = page.getByRole('dialog');
+    await newNodeDialog.getByLabel('Type').selectOption({ label: 'Task' });
+    await newNodeDialog.getByLabel('title *').fill('Write the domain content types e2e test');
+    await expect(newNodeDialog.getByLabel('status')).toBeVisible();
+    await expect(newNodeDialog.getByLabel('priority')).toBeVisible();
+    await expect(newNodeDialog.getByLabel('dueDate')).toBeVisible();
+    await expect(newNodeDialog.getByLabel('description')).toBeVisible();
+    await newNodeDialog.getByRole('button', { name: 'Create' }).click();
+    await expect(page).toHaveURL(/\/graph\/[a-f0-9-]+\/node\/[a-f0-9-]+/);
+
+    // 11. Clean up: delete the test graph.
+    await page.getByRole('link', { name: 'Database' }).click();
+    await expect(page).toHaveURL('/');
+    const card = page.locator('.group', { hasText: 'Domain Content Types E2E Graph' });
+    await card.hover();
+    await card.getByRole('button').click();
+    await expect(page.locator('text=Domain Content Types E2E Graph')).toHaveCount(0);
   });
 });
