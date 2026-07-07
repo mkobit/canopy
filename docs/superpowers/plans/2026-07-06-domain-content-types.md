@@ -10,7 +10,7 @@
 
 **Design doc:** `docs/design/2026-07-06-domain-content-types.md`
 
-**Progress (2026-07-06):** Task 1 done, commit `d95540a`. Task 2 done, commit `c2d6833` (see corrected code below — the original plan's `namespaceLink` selector was ambiguous and got fixed during implementation). Tasks 3–6 not started.
+**Progress (2026-07-06):** Task 1 done, commit `d95540a`. Task 2 done, commit `c2d6833` (see corrected code below — the original plan's `namespaceLink` selector was ambiguous and got fixed during implementation). Task 3 done, commit `076e9b0` (draft code worked verbatim, no deviations). Task 4 done, commit `1d0b07a` (fixed one selector: `getByLabel('Name')` needed `{ exact: true }` since it substring-matched the `system/Namespace` checkbox label). Task 5 done, commit `b57fdfb` (fixed New Node dialog selectors: scoped to `page.getByRole('dialog')` since the unscoped `Type` select's accessible name concatenates all option text, colliding with background EdgeType-form checkboxes). Task 6 not started.
 
 ---
 
@@ -348,7 +348,7 @@ git commit -m "test(web): scaffold domain content types e2e — namespace + stat
 **Files:**
 - Modify: `apps/web/e2e/domain-content-types.e2e.ts`
 
-- [ ] **Step 1: Add NodeType creation steps before the closing `});`**
+- [x] **Step 1: Add NodeType creation steps before the closing `});`** (done, commit `076e9b0`)
 
 Insert after the PropertyType assertion from Task 2, still inside the same `test(...)` callback:
 
@@ -426,17 +426,9 @@ Insert after the PropertyType assertion from Task 2, still inside the same `test
     await expect(taskItem).toContainText('5 properties');
 ```
 
-- [ ] **Step 2: Run it**
+- [x] **Step 2: Run it** (done — passed: `1 passed (4.7s)`, draft selectors worked verbatim)
 
-Run: `cd apps/web && bunx playwright test domain-content-types.e2e.ts`
-Expected: PASS. If a selector doesn't match (e.g. `div.border.rounded-md.bg-gray-50` needs adjusting), use `bunx playwright test domain-content-types.e2e.ts --debug` to inspect the live DOM and fix the locator before moving on — don't guess blind.
-
-- [ ] **Step 3: Commit**
-
-```bash
-git add apps/web/e2e/domain-content-types.e2e.ts
-git commit -m "test(web): author Person/Project/Task NodeTypes in domain content types e2e"
-```
+- [x] **Step 3: Commit** (done, commit `076e9b0`)
 
 ---
 
@@ -445,7 +437,7 @@ git commit -m "test(web): author Person/Project/Task NodeTypes in domain content
 **Files:**
 - Modify: `apps/web/e2e/domain-content-types.e2e.ts`
 
-- [ ] **Step 1: Add EdgeType creation steps**
+- [x] **Step 1: Add EdgeType creation steps** (done, commit `1d0b07a` — fixed `getByLabel('Name')` to `getByLabel('Name', { exact: true })`, see progress note)
 
 Insert after the Task NodeType assertions from Task 3:
 
@@ -479,17 +471,9 @@ Insert after the Task NodeType assertions from Task 3:
     await expect(assignedToItem.locator('p.font-mono')).not.toContainText('any -> any');
 ```
 
-- [ ] **Step 2: Run it**
+- [x] **Step 2: Run it** (done — passed: `1 passed (5.3s)`)
 
-Run: `cd apps/web && bunx playwright test domain-content-types.e2e.ts`
-Expected: PASS. If the `div.max-h-32` scoping picks up the wrong box, use `--debug` to confirm DOM order (Source types renders before Target types in `EdgeTypeCreateForm`) and adjust `.first()`/`.nth(1)` accordingly.
-
-- [ ] **Step 3: Commit**
-
-```bash
-git add apps/web/e2e/domain-content-types.e2e.ts
-git commit -m "test(web): author belongs_to/assigned_to EdgeTypes in domain content types e2e"
-```
+- [x] **Step 3: Commit** (done, commit `1d0b07a`)
 
 ---
 
@@ -498,7 +482,7 @@ git commit -m "test(web): author belongs_to/assigned_to EdgeTypes in domain cont
 **Files:**
 - Modify: `apps/web/e2e/domain-content-types.e2e.ts`
 
-- [ ] **Step 1: Add New Node dialog interaction and graph cleanup**
+- [x] **Step 1: Add New Node dialog interaction and graph cleanup** (done, commit `b57fdfb` — scoped New Node selectors to `page.getByRole('dialog')`, see progress note)
 
 Insert after the EdgeType assertions from Task 4, before the closing of the test function:
 
@@ -526,17 +510,9 @@ Insert after the EdgeType assertions from Task 4, before the closing of the test
 });
 ```
 
-- [ ] **Step 2: Run the full e2e suite**
+- [x] **Step 2: Run the full e2e suite** (done — 4 passed: `smoke.e2e.ts`, `schema.e2e.ts`, `domain-content-types.e2e.ts`, and pre-existing `block-editor.e2e.ts`)
 
-Run: `cd apps/web && bun run test:e2e`
-Expected: PASS for all 3 spec files (`smoke.e2e.ts`, `schema.e2e.ts`, `domain-content-types.e2e.ts`).
-
-- [ ] **Step 3: Commit**
-
-```bash
-git add apps/web/e2e/domain-content-types.e2e.ts
-git commit -m "test(web): instantiate a real Task node in domain content types e2e"
-```
+- [x] **Step 3: Commit** (done, commit `b57fdfb`)
 
 ---
 
