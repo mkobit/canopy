@@ -48,5 +48,77 @@ test.describe('domain content types (canopy-goi)', () => {
     await propertyTypeForm.getByLabel('Value kind').selectOption('text');
     await propertyTypeForm.getByRole('button', { name: 'Create PropertyType' }).click();
     await expect(page.locator('li', { hasText: 'status' })).toBeVisible();
+
+    // 5. Create the Person NodeType: name (required), email (optional).
+    const nodeTypeForm = page.locator('form', {
+      has: page.getByRole('heading', { name: 'New NodeType' }),
+    });
+    let lastRow = nodeTypeForm.locator('div.border.rounded-md.bg-gray-50').last();
+
+    await nodeTypeForm.getByLabel('Name').fill('Person');
+    await nodeTypeForm.getByRole('button', { name: 'Inline property' }).click();
+    lastRow = nodeTypeForm.locator('div.border.rounded-md.bg-gray-50').last();
+    await lastRow.getByPlaceholder('Property name').fill('name');
+    await lastRow.getByLabel('Required').check();
+
+    await nodeTypeForm.getByRole('button', { name: 'Inline property' }).click();
+    lastRow = nodeTypeForm.locator('div.border.rounded-md.bg-gray-50').last();
+    await lastRow.getByPlaceholder('Property name').fill('email');
+
+    await nodeTypeForm.getByRole('button', { name: 'Create NodeType' }).click();
+    const personItem = page.locator('li', { hasText: 'Person' });
+    await expect(personItem).toBeVisible();
+    await expect(personItem).toContainText('2 properties');
+
+    // 6. Create the Project NodeType: name (required), description (optional),
+    //    status (reference to the shared PropertyType).
+    await nodeTypeForm.getByLabel('Name').fill('Project');
+    await nodeTypeForm.getByRole('button', { name: 'Inline property' }).click();
+    lastRow = nodeTypeForm.locator('div.border.rounded-md.bg-gray-50').last();
+    await lastRow.getByPlaceholder('Property name').fill('name');
+    await lastRow.getByLabel('Required').check();
+
+    await nodeTypeForm.getByRole('button', { name: 'Inline property' }).click();
+    lastRow = nodeTypeForm.locator('div.border.rounded-md.bg-gray-50').last();
+    await lastRow.getByPlaceholder('Property name').fill('description');
+
+    await nodeTypeForm.getByRole('button', { name: 'Reference PropertyType' }).click();
+    await expect(
+      nodeTypeForm.locator('option', { hasText: 'content/status (text)' }),
+    ).toBeAttached();
+
+    await nodeTypeForm.getByRole('button', { name: 'Create NodeType' }).click();
+    const projectItem = page.locator('li', { hasText: 'Project' });
+    await expect(projectItem).toBeVisible();
+    await expect(projectItem).toContainText('3 properties');
+
+    // 7. Create the Task NodeType: title (required), priority (number),
+    //    dueDate (plain-date), description (optional), status (reference).
+    await nodeTypeForm.getByLabel('Name').fill('Task');
+    await nodeTypeForm.getByRole('button', { name: 'Inline property' }).click();
+    lastRow = nodeTypeForm.locator('div.border.rounded-md.bg-gray-50').last();
+    await lastRow.getByPlaceholder('Property name').fill('title');
+    await lastRow.getByLabel('Required').check();
+
+    await nodeTypeForm.getByRole('button', { name: 'Inline property' }).click();
+    lastRow = nodeTypeForm.locator('div.border.rounded-md.bg-gray-50').last();
+    await lastRow.getByPlaceholder('Property name').fill('priority');
+    await lastRow.locator('select').selectOption('number');
+
+    await nodeTypeForm.getByRole('button', { name: 'Inline property' }).click();
+    lastRow = nodeTypeForm.locator('div.border.rounded-md.bg-gray-50').last();
+    await lastRow.getByPlaceholder('Property name').fill('dueDate');
+    await lastRow.locator('select').selectOption('plain-date');
+
+    await nodeTypeForm.getByRole('button', { name: 'Inline property' }).click();
+    lastRow = nodeTypeForm.locator('div.border.rounded-md.bg-gray-50').last();
+    await lastRow.getByPlaceholder('Property name').fill('description');
+
+    await nodeTypeForm.getByRole('button', { name: 'Reference PropertyType' }).click();
+
+    await nodeTypeForm.getByRole('button', { name: 'Create NodeType' }).click();
+    const taskItem = page.locator('li', { hasText: 'Task' });
+    await expect(taskItem).toBeVisible();
+    await expect(taskItem).toContainText('5 properties');
   });
 });
