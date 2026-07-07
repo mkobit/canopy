@@ -120,5 +120,33 @@ test.describe('domain content types (canopy-goi)', () => {
     const taskItem = page.locator('li', { hasText: 'Task' });
     await expect(taskItem).toBeVisible();
     await expect(taskItem).toContainText('5 properties');
+
+    // 8. Create the belongs_to EdgeType: Task -> Project.
+    const edgeTypeForm = page.locator('form', {
+      has: page.getByRole('heading', { name: 'New EdgeType' }),
+    });
+    const sourceTypesBox = edgeTypeForm.locator('div.max-h-32').first();
+    const targetTypesBox = edgeTypeForm.locator('div.max-h-32').nth(1);
+
+    await edgeTypeForm.getByLabel('Name', { exact: true }).fill('belongs_to');
+    await sourceTypesBox.getByLabel('content/Task').check();
+    await targetTypesBox.getByLabel('content/Project').check();
+    await edgeTypeForm.getByRole('button', { name: 'Create EdgeType' }).click();
+    const belongsToItem = page.locator('li', { hasText: 'belongs_to' });
+    await expect(belongsToItem).toBeVisible();
+    // sourceTypes/targetTypes render as raw NodeIds (see EdgeTypeList in
+    // schema-namespace-page.tsx), not "namespace/Name" strings, and those IDs are
+    // freshly generated so can't be predicted here -- just confirm the
+    // source/target line isn't the unrestricted "any -> any" default.
+    await expect(belongsToItem.locator('p.font-mono')).not.toContainText('any -> any');
+
+    // 9. Create the assigned_to EdgeType: Task -> Person.
+    await edgeTypeForm.getByLabel('Name', { exact: true }).fill('assigned_to');
+    await sourceTypesBox.getByLabel('content/Task').check();
+    await targetTypesBox.getByLabel('content/Person').check();
+    await edgeTypeForm.getByRole('button', { name: 'Create EdgeType' }).click();
+    const assignedToItem = page.locator('li', { hasText: 'assigned_to' });
+    await expect(assignedToItem).toBeVisible();
+    await expect(assignedToItem.locator('p.font-mono')).not.toContainText('any -> any');
   });
 });
