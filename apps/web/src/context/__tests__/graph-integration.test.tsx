@@ -260,7 +260,12 @@ describe('bootstrap bridge — context integration', () => {
     const types = listAllowedNodeTypes(graph, listNamespaces(graph));
     const ids = types.map((t) => t.id).toSorted();
     expect(ids).toEqual(
-      [SYSTEM_IDS.TYPE_CODE_BLOCK, SYSTEM_IDS.TYPE_MARKDOWN, SYSTEM_IDS.TYPE_TEXT_BLOCK].toSorted(),
+      [
+        SYSTEM_IDS.TYPE_CODE_BLOCK,
+        SYSTEM_IDS.TYPE_MARKDOWN,
+        SYSTEM_IDS.TYPE_TEXT_BLOCK,
+        SYSTEM_IDS.QUERY_DEFINITION,
+      ].toSorted(),
     );
   });
 });

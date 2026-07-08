@@ -22,10 +22,12 @@ export interface NodeTypeOption {
 // TextBlock/CodeBlock/MarkdownNode are bootstrap-seeded into the restricted `system`
 // namespace (a pre-existing placement quirk, unrelated to this fix) but must stay
 // instantiable -- unlike the rest of `system`'s machinery types.
+// We also allow QueryDefinition to be instantiated so users can save/manage queries.
 const LEGACY_ALLOWED_TYPE_DEF_IDS: ReadonlySet<string> = new Set([
   SYSTEM_IDS.NODE_TYPE_MARKDOWN,
   SYSTEM_IDS.NODE_TYPE_CODE_BLOCK,
   SYSTEM_IDS.NODE_TYPE_TEXT_BLOCK,
+  SYSTEM_IDS.QUERY_DEFINITION_DEF,
 ]);
 
 // UserSetting lives in the non-restricted `user-settings` namespace despite being

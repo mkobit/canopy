@@ -21,7 +21,7 @@ test.describe('event-sourced block editing', () => {
 
     // 2. Create a MarkdownNode with initial content.
     await page.getByRole('button', { name: 'New Node' }).click();
-    await page.getByLabel('Type').selectOption('system:nodetype:markdown');
+    await page.getByRole('dialog').locator('select').selectOption('system:nodetype:markdown');
     await page.getByLabel('content *').fill('initial content');
     await page.getByRole('button', { name: 'Create' }).click();
     await expect(page).toHaveURL(/\/graph\/[a-f0-9-]+\/node\/[a-f0-9-]+/);
