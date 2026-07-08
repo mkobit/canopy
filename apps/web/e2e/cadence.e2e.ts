@@ -118,6 +118,63 @@ async function createTriggersEdgeType(page: Page): Promise<void> {
   await expect(triggersItem.locator('p.font-mono')).not.toContainText('any -> any');
 }
 
+async function instantiateCadenceNodes(page: Page): Promise<void> {
+  // 7. Instantiate a real Cadence node via the New Node dialog.
+  await page.getByRole('button', { name: 'New Node' }).click();
+  const newCadenceDialog = page.getByRole('dialog');
+  await newCadenceDialog.getByLabel('Type').selectOption({ label: 'Cadence' });
+  await newCadenceDialog.getByLabel('name *').fill('Pomodoro');
+  await newCadenceDialog.getByLabel('rrule *').fill('FREQ=DAILY;COUNT=4');
+  await newCadenceDialog
+    .getByLabel('phases *')
+    .fill('[{"name":"work","minutes":25},{"name":"break","minutes":5}]');
+  await newCadenceDialog.getByRole('button', { name: 'Create' }).click();
+  await expect(page).toHaveURL(/\/graph\/[a-f0-9-]+\/node\/[a-f0-9-]+/);
+
+  // Extract the Cadence node's own ID from its detail-page URL. There is no
+  // real QueryDefinition instance to point CadenceAction.target at yet
+  // (QueryDefinition lives in the restricted `system` namespace with no UI
+  // path to instantiate it), so the Cadence node's own ID stands in as a
+  // placeholder pointer -- this only needs to prove `reference` is fillable
+  // and submittable end-to-end via the New Node dialog, not model a real
+  // trigger relationship.
+  const cadenceNodeUrlMatch = /\/node\/([a-f0-9-]+)$/.exec(page.url());
+  if (!cadenceNodeUrlMatch) {
+    throw new Error(`Could not extract Cadence node ID from URL: ${page.url()}`);
+  }
+  const [, cadenceNodeId] = cadenceNodeUrlMatch;
+
+  // 8. Instantiate a real CadenceAction node whose `target` points at the
+  //    Cadence node above -- proves the `reference` PropertyValueKind is
+  //    usable via the New Node dialog, which no prior e2e test has exercised
+  //    (canopy-goi's `status` property used `text`, not `reference`).
+  await page.getByRole('button', { name: 'New Node' }).click();
+  const newActionDialog = page.getByRole('dialog');
+  await newActionDialog.getByLabel('Type').selectOption({ label: 'CadenceAction' });
+  await newActionDialog.getByLabel('actionKind *').fill('rerun-query');
+  await expect(newActionDialog.getByLabel('target')).toBeVisible();
+  await newActionDialog.getByLabel('target').fill(cadenceNodeId);
+  await expect(newActionDialog.getByLabel('description')).toBeVisible();
+  await newActionDialog.getByRole('button', { name: 'Create' }).click();
+  await expect(page).toHaveURL(/\/graph\/[a-f0-9-]+\/node\/[a-f0-9-]+/);
+
+  // Round-trip check: the created CadenceAction's raw property data (NodeView,
+  // rendered inside the node detail page's "Raw Node Data" panel) shows
+  // `target` holding the exact Cadence node ID -- confirms the reference value
+  // was actually persisted, not just that the form submitted and navigated.
+  await expect(page.locator('[data-node-id]')).toContainText(cadenceNodeId);
+}
+
+async function cleanUpGraph(page: Page): Promise<void> {
+  // 9. Clean up: delete the test graph.
+  await page.getByRole('link', { name: 'Database' }).click();
+  await expect(page).toHaveURL('/');
+  const card = page.locator('.group', { hasText: 'Cadence E2E Graph' });
+  await card.hover();
+  await card.getByRole('button').click();
+  await expect(page.locator('text=Cadence E2E Graph')).toHaveCount(0);
+}
+
 test.describe('cadence domain content type (canopy-ayv)', () => {
   test('dogfoods the Schema UI to author Cadence/CadenceAction and instantiate them', async ({
     page,
@@ -126,5 +183,7 @@ test.describe('cadence domain content type (canopy-ayv)', () => {
     await createCadenceNamespace(page);
     await createNodeTypes(page);
     await createTriggersEdgeType(page);
+    await instantiateCadenceNodes(page);
+    await cleanUpGraph(page);
   });
 });
