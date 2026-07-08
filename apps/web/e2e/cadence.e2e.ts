@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Locator, type Page } from '@playwright/test';
 
 async function createAndOpenGraph(page: Page): Promise<void> {
   // 1. Create a fresh graph and open it.
@@ -41,11 +41,63 @@ async function createCadenceNamespace(page: Page): Promise<void> {
   await expect(page.getByRole('heading', { name: 'cadence' })).toBeVisible();
 }
 
+interface InlinePropertyOptions {
+  readonly required?: boolean;
+  readonly valueKind?: string;
+}
+
+// Shared by createNodeTypes below: each NodeType form submission adds one or more
+// inline property rows, each requiring the same click-then-fill sequence.
+async function addInlineProperty(
+  form: Locator,
+  name: string,
+  options: InlinePropertyOptions = {},
+): Promise<void> {
+  await form.getByRole('button', { name: 'Inline property' }).click();
+  const row = form.locator('div.border.rounded-md.bg-gray-50').last();
+  await row.getByPlaceholder('Property name').fill(name);
+  if (options.required) {
+    await row.getByLabel('Required').check();
+  }
+  if (options.valueKind) {
+    await row.locator('select').selectOption(options.valueKind);
+  }
+}
+
+async function createNodeTypes(page: Page): Promise<void> {
+  const nodeTypeForm = page.locator('form', {
+    has: page.getByRole('heading', { name: 'New NodeType' }),
+  });
+
+  // 4. Create the Cadence NodeType: name, rrule, phases (all required, inline
+  //    text -- rrule is an RRULE string, phases a JSON-encoded {name,minutes}[]).
+  await nodeTypeForm.getByLabel('Name').fill('Cadence');
+  await addInlineProperty(nodeTypeForm, 'name', { required: true });
+  await addInlineProperty(nodeTypeForm, 'rrule', { required: true });
+  await addInlineProperty(nodeTypeForm, 'phases', { required: true });
+  await nodeTypeForm.getByRole('button', { name: 'Create NodeType' }).click();
+  const cadenceItem = page.locator('li', { hasText: 'Cadence' });
+  await expect(cadenceItem).toBeVisible();
+  await expect(cadenceItem).toContainText('3 properties');
+
+  // 5. Create the CadenceAction NodeType: actionKind (required, free-form
+  //    text), target (optional, reference), description (optional, text).
+  await nodeTypeForm.getByLabel('Name').fill('CadenceAction');
+  await addInlineProperty(nodeTypeForm, 'actionKind', { required: true });
+  await addInlineProperty(nodeTypeForm, 'target', { valueKind: 'reference' });
+  await addInlineProperty(nodeTypeForm, 'description');
+  await nodeTypeForm.getByRole('button', { name: 'Create NodeType' }).click();
+  const cadenceActionItem = page.locator('li', { hasText: 'CadenceAction' });
+  await expect(cadenceActionItem).toBeVisible();
+  await expect(cadenceActionItem).toContainText('3 properties');
+}
+
 test.describe('cadence domain content type (canopy-ayv)', () => {
   test('dogfoods the Schema UI to author Cadence/CadenceAction and instantiate them', async ({
     page,
   }) => {
     await createAndOpenGraph(page);
     await createCadenceNamespace(page);
+    await createNodeTypes(page);
   });
 });
