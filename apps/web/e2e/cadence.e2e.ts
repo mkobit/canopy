@@ -122,7 +122,7 @@ async function instantiateCadenceNodes(page: Page): Promise<void> {
   // 7. Instantiate a real Cadence node via the New Node dialog.
   await page.getByRole('button', { name: 'New Node' }).click();
   const newCadenceDialog = page.getByRole('dialog');
-  await newCadenceDialog.getByLabel('Type').selectOption({ label: 'Cadence' });
+  await newCadenceDialog.locator('select').selectOption({ label: 'Cadence' });
   await newCadenceDialog.getByLabel('name *').fill('Pomodoro');
   await newCadenceDialog.getByLabel('rrule *').fill('FREQ=DAILY;COUNT=4');
   await newCadenceDialog
@@ -150,7 +150,7 @@ async function instantiateCadenceNodes(page: Page): Promise<void> {
   //    (canopy-goi's `status` property used `text`, not `reference`).
   await page.getByRole('button', { name: 'New Node' }).click();
   const newActionDialog = page.getByRole('dialog');
-  await newActionDialog.getByLabel('Type').selectOption({ label: 'CadenceAction' });
+  await newActionDialog.locator('select').selectOption({ label: 'CadenceAction' });
   await newActionDialog.getByLabel('actionKind *').fill('rerun-query');
   await expect(newActionDialog.getByLabel('target')).toBeVisible();
   await newActionDialog.getByLabel('target').fill(cadenceNodeId);

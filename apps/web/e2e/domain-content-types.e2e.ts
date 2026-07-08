@@ -153,7 +153,7 @@ async function instantiateTaskNode(page: Page): Promise<void> {
   // mode violation without this scope.
   await page.getByRole('button', { name: 'New Node' }).click();
   const newNodeDialog = page.getByRole('dialog');
-  await newNodeDialog.getByLabel('Type').selectOption({ label: 'Task' });
+  await newNodeDialog.locator('select').selectOption({ label: 'Task' });
   await newNodeDialog.getByLabel('title *').fill('Write the domain content types e2e test');
   await expect(newNodeDialog.getByLabel('status')).toBeVisible();
   await expect(newNodeDialog.getByLabel('priority')).toBeVisible();

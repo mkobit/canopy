@@ -32,7 +32,7 @@ test.describe('canopy smoke tests', () => {
     await page.getByRole('button', { name: 'New Node' }).click();
 
     // 8. Select the MarkdownNode type.
-    await page.getByLabel('Type').selectOption('system:nodetype:markdown');
+    await page.getByRole('dialog').locator('select').selectOption('system:nodetype:markdown');
 
     // 9. Fill out the content field.
     const contentInput = page.getByLabel('content *');
