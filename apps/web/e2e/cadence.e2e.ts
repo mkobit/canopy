@@ -92,6 +92,32 @@ async function createNodeTypes(page: Page): Promise<void> {
   await expect(cadenceActionItem).toContainText('3 properties');
 }
 
+async function createTriggersEdgeType(page: Page): Promise<void> {
+  const edgeTypeForm = page.locator('form', {
+    has: page.getByRole('heading', { name: 'New EdgeType' }),
+  });
+  const sourceTypesBox = edgeTypeForm.locator('div.max-h-32').first();
+  const targetTypesBox = edgeTypeForm.locator('div.max-h-32').nth(1);
+
+  // 6. Create the triggers EdgeType: Cadence -> CadenceAction.
+  // `{ exact: true }` matters on both selectors here: the EdgeType form's
+  // "Name" field substring-matches any "system/Namespace" NodeType checkbox
+  // ("Namespace" contains "Name"), the same collision domain-content-types.e2e.ts
+  // hit; and "cadence/Cadence" is itself a substring-match prefix of
+  // "cadence/CadenceAction", a new collision this test introduces.
+  await edgeTypeForm.getByLabel('Name', { exact: true }).fill('triggers');
+  await sourceTypesBox.getByLabel('cadence/Cadence', { exact: true }).check();
+  await targetTypesBox.getByLabel('cadence/CadenceAction', { exact: true }).check();
+  await edgeTypeForm.getByRole('button', { name: 'Create EdgeType' }).click();
+  const triggersItem = page.locator('li', { hasText: 'triggers' });
+  await expect(triggersItem).toBeVisible();
+  // sourceTypes/targetTypes render as raw NodeIds (see EdgeTypeList in
+  // schema-namespace-page.tsx), not "namespace/Name" strings, and those IDs are
+  // freshly generated so can't be predicted here -- just confirm the
+  // source/target line isn't the unrestricted "any -> any" default.
+  await expect(triggersItem.locator('p.font-mono')).not.toContainText('any -> any');
+}
+
 test.describe('cadence domain content type (canopy-ayv)', () => {
   test('dogfoods the Schema UI to author Cadence/CadenceAction and instantiate them', async ({
     page,
@@ -99,5 +125,6 @@ test.describe('cadence domain content type (canopy-ayv)', () => {
     await createAndOpenGraph(page);
     await createCadenceNamespace(page);
     await createNodeTypes(page);
+    await createTriggersEdgeType(page);
   });
 });
