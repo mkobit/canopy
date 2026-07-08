@@ -19,13 +19,14 @@ function bootstrappedGraph() {
 }
 
 describe('listAllowedNodeTypes', () => {
-  it('returns Markdown, CodeBlock, and TextBlock from a bootstrapped graph', () => {
+  it('returns Markdown, CodeBlock, TextBlock, and QueryDefinition from a bootstrapped graph', () => {
     const graph = bootstrappedGraph();
     const types = listAllowedNodeTypes(graph, listNamespaces(graph));
     const ids = types.map((t) => t.id);
     expect(ids).toContain(SYSTEM_IDS.TYPE_MARKDOWN);
     expect(ids).toContain(SYSTEM_IDS.TYPE_CODE_BLOCK);
     expect(ids).toContain(SYSTEM_IDS.TYPE_TEXT_BLOCK);
+    expect(ids).toContain(SYSTEM_IDS.QUERY_DEFINITION);
   });
 
   it('excludes meta-types', () => {
@@ -33,7 +34,6 @@ describe('listAllowedNodeTypes', () => {
     const ids = listAllowedNodeTypes(graph, listNamespaces(graph)).map((t) => t.id);
     expect(ids).not.toContain(SYSTEM_IDS.NODE_TYPE);
     expect(ids).not.toContain(SYSTEM_IDS.EDGE_TYPE);
-    expect(ids).not.toContain(SYSTEM_IDS.QUERY_DEFINITION);
     expect(ids).not.toContain(SYSTEM_IDS.VIEW_DEFINITION);
     expect(ids).not.toContain(SYSTEM_IDS.TEMPLATE);
     expect(ids).not.toContain(SYSTEM_IDS.RENDERER);
