@@ -27,16 +27,14 @@ export const NodePage = () => {
   // Subscribe/Fetch node from graph
   useEffect(() => {
     if (graph && nodeId) {
-      Promise.resolve()
-        .then(() => {
-          const node = graph.nodes.get(asNodeId(nodeId));
-          setCurrentNode(node);
-          if (node) {
-            setEditedProps(new Map(node.properties));
-          }
-          return undefined;
-        })
-        .catch(console.error);
+      void Promise.resolve().then(() => {
+        const node = graph.nodes.get(asNodeId(nodeId));
+        setCurrentNode(node);
+        if (node) {
+          setEditedProps(new Map(node.properties));
+        }
+        return undefined;
+      });
     }
     return undefined;
   }, [graph, nodeId]);
@@ -58,7 +56,9 @@ export const NodePage = () => {
     if (!currentNode) return undefined;
     updateNodeProperties(currentNode.id, new Map([['content', nextContent]]))
       .then((result) => {
-        if (!result.ok) console.error('Failed to commit block content', result.error);
+        if (!result.ok) {
+          console.error('Failed to commit block content', result.error);
+        }
         return undefined;
       })
       .catch((error: unknown) => {
@@ -183,21 +183,18 @@ export const NodePage = () => {
 
             <div className="space-y-4">
               <h3 className="font-semibold text-gray-900">Properties</h3>
-              {map(
-                [...propertiesToEdit.entries()],
-                ([key, val]: readonly [string, PropertyValue]) => (
-                  <div key={key} className="space-y-1">
-                    <label className="text-sm text-gray-600">{key}</label>
-                    <PropertyInput
-                      value={val}
-                      onChange={(newVal) => {
-                        handlePropertyChange(key, newVal);
-                        return undefined;
-                      }}
-                    />
-                  </div>
-                ),
-              )}
+              {map([...propertiesToEdit], ([key, val]: readonly [string, PropertyValue]) => (
+                <div key={key} className="space-y-1">
+                  <label className="text-sm text-gray-600">{key}</label>
+                  <PropertyInput
+                    value={val}
+                    onChange={(newVal) => {
+                      handlePropertyChange(key, newVal);
+                      return undefined;
+                    }}
+                  />
+                </div>
+              ))}
             </div>
           </div>
         ) : (

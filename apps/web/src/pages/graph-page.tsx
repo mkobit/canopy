@@ -18,6 +18,7 @@ export const GraphPage = () => {
   const { loadGraph, graph, isLoading, error, createNode } = useGraph();
 
   const navigate = useNavigate();
+  const outlet = useOutlet();
 
   const [selectedNode, setSelectedNode] = useState<InspectorNodeData | undefined>();
   const [isInspectorOpen, setIsInspectorOpen] = useState(false);
@@ -46,13 +47,6 @@ export const GraphPage = () => {
     return undefined;
   };
 
-  const outlet = useOutlet();
-
-  const handleQuickEntry = withResultAlert(
-    (text: string) => createNode(SYSTEM_IDS.TYPE_MARKDOWN, { name: text }),
-    'Failed to capture thought',
-  );
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full text-on-surface">
@@ -79,6 +73,11 @@ export const GraphPage = () => {
   if (!graph) {
     return null;
   }
+
+  const handleQuickEntry = withResultAlert(
+    (text: string) => createNode(SYSTEM_IDS.TYPE_MARKDOWN, { name: text }),
+    'Failed to capture thought',
+  );
 
   return (
     <div className="h-full flex flex-col w-full">

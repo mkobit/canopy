@@ -4,7 +4,7 @@ import { mock } from 'bun:test';
 
 GlobalRegistrator.register();
 
-// Mock matchMedia for testing-library
+// eslint-disable-next-line unicorn/no-global-object-property-assignment -- Happy-dom global test mock
 globalThis.matchMedia = mock((query) => ({
   matches: false,
   media: query,

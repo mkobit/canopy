@@ -18,12 +18,12 @@ export const TableLayout: React.FC<TableLayoutProps> = ({
   displayProperties,
   onNodeClick,
 }) => {
-  const columns =
-    displayProperties && displayProperties.length > 0 ? displayProperties : ['name', 'description'];
-
   if (nodes.length === 0) {
     return <div className="p-8 text-center text-gray-500">No nodes found.</div>;
   }
+
+  const columns =
+    displayProperties && displayProperties.length > 0 ? displayProperties : ['name', 'description'];
 
   return (
     <div className="overflow-x-auto">

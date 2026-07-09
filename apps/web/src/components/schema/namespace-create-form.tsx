@@ -17,7 +17,7 @@ export const NamespaceCreateForm: React.FC<NamespaceCreateFormProps> = ({
   const [customKind, setCustomKind] = useState('');
   const [description, setDescription] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  const [isSubmitting, setSubmitting] = useState(false);
 
   const resolvedKind = kind === CUSTOM_KIND ? customKind : kind;
 
@@ -29,7 +29,7 @@ export const NamespaceCreateForm: React.FC<NamespaceCreateFormProps> = ({
     const result = await onSubmit({
       name,
       kind: resolvedKind,
-      ...(description ? { description } : {}),
+      ...(description && { description }),
     });
 
     setSubmitting(false);
@@ -99,7 +99,7 @@ export const NamespaceCreateForm: React.FC<NamespaceCreateFormProps> = ({
       {error && <p className="text-sm text-red-600">{error}</p>}
       <button
         type="submit"
-        disabled={submitting || !name || !resolvedKind}
+        disabled={isSubmitting || !name || !resolvedKind}
         className="px-4 py-2 rounded text-sm bg-blue-600 text-white disabled:opacity-40 disabled:cursor-not-allowed hover:bg-blue-700"
       >
         Create namespace

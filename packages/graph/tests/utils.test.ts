@@ -25,7 +25,7 @@ describe('generateExecutionId', () => {
 
   it('generates IDs that maintain sort order (time-based)', () => {
     const ids = Array.from({ length: 100 }, () => generateExecutionId());
-    const sortedIds = ids.toSorted();
+    const sortedIds = ids.toSorted((a, b) => a.localeCompare(b));
     expect(ids).toEqual(sortedIds);
   });
 });

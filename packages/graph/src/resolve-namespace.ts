@@ -19,10 +19,10 @@ export function parseNamespace(graph: Readonly<Graph>, name: string): Result<Nam
     return err(new Error(formatResult.error.issues[0]?.message ?? `Invalid namespace '${name}'`));
   }
 
-  const exists = [...graph.nodes.values()].some(
+  const isExists = [...graph.nodes.values()].some(
     (node) => node.type === SYSTEM_IDS.NAMESPACE && node.properties.get('name') === name,
   );
-  if (!exists) {
+  if (!isExists) {
     return err(new Error(`Namespace '${name}' does not exist`));
   }
 

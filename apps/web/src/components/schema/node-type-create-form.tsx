@@ -18,7 +18,7 @@ export const NodeTypeCreateForm: React.FC<NodeTypeCreateFormProps> = ({
   const [description, setDescription] = useState('');
   const [properties, setProperties] = useState<readonly TypePropertyInput[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  const [isSubmitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,7 +29,7 @@ export const NodeTypeCreateForm: React.FC<NodeTypeCreateFormProps> = ({
       name,
       namespace,
       properties,
-      ...(description ? { description } : {}),
+      ...(description && { description }),
     });
 
     setSubmitting(false);
@@ -82,7 +82,7 @@ export const NodeTypeCreateForm: React.FC<NodeTypeCreateFormProps> = ({
       {error && <p className="text-sm text-red-600">{error}</p>}
       <button
         type="submit"
-        disabled={submitting || !name}
+        disabled={isSubmitting || !name}
         className="px-4 py-2 rounded text-sm bg-blue-600 text-white disabled:opacity-40 disabled:cursor-not-allowed hover:bg-blue-700"
       >
         Create NodeType

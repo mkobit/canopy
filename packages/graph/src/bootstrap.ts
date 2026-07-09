@@ -13,7 +13,7 @@ export const SYSTEM_DEVICE_ID = asDeviceId('00000000-0000-0000-0000-000000000000
 function addNodeGraph(graph: Graph, node: Node, migrationId?: string): Result<Graph, Error> {
   const result = addNode(graph, node, {
     deviceId: SYSTEM_DEVICE_ID,
-    ...(migrationId === undefined ? {} : { migrationId }),
+    ...(migrationId !== undefined && { migrationId }),
   });
   if (result.ok) {
     return ok(result.value.graph);
@@ -894,7 +894,7 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
             const extraProps = {
               layout: text(def.layout),
               queryRef: reference(def.queryRef),
-              ...(def.groupBy ? { groupBy: text(def.groupBy) } : {}),
+              ...(def.groupBy && { groupBy: text(def.groupBy) }),
             };
             return addNodeGraph(
               cg,

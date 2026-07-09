@@ -26,9 +26,7 @@ export const createInMemoryEventStore = (): EventLogStore => {
       }
 
       // Sort the events by eventId ascending
-      const sortedEvents = newEvents.toSorted((a, b) =>
-        a.eventId < b.eventId ? -1 : a.eventId > b.eventId ? 1 : 0,
-      );
+      const sortedEvents = newEvents.toSorted((a, b) => a.eventId.localeCompare(b.eventId));
 
       graphs.set(graphId, sortedEvents);
 

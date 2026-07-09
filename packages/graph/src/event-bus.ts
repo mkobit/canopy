@@ -12,10 +12,10 @@ export const onNodeCreated = (
   // eslint-disable-next-line functional/no-return-void
   return (events: readonly GraphEvent[]) => {
     // eslint-disable-next-line functional/no-loop-statements
-    for (const event of events.filter(
-      (event): event is NodeCreated => event.type === 'NodeCreated' && event.nodeType === typeId,
-    )) {
-      callback(event);
+    for (const event of events) {
+      if (event.type === 'NodeCreated' && event.nodeType === typeId) {
+        callback(event);
+      }
     }
   };
 };

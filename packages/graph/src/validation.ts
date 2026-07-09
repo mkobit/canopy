@@ -48,7 +48,7 @@ function extractTypeIdList(val: PropertyValue | undefined): readonly TypeId[] {
     return [];
   }
   if (Array.isArray(val)) {
-    return val.map((i) => (typeof i === 'string' ? asTypeId(i) : asTypeId('unknown')));
+    return val.map((i) => asTypeId(typeof i === 'string' ? i : 'unknown'));
   }
   if (typeof val === 'string') {
     const result = fromThrowable(() => JSON.parse(val) as readonly string[]);
@@ -83,7 +83,7 @@ function extractEdgeTypeDefinition(graph: Graph, node: Node): EdgeTypeDefinition
   const targetTypes = extractTypeIdList(node.properties.get('targetTypes'));
 
   const transitiveProp = node.properties.get('transitive');
-  const transitive = transitiveProp === true;
+  const isTransitive = transitiveProp === true;
 
   const inverseProp = node.properties.get('inverse');
   const inverse = typeof inverseProp === 'string' ? asTypeId(inverseProp) : undefined;
@@ -96,7 +96,7 @@ function extractEdgeTypeDefinition(graph: Graph, node: Node): EdgeTypeDefinition
     properties,
     sourceTypes,
     targetTypes,
-    transitive,
+    transitive: isTransitive,
     inverse,
   };
 }
@@ -280,9 +280,9 @@ export function isEdgeCompatible(
   sourceType: TypeId,
   targetType: TypeId,
 ): boolean {
-  const sourceOk = def.sourceTypes.length === 0 || def.sourceTypes.includes(sourceType);
-  const targetOk = def.targetTypes.length === 0 || def.targetTypes.includes(targetType);
-  return sourceOk && targetOk;
+  const isSourceOk = def.sourceTypes.length === 0 || def.sourceTypes.includes(sourceType);
+  const isTargetOk = def.targetTypes.length === 0 || def.targetTypes.includes(targetType);
+  return isSourceOk && isTargetOk;
 }
 
 // Validate edge constraints from the node type side (validOutgoingEdges / validIncomingEdges)

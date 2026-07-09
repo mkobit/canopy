@@ -32,7 +32,7 @@ describe('listNamespaces', () => {
     const graph = bootstrappedGraph();
     const names = listNamespaces(graph)
       .map((ns) => ns.name)
-      .toSorted();
+      .toSorted((a, b) => a.localeCompare(b));
     expect(names).toEqual(['imported', 'system', 'user', 'user-settings'].map(asNamespace));
   });
 

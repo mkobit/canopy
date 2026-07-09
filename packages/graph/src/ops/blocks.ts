@@ -28,9 +28,9 @@ export function insertBlock(
   // 1. Add the block node
   const nodeResult = addNode(graph, block, {
     deviceId: options.deviceId,
-    ...(options.validate === undefined ? {} : { validate: options.validate }),
-    ...(options.batchId === undefined ? {} : { batchId: options.batchId }),
-    ...(options.migrationId === undefined ? {} : { migrationId: options.migrationId }),
+    ...(options.validate !== undefined && { validate: options.validate }),
+    ...(options.batchId !== undefined && { batchId: options.batchId }),
+    ...(options.migrationId !== undefined && { migrationId: options.migrationId }),
   });
   if (!nodeResult.ok) return nodeResult;
 
@@ -100,9 +100,9 @@ export function insertBlock(
 
   const edgeResult = addEdge(graphWithNode, edge, {
     deviceId: options.deviceId,
-    ...(options.validate === undefined ? {} : { validate: options.validate }),
-    ...(options.batchId === undefined ? {} : { batchId: options.batchId }),
-    ...(options.migrationId === undefined ? {} : { migrationId: options.migrationId }),
+    ...(options.validate !== undefined && { validate: options.validate }),
+    ...(options.batchId !== undefined && { batchId: options.batchId }),
+    ...(options.migrationId !== undefined && { migrationId: options.migrationId }),
   });
   if (!edgeResult.ok) return edgeResult;
 

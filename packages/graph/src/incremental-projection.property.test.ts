@@ -143,10 +143,11 @@ function resolveSteps(steps: readonly Step[]): readonly GraphEvent[] {
       // too (referencing them would make canonical projectGraph error).
       for (let i = liveEdges.length - 1; i >= 0; i -= 1) {
         const edgeId = liveEdges[i];
-        if (edgeId === undefined) continue;
-        const endpoints = edgeEndpoints.get(edgeId);
-        if (endpoints && (endpoints.source === id || endpoints.target === id)) {
-          liveEdges.splice(i, 1);
+        if (edgeId !== undefined) {
+          const endpoints = edgeEndpoints.get(edgeId);
+          if (endpoints && (endpoints.source === id || endpoints.target === id)) {
+            liveEdges.splice(i, 1);
+          }
         }
       }
       counter += 1;
@@ -200,7 +201,6 @@ function resolveSteps(steps: readonly Step[]): readonly GraphEvent[] {
       events.push({ type: 'EdgeDeleted', eventId, id, timestamp, deviceId });
       liveEdges.splice(index, 1);
       counter += 1;
-      continue;
     }
   }
 

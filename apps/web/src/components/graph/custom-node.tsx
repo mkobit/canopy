@@ -30,7 +30,7 @@ export const CustomNode = ({ data, selected }: NodeProps<CustomNodeType>) => {
       </div>
 
       <div className="space-y-2">
-        {[...node.properties.entries()].map(([key, value]) => (
+        {[...node.properties].map(([key, value]) => (
           <div key={key} className="text-sm">
             <div className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-0.5">
               {key}

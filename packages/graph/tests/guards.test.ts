@@ -28,9 +28,9 @@ describe('Type Guards', () => {
   });
 
   it('should identify BooleanValue', () => {
-    const value = true;
-    expect(isBooleanValue(value)).toBe(true);
-    expect(isTextValue(value as unknown as ScalarValue)).toBe(false);
+    const isValue = true;
+    expect(isBooleanValue(isValue)).toBe(true);
+    expect(isTextValue(isValue as unknown as ScalarValue)).toBe(false);
   });
 
   it('should identify InstantValue', () => {

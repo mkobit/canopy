@@ -78,13 +78,13 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
               return err(new Error(`Node with ID ${event.id} not found`));
             }
 
-            const eventWins = lwwWins(
+            const isEventWins = lwwWins(
               event.timestamp,
               event.deviceId,
               node.metadata.modified,
               node.metadata.modifiedBy,
             );
-            if (!eventWins) {
+            if (!isEventWins) {
               return ok(graph);
             }
 
@@ -210,13 +210,13 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
               return err(new Error(`Edge with ID ${event.id} not found`));
             }
 
-            const eventWins = lwwWins(
+            const isEventWins = lwwWins(
               event.timestamp,
               event.deviceId,
               edge.metadata.modified,
               edge.metadata.modifiedBy,
             );
-            if (!eventWins) {
+            if (!isEventWins) {
               return ok(graph);
             }
 

@@ -359,6 +359,13 @@ export default tseslint.config(
       'unicorn/import-style': 'off',
       'unicorn/no-useless-undefined': 'off', // Conflicts with functional/no-return-void
       'unicorn/prefer-math-min-max': 'off', // Project uses Instant (ISO strings) for timestamps; Math.max() does not work with strings
+      'unicorn/prefer-iterator-to-array': 'off', // Requires Iterator.prototype.toArray() which is not typed in the configured TS ES2023 target
+      'unicorn/no-useless-recursion': 'off', // Conflicts with functional programming style banning loops
+      'unicorn/no-non-function-verb-prefix': 'off', // Banned for variables like addResult or addParentResult
+      'unicorn/consistent-boolean-name': 'off', // Too restrictive for domain terms like lwwWins
+      'unicorn/max-nested-calls': 'off', // Too restrictive for test suites and schema definitions
+      'unicorn/prefer-await': 'off', // Conflicts with functional/no-try-statements since await requires try-catch
+      'unicorn/no-declarations-before-early-exit': 'off', // Conflicts with React Hook rules which require calling hooks before early exits
     },
   },
 

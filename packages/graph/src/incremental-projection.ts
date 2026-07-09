@@ -117,7 +117,7 @@ function touchGraphMetadata(
   nodes: ReadonlyMap<NodeId, Node>,
   edges: ReadonlyMap<EdgeId, Edge>,
 ): Graph {
-  const wins = lwwWins(
+  const isWins = lwwWins(
     event.timestamp,
     event.deviceId,
     graph.metadata.modified,
@@ -127,7 +127,7 @@ function touchGraphMetadata(
     ...graph,
     nodes,
     edges,
-    metadata: wins
+    metadata: isWins
       ? { ...graph.metadata, modified: event.timestamp, modifiedBy: event.deviceId }
       : graph.metadata,
   };
@@ -204,7 +204,7 @@ function applyOneEvent(
         }
       }
 
-      const touchWins = lwwWins(
+      const isTouchWins = lwwWins(
         event.timestamp,
         event.deviceId,
         node.metadata.modified,
@@ -214,7 +214,7 @@ function applyOneEvent(
       const updatedNode: Node = {
         ...node,
         properties,
-        metadata: touchWins
+        metadata: isTouchWins
           ? { ...node.metadata, modified: event.timestamp, modifiedBy: event.deviceId }
           : node.metadata,
       };
@@ -336,7 +336,7 @@ function applyOneEvent(
         }
       }
 
-      const touchWins = lwwWins(
+      const isTouchWins = lwwWins(
         event.timestamp,
         event.deviceId,
         edge.metadata.modified,
@@ -346,7 +346,7 @@ function applyOneEvent(
       const updatedEdge: Edge = {
         ...edge,
         properties,
-        metadata: touchWins
+        metadata: isTouchWins
           ? { ...edge.metadata, modified: event.timestamp, modifiedBy: event.deviceId }
           : edge.metadata,
       };
@@ -406,17 +406,18 @@ function dependenciesSatisfied(
   for (const event of events) {
     // eslint-disable-next-line functional/no-loop-statements
     for (const key of dependencyKeysFor(event)) {
-      if (createdInGroup.has(key)) continue;
-      const separatorIndex = key.indexOf(':');
-      const kind = key.slice(0, separatorIndex);
-      const id = key.slice(separatorIndex + 1);
-      const satisfied =
-        kind === 'node'
-          ? (nodeMeta.get(id as NodeId)?.exists ?? false)
-          : (edgeMeta.get(id as EdgeId)?.exists ?? false);
-      if (!satisfied) {
-        // eslint-disable-next-line functional/immutable-data
-        unmet.add(key);
+      if (!createdInGroup.has(key)) {
+        const separatorIndex = key.indexOf(':');
+        const kind = key.slice(0, separatorIndex);
+        const id = key.slice(separatorIndex + 1);
+        const isSatisfied =
+          kind === 'node'
+            ? (nodeMeta.get(id as NodeId)?.exists ?? false)
+            : (edgeMeta.get(id as EdgeId)?.exists ?? false);
+        if (!isSatisfied) {
+          // eslint-disable-next-line functional/immutable-data
+          unmet.add(key);
+        }
       }
     }
   }
@@ -644,10 +645,11 @@ export function mergeEvents(
     // eslint-disable-next-line functional/no-loop-statements
     for (const groupId of groupIds) {
       const group = workingState.pendingGroups.get(groupId);
-      if (!group) continue;
-      // Removed here; tryApply will re-register under any still-unmet keys.
-      workingState = removePendingGroup(workingState, groupId);
-      tryApply(group.events, groupId);
+      if (group) {
+        // Removed here; tryApply will re-register under any still-unmet keys.
+        workingState = removePendingGroup(workingState, groupId);
+        tryApply(group.events, groupId);
+      }
     }
   }
 

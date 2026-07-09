@@ -68,7 +68,7 @@ const InlinePropertyRow: React.FC<
             name: row.name,
             valueKind: row.valueKind,
             required: row.required,
-            ...(description ? { description } : {}),
+            ...(description && { description }),
           });
           return undefined;
         }}
