@@ -1,7 +1,7 @@
 ## Why
 
 `packages/graph/src/system.ts` only defines meta/system-level node types (node-type, edge-type, query-definition, view-definition, template, settings-schema, user-setting, text-block, code-block, markdown, workflow-trigger, workflow-definition).
-There are no domain content types (task, project, person, etc.) yet, and there is no way to add any: `apps/web` only ships a whitelisted node-*instance* creation dialog (`new-node-dialog.tsx`), never a way to define a brand new `NodeType`, `EdgeType`, or `PropertyType`.
+There are no domain content types (task, project, person, etc.) yet, and there is no way to add any: `apps/web` only ships a whitelisted node-_instance_ creation dialog (`new-node-dialog.tsx`), never a way to define a brand new `NodeType`, `EdgeType`, or `PropertyType`.
 `namespace` (`packages/graph/src/namespace.ts`) is also a closed 4-value enum (`system` | `user` | `imported` | `user-settings`) with no UI exposure, which blocks introducing any new namespace at all without a code change.
 
 This change builds the missing control plane so new types and namespaces can be authored without editing application code.

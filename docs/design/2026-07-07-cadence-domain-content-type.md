@@ -18,6 +18,7 @@ All of the following are authored at runtime through the Schema UI, the same way
 **Namespace:** `cadence` (kind: `user`), deliberately separate from `content`.
 
 **NodeTypes** (in `cadence`):
+
 - **Cadence** — `name` (text, required, inline), `rrule` (text, required, inline — an RRULE string, e.g. `FREQ=DAILY;COUNT=4`; RRULE-in-a-property is the same convention Obsidian's TaskNotes plugin uses for recurrence), `phases` (text, required, inline — a JSON-encoded ordered list of `{name, minutes}`, e.g. Pomodoro's classic `[{"name":"work","minutes":25},{"name":"break","minutes":5}]` repeated with a longer break every fourth cycle).
 - **CadenceAction** — `actionKind` (text, required, inline — free-form, e.g. `"rerun-query"` or `"notify"`; deliberately not a closed enum, same precedent as `Namespace.kind` from `canopy-9zj`, so new action kinds never need a schema change), `target` (reference, optional, inline — a NodeId pointing at whatever gets acted on, e.g. a saved `QueryDefinition`), `description` (text, optional, inline).
 
@@ -25,6 +26,7 @@ Phases stay a single opaque JSON-string property on `Cadence` rather than their 
 This is the "minimal" model, not the "fully exploded" one where each phase and action would be an independently queryable node; that richer model is deferred pending the Obsidian vault validation mentioned above.
 
 **EdgeTypes** (in `cadence`):
+
 - `triggers` — `sourceTypes: [Cadence]`, `targetTypes: [CadenceAction]`.
 
 Only one EdgeType, matching the minimal-scope decision — `CadenceAction.target` carries the actual pointer to whatever gets acted on as a plain `reference`-kind property value, not a second EdgeType.

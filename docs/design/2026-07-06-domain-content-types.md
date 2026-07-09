@@ -14,17 +14,20 @@ All of the following are authored at runtime through the Schema UI; none of it i
 **Namespace:** `content` (kind: `user`).
 
 **PropertyTypes** (in `content`):
+
 - `status` — `text`. Shared, referenced by both `Task` and `Project`. Deliberately `text`, not `reference` — a status is a plain string, not a pointer to another node.
 
 **NodeTypes** (in `content`):
+
 - **Person** — `name` (text, required, inline), `email` (text, optional, inline).
 - **Project** — `name` (text, required, inline), `status` (optional, referencing the `status` PropertyType), `description` (text, optional, inline).
 - **Task** — `title` (text, required, inline), `status` (optional, referencing the `status` PropertyType), `priority` (number, optional, inline), `dueDate` (plain-date, optional, inline), `description` (text, optional, inline).
 
-Note the two different senses of "reference" in this system: `status` here uses a `TypePropertyInput` of `kind: 'reference'`, meaning the property's *shape* is looked up from the `status` PropertyType node — the resulting value kind is still `text`, resolved to a concrete inline `PropertyDefinition` at NodeType-creation time.
+Note the two different senses of "reference" in this system: `status` here uses a `TypePropertyInput` of `kind: 'reference'`, meaning the property's _shape_ is looked up from the `status` PropertyType node — the resulting value kind is still `text`, resolved to a concrete inline `PropertyDefinition` at NodeType-creation time.
 That's distinct from `PropertyValueKind`'s `'reference'` (a value that is itself a `NodeId`), which none of these properties use.
 
 **EdgeTypes** (in `content`):
+
 - `belongs_to` — `sourceTypes: [Task]`, `targetTypes: [Project]`. Named generically (not `belongs_to_project`) since these hint lists are create-only/immutable and only ever advisory (see below) — a narrow name would misrepresent a relationship that may get reused for other pairs later.
 - `assigned_to` — `sourceTypes: [Task]`, `targetTypes: [Person]`.
 

@@ -4,6 +4,7 @@
 
 The collaborative [BlockEditor](file:///home/mkobit/workspace/mkobit/canopy/apps/web/src/components/editor/block-editor.tsx) is currently built and tested but not integrated into the user interface.
 To enable collaborative editing in Canopy:
+
 1. Users need a way to edit node text/markdown content directly using the rich-text block editor.
 2. Standard properties lists should not expose the raw text content as a plain one-line input field.
 3. Node page views should reactively display the rendered document layout while editing content.

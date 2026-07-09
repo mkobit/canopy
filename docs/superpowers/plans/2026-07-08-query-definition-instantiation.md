@@ -7,6 +7,7 @@
 This will allow pointing `CadenceAction.target` at a real `QueryDefinition` instance in E2E tests.
 
 **Architecture:**
+
 - Modify `apps/web/src/utils/node-types.ts` to add `SYSTEM_IDS.QUERY_DEFINITION_DEF` to `LEGACY_ALLOWED_TYPE_DEF_IDS`.
 - Create a new Playwright E2E test `apps/web/e2e/query-definition.e2e.ts`.
 
@@ -20,6 +21,7 @@ This will allow pointing `CadenceAction.target` at a real `QueryDefinition` inst
 ### Task 1: Expose QueryDefinition in listAllowedNodeTypes
 
 **Files:**
+
 - Modify: [node-types.ts](file:///home/mkobit/workspace/mkobit/canopy/apps/web/src/utils/node-types.ts)
 - Modify: [node-types.test.ts](file:///home/mkobit/workspace/mkobit/canopy/apps/web/src/utils/__tests__/node-types.test.ts)
 
@@ -44,6 +46,7 @@ Commit the unit test and source changes.
 ### Task 2: Scaffold E2E test for QueryDefinition instantiation
 
 **Files:**
+
 - Create: `apps/web/e2e/query-definition.e2e.ts`
 
 - [ ] **Step 1: Write the test code**

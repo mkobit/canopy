@@ -11,12 +11,14 @@ Resolution already works by string comparison (`node.properties.namespace ?? nod
 ## Goals / Non-Goals
 
 **Goals:**
+
 - Namespace becomes a first-class, listable, queryable graph node — closing open question #6 in `core-data-model.md` section 10.
 - Any of the 3 layer-1 metatypes (NodeType, EdgeType, PropertyType) can be authored at runtime, in any non-restricted namespace, without a code change.
 - The 4 existing namespaces keep working exactly as before from every other package's point of view (same string values, same resolution semantics) — only their backing representation changes.
 - Public API surface added to `@canopy/graph` stays at exactly 4 new ops.
 
 **Non-Goals:**
+
 - Editing or deleting an existing Namespace/NodeType/EdgeType/PropertyType definition. Definitions are create-only; evolving a type means creating a new one.
 - PropertyType constraint validation (format/range/enum rules) — `PropertyType` here is `name` + `valueKind` only, constraints stay a documented future concern.
 - Namespace import mechanics (schema.org vocab, cross-user type import) — this builds the primitive (`Namespace` as a node) that an importer would target later, not the importer.
@@ -32,7 +34,7 @@ Making `Namespace` a node costs one more self-describing metatype (the codebase 
 
 **`namespace` property values stay plain strings (the `Namespace` node's `name`), not `NodeId` references.**
 Alternative considered: store a `NodeId` pointing at the `Namespace` node, consistent with how other references work (e.g. edge `source`/`target`).
-Rejected because every existing namespace comparison in the codebase (`namespace.ts`, `resolve-namespace.ts`, and call sites across `@canopy/settings`/`@canopy/storage`) does plain string equality today. Switching to `NodeId` would touch every one of those call sites for a change that isn't required by anything in this proposal's scope. Keeping `namespace` a string and adding a `Namespace` node registry alongside it is strictly additive at the call-site level: only the *validity check* (does this string correspond to a real namespace) changes, not the storage shape.
+Rejected because every existing namespace comparison in the codebase (`namespace.ts`, `resolve-namespace.ts`, and call sites across `@canopy/settings`/`@canopy/storage`) does plain string equality today. Switching to `NodeId` would touch every one of those call sites for a change that isn't required by anything in this proposal's scope. Keeping `namespace` a string and adding a `Namespace` node registry alongside it is strictly additive at the call-site level: only the _validity check_ (does this string correspond to a real namespace) changes, not the storage shape.
 
 **`kind` is an open string, not a boolean.**
 Alternative considered: a `protected: boolean` flag directly on the Namespace node.
@@ -44,7 +46,7 @@ Rejected because it creates two permanent, divergent validation paths (a `switch
 
 **Four dedicated ops, not one generic `defineType(kind, input)`.**
 Alternative considered: a single parameterized op dispatching on a `kind` argument (`"namespace" | "nodetype" | "edgetype" | "propertytype"`).
-Rejected because each of the 4 has a different input shape and different validation rules (e.g. only `createNamespace` checks `RESTRICTED_NAMESPACE_KINDS` against the *new* namespace's own kind; `createNodeType`/`createEdgeType`/`createPropertyType` check it against the *target* namespace they're writing into). A generic op would need an internal branch per kind anyway, just hidden behind one misleadingly-uniform signature. Four small, named, single-purpose functions match the existing convention (`createUserSetting` in `@canopy/settings`) and keep each function's contract legible on its own.
+Rejected because each of the 4 has a different input shape and different validation rules (e.g. only `createNamespace` checks `RESTRICTED_NAMESPACE_KINDS` against the _new_ namespace's own kind; `createNodeType`/`createEdgeType`/`createPropertyType` check it against the _target_ namespace they're writing into). A generic op would need an internal branch per kind anyway, just hidden behind one misleadingly-uniform signature. Four small, named, single-purpose functions match the existing convention (`createUserSetting` in `@canopy/settings`) and keep each function's contract legible on its own.
 
 **Definitions are create-only.**
 Alternative considered: allow editing a NodeType's property list in place (e.g. to add a newly-needed optional property).
@@ -66,6 +68,7 @@ Rejected because it re-opens the "nodes are never mutated in place" invariant at
 3. Rewrite namespace validity checks (`validation.ts`, `resolve-namespace.ts`) to look up `Namespace` nodes by `name` instead of matching the old 4-literal union. Remove the old union type once nothing references it.
 4. Add the 4 new ops in `packages/graph/src/ops/`.
 5. Build the `apps/web` Schema UI section on top of the new ops.
+
 - **Rollback**: this is additive graph state (new metatypes + 4 new nodes via a migration event) plus a validation rewrite. Rolling back means reverting the code change; no external data format changes, so no data rollback is needed beyond replaying events from before the migration event if a fresh vault needs to avoid it entirely.
 
 ## Open Questions

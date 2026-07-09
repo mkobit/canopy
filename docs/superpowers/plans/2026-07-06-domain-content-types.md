@@ -19,6 +19,7 @@
 **Why this is first:** the e2e test in Task 4 instantiates a `Task` node via the "New Node" dialog. That dialog's type picker is populated by `listAllowedNodeTypes`, which today is a hardcoded 3-ID allowlist (`MarkdownNode`/`CodeBlock`/`TextBlock`) predating the type-authoring control plane — a dynamically-created `Task` NodeType would never appear in it. Fixing this first means Task 4 can rely on it working.
 
 **Files:**
+
 - Modify: `apps/web/src/utils/node-types.ts`
 - Modify: `apps/web/src/components/layout.tsx:8,20`
 - Modify: `apps/web/src/utils/__tests__/node-types.test.ts`
@@ -222,10 +223,10 @@ import { listNamespaces } from '../utils/schema';
 ```
 
 ```ts
-  const availableTypes = useMemo(
-    () => (graph ? listAllowedNodeTypes(graph, listNamespaces(graph)) : []),
-    [graph],
-  );
+const availableTypes = useMemo(
+  () => (graph ? listAllowedNodeTypes(graph, listNamespaces(graph)) : []),
+  [graph],
+);
 ```
 
 In `apps/web/src/context/__tests__/graph-integration.test.tsx`, add the import near the existing `listAllowedNodeTypes` import (around line 10):
@@ -237,7 +238,7 @@ import { listNamespaces } from '../../utils/schema';
 And change line 259 from `const types = listAllowedNodeTypes(graph);` to:
 
 ```ts
-    const types = listAllowedNodeTypes(graph, listNamespaces(graph));
+const types = listAllowedNodeTypes(graph, listNamespaces(graph));
 ```
 
 - [x] **Step 5: Run both test files to confirm they pass** (done — use `bun test <files> --preload ./src/test/setup.ts` from `apps/web`; the plan's plain command was missing the happy-dom preload that `apps/web/package.json`'s own `test` script includes, causing a `localStorage is not defined` error unrelated to this fix)
@@ -268,6 +269,7 @@ settings-cascade machinery living in a non-restricted namespace."
 ### Task 2: Scaffold the e2e test — graph, namespace, PropertyType
 
 **Files:**
+
 - Create: `apps/web/e2e/domain-content-types.e2e.ts`
 
 - [x] **Step 1: Create the file with graph setup, namespace, and status PropertyType creation** (done — actual committed code below, corrected from the original draft)
@@ -346,6 +348,7 @@ git commit -m "test(web): scaffold domain content types e2e — namespace + stat
 ### Task 3: Author Person, Project, and Task NodeTypes
 
 **Files:**
+
 - Modify: `apps/web/e2e/domain-content-types.e2e.ts`
 
 - [x] **Step 1: Add NodeType creation steps before the closing `});`** (done, commit `076e9b0`)
@@ -353,77 +356,75 @@ git commit -m "test(web): scaffold domain content types e2e — namespace + stat
 Insert after the PropertyType assertion from Task 2, still inside the same `test(...)` callback:
 
 ```ts
-    // 5. Create the Person NodeType: name (required), email (optional).
-    const nodeTypeForm = page.locator('form', {
-      has: page.getByRole('heading', { name: 'New NodeType' }),
-    });
-    let lastRow = nodeTypeForm.locator('div.border.rounded-md.bg-gray-50').last();
+// 5. Create the Person NodeType: name (required), email (optional).
+const nodeTypeForm = page.locator('form', {
+  has: page.getByRole('heading', { name: 'New NodeType' }),
+});
+let lastRow = nodeTypeForm.locator('div.border.rounded-md.bg-gray-50').last();
 
-    await nodeTypeForm.getByLabel('Name').fill('Person');
-    await nodeTypeForm.getByRole('button', { name: 'Inline property' }).click();
-    lastRow = nodeTypeForm.locator('div.border.rounded-md.bg-gray-50').last();
-    await lastRow.getByPlaceholder('Property name').fill('name');
-    await lastRow.getByLabel('Required').check();
+await nodeTypeForm.getByLabel('Name').fill('Person');
+await nodeTypeForm.getByRole('button', { name: 'Inline property' }).click();
+lastRow = nodeTypeForm.locator('div.border.rounded-md.bg-gray-50').last();
+await lastRow.getByPlaceholder('Property name').fill('name');
+await lastRow.getByLabel('Required').check();
 
-    await nodeTypeForm.getByRole('button', { name: 'Inline property' }).click();
-    lastRow = nodeTypeForm.locator('div.border.rounded-md.bg-gray-50').last();
-    await lastRow.getByPlaceholder('Property name').fill('email');
+await nodeTypeForm.getByRole('button', { name: 'Inline property' }).click();
+lastRow = nodeTypeForm.locator('div.border.rounded-md.bg-gray-50').last();
+await lastRow.getByPlaceholder('Property name').fill('email');
 
-    await nodeTypeForm.getByRole('button', { name: 'Create NodeType' }).click();
-    const personItem = page.locator('li', { hasText: 'Person' });
-    await expect(personItem).toBeVisible();
-    await expect(personItem).toContainText('2 properties');
+await nodeTypeForm.getByRole('button', { name: 'Create NodeType' }).click();
+const personItem = page.locator('li', { hasText: 'Person' });
+await expect(personItem).toBeVisible();
+await expect(personItem).toContainText('2 properties');
 
-    // 6. Create the Project NodeType: name (required), description (optional),
-    //    status (reference to the shared PropertyType).
-    await nodeTypeForm.getByLabel('Name').fill('Project');
-    await nodeTypeForm.getByRole('button', { name: 'Inline property' }).click();
-    lastRow = nodeTypeForm.locator('div.border.rounded-md.bg-gray-50').last();
-    await lastRow.getByPlaceholder('Property name').fill('name');
-    await lastRow.getByLabel('Required').check();
+// 6. Create the Project NodeType: name (required), description (optional),
+//    status (reference to the shared PropertyType).
+await nodeTypeForm.getByLabel('Name').fill('Project');
+await nodeTypeForm.getByRole('button', { name: 'Inline property' }).click();
+lastRow = nodeTypeForm.locator('div.border.rounded-md.bg-gray-50').last();
+await lastRow.getByPlaceholder('Property name').fill('name');
+await lastRow.getByLabel('Required').check();
 
-    await nodeTypeForm.getByRole('button', { name: 'Inline property' }).click();
-    lastRow = nodeTypeForm.locator('div.border.rounded-md.bg-gray-50').last();
-    await lastRow.getByPlaceholder('Property name').fill('description');
+await nodeTypeForm.getByRole('button', { name: 'Inline property' }).click();
+lastRow = nodeTypeForm.locator('div.border.rounded-md.bg-gray-50').last();
+await lastRow.getByPlaceholder('Property name').fill('description');
 
-    await nodeTypeForm.getByRole('button', { name: 'Reference PropertyType' }).click();
-    await expect(
-      nodeTypeForm.locator('option', { hasText: 'content/status (text)' }),
-    ).toBeAttached();
+await nodeTypeForm.getByRole('button', { name: 'Reference PropertyType' }).click();
+await expect(nodeTypeForm.locator('option', { hasText: 'content/status (text)' })).toBeAttached();
 
-    await nodeTypeForm.getByRole('button', { name: 'Create NodeType' }).click();
-    const projectItem = page.locator('li', { hasText: 'Project' });
-    await expect(projectItem).toBeVisible();
-    await expect(projectItem).toContainText('3 properties');
+await nodeTypeForm.getByRole('button', { name: 'Create NodeType' }).click();
+const projectItem = page.locator('li', { hasText: 'Project' });
+await expect(projectItem).toBeVisible();
+await expect(projectItem).toContainText('3 properties');
 
-    // 7. Create the Task NodeType: title (required), priority (number),
-    //    dueDate (plain-date), description (optional), status (reference).
-    await nodeTypeForm.getByLabel('Name').fill('Task');
-    await nodeTypeForm.getByRole('button', { name: 'Inline property' }).click();
-    lastRow = nodeTypeForm.locator('div.border.rounded-md.bg-gray-50').last();
-    await lastRow.getByPlaceholder('Property name').fill('title');
-    await lastRow.getByLabel('Required').check();
+// 7. Create the Task NodeType: title (required), priority (number),
+//    dueDate (plain-date), description (optional), status (reference).
+await nodeTypeForm.getByLabel('Name').fill('Task');
+await nodeTypeForm.getByRole('button', { name: 'Inline property' }).click();
+lastRow = nodeTypeForm.locator('div.border.rounded-md.bg-gray-50').last();
+await lastRow.getByPlaceholder('Property name').fill('title');
+await lastRow.getByLabel('Required').check();
 
-    await nodeTypeForm.getByRole('button', { name: 'Inline property' }).click();
-    lastRow = nodeTypeForm.locator('div.border.rounded-md.bg-gray-50').last();
-    await lastRow.getByPlaceholder('Property name').fill('priority');
-    await lastRow.locator('select').selectOption('number');
+await nodeTypeForm.getByRole('button', { name: 'Inline property' }).click();
+lastRow = nodeTypeForm.locator('div.border.rounded-md.bg-gray-50').last();
+await lastRow.getByPlaceholder('Property name').fill('priority');
+await lastRow.locator('select').selectOption('number');
 
-    await nodeTypeForm.getByRole('button', { name: 'Inline property' }).click();
-    lastRow = nodeTypeForm.locator('div.border.rounded-md.bg-gray-50').last();
-    await lastRow.getByPlaceholder('Property name').fill('dueDate');
-    await lastRow.locator('select').selectOption('plain-date');
+await nodeTypeForm.getByRole('button', { name: 'Inline property' }).click();
+lastRow = nodeTypeForm.locator('div.border.rounded-md.bg-gray-50').last();
+await lastRow.getByPlaceholder('Property name').fill('dueDate');
+await lastRow.locator('select').selectOption('plain-date');
 
-    await nodeTypeForm.getByRole('button', { name: 'Inline property' }).click();
-    lastRow = nodeTypeForm.locator('div.border.rounded-md.bg-gray-50').last();
-    await lastRow.getByPlaceholder('Property name').fill('description');
+await nodeTypeForm.getByRole('button', { name: 'Inline property' }).click();
+lastRow = nodeTypeForm.locator('div.border.rounded-md.bg-gray-50').last();
+await lastRow.getByPlaceholder('Property name').fill('description');
 
-    await nodeTypeForm.getByRole('button', { name: 'Reference PropertyType' }).click();
+await nodeTypeForm.getByRole('button', { name: 'Reference PropertyType' }).click();
 
-    await nodeTypeForm.getByRole('button', { name: 'Create NodeType' }).click();
-    const taskItem = page.locator('li', { hasText: 'Task' });
-    await expect(taskItem).toBeVisible();
-    await expect(taskItem).toContainText('5 properties');
+await nodeTypeForm.getByRole('button', { name: 'Create NodeType' }).click();
+const taskItem = page.locator('li', { hasText: 'Task' });
+await expect(taskItem).toBeVisible();
+await expect(taskItem).toContainText('5 properties');
 ```
 
 - [x] **Step 2: Run it** (done — passed: `1 passed (4.7s)`, draft selectors worked verbatim)
@@ -435,6 +436,7 @@ Insert after the PropertyType assertion from Task 2, still inside the same `test
 ### Task 4: Author belongs_to and assigned_to EdgeTypes
 
 **Files:**
+
 - Modify: `apps/web/e2e/domain-content-types.e2e.ts`
 
 - [x] **Step 1: Add EdgeType creation steps** (done, commit `1d0b07a` — fixed `getByLabel('Name')` to `getByLabel('Name', { exact: true })`, see progress note)
@@ -442,33 +444,33 @@ Insert after the PropertyType assertion from Task 2, still inside the same `test
 Insert after the Task NodeType assertions from Task 3:
 
 ```ts
-    // 8. Create the belongs_to EdgeType: Task -> Project.
-    const edgeTypeForm = page.locator('form', {
-      has: page.getByRole('heading', { name: 'New EdgeType' }),
-    });
-    const sourceTypesBox = edgeTypeForm.locator('div.max-h-32').first();
-    const targetTypesBox = edgeTypeForm.locator('div.max-h-32').nth(1);
+// 8. Create the belongs_to EdgeType: Task -> Project.
+const edgeTypeForm = page.locator('form', {
+  has: page.getByRole('heading', { name: 'New EdgeType' }),
+});
+const sourceTypesBox = edgeTypeForm.locator('div.max-h-32').first();
+const targetTypesBox = edgeTypeForm.locator('div.max-h-32').nth(1);
 
-    await edgeTypeForm.getByLabel('Name').fill('belongs_to');
-    await sourceTypesBox.getByLabel('content/Task').check();
-    await targetTypesBox.getByLabel('content/Project').check();
-    await edgeTypeForm.getByRole('button', { name: 'Create EdgeType' }).click();
-    const belongsToItem = page.locator('li', { hasText: 'belongs_to' });
-    await expect(belongsToItem).toBeVisible();
-    // sourceTypes/targetTypes render as raw NodeIds (see EdgeTypeList in
-    // schema-namespace-page.tsx), not "namespace/Name" strings, and those IDs are
-    // freshly generated so can't be predicted here -- just confirm the
-    // source/target line isn't the unrestricted "any -> any" default.
-    await expect(belongsToItem.locator('p.font-mono')).not.toContainText('any -> any');
+await edgeTypeForm.getByLabel('Name').fill('belongs_to');
+await sourceTypesBox.getByLabel('content/Task').check();
+await targetTypesBox.getByLabel('content/Project').check();
+await edgeTypeForm.getByRole('button', { name: 'Create EdgeType' }).click();
+const belongsToItem = page.locator('li', { hasText: 'belongs_to' });
+await expect(belongsToItem).toBeVisible();
+// sourceTypes/targetTypes render as raw NodeIds (see EdgeTypeList in
+// schema-namespace-page.tsx), not "namespace/Name" strings, and those IDs are
+// freshly generated so can't be predicted here -- just confirm the
+// source/target line isn't the unrestricted "any -> any" default.
+await expect(belongsToItem.locator('p.font-mono')).not.toContainText('any -> any');
 
-    // 9. Create the assigned_to EdgeType: Task -> Person.
-    await edgeTypeForm.getByLabel('Name').fill('assigned_to');
-    await sourceTypesBox.getByLabel('content/Task').check();
-    await targetTypesBox.getByLabel('content/Person').check();
-    await edgeTypeForm.getByRole('button', { name: 'Create EdgeType' }).click();
-    const assignedToItem = page.locator('li', { hasText: 'assigned_to' });
-    await expect(assignedToItem).toBeVisible();
-    await expect(assignedToItem.locator('p.font-mono')).not.toContainText('any -> any');
+// 9. Create the assigned_to EdgeType: Task -> Person.
+await edgeTypeForm.getByLabel('Name').fill('assigned_to');
+await sourceTypesBox.getByLabel('content/Task').check();
+await targetTypesBox.getByLabel('content/Person').check();
+await edgeTypeForm.getByRole('button', { name: 'Create EdgeType' }).click();
+const assignedToItem = page.locator('li', { hasText: 'assigned_to' });
+await expect(assignedToItem).toBeVisible();
+await expect(assignedToItem.locator('p.font-mono')).not.toContainText('any -> any');
 ```
 
 - [x] **Step 2: Run it** (done — passed: `1 passed (5.3s)`)
@@ -480,6 +482,7 @@ Insert after the Task NodeType assertions from Task 3:
 ### Task 5: Instantiate a real Task node and clean up
 
 **Files:**
+
 - Modify: `apps/web/e2e/domain-content-types.e2e.ts`
 
 - [x] **Step 1: Add New Node dialog interaction and graph cleanup** (done, commit `b57fdfb` — scoped New Node selectors to `page.getByRole('dialog')`, see progress note)
