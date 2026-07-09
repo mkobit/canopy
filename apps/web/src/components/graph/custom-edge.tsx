@@ -31,7 +31,7 @@ export const CustomEdge = ({
       stroke: selected ? '#3b82f6' : '#cbd5e1',
     },
     className: 'transition-colors hover:stroke-gray-400 cursor-pointer',
-    ...(markerEnd ? { markerEnd } : {}),
+    ...(markerEnd && { markerEnd }),
   };
 
   return (

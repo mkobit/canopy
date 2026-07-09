@@ -24,8 +24,6 @@ export function generateKeyBetween(a: string | null, b: string | null): string {
   // Treat null start as before the first char, effectively empty string-like but handled via indices
   // We'll iterate characters.
 
-  let index = 0;
-
   // If a is null, we treat it as effectively empty string, BUT we want to return something < b.
   // If b is "0", we need something smaller. "0" is min char.
   // We can't produce a string < "0" if "0" is the min char and we rely on standard string comparison.
@@ -39,7 +37,7 @@ export function generateKeyBetween(a: string | null, b: string | null): string {
   if (a === null) {
     if (b === null) return 'a0'; // handled above
     // b is "..."
-    const bFirst = getIndex(b[0]);
+    const bFirst = getIndex(b.at(0));
     if (bFirst > 0) {
       // Return something starting with (bFirst + 0) / 2
       const mid = Math.floor((0 + bFirst) / 2);
@@ -64,19 +62,19 @@ export function generateKeyBetween(a: string | null, b: string | null): string {
   if (b === null) {
     // a is "..."
     // Find something after a.
-    const aFirst = getIndex(a[0]);
+    const aFirst = getIndex(a.at(0));
     if (aFirst < DIGITS.length - 1) {
       const nextChar = DIGITS[aFirst + 1];
       if (!nextChar) {
-        return a + DIGITS[Math.floor(DIGITS.length / 2)];
+        return a + DIGITS.at(Math.floor(DIGITS.length / 2));
       }
       return nextChar;
     }
     // a is "z...". Append.
-    return a + DIGITS[Math.floor(DIGITS.length / 2)];
+    return a + DIGITS.at(Math.floor(DIGITS.length / 2));
   }
 
-  // Both exist.
+  let index = 0;
 
   while (true) {
     const charA = a[index]; // undefined if exhausted
@@ -103,13 +101,12 @@ export function generateKeyBetween(a: string | null, b: string | null): string {
         // We can fit a char in between
         const mid = Math.round((valA + valB) / 2);
         return a.slice(0, index) + DIGITS[mid];
-      } else {
-        // diff is 1. "a", "b".
-        // We need > "a...", < "b...".
-        // Append to a.
-        // a + midChar.
-        return a.slice(0, index + 1) + DIGITS[Math.floor(DIGITS.length / 2)];
       }
+      // diff is 1. "a", "b".
+      // We need > "a...", < "b...".
+      // Append to a.
+      // a + midChar.
+      return a.slice(0, index + 1) + DIGITS.at(Math.floor(DIGITS.length / 2));
     }
 
     // One is exhausted.
@@ -182,7 +179,7 @@ export function generateKeyBetween(a: string | null, b: string | null): string {
       // So we return "A0" + mid(0, 'B').
 
       // Loop until we find a char in b > '0'.
-      while (index < b.length && b[index] === DIGITS[0]) {
+      while (index < b.length && b[index] === DIGITS.at(0)) {
         index++;
       }
       // now b[index] > '0' (or exhausted).
@@ -198,7 +195,7 @@ export function generateKeyBetween(a: string | null, b: string | null): string {
       const midVal = Math.floor(valAt / 2);
       const midChar = DIGITS[midVal];
       if (!midChar) {
-        return a + zeros + DIGITS[0];
+        return a + zeros + DIGITS.at(0);
       }
       return a + zeros + midChar;
     }

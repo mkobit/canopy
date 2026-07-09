@@ -8,7 +8,6 @@ export interface InspectorNodeData {
   readonly properties?: Readonly<Record<string, unknown>>;
 }
 
-// eslint-disable-next-line functional/no-mixed-types
 export interface InspectorPanelProps {
   readonly selectedNode?: InspectorNodeData;
   readonly onClose?: () => unknown;

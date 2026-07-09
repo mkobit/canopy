@@ -111,8 +111,8 @@ export function saveViewDefinition(
 
   const newGraphResult = addNode(graph, node, {
     deviceId: options.deviceId,
-    ...(options.batchId === undefined ? {} : { batchId: options.batchId }),
-    ...(options.migrationId === undefined ? {} : { migrationId: options.migrationId }),
+    ...(options.batchId !== undefined && { batchId: options.batchId }),
+    ...(options.migrationId !== undefined && { migrationId: options.migrationId }),
   });
   if (!newGraphResult.ok) return err(newGraphResult.error);
 
@@ -163,11 +163,11 @@ export function getViewDefinition(graph: Graph, nodeId: NodeId): Result<ViewDefi
     name: nameProp,
     queryRef: asNodeId(queryRefProp),
     layout: layoutProp,
-    ...(typeof description === 'string' ? { description: description } : {}),
-    ...(sort ? { sort } : {}),
-    ...(typeof groupBy === 'string' ? { groupBy: groupBy } : {}),
-    ...(displayPropertiesList ? { displayProperties: displayPropertiesList } : {}),
-    ...(typeof pageSize === 'number' ? { pageSize: pageSize } : {}),
+    ...(typeof description === 'string' && { description: description }),
+    ...(sort && { sort }),
+    ...(typeof groupBy === 'string' && { groupBy: groupBy }),
+    ...(displayPropertiesList && { displayProperties: displayPropertiesList }),
+    ...(typeof pageSize === 'number' && { pageSize: pageSize }),
   });
 }
 

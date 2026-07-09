@@ -55,7 +55,7 @@ export const EdgeTypeCreateForm: React.FC<EdgeTypeCreateFormProps> = ({
   const [sourceTypes, setSourceTypes] = useState<readonly NodeId[]>([]);
   const [targetTypes, setTargetTypes] = useState<readonly NodeId[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  const [isSubmitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,9 +66,9 @@ export const EdgeTypeCreateForm: React.FC<EdgeTypeCreateFormProps> = ({
       name,
       namespace,
       properties,
-      ...(description ? { description } : {}),
-      ...(sourceTypes.length > 0 ? { sourceTypes } : {}),
-      ...(targetTypes.length > 0 ? { targetTypes } : {}),
+      ...(description && { description }),
+      ...(sourceTypes.length > 0 && { sourceTypes }),
+      ...(targetTypes.length > 0 && { targetTypes }),
     });
 
     setSubmitting(false);
@@ -135,7 +135,7 @@ export const EdgeTypeCreateForm: React.FC<EdgeTypeCreateFormProps> = ({
       {error && <p className="text-sm text-red-600">{error}</p>}
       <button
         type="submit"
-        disabled={submitting || !name}
+        disabled={isSubmitting || !name}
         className="px-4 py-2 rounded text-sm bg-blue-600 text-white disabled:opacity-40 disabled:cursor-not-allowed hover:bg-blue-700"
       >
         Create EdgeType

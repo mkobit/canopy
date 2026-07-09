@@ -1,12 +1,13 @@
-// eslint-disable-next-line functional/no-return-void
 export const showAlert = (message?: string): void => {
-  globalThis.alert(message);
+  // eslint-disable-next-line no-restricted-globals -- Wrapper for global alert
+  alert(message);
 };
 
 export const showPrompt = (message?: string, _default?: string): string | null => {
-  return globalThis.prompt(message, _default);
+  // eslint-disable-next-line no-restricted-globals -- Wrapper for global prompt
+  return prompt(message, _default);
 };
 
 export const showConfirm = (message?: string): boolean => {
-  return globalThis.confirm(message);
+  return confirm(message);
 };

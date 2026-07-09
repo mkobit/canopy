@@ -87,7 +87,7 @@ export function createNamespace(
   const properties: Record<string, PropertyValue> = {
     name: input.name,
     kind: input.kind,
-    ...(input.description === undefined ? {} : { description: input.description }),
+    ...(input.description !== undefined && { description: input.description }),
   };
 
   const node: Node = {
@@ -221,7 +221,7 @@ export function createNodeType(
     name: input.name,
     namespace: input.namespace,
     properties: JSON.stringify(propertiesResult.value),
-    ...(input.description === undefined ? {} : { description: input.description }),
+    ...(input.description !== undefined && { description: input.description }),
   };
 
   const node: Node = {
@@ -275,9 +275,9 @@ export function createEdgeType(
     name: input.name,
     namespace: input.namespace,
     properties: JSON.stringify(propertiesResult.value),
-    ...(input.description === undefined ? {} : { description: input.description }),
-    ...(input.sourceTypes === undefined ? {} : { sourceTypes: input.sourceTypes }),
-    ...(input.targetTypes === undefined ? {} : { targetTypes: input.targetTypes }),
+    ...(input.description !== undefined && { description: input.description }),
+    ...(input.sourceTypes !== undefined && { sourceTypes: input.sourceTypes }),
+    ...(input.targetTypes !== undefined && { targetTypes: input.targetTypes }),
   };
 
   const node: Node = {
@@ -324,10 +324,10 @@ export function createPropertyType(
     });
   }
 
-  const duplicate = getNodesOfType(graph, SYSTEM_IDS.PROPERTY_TYPE).find(
+  const hasDuplicate = getNodesOfType(graph, SYSTEM_IDS.PROPERTY_TYPE).some(
     (node) => node.properties.get('name') === input.name,
   );
-  if (duplicate) {
+  if (hasDuplicate) {
     return err({ path: ['name'], message: `PropertyType '${input.name}' already exists` });
   }
 
@@ -335,7 +335,7 @@ export function createPropertyType(
     name: input.name,
     namespace: input.namespace,
     valueKind: valueKindResult.data,
-    ...(input.description === undefined ? {} : { description: input.description }),
+    ...(input.description !== undefined && { description: input.description }),
   };
 
   const node: Node = {

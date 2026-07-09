@@ -36,7 +36,6 @@ export function maxEventIdForTimestamp(timestamp: Instant): EventId {
  * Used to transform an inclusive upper bound to an exclusive one.
  */
 export function incrementEventId(eventId: EventId): EventId {
-  // eslint-disable-next-line unicorn/prefer-spread
   const hexChars = eventId.toLowerCase().split('');
 
   // eslint-disable-next-line functional/no-loop-statements
@@ -50,10 +49,9 @@ export function incrementEventId(eventId: EventId): EventId {
       // eslint-disable-next-line functional/immutable-data
       hexChars[i] = (val + 1).toString(16);
       return hexChars.join('') as EventId;
-    } else {
-      // eslint-disable-next-line functional/immutable-data
-      hexChars[i] = '0';
     }
+    // eslint-disable-next-line functional/immutable-data
+    hexChars[i] = '0';
   }
 
   // Overflow (should not happen for valid UUIDs in our lifetime)

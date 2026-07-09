@@ -160,7 +160,8 @@ function applyFilter(items: readonly GraphItem[], predicate: Filter): readonly G
       case 'contains': {
         if (Array.isArray(pVal)) {
           return pVal.includes(value);
-        } else if (typeof pVal === 'string') {
+        }
+        if (typeof pVal === 'string') {
           return pVal.includes(value as string);
         }
         return false;
@@ -202,22 +203,22 @@ function traverse(
     flatMap(edges, (edge: Edge) => {
       if (edgeType && edge.type !== edgeType) return [];
 
-      const sourceMatches = nodeIds.has(edge.source);
-      const targetMatches = nodeIds.has(edge.target);
+      const isSourceMatches = nodeIds.has(edge.source);
+      const isTargetMatches = nodeIds.has(edge.target);
 
       const targetNode = graph.nodes.get(edge.target);
       const sourceNode = graph.nodes.get(edge.source);
       switch (direction) {
         case 'out': {
-          return sourceMatches && targetNode ? [targetNode] : [];
+          return isSourceMatches && targetNode ? [targetNode] : [];
         }
         case 'in': {
-          return targetMatches && sourceNode ? [sourceNode] : [];
+          return isTargetMatches && sourceNode ? [sourceNode] : [];
         }
         case 'both': {
           return [
-            ...(sourceMatches && targetNode ? [targetNode] : []),
-            ...(targetMatches && sourceNode ? [sourceNode] : []),
+            ...(isSourceMatches && targetNode ? [targetNode] : []),
+            ...(isTargetMatches && sourceNode ? [sourceNode] : []),
           ];
         }
         default: {

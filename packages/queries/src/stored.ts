@@ -134,11 +134,12 @@ function substituteParams(obj: any, params: Record<string, unknown>): any {
   if (Array.isArray(obj)) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return obj.map((item: any) => substituteParams(item, params));
-  } else if (isPlainObject(obj)) {
+  }
+  if (isPlainObject(obj)) {
     return mapValues(obj, (value) => {
       if (isString(value) && value.startsWith('$')) {
         const paramName = value.slice(1);
-        if (paramName in params) {
+        if (Object.hasOwn(params, paramName)) {
           return params[paramName];
         }
       }

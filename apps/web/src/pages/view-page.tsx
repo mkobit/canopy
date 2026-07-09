@@ -16,11 +16,6 @@ export const ViewPage = () => {
     return executeView(graph, asNodeId(viewId));
   }, [graph, viewId]);
 
-  const handleNodeClick = (node: Node) => {
-    navigate(`/graph/${graphId}/node/${node.id}`);
-    return undefined;
-  };
-
   if (!graph || !viewId) {
     return <div className="p-8 text-center text-gray-500">No graph loaded.</div>;
   }
@@ -28,6 +23,11 @@ export const ViewPage = () => {
   if (!viewResult) {
     return <div className="p-8 text-center text-gray-400">Loading view…</div>;
   }
+
+  const handleNodeClick = (node: Node) => {
+    navigate(`/graph/${graphId}/node/${node.id}`);
+    return undefined;
+  };
 
   if (!viewResult.ok) {
     return <div className="p-8 text-center text-red-500">Error: {viewResult.error.message}</div>;

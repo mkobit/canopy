@@ -9,10 +9,10 @@ import { Temporal } from 'temporal-polyfill';
 
 // eslint-disable-next-line max-lines-per-function
 export const HomePage = () => {
-  const { registry, isLoading: storageLoading } = useStorage();
+  const { registry, isLoading: isStorageLoading } = useStorage();
   const navigate = useNavigate();
   const [graphs, setGraphs] = useState<readonly GraphRegistryEntry[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setLoading] = useState(false);
 
   const loadGraphs = React.useCallback(async () => {
     if (!registry) return undefined;
@@ -31,7 +31,9 @@ export const HomePage = () => {
 
   useEffect(() => {
     if (registry) {
-      Promise.resolve().then(loadGraphs).catch(console.error);
+      queueMicrotask(() => {
+        void loadGraphs().catch(console.error);
+      });
     }
     return undefined;
   }, [registry, loadGraphs]);
@@ -67,13 +69,13 @@ export const HomePage = () => {
     return undefined;
   };
 
+  if (isStorageLoading || isLoading) return <div className="p-8">Loading...</div>;
+
   const handleOpenGraph = (id: string) => {
     // Navigate to graph route
     navigate(`/graph/${id}`);
     return undefined;
   };
-
-  if (storageLoading || loading) return <div className="p-8">Loading...</div>;
 
   return (
     <div className="p-8 max-w-4xl mx-auto">

@@ -11,9 +11,9 @@ import { listAllowedNodeTypes } from '../../utils/node-types';
 import { listNamespaces } from '../../utils/schema';
 
 function useTestContext() {
-  const { eventLog, isLoading: storageLoading } = useStorage();
+  const { eventLog, isLoading: isStorageLoading } = useStorage();
   const graphCtx = useGraph();
-  return { storageReady: !storageLoading && eventLog !== null, ...graphCtx };
+  return { storageReady: !isStorageLoading && eventLog !== null, ...graphCtx };
 }
 
 const wrapper = ({ children }: { children: ReactNode }): React.JSX.Element => (
@@ -258,14 +258,14 @@ describe('bootstrap bridge — context integration', () => {
     if (!graph) return;
 
     const types = listAllowedNodeTypes(graph, listNamespaces(graph));
-    const ids = types.map((t) => t.id).toSorted();
+    const ids = types.map((t) => t.id).toSorted((a, b) => a.localeCompare(b));
     expect(ids).toEqual(
       [
         SYSTEM_IDS.TYPE_CODE_BLOCK,
         SYSTEM_IDS.TYPE_MARKDOWN,
         SYSTEM_IDS.TYPE_TEXT_BLOCK,
         SYSTEM_IDS.QUERY_DEFINITION,
-      ].toSorted(),
+      ].toSorted((a, b) => a.localeCompare(b)),
     );
   });
 });

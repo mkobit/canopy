@@ -8,11 +8,11 @@ export interface CodeBlockRendererProps {
 
 export const CodeBlockRenderer: React.FC<CodeBlockRendererProps> = ({ node, className }) => {
   const content = node.properties.get('content');
-  const language = node.properties.get('language');
-
   if (typeof content !== 'string') {
     return <div className="text-red-500">Invalid code content</div>;
   }
+
+  const language = node.properties.get('language');
 
   return (
     <div

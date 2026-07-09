@@ -80,8 +80,8 @@ describe('namespace utilities', () => {
 
     const importedNodes = getNodesInNamespace(graph, asNamespace('imported'));
     expect(importedNodes.length).toBe(3); // The type definition itself, node1, and node3
-    expect(importedNodes.map((n) => n.id).toSorted()).toEqual(
-      [importedType.id, node1.id, node3.id].toSorted(),
+    expect(importedNodes.map((n) => n.id).toSorted((a, b) => a.localeCompare(b))).toEqual(
+      [importedType.id, node1.id, node3.id].toSorted((a, b) => a.localeCompare(b)),
     );
 
     const userSettingsNodes = getNodesInNamespace(graph, asNamespace('user-settings')).filter((n) =>

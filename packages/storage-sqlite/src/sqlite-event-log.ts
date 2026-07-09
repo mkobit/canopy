@@ -91,10 +91,11 @@ export const createSQLiteEventLog = (persistence?: SQLitePersistence): SQLiteEve
   };
 
   const persist = async (): Promise<void> => {
-    if (persistence && db) {
-      const data = db.export();
-      await persistence.write(data);
+    if (!persistence || !db) {
+      return;
     }
+    const data = db.export();
+    await persistence.write(data);
   };
 
   return {
@@ -133,7 +134,7 @@ export const createSQLiteEventLog = (persistence?: SQLitePersistence): SQLiteEve
       if (!db) return err(new Error('Database not initialized'));
 
       const dbInstance = db;
-      return fromAsyncThrowable(async () => {
+      const result = await fromAsyncThrowable(async () => {
         dbInstance.run('BEGIN TRANSACTION');
         const stmt = dbInstance.prepare(`
           INSERT OR IGNORE INTO events (graph_id, event_id, timestamp, type, payload)
@@ -151,12 +152,12 @@ export const createSQLiteEventLog = (persistence?: SQLitePersistence): SQLiteEve
         dbInstance.run('COMMIT');
         await persist();
         return;
-      }).then((result) => {
-        if (!result.ok) {
-          dbInstance.run('ROLLBACK');
-        }
-        return result;
       });
+
+      if (!result.ok) {
+        dbInstance.run('ROLLBACK');
+      }
+      return result;
     },
 
     getEvents: async (

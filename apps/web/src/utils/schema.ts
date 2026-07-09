@@ -106,7 +106,9 @@ export function listCreatableNamespaceKinds(
   namespaces: readonly NamespaceOption[],
 ): readonly string[] {
   const kinds = new Set(namespaces.map((ns) => ns.kind));
-  return [...kinds].filter((kind) => !RESTRICTED_NAMESPACE_KINDS.has(kind)).toSorted();
+  return [...kinds]
+    .filter((kind) => !RESTRICTED_NAMESPACE_KINDS.has(kind))
+    .toSorted((a, b) => a.localeCompare(b));
 }
 
 export function listAllNodeTypes(graph: Graph): readonly TypeDefOption[] {

@@ -17,6 +17,14 @@ export interface QueryEngine {
 }
 
 export class CypherQueryEngine implements QueryEngine {
+  private extractQueryString(query: QueryNode): string {
+    const q = query.properties.get('query');
+    if (typeof q === 'string') {
+      return q;
+    }
+    return '';
+  }
+
   execute(
     graph: Graph,
     query: string | QueryNode,
@@ -43,13 +51,5 @@ export class CypherQueryEngine implements QueryEngine {
   validate(_query: string | QueryNode): ValidationResult {
     // Stub implementation
     return { valid: true, errors: [] };
-  }
-
-  private extractQueryString(query: QueryNode): string {
-    const q = query.properties.get('query');
-    if (typeof q === 'string') {
-      return q;
-    }
-    return '';
   }
 }

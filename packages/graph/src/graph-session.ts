@@ -53,8 +53,7 @@ function validateCommit(graph: Graph, events: readonly GraphEvent[]): Result<voi
     if (event.type === 'NodeCreated' || event.type === 'NodePropertiesUpdated') {
       // eslint-disable-next-line functional/immutable-data
       touchedNodeIds.add(event.id);
-    }
-    if (event.type === 'EdgeCreated' || event.type === 'EdgePropertiesUpdated') {
+    } else if (event.type === 'EdgeCreated' || event.type === 'EdgePropertiesUpdated') {
       // eslint-disable-next-line functional/immutable-data
       touchedEdgeIds.add(event.id);
     }
