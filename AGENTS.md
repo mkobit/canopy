@@ -30,13 +30,13 @@ Six packages:
 ## Architectural invariants
 
 1. `@canopy/graph` is the leaf — no `@canopy/*` imports.
-Bootstrap, system IDs, and the `EventLogStore` port live here.
+   Bootstrap, system IDs, and the `EventLogStore` port live here.
 2. No package imports `yjs` or `y-protocols`. The event log is the sole persistence and sync mechanism.
 3. Storage adapters implement `EventLogStore` (defined in `@canopy/graph`); they do not redefine the port.
 4. UI components are stateless; they receive data via props and do not fetch or mutate.
 5. Zod schemas in `@canopy/graph` are the source of truth for runtime validation.
 6. All type properties are `readonly`.
-No mutations — functions return new values, never modify arguments.
+   No mutations — functions return new values, never modify arguments.
 7. No raw primitives in domain types — use branded IDs and domain wrappers.
 8. Errors are returned as `Result<T, E>`, not thrown.
 
@@ -124,6 +124,7 @@ See `.jules/AGENTS.md`.
 ## Agent constraints and quality control
 
 To prevent agent sprawl, inconsistent code, and high token costs:
+
 - Avoid adding new files or scripts to the project root unless absolutely necessary.
 - Follow the package layout and bounded contexts.
 - Keep components and context provider files focused and modular.

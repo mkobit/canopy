@@ -4,6 +4,7 @@
 
 The current [BlockEditor](file:///home/mkobit/workspace/mkobit/canopy/apps/web/src/components/editor/block-editor.tsx) uses a basic HTML string-based `contentEditable` component.
 This design has several major limitations for collaborative editing:
+
 1. Direct editing of HTML strings leads to tag corruption and parsing errors when Yjs merges concurrent character insertions.
 2. Character-by-character changes flood the global event log if captured as standard node update events.
 3. User actions like undo and redo work at the raw character level rather than grouping edits into logical text segments.

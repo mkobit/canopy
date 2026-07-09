@@ -22,5 +22,5 @@ Until both are true, the protocol would drift from reality before it could be us
 ## What's preserved here
 
 - `proposal.md`, `design.md`, `tasks.md`, `specs/` — the original artifacts, untouched.
-Use these as the starting point if/when the proposal is reopened, since they capture the original intent.
+  Use these as the starting point if/when the proposal is reopened, since they capture the original intent.
 - No code or spec changes were applied to `openspec/specs/` or the workspace.

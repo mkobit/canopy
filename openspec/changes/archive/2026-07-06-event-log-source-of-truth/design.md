@@ -10,6 +10,7 @@ Existing vaults therefore have no reliable event history — the materialized `Y
 ## Goals / Non-Goals
 
 **Goals:**
+
 - One write path: op → events → validate → append → project → notify, per the event lifecycle in `2026-02-08-event-system.md` section 7.
 - Incremental projection that converges under out-of-order, partial delivery — the property that makes every future sync backend (file, HTTP, server) a dumb event carrier.
 - Per-backend storage packages so third-party deps (`idb`, `sql.js`, future HTTP/Drive clients) stay isolated.
@@ -17,6 +18,7 @@ Existing vaults therefore have no reliable event history — the materialized `Y
 - Existing dogfood vaults survive via a one-time import.
 
 **Non-Goals:**
+
 - The file-based/Drive sync backend and server API backend (`canopy-1q5.2`/`.3`/`.4`) — the design doc specifies the file format; implementation is follow-on changes.
 - Persisted projection snapshots for fast startup — replay of personal-vault logs through `projectGraph` is milliseconds-scale; deferred until felt.
 - Log-aware undo via inverse events — `Y.UndoManager`'s replacement is local editor undo for now.

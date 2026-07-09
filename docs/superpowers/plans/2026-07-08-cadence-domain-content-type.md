@@ -16,6 +16,7 @@
 ### Task 1: Claim the bead, scaffold the e2e test — graph and `cadence` namespace
 
 **Files:**
+
 - Create: `apps/web/e2e/cadence.e2e.ts`
 
 - [ ] **Step 1: Claim the bead**
@@ -95,6 +96,7 @@ git commit -m "test(web): scaffold cadence e2e — graph + cadence namespace (ca
 ### Task 2: Author the Cadence and CadenceAction NodeTypes
 
 **Files:**
+
 - Modify: `apps/web/e2e/cadence.e2e.ts`
 
 - [ ] **Step 1: Add the `Locator` import, the `addInlineProperty` helper, and `createNodeTypes`**
@@ -163,7 +165,7 @@ async function createNodeTypes(page: Page): Promise<void> {
 Add the call in `test.describe`, right after `createCadenceNamespace(page);`:
 
 ```ts
-    await createNodeTypes(page);
+await createNodeTypes(page);
 ```
 
 - [ ] **Step 2: Run it**
@@ -171,7 +173,7 @@ Add the call in `test.describe`, right after `createCadenceNamespace(page);`:
 Run: `cd apps/web && bunx playwright test cadence.e2e.ts`
 Expected: PASS.
 
-If `cadenceItem`/`cadenceActionItem` assertions fail with a strict-mode "multiple elements" error: `page.locator('li', { hasText: 'Cadence' })` is checked for visibility *before* `CadenceAction` exists, so it can only match one `<li>` at that point — if this still fails, check the DOM against the live page in Playwright's trace viewer rather than guessing.
+If `cadenceItem`/`cadenceActionItem` assertions fail with a strict-mode "multiple elements" error: `page.locator('li', { hasText: 'Cadence' })` is checked for visibility _before_ `CadenceAction` exists, so it can only match one `<li>` at that point — if this still fails, check the DOM against the live page in Playwright's trace viewer rather than guessing.
 
 - [ ] **Step 3: Commit**
 
@@ -185,6 +187,7 @@ git commit -m "test(web): author Cadence and CadenceAction NodeTypes in cadence 
 ### Task 3: Author the `triggers` EdgeType
 
 **Files:**
+
 - Modify: `apps/web/e2e/cadence.e2e.ts`
 
 - [ ] **Step 1: Add `createTriggersEdgeType`**
@@ -222,7 +225,7 @@ async function createTriggersEdgeType(page: Page): Promise<void> {
 Add the call in `test.describe`, right after `createNodeTypes(page);`:
 
 ```ts
-    await createTriggersEdgeType(page);
+await createTriggersEdgeType(page);
 ```
 
 - [ ] **Step 2: Run it**
@@ -244,6 +247,7 @@ git commit -m "test(web): author triggers EdgeType in cadence e2e (canopy-ayv)"
 ### Task 4: Instantiate real Cadence + CadenceAction nodes and clean up
 
 **Files:**
+
 - Modify: `apps/web/e2e/cadence.e2e.ts`
 
 - [ ] **Step 1: Add `instantiateCadenceNodes` and `cleanUpGraph`**
@@ -312,8 +316,8 @@ async function cleanUpGraph(page: Page): Promise<void> {
 Add the calls in `test.describe`, right after `createTriggersEdgeType(page);`, completing the test body:
 
 ```ts
-    await instantiateCadenceNodes(page);
-    await cleanUpGraph(page);
+await instantiateCadenceNodes(page);
+await cleanUpGraph(page);
 ```
 
 - [ ] **Step 2: Run it**

@@ -18,6 +18,7 @@ This exposes `QueryDefinition` in the "New Node" dialog.
 
 We will create a new end-to-end test under `apps/web/e2e/query-definition.e2e.ts`.
 This test will perform the following actions:
+
 1. Create a fresh graph and open it.
 2. Navigate to the Schema section and create a new user namespace called `cadence`.
 3. Create the `CadenceAction` NodeType with a `reference`-kind property called `target`.

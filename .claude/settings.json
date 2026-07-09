@@ -24,8 +24,6 @@
     ]
   },
   "permissions": {
-    "allow": [
-      "Bash(mise exec:*)"
-    ]
+    "allow": ["Bash(mise exec:*)"]
   }
 }

@@ -7,11 +7,13 @@ We will bump these packages and resolve all surfaced errors.
 ## Goals / Non-Goals
 
 **Goals:**
+
 - Update `@typescript-eslint/eslint-plugin`, `@typescript-eslint/parser`, `eslint`, `eslint-plugin-functional`, `eslint-plugin-unicorn`, and `prettier` to the target versions.
 - Fix all new linting and formatting errors surfaced by the bump.
 - Keep the build, typecheck, and test tasks passing.
 
 **Non-Goals:**
+
 - Upgrade TypeScript to version 7.0 at this time because `@typescript-eslint` does not yet natively support it.
 - Suppress or disable any rules to work around new violations.
 

@@ -4,7 +4,9 @@
 
 Enforce the functional/immutability architectural invariant at the linting layer.
 The ESLint config keeps `eslint-plugin-functional` rules fully active with a minimal, explicitly documented allowlist so that mutable code cannot land in production packages without a visible error.
+
 ## Requirements
+
 ### Requirement: prefer-immutable-types is active for all source types
 
 The ESLint config SHALL enforce `functional/prefer-immutable-types` at `ReadonlyShallow` depth for all `.ts` and `.tsx` files in `packages/` and `apps/` excluding test files.
@@ -81,4 +83,3 @@ After tightening or upgrading the ESLint configuration, all pre-existing and new
 
 - **WHEN** `bun run typecheck` is run after ESLint config changes and violation fixes
 - **THEN** the command SHALL exit 0
-

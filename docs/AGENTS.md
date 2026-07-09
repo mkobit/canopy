@@ -6,12 +6,12 @@ Per-package guidance lives in each package's `AGENTS.md`.
 ## Subdirectories
 
 - `design/` — design proposals and decisions.
-Files are date-prefixed (`YYYY-MM-DD-slug.md`).
-The canonical reference is `2026-02-06-core-data-model.md`.
+  Files are date-prefixed (`YYYY-MM-DD-slug.md`).
+  The canonical reference is `2026-02-06-core-data-model.md`.
 - `architecture/` — current-state architecture maps.
-`bounded-contexts.md` is the canonical package layout; `graph-model.md` summarizes the kernel; `decisions.md` is a running, append-only log of implementation-time decisions too small for their own dated `design/` doc.
+  `bounded-contexts.md` is the canonical package layout; `graph-model.md` summarizes the kernel; `decisions.md` is a running, append-only log of implementation-time decisions too small for their own dated `design/` doc.
 - `research/` — dated investigations and external evaluations.
-Frozen snapshots; do not retrofit unless an example is misleading.
+  Frozen snapshots; do not retrofit unless an example is misleading.
 - `extensions/` — extension and plugin design notes.
 
 ## Style

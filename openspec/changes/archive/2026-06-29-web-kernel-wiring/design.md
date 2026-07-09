@@ -25,6 +25,7 @@ Not addressed here. When this becomes real, options are: (a) add a one-time migr
 `GraphStore` in `@canopy/sync` is a Yjs-backed mutable store.
 
 Bridge approach in `HomePage.handleCreateGraph`:
+
 1. Call `createGraph(id, name)` — returns `Result<Graph, Error>` with all system nodes already present (bootstrap is called inside `createGraph`).
 2. Create `createSyncEngine({})` — empty Yjs doc.
 3. Iterate `bootstrappedGraph.nodes.values()`, call `engine.store.addNode({ id, type, properties })` for each.
@@ -82,10 +83,10 @@ The mechanism is: query `listViewDefinitions(graph)` from `@canopy/queries`, fil
 
 ## Open questions
 
-| # | Question | Trigger to revisit |
-|---|----------|--------------------|
-| 1 | Migration path for graphs created before bootstrap wiring | When real data is at stake (multi-user, cloud sync) |
-| 2 | Bootstrap edges — are any produced now or planned? | Any time `createGraph` output changes |
-| 3 | Type picker for node creation | When type-aware forms change is started |
-| 4 | User-created views in sidebar | When view creation UI is built |
-| 5 | Claude design prototype — were design decisions captured elsewhere? | User noted prior design prototyping; confirm design tokens / component choices are intentional before restyling |
+| #   | Question                                                            | Trigger to revisit                                                                                              |
+| --- | ------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| 1   | Migration path for graphs created before bootstrap wiring           | When real data is at stake (multi-user, cloud sync)                                                             |
+| 2   | Bootstrap edges — are any produced now or planned?                  | Any time `createGraph` output changes                                                                           |
+| 3   | Type picker for node creation                                       | When type-aware forms change is started                                                                         |
+| 4   | User-created views in sidebar                                       | When view creation UI is built                                                                                  |
+| 5   | Claude design prototype — were design decisions captured elsewhere? | User noted prior design prototyping; confirm design tokens / component choices are intentional before restyling |

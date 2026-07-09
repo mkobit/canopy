@@ -68,7 +68,7 @@ createGraphSession(eventLog: EventLogStore, graphId, deviceId)
 ```
 
 Reads come from the projected `Graph`; there is no separate materialized store in the browser initially.
-The projected graph is a *live* projection: `subscribe` fires after each merge, and the notification carries both the updated `Graph` and the delta (the events applied in that merge).
+The projected graph is a _live_ projection: `subscribe` fires after each merge, and the notification carries both the updated `Graph` and the delta (the events applied in that merge).
 Incremental projection computes that delta anyway, and exposing it is what lets future live queries and reactive views (event lifecycle step 7 in the event system doc) refresh incrementally instead of re-scanning the graph — the queries layer stays a consumer of deltas, not a projection participant.
 Session events are stamped with a real, stable per-installation deviceId (provisioned and persisted by the app); the current placeholder zero deviceId in `apps/web` breaks LWW tiebreaking the moment two devices exist, so it dies with the cutover.
 A persisted projection snapshot (fast-start cache per the storage doc, section 4) is deferred: replaying a personal vault's log (thousands of events) through `projectGraph` is milliseconds-scale, so the optimization is not yet justified.
@@ -168,7 +168,7 @@ Mechanics of the replacement:
   Log-aware undo via inverse events is a possible later feature on top of history.
 - Awareness (presence/cursors) is dropped; it is meaningless without a real-time transport.
 
-**Re-entry point** (per sync doc section 7's carve-out): if real-time collaboration becomes a goal, a text CRDT returns as a *per-property merge strategy*, not as the backbone.
+**Re-entry point** (per sync doc section 7's carve-out): if real-time collaboration becomes a goal, a text CRDT returns as a _per-property merge strategy_, not as the backbone.
 A property type would declare its merge (`lww` today, `crdt-text` then); events would carry opaque CRDT deltas for such properties; projection would dispatch to the declared merge instead of LWW.
 Section 4's per-property tracking is already shaped for this — merge strategy is a per-property decision.
 Nothing is built for this now; the design just avoids precluding it.
@@ -182,18 +182,18 @@ For a personal knowledge system these are acceptable; the epic's premise is that
 
 Following the per-backend-package direction (each backend's third-party deps stay isolated):
 
-| Package | Contents | Third-party deps |
-| --- | --- | --- |
-| `@canopy/graph` | unchanged, plus `GraphSession` and incremental (convergent) projection | none |
-| `@canopy/storage` | contract re-exports + in-memory `EventLogStore` | none |
-| `@canopy/storage-indexeddb` | new; `EventLogStore` on IndexedDB (events store keyed by `[graphId, eventId]`), plus the one-time Yjs import reader during migration | `idb` |
-| `@canopy/storage-sqlite` | new; the existing SQLite event log moves here, Yjs-snapshot surface stripped | `sql.js` |
-| `@canopy/storage-file` | future (`canopy-1q5.3` / `.4`); the section 5 format — single-device write path first, multi-device ingest second | none expected |
-| `@canopy/storage-http` | future (`canopy-1q5.2`); `EventLogStore` against a server API | HTTP client |
-| `@canopy/sync` | **deleted** at the end of migration | — |
+| Package                     | Contents                                                                                                                             | Third-party deps |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | ---------------- |
+| `@canopy/graph`             | unchanged, plus `GraphSession` and incremental (convergent) projection                                                               | none             |
+| `@canopy/storage`           | contract re-exports + in-memory `EventLogStore`                                                                                      | none             |
+| `@canopy/storage-indexeddb` | new; `EventLogStore` on IndexedDB (events store keyed by `[graphId, eventId]`), plus the one-time Yjs import reader during migration | `idb`            |
+| `@canopy/storage-sqlite`    | new; the existing SQLite event log moves here, Yjs-snapshot surface stripped                                                         | `sql.js`         |
+| `@canopy/storage-file`      | future (`canopy-1q5.3` / `.4`); the section 5 format — single-device write path first, multi-device ingest second                    | none expected    |
+| `@canopy/storage-http`      | future (`canopy-1q5.2`); `EventLogStore` against a server API                                                                        | HTTP client      |
+| `@canopy/sync`              | **deleted** at the end of migration                                                                                                  | —                |
 
 `@canopy/sync` is deleted rather than gutted: after Yjs removal its only honest scope would be an active-transport replication engine (WebSocket/LAN push), and no such transport is planned.
-File-based sync lives in `@canopy/storage-file` because the storage format *is* the sync artifact.
+File-based sync lives in `@canopy/storage-file` because the storage format _is_ the sync artifact.
 If a live transport is ever built, a sync package returns with real scope.
 
 The `StorageAdapter` interface (Yjs snapshot save/load) is deleted with it.
