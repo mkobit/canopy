@@ -52,7 +52,7 @@ export const Layout = () => {
   // Add the `dark` class to html/body implicitly via container, or manually update index.html.
   // Tailwind configured to expect 'dark' class. We'll set it on this main container.
   return (
-    <div className="dark h-screen w-full bg-background text-on-surface font-body overflow-hidden flex">
+    <div className="dark h-screen w-full bg-background text-on-surface font-sans overflow-hidden flex">
       <SideNavBar
         onNewNode={handleNewNode}
         onLogout={handleLogout}

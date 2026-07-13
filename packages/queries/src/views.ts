@@ -45,6 +45,7 @@ export interface ResolvedView {
 }
 
 // Helper to wrap a scalar value
+// eslint-disable-next-line functional/prefer-tacit -- Wrapper to restrict type signature to ScalarValue
 function scalar(val: string | number | boolean): Result<ScalarValue, Error> {
   return ok(val);
 }
