@@ -13,6 +13,7 @@ This design defines how view definitions and renderers are resolved, registered,
 - Define system-level default renderers and default view definitions during graph bootstrap.
 - Replace the hardcoded rendering dispatch in `BlockRenderer` with a registry-based dynamic lookup.
 - Rename the settings key from `default-renderer` to `default-view` to reflect its target type.
+- Support component delegation by exposing `BlockRenderer` as a reusable component for recursive child rendering.
 
 **Non-Goals:**
 - Implementing sandboxed WASM or custom user-provided renderers (explicitly deferred).
@@ -32,6 +33,10 @@ This design defines how view definitions and renderers are resolved, registered,
 ### Decision 3: Use a static React component registry in the web application
 - **Rationale**: Since execution of custom code is deferred, a static registry is the simplest and safest way to map a `Renderer` definition's `entryPoint` to its actual implementation.
 - **Alternatives**: Dynamic imports or loading bundles at runtime were rejected as unnecessary complexity for the initial implementation.
+
+### Decision 4: Expose component delegation for child rendering
+- **Rationale**: Reusing smaller, specific components within larger components (e.g. rendering list items or children inside a custom container component) should go through the same view/renderer resolution. By exporting `BlockRenderer` (or a similar delegation helper) to the registry, any custom component can render child nodes by delegating back to the system, preserving dynamic rendering resolution for all nested content.
+- **Alternatives**: Forcing components to hardcode child renderers was rejected because it breaks plugin extensibility and modularity.
 
 ## Risks / Trade-offs
 

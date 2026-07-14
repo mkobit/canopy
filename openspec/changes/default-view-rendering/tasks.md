@@ -17,3 +17,4 @@
 - [ ] 3.2 Update `BlockRenderer` to dynamically resolve and render components using the registry.
 - [ ] 3.3 Implement generic fallback rendering in `BlockRenderer` for unresolved or missing renderers.
 - [ ] 3.4 Verify rendering end-to-end using an e2e test or manual testing.
+- [ ] 3.5 Ensure container components can delegate child rendering recursively via `BlockRenderer` using resolved view definitions.

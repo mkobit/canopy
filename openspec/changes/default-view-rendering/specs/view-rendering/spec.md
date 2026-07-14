@@ -34,3 +34,10 @@ The web application SHALL register rendering components and dispatch node render
 #### Scenario: Generic fallback on resolution failure
 - **WHEN** a node's type does not map to any registered renderer or resolution fails
 - **THEN** the system SHALL render the node using a fallback representation showing its properties
+
+### Requirement: Component delegation for child rendering
+The system SHALL expose a reusable rendering delegation component (such as `BlockRenderer`) so that parent/container components can delegate child rendering back to the system's dynamic resolution pipeline.
+
+#### Scenario: Delegated child rendering resolves dynamically
+- **WHEN** a container component delegates child rendering using `BlockRenderer`
+- **THEN** the child node SHALL be resolved and rendered using its own dynamically resolved ViewDefinition and Renderer
