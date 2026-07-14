@@ -42,7 +42,7 @@ export const SYSTEM_IDS = {
   USER_SETTING_DEF: asNodeId('system:nodetype:user-setting'),
 
   // System settings schemas
-  SETTING_DEFAULT_RENDERER: asNodeId('system:setting:default-renderer'),
+  SETTING_DEFAULT_VIEW: asNodeId('system:setting:default-view'),
   SETTING_DISPLAY_DENSITY: asNodeId('system:setting:display-density'),
 
   // Node Type Definitions for Block Content
@@ -62,6 +62,9 @@ export const SYSTEM_IDS = {
   EDGE_DEFINES: asNodeId('edge:type:defines'),
   EDGE_REFERENCES: asNodeId('edge:type:references'),
   EDGE_PREREQUISITE: asNodeId('edge:type:prerequisite'),
+  EDGE_USES_RENDERER: asNodeId('system:edgetype:uses-renderer'),
+  EDGE_VIEW_OVERRIDE: asNodeId('system:edgetype:view-override'),
+  EDGE_DEFAULT_VIEW: asNodeId('system:edgetype:default-view'),
 
   SETTINGS_SCHEMA: asTypeId('system:nodetype:settings-schema'),
   USER_SETTING: asTypeId('system:nodetype:user-setting'),
@@ -73,4 +76,9 @@ export const SYSTEM_EDGE_TYPES = {
   DEFINES: asTypeId('edge:type:defines'),
   REFERENCES: asTypeId('edge:type:references'),
   PREREQUISITE: asTypeId('edge:type:prerequisite'),
+  USES_RENDERER: asTypeId('system:edgetype:uses-renderer'),
+  VIEW_OVERRIDE: asTypeId('system:edgetype:view-override'),
+  DEFAULT_VIEW: asTypeId('system:edgetype:default-view'),
 };
+
+export type SystemRendererEntryPoint = 'system:text' | 'system:code' | 'system:markdown';

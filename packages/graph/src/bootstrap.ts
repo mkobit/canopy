@@ -1,11 +1,12 @@
 import type { Graph } from './graph';
 import type { Node } from './node';
+import type { Edge } from './edge';
 import type { PropertyMap, PropertyValue, PropertyDefinition } from './properties';
 import type { TypeId, NodeId } from './identifiers';
 import type { Result } from './result';
-import { createInstant, asDeviceId } from './factories';
+import { createInstant, asDeviceId, asNodeId, asEdgeId } from './factories';
 import { ok } from './result';
-import { addNode } from './ops';
+import { addNode, addEdge } from './ops';
 import { SYSTEM_IDS, SYSTEM_EDGE_TYPES } from './system';
 
 export const SYSTEM_DEVICE_ID = asDeviceId('00000000-0000-0000-0000-000000000000');
@@ -14,6 +15,34 @@ function addNodeGraph(graph: Graph, node: Node, migrationId?: string): Result<Gr
   const result = addNode(graph, node, {
     deviceId: SYSTEM_DEVICE_ID,
     ...(migrationId !== undefined && { migrationId }),
+  });
+  if (result.ok) {
+    return ok(result.value.graph);
+  }
+  return result;
+}
+
+function addEdgeGraph(
+  graph: Graph,
+  id: string,
+  type: TypeId,
+  source: NodeId,
+  target: NodeId,
+): Result<Graph, Error> {
+  const edge: Edge = {
+    id: asEdgeId(id),
+    type,
+    source,
+    target,
+    properties: new Map(),
+    metadata: {
+      created: createInstant(),
+      modified: createInstant(),
+      modifiedBy: SYSTEM_DEVICE_ID,
+    },
+  };
+  const result = addEdge(graph, edge, {
+    deviceId: SYSTEM_DEVICE_ID,
   });
   if (result.ok) {
     return ok(result.value.graph);
@@ -427,7 +456,7 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
                     {
                       name: 'queryRef',
                       valueKind: 'reference',
-                      required: true,
+                      required: false,
                       description: 'Reference to a QueryDefinition node',
                     },
                     {
@@ -724,6 +753,24 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
       name: 'Prerequisite',
       description: 'Indicates that the target is a prerequisite for the source.',
     },
+    {
+      id: SYSTEM_IDS.EDGE_USES_RENDERER,
+      typeId: SYSTEM_EDGE_TYPES.USES_RENDERER,
+      name: 'uses_renderer',
+      description: 'Links a ViewDefinition to a Renderer.',
+    },
+    {
+      id: SYSTEM_IDS.EDGE_VIEW_OVERRIDE,
+      typeId: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
+      name: 'view_override',
+      description: 'Links a node to a ViewDefinition that overrides its default view.',
+    },
+    {
+      id: SYSTEM_IDS.EDGE_DEFAULT_VIEW,
+      typeId: SYSTEM_EDGE_TYPES.DEFAULT_VIEW,
+      name: 'default_view',
+      description: 'Links a NodeType to a ViewDefinition that defines its default view.',
+    },
   ] as const;
 
   // 6. System Queries
@@ -787,11 +834,11 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
   // 7. System Settings Schemas
   const systemSettings = [
     {
-      id: SYSTEM_IDS.SETTING_DEFAULT_RENDERER,
-      key: 'default-renderer',
+      id: SYSTEM_IDS.SETTING_DEFAULT_VIEW,
+      key: 'default-view',
       valueKind: 'reference',
       defaultValue: 'null',
-      description: 'The default renderer node to use for a given scope.',
+      description: 'The default view definition node to use for a given scope.',
       scopes: '["node","type","namespace","global"]',
       namespace: 'system',
     },
@@ -802,6 +849,62 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
       defaultValue: '"comfortable"',
       description: 'UI display density: comfortable, compact, or spacious.',
       scopes: '["global"]',
+      namespace: 'system',
+    },
+  ] as const;
+
+  // 8. System Renderers
+  const systemRenderers = [
+    {
+      id: asNodeId('system:renderer:text'),
+      name: 'Text Renderer',
+      description: 'Renders plain text',
+      rendererKind: 'system',
+      entryPoint: 'system:text' as const,
+      permissions: [] as readonly string[],
+      namespace: 'system',
+    },
+    {
+      id: asNodeId('system:renderer:code'),
+      name: 'Code Renderer',
+      description: 'Renders source code',
+      rendererKind: 'system',
+      entryPoint: 'system:code' as const,
+      permissions: [] as readonly string[],
+      namespace: 'system',
+    },
+    {
+      id: asNodeId('system:renderer:markdown'),
+      name: 'Markdown Renderer',
+      description: 'Renders markdown document',
+      rendererKind: 'system',
+      entryPoint: 'system:markdown' as const,
+      permissions: [] as readonly string[],
+      namespace: 'system',
+    },
+  ] as const;
+
+  // 9. Default View Definitions
+  const defaultViews = [
+    {
+      id: asNodeId('system:view:text-block'),
+      name: 'Text Block View',
+      description: 'Default view for text blocks',
+      layout: 'document',
+      namespace: 'system',
+    },
+    {
+      id: asNodeId('system:view:code-block'),
+      name: 'Code Block View',
+      description: 'Default view for code blocks',
+      layout: 'document',
+      namespace: 'system',
+    },
+    {
+      id: asNodeId('system:view:markdown'),
+      name: 'Markdown View',
+      description: 'Default view for markdown content',
+      layout: 'document',
       namespace: 'system',
     },
   ] as const;
@@ -930,6 +1033,100 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
               ),
         g,
       ),
+    (g) =>
+      reduceResult(
+        systemRenderers,
+        (cg, def) =>
+          cg.nodes.has(def.id)
+            ? ok(cg)
+            : addNodeGraph(
+                cg,
+                createBootstrapNode(def.id, SYSTEM_IDS.RENDERER, def.name, def.description, {
+                  rendererKind: text(def.rendererKind),
+                  entryPoint: text(def.entryPoint),
+                  permissions: def.permissions,
+                  namespace: text(def.namespace),
+                }),
+              ),
+        g,
+      ),
+    (g) =>
+      reduceResult(
+        defaultViews,
+        (cg, def) =>
+          cg.nodes.has(def.id)
+            ? ok(cg)
+            : addNodeGraph(
+                cg,
+                createBootstrapNode(def.id, SYSTEM_IDS.VIEW_DEFINITION, def.name, def.description, {
+                  layout: text(def.layout),
+                  namespace: text(def.namespace),
+                }),
+              ),
+        g,
+      ),
+    (g) => {
+      const usesEdges = [
+        {
+          id: 'system:edge:uses-renderer:text-block',
+          type: SYSTEM_EDGE_TYPES.USES_RENDERER,
+          source: asNodeId('system:view:text-block'),
+          target: asNodeId('system:renderer:text'),
+        },
+        {
+          id: 'system:edge:uses-renderer:code-block',
+          type: SYSTEM_EDGE_TYPES.USES_RENDERER,
+          source: asNodeId('system:view:code-block'),
+          target: asNodeId('system:renderer:code'),
+        },
+        {
+          id: 'system:edge:uses-renderer:markdown',
+          type: SYSTEM_EDGE_TYPES.USES_RENDERER,
+          source: asNodeId('system:view:markdown'),
+          target: asNodeId('system:renderer:markdown'),
+        },
+      ];
+
+      return reduceResult(
+        usesEdges,
+        (cg, edgeDef) =>
+          cg.edges.has(asEdgeId(edgeDef.id))
+            ? ok(cg)
+            : addEdgeGraph(cg, edgeDef.id, edgeDef.type, edgeDef.source, edgeDef.target),
+        g,
+      );
+    },
+    (g) => {
+      const defaultViewEdges = [
+        {
+          id: 'system:edge:default-view:text-block',
+          type: SYSTEM_EDGE_TYPES.DEFAULT_VIEW,
+          source: SYSTEM_IDS.NODE_TYPE_TEXT_BLOCK,
+          target: asNodeId('system:view:text-block'),
+        },
+        {
+          id: 'system:edge:default-view:code-block',
+          type: SYSTEM_EDGE_TYPES.DEFAULT_VIEW,
+          source: SYSTEM_IDS.NODE_TYPE_CODE_BLOCK,
+          target: asNodeId('system:view:code-block'),
+        },
+        {
+          id: 'system:edge:default-view:markdown',
+          type: SYSTEM_EDGE_TYPES.DEFAULT_VIEW,
+          source: SYSTEM_IDS.NODE_TYPE_MARKDOWN,
+          target: asNodeId('system:view:markdown'),
+        },
+      ];
+
+      return reduceResult(
+        defaultViewEdges,
+        (cg, edgeDef) =>
+          cg.edges.has(asEdgeId(edgeDef.id))
+            ? ok(cg)
+            : addEdgeGraph(cg, edgeDef.id, edgeDef.type, edgeDef.source, edgeDef.target),
+        g,
+      );
+    },
   ];
 
   return reduceResult(allSteps, (g, step) => step(g), graph);
