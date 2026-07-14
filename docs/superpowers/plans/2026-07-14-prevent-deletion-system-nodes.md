@@ -173,7 +173,7 @@ git commit -m "feat: reject system node deletion in removeNode"
 - Modify: [graph-session.ts](file:///home/mkobit/workspace/mkobit/canopy/packages/graph/src/graph-session.ts)
 - Modify: [graph-session.test.ts](file:///home/mkobit/workspace/mkobit/canopy/packages/graph/src/graph-session.test.ts)
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Add a test case in `packages/graph/src/graph-session.test.ts` to verify that committing a `NodeDeleted` event targeting a system node fails validation.
 
@@ -200,12 +200,12 @@ Add a test case in `packages/graph/src/graph-session.test.ts` to verify that com
   });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `bun test packages/graph/src/graph-session.test.ts`
 Expected: FAIL on the new test case.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 Modify `packages/graph/src/graph-session.ts` to import `isSystemNodeId` and check it in `validateCommit`.
 
@@ -229,12 +229,12 @@ function validateCommit(graph: Graph, events: readonly GraphEvent[]): Result<voi
   // ... rest of validation logic ...
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `bun test packages/graph/src/graph-session.test.ts`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/graph/src/graph-session.ts packages/graph/src/graph-session.test.ts
