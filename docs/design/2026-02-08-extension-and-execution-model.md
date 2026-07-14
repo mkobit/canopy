@@ -38,47 +38,39 @@ For now, the model assumes the WASM blob is present in the vault as a node.
 
 ### WASM sandbox
 
-Extensions execute as WASM modules in a sandboxed runtime.
-Any language that compiles to WASM can be used to write an extension.
+Extensions execute as WebAssembly modules in a sandboxed runtime.
+Any programming language compiling to WASM can be used to write extensions.
+The sandbox ensures isolation so that extensions cannot access the host system filesystem, network, or other processes directly.
+Capability-based security is enforced by providing explicit capability handles during module instantiation.
+Resource limits such as execution time, maximum memory, and call stack depth are configured by the host to prevent runaway code.
 
-The sandbox provides:
+### Loading and unloading lifecycle
 
-- **Isolation**: the extension cannot access the host system (filesystem, network, etc.) directly.
-- **Capability-based access**: the extension receives explicit handles to the APIs it is permitted to use.
-- **Resource limits**: execution time, memory, and other resource constraints prevent runaway extensions.
+The host manages compiling, instantiating, and caching WASM modules dynamically.
+When a plugin node is loaded, the host compiles its WASM binary and caches the compiled module in memory.
+Guest instances themselves are stateless and instantiated on-demand for specific calls (e.g. rendering a single node or processing a single trigger).
+Once the invocation finishes, the host tears down the instance and reclaims its memory.
+This stateless execution pattern ensures that plugins can be loaded and unloaded without leaking resources or leaving stale memory.
 
-The analogy is a container with limited capabilities.
-The extension can only do what its capability handles allow.
+### WebAssembly Interface Types (WIT) and host capabilities
 
-### Capability handles
+All APIs between the host and the plugins are defined using WebAssembly Interface Types (WIT).
+The host imports standard interfaces that extensions can consume:
+- `canopy:graph/read`: Lookup nodes and query edge relationships in the graph.
+- `canopy:graph/write`: Append new events to the event log.
+- `canopy:system/events`: Subscribe and publish to transient in-memory events.
+- `canopy:ui/render`: Return HTML output to the viewport.
 
-When an extension is invoked, it receives a set of capability handles scoped to its permissions.
-These handles are the extension's interface to the system.
+Extensions export specific interface functions based on their type, such as `render(node)` or `execute(trigger)`.
 
-Possible capabilities (conceptual, not finalized):
+### Inter-plugin communication
 
-- **Graph read**: query nodes and edges within permitted namespaces/types.
-- **Graph write**: create or modify nodes and edges within permitted namespaces/types (produces events through the normal event system).
-- **Render output**: return HTML or other rendered content to the view system.
-- **Network access**: make outbound HTTP requests (if permitted).
-- **Invoke other extensions**: call other extensions within the vault (if permitted).
-
-An extension only receives the handles it has been granted.
-A renderer extension might only get graph read and render output.
-A workflow action might get graph read and graph write.
-
-### Invocation
-
-Extensions are invoked by the system, not by themselves.
-The system decides when to invoke an extension based on:
-
-- A renderer is needed for a node (invokes the renderer extension).
-- A workflow step executes (invokes the workflow action extension).
-- A hook fires on an event (invokes the hook extension).
-- An automation triggers (invokes the automation extension).
-
-The extension receives its input (node data, event data, etc.) and its capability handles, does its work, and returns its output.
-It does not persist state outside of what it writes to the graph through its handles.
+Plugins communicate using two primary patterns depending on whether the call is synchronous or asynchronous.
+For synchronous utility dependencies (e.g., calling a markdown parser or syntax highlighter), plugins use WASM Component Model dynamic binding.
+The host resolves these dependencies at load time, linking the guest import of Plugin A directly to the guest export of Plugin B.
+This linking allows direct WASM-to-WASM calls without host intervention or serialization overhead.
+For asynchronous, decoupled communication (e.g., reacting to calendar ticks or document updates), plugins publish and subscribe to transient events using the host-provided event bus interface.
+This event bus is in-memory and does not write to the persistent graph, keeping transient notifications fast and lightweight.
 
 ---
 
@@ -174,11 +166,11 @@ Extensions expand what the system can do beyond these built-in capabilities.
 
 ## 8. Open questions
 
-1. How extension WASM binaries are stored: as blob properties on the node, as external URI references, or both.
+1. How extension WASM binaries are stored: they are stored as blob properties on the node for self-contained synchronization, but the host supports external URI references (like `file://` or `http://`) to facilitate local plugin development.
 2. Policy framework: OPA-style, capability tokens, graph-stored rules, or something else.
 3. Whether extensions can define their own settings schemas (likely yes, but mechanics TBD).
 4. How extension updates are handled: new node version, node property update, or replacement node.
-5. Whether extensions can invoke other extensions and how that permission chain works.
+5. Whether extensions can invoke other extensions and how that permission chain works: resolved at load time using WASM Component Model dynamic binding for synchronous imports, and via the host-brokered pub/sub Event Bus for asynchronous event dispatch.
 6. Resource limit defaults and whether they are configurable per extension.
 7. Synchronous vs asynchronous invocation semantics for different extension types.
 8. How extension errors surface to the user and whether they can affect system stability.
