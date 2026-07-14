@@ -46,7 +46,7 @@ function validateCommit(graph: Graph, events: readonly GraphEvent[]): Result<voi
   // eslint-disable-next-line functional/no-loop-statements
   for (const event of events) {
     if (event.type === 'NodeDeleted' && isSystemNodeId(event.id)) {
-      return err(new Error(`Cannot delete system node: ${event.id}`));
+      return error(new Error(`Cannot delete system node: ${event.id}`));
     }
   }
 

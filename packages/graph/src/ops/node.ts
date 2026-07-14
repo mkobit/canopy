@@ -82,7 +82,7 @@ export function removeNode(
   options: NodeOperationOptions,
 ): Result<GraphResult<Graph>, Error> {
   if (isSystemNodeId(nodeId)) {
-    return err(new Error(`Cannot delete system node: ${nodeId}`));
+    return error(new Error(`Cannot delete system node: ${nodeId}`));
   }
 
   if (!graph.nodes.has(nodeId)) {
