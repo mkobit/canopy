@@ -1058,7 +1058,7 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
             ? ok(cg)
             : addNodeGraph(
                 cg,
-                createBootstrapNode(def.id, SYSTEM_IDS.VIEW_DEFINITION_DEF, def.name, def.description, {
+                createBootstrapNode(def.id, SYSTEM_IDS.VIEW_DEFINITION, def.name, def.description, {
                   layout: text(def.layout),
                   namespace: text(def.namespace),
                 }),

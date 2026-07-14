@@ -151,19 +151,19 @@ describe('Meta-circular bootstrap', () => {
     // Check system ViewDefinitions
     const textView = graph.nodes.get(asNodeId('system:view:text-block'));
     expect(textView).toBeDefined();
-    expect(textView?.type).toBe(SYSTEM_IDS.VIEW_DEFINITION_DEF);
+    expect(textView?.type).toBe(SYSTEM_IDS.VIEW_DEFINITION);
     expect(textView?.properties.get('name')).toBe('Text Block View');
     expect(textView?.properties.get('layout')).toBe('document');
 
     const codeView = graph.nodes.get(asNodeId('system:view:code-block'));
     expect(codeView).toBeDefined();
-    expect(codeView?.type).toBe(SYSTEM_IDS.VIEW_DEFINITION_DEF);
+    expect(codeView?.type).toBe(SYSTEM_IDS.VIEW_DEFINITION);
     expect(codeView?.properties.get('name')).toBe('Code Block View');
     expect(codeView?.properties.get('layout')).toBe('document');
 
     const mdView = graph.nodes.get(asNodeId('system:view:markdown'));
     expect(mdView).toBeDefined();
-    expect(mdView?.type).toBe(SYSTEM_IDS.VIEW_DEFINITION_DEF);
+    expect(mdView?.type).toBe(SYSTEM_IDS.VIEW_DEFINITION);
     expect(mdView?.properties.get('name')).toBe('Markdown View');
     expect(mdView?.properties.get('layout')).toBe('document');
 

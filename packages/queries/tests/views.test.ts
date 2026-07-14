@@ -104,4 +104,33 @@ describe('View Definitions', () => {
     const resolved = unwrap(resolveView(graph, SYSTEM_IDS.VIEW_ALL_NODES));
     expect(resolved.query).toEqual({ steps: [{ kind: 'node-scan' }] });
   });
+
+  it('should save and retrieve a view definition without queryRef', () => {
+    let graph = unwrap(createGraph(createGraphId(), 'Test Graph'));
+
+    // Save view without queryRef
+    const { graph: g2, nodeId: viewId } = unwrap(
+      saveViewDefinition(
+        graph,
+        {
+          name: 'My Custom View',
+          description: 'A test view without queryRef',
+          layout: 'document',
+        },
+        { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') },
+      ),
+    );
+    graph = g2;
+
+    // Retrieve view
+    const view = unwrap(getViewDefinition(graph, viewId));
+    expect(view.name).toBe('My Custom View');
+    expect(view.description).toBe('A test view without queryRef');
+    expect(view.queryRef).toBeUndefined();
+    expect(view.layout).toBe('document');
+
+    // Resolving it should fail
+    const resolved = resolveView(graph, viewId);
+    expect(resolved.ok).toBe(false);
+  });
 });

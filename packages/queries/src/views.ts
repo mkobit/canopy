@@ -25,7 +25,7 @@ import { getQueryDefinition } from './stored';
 export interface ViewDefinition {
   readonly name: string;
   readonly description?: string;
-  readonly queryRef: NodeId;
+  readonly queryRef?: NodeId;
   readonly layout: string;
   readonly sort?: readonly Sort[];
   readonly groupBy?: string;
@@ -85,10 +85,10 @@ export function saveViewDefinition(
   const pageSizeVal = view.pageSize ? scalar(view.pageSize) : ok(undefined);
   if (!pageSizeVal.ok) return err(pageSizeVal.error);
 
-  const properties = new Map([
+  const properties = new Map<string, PropertyValue>([
     ['name', nameVal.value],
-    ['queryRef', reference(view.queryRef)],
     ['layout', layoutVal.value],
+    ...(view.queryRef ? [['queryRef', reference(view.queryRef)] as const] : []),
     ...(descriptionVal.value ? [['description', descriptionVal.value] as const] : []),
     ...(sortVal.value ? [['sort', sortVal.value] as const] : []),
     ...(groupByVal.value ? [['groupBy', groupByVal.value] as const] : []),
@@ -133,7 +133,9 @@ export function getViewDefinition(graph: Graph, nodeId: NodeId): Result<ViewDefi
   if (typeof nameProp !== 'string') return err(new Error('Invalid view name'));
 
   const queryRefProp = node.properties.get('queryRef');
-  if (typeof queryRefProp !== 'string') return err(new Error('Invalid view queryRef'));
+  if (queryRefProp !== undefined && typeof queryRefProp !== 'string') {
+    return err(new Error('Invalid view queryRef'));
+  }
 
   const layoutProp = node.properties.get('layout');
   if (typeof layoutProp !== 'string') return err(new Error('Invalid view layout'));
@@ -161,8 +163,8 @@ export function getViewDefinition(graph: Graph, nodeId: NodeId): Result<ViewDefi
 
   return ok({
     name: nameProp,
-    queryRef: asNodeId(queryRefProp),
     layout: layoutProp,
+    ...(queryRefProp !== undefined && { queryRef: asNodeId(queryRefProp) }),
     ...(typeof description === 'string' && { description: description }),
     ...(sort && { sort }),
     ...(typeof groupBy === 'string' && { groupBy: groupBy }),
@@ -206,6 +208,10 @@ export function executeView(
 export function resolveView(graph: Graph, viewNodeId: NodeId): Result<ResolvedView, Error> {
   const viewDef = getViewDefinition(graph, viewNodeId);
   if (!viewDef.ok) return err(viewDef.error);
+
+  if (!viewDef.value.queryRef) {
+    return err(new Error(`View definition ${viewNodeId} does not have a queryRef`));
+  }
 
   const queryDef = getQueryDefinition(graph, viewDef.value.queryRef);
   if (!queryDef.ok) return err(queryDef.error);
