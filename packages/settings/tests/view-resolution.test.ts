@@ -162,9 +162,7 @@ describe('View resolution engine', () => {
     const typeDefNode: Node = {
       id: asNodeId(typeId),
       type: SYSTEM_IDS.NODE_TYPE,
-      properties: new Map([
-        ['name', 'Custom Type Definition'],
-      ]),
+      properties: new Map([['name', 'Custom Type Definition']]),
       metadata: {
         created: createInstant(),
         modified: createInstant(),

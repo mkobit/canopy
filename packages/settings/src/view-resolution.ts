@@ -1,12 +1,5 @@
 import type { Graph, Node, NodeId, TypeId, Namespace, Result } from '@canopy/graph';
-import {
-  SYSTEM_EDGE_TYPES,
-  SYSTEM_IDS,
-  getEdgesFrom,
-  ok,
-  err,
-  asNodeId,
-} from '@canopy/graph';
+import { SYSTEM_EDGE_TYPES, SYSTEM_IDS, getEdgesFrom, ok, err, asNodeId } from '@canopy/graph';
 import { resolveSetting } from './cascade';
 
 /**

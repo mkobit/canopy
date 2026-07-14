@@ -82,4 +82,3 @@ export const SYSTEM_EDGE_TYPES = {
 };
 
 export type SystemRendererEntryPoint = 'system:text' | 'system:code' | 'system:markdown';
-

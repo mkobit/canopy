@@ -1,18 +1,68 @@
 import React, { useMemo } from 'react';
-import type { Graph, Node } from '@canopy/graph';
-import { SYSTEM_IDS, SYSTEM_EDGE_TYPES } from '@canopy/graph';
+import type { Graph, Node, NodeId, SystemRendererEntryPoint } from '@canopy/graph';
+import { SYSTEM_IDS, SYSTEM_EDGE_TYPES, getEdgesFrom, resolveNamespace } from '@canopy/graph';
+import { resolveViewDefinition } from '@canopy/settings';
 import { MarkdownRenderer } from './markdown-renderer';
 import { TextBlockRenderer } from './text-block-renderer';
 import { CodeBlockRenderer } from './code-block-renderer';
+import { RENDERER_REGISTRY } from './registry';
 
 export interface BlockRendererProps {
-  node: Node;
-  graph: Graph;
-  depth?: number;
+  readonly node: Node;
+  readonly graph: Graph;
+  readonly depth?: number;
+  readonly visited?: ReadonlySet<NodeId>;
 }
 
-export const BlockRenderer: React.FC<BlockRendererProps> = ({ node, graph, depth = 0 }) => {
-  // Find and sort children
+function isSystemRendererEntryPoint(val: string): val is SystemRendererEntryPoint {
+  return (['system:text', 'system:code', 'system:markdown'] as readonly string[]).includes(val);
+}
+
+function resolveDynamicContent(node: Node, graph: Graph): React.ReactNode | null {
+  const namespace = resolveNamespace(graph, node);
+  const viewResult = resolveViewDefinition(graph, node.id, node.type, namespace);
+  if (!viewResult.ok) {
+    return null;
+  }
+  const viewDefNode = viewResult.value;
+  const usesRendererEdges = getEdgesFrom(graph, viewDefNode.id, SYSTEM_EDGE_TYPES.USES_RENDERER);
+  const usesEdge = usesRendererEdges[0];
+  if (!usesEdge) {
+    return null;
+  }
+  const rendererId = usesEdge.target;
+  const rendererNode = graph.nodes.get(rendererId);
+  if (!rendererNode) {
+    console.warn(`Renderer node not found: ${rendererId}`);
+    return null;
+  }
+  const entryPoint = rendererNode.properties.get('entryPoint');
+  if (typeof entryPoint !== 'string' || !isSystemRendererEntryPoint(entryPoint)) {
+    return null;
+  }
+  const rendererComponent = RENDERER_REGISTRY.get(entryPoint);
+  if (!rendererComponent) {
+    return null;
+  }
+  return React.createElement(rendererComponent, {
+    node,
+    graph,
+    config: viewDefNode.properties,
+  });
+}
+
+export const BlockRenderer: React.FC<BlockRendererProps> = ({
+  node,
+  graph,
+  depth = 0,
+  visited = new Set<NodeId>(),
+}) => {
+  // Create new visited set containing current node.id without mutations (unconditional)
+  const nextVisited = useMemo(() => {
+    return new Set<NodeId>([...visited, node.id]);
+  }, [visited, node.id]);
+
+  // Find and sort children (unconditional)
   const children = useMemo(() => {
     const childEdges = [...graph.edges.values()].filter(
       (e) => e.target === node.id && e.type === SYSTEM_EDGE_TYPES.CHILD_OF,
@@ -30,24 +80,36 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({ node, graph, depth
       .filter((n): n is Node => n !== undefined);
   }, [graph, node.id]);
 
+  // Cycle protection check (called after hook registrations to follow rules of hooks)
+  if (visited.has(node.id)) {
+    return (
+      <div className="text-red-500 font-medium p-2 border border-red-200 bg-red-50 rounded">
+        Cycle detected: {node.id}
+      </div>
+    );
+  }
+
   // Determine specific renderer
-  const content = (() => {
-    switch (node.type) {
-      case SYSTEM_IDS.TYPE_TEXT_BLOCK: {
-        return <TextBlockRenderer node={node} />;
-      }
-      case SYSTEM_IDS.TYPE_CODE_BLOCK: {
-        return <CodeBlockRenderer node={node} />;
-      }
-      case SYSTEM_IDS.TYPE_MARKDOWN: {
-        return <MarkdownRenderer node={node} />;
-      }
-      default: {
-        // Fallback for unknown block types
-        return <div className="text-gray-400 italic">Unknown block type: {node.type}</div>;
-      }
-    }
-  })();
+  const dynamicContent = resolveDynamicContent(node, graph);
+  const content =
+    dynamicContent === null
+      ? (() => {
+          switch (node.type) {
+            case SYSTEM_IDS.TYPE_TEXT_BLOCK: {
+              return <TextBlockRenderer node={node} />;
+            }
+            case SYSTEM_IDS.TYPE_CODE_BLOCK: {
+              return <CodeBlockRenderer node={node} />;
+            }
+            case SYSTEM_IDS.TYPE_MARKDOWN: {
+              return <MarkdownRenderer node={node} />;
+            }
+            default: {
+              return <div className="text-gray-400 italic">Unknown block type: {node.type}</div>;
+            }
+          }
+        })()
+      : dynamicContent;
 
   const hasChildren = children.length > 0;
 
@@ -60,7 +122,13 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({ node, graph, depth
       {hasChildren && (
         <div className="mt-2 ml-4 pl-4 border-l-2 border-gray-100 flex flex-col gap-2">
           {children.map((child) => (
-            <BlockRenderer key={child.id} node={child} graph={graph} depth={depth + 1} />
+            <BlockRenderer
+              key={child.id}
+              node={child}
+              graph={graph}
+              depth={depth + 1}
+              visited={nextVisited}
+            />
           ))}
         </div>
       )}

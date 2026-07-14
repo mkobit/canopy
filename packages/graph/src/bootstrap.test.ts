@@ -170,19 +170,39 @@ describe('Meta-circular bootstrap', () => {
     // Helper to find edge by type, source, target
     const findEdge = (type: string, source: string, target: string) => {
       return [...graph.edges.values()].find(
-        (e) => e.type === type && e.source === source && e.target === target
+        (e) => e.type === type && e.source === source && e.target === target,
       );
     };
 
     // Check uses_renderer edges
-    expect(findEdge('system:edgetype:uses-renderer', 'system:view:text-block', 'system:renderer:text')).toBeDefined();
-    expect(findEdge('system:edgetype:uses-renderer', 'system:view:code-block', 'system:renderer:code')).toBeDefined();
-    expect(findEdge('system:edgetype:uses-renderer', 'system:view:markdown', 'system:renderer:markdown')).toBeDefined();
+    expect(
+      findEdge('system:edgetype:uses-renderer', 'system:view:text-block', 'system:renderer:text'),
+    ).toBeDefined();
+    expect(
+      findEdge('system:edgetype:uses-renderer', 'system:view:code-block', 'system:renderer:code'),
+    ).toBeDefined();
+    expect(
+      findEdge('system:edgetype:uses-renderer', 'system:view:markdown', 'system:renderer:markdown'),
+    ).toBeDefined();
 
     // Check default_view edges
-    expect(findEdge('system:edgetype:default-view', 'system:nodetype:text-block', 'system:view:text-block')).toBeDefined();
-    expect(findEdge('system:edgetype:default-view', 'system:nodetype:code-block', 'system:view:code-block')).toBeDefined();
-    expect(findEdge('system:edgetype:default-view', 'system:nodetype:markdown', 'system:view:markdown')).toBeDefined();
+    expect(
+      findEdge(
+        'system:edgetype:default-view',
+        'system:nodetype:text-block',
+        'system:view:text-block',
+      ),
+    ).toBeDefined();
+    expect(
+      findEdge(
+        'system:edgetype:default-view',
+        'system:nodetype:code-block',
+        'system:view:code-block',
+      ),
+    ).toBeDefined();
+    expect(
+      findEdge('system:edgetype:default-view', 'system:nodetype:markdown', 'system:view:markdown'),
+    ).toBeDefined();
   });
 
   it('migrates the 4 previously-hardcoded namespaces so they resolve as valid', () => {

@@ -36,6 +36,7 @@ export { TextBlockRenderer, type TextBlockRendererProps } from './renderers/text
 export { CodeBlockRenderer, type CodeBlockRendererProps } from './renderers/code-block-renderer';
 export { BlockRenderer, type BlockRendererProps } from './renderers/block-renderer';
 export { DocumentRenderer, type DocumentRendererProps } from './renderers/document-renderer';
+export { RENDERER_REGISTRY, type RegistryComponent } from './renderers/registry';
 
 // Quick Entry
 export { QuickEntryOverlay, type QuickEntryOverlayProps } from './graph/quick-entry-overlay';

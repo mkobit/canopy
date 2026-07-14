@@ -69,8 +69,7 @@ export function saveViewDefinition(
   const nameVal = scalar(view.name);
   const layoutVal = scalar(view.layout);
   const descriptionVal = view.description ? scalar(view.description) : undefined;
-  const sortVal =
-    view.sort && view.sort.length > 0 ? scalar(JSON.stringify(view.sort)) : undefined;
+  const sortVal = view.sort && view.sort.length > 0 ? scalar(JSON.stringify(view.sort)) : undefined;
   const groupByVal = view.groupBy ? scalar(view.groupBy) : undefined;
   const pageSizeVal = view.pageSize ? scalar(view.pageSize) : undefined;
 
@@ -78,13 +77,13 @@ export function saveViewDefinition(
     ['name', nameVal],
     ['layout', layoutVal],
     ...(view.queryRef ? [['queryRef', reference(view.queryRef)] as const] : []),
-    ...(descriptionVal !== undefined ? [['description', descriptionVal] as const] : []),
-    ...(sortVal !== undefined ? [['sort', sortVal] as const] : []),
-    ...(groupByVal !== undefined ? [['groupBy', groupByVal] as const] : []),
+    ...(descriptionVal === undefined ? [] : [['description', descriptionVal] as const]),
+    ...(sortVal === undefined ? [] : [['sort', sortVal] as const]),
+    ...(groupByVal === undefined ? [] : [['groupBy', groupByVal] as const]),
     ...(view.displayProperties && view.displayProperties.length > 0
       ? [['displayProperties', list(view.displayProperties)] as const]
       : []),
-    ...(pageSizeVal !== undefined ? [['pageSize', pageSizeVal] as const] : []),
+    ...(pageSizeVal === undefined ? [] : [['pageSize', pageSizeVal] as const]),
   ]);
 
   const node: Node = {

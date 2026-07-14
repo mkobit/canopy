@@ -1041,7 +1041,7 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
             ? ok(cg)
             : addNodeGraph(
                 cg,
-                createBootstrapNode(def.id, SYSTEM_IDS.RENDERER_DEF, def.name, def.description, {
+                createBootstrapNode(def.id, SYSTEM_IDS.RENDERER, def.name, def.description, {
                   rendererKind: text(def.rendererKind),
                   entryPoint: text(def.entryPoint),
                   permissions: def.permissions,
