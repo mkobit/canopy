@@ -101,7 +101,7 @@ git commit -m "feat: add isSystemNodeId helper and tests"
 - Modify: [node.ts](file:///home/mkobit/workspace/mkobit/canopy/packages/graph/src/ops/node.ts)
 - Modify: [graph.test.ts](file:///home/mkobit/workspace/mkobit/canopy/packages/graph/src/tests/graph.test.ts)
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Add a test case at the end of the `removeNode` describe block or test suite in `packages/graph/src/tests/graph.test.ts`.
 
@@ -118,12 +118,12 @@ Add a test case at the end of the `removeNode` describe block or test suite in `
   });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `bun test packages/graph/src/tests/graph.test.ts`
 Expected: FAIL on the new test case.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 Modify `packages/graph/src/ops/node.ts` to import `isSystemNodeId` and check it at the start of `removeNode`.
 
@@ -153,12 +153,12 @@ export function removeNode(
   // ...
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `bun test packages/graph/src/tests/graph.test.ts`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/graph/src/ops/node.ts packages/graph/src/tests/graph.test.ts
