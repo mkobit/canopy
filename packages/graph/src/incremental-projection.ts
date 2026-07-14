@@ -146,7 +146,11 @@ function applyOneEvent(
 ): ApplyOutcome {
   switch (event.type) {
     case 'NodeCreated': {
-      const meta = nodeMeta.get(event.id) ?? emptyMeta();
+      const meta =
+        nodeMeta.get(event.id) ??
+        (graph.nodes.has(event.id)
+          ? { exists: true, tombstoned: false, propertyWriters: new Map() }
+          : emptyMeta());
       if (meta.tombstoned || meta.exists) {
         // Already deleted (arrived out of order) or duplicate create: no-op.
         return { graph, nodeMeta, edgeMeta };
@@ -185,7 +189,11 @@ function applyOneEvent(
     }
 
     case 'NodePropertiesUpdated': {
-      const meta = nodeMeta.get(event.id);
+      const meta =
+        nodeMeta.get(event.id) ??
+        (graph.nodes.has(event.id)
+          ? { exists: true, tombstoned: false, propertyWriters: new Map() }
+          : undefined);
       const node = graph.nodes.get(event.id);
       if (!meta || !meta.exists || meta.tombstoned || !node) {
         return { graph, nodeMeta, edgeMeta };
@@ -234,7 +242,11 @@ function applyOneEvent(
     }
 
     case 'NodeDeleted': {
-      const meta = nodeMeta.get(event.id);
+      const meta =
+        nodeMeta.get(event.id) ??
+        (graph.nodes.has(event.id)
+          ? { exists: true, tombstoned: false, propertyWriters: new Map() }
+          : undefined);
       if (!meta || !meta.exists || meta.tombstoned) {
         return { graph, nodeMeta, edgeMeta };
       }
@@ -269,7 +281,11 @@ function applyOneEvent(
     }
 
     case 'EdgeCreated': {
-      const meta = edgeMeta.get(event.id) ?? emptyMeta();
+      const meta =
+        edgeMeta.get(event.id) ??
+        (graph.edges.has(event.id)
+          ? { exists: true, tombstoned: false, propertyWriters: new Map() }
+          : emptyMeta());
       if (meta.tombstoned || meta.exists) {
         return { graph, nodeMeta, edgeMeta };
       }
@@ -317,7 +333,11 @@ function applyOneEvent(
     }
 
     case 'EdgePropertiesUpdated': {
-      const meta = edgeMeta.get(event.id);
+      const meta =
+        edgeMeta.get(event.id) ??
+        (graph.edges.has(event.id)
+          ? { exists: true, tombstoned: false, propertyWriters: new Map() }
+          : undefined);
       const edge = graph.edges.get(event.id);
       if (!meta || !meta.exists || meta.tombstoned || !edge) {
         return { graph, nodeMeta, edgeMeta };
@@ -366,7 +386,11 @@ function applyOneEvent(
     }
 
     case 'EdgeDeleted': {
-      const meta = edgeMeta.get(event.id);
+      const meta =
+        edgeMeta.get(event.id) ??
+        (graph.edges.has(event.id)
+          ? { exists: true, tombstoned: false, propertyWriters: new Map() }
+          : undefined);
       if (!meta || !meta.exists || meta.tombstoned) {
         return { graph, nodeMeta, edgeMeta };
       }
@@ -397,6 +421,7 @@ function applyOneEvent(
 
 function dependenciesSatisfied(
   events: readonly GraphEvent[],
+  graph: Graph,
   nodeMeta: ReadonlyMap<NodeId, EntityMergeMeta>,
   edgeMeta: ReadonlyMap<EdgeId, EntityMergeMeta>,
   createdInGroup: ReadonlySet<string>,
@@ -412,8 +437,8 @@ function dependenciesSatisfied(
         const id = key.slice(separatorIndex + 1);
         const isSatisfied =
           kind === 'node'
-            ? (nodeMeta.get(id as NodeId)?.exists ?? false)
-            : (edgeMeta.get(id as EdgeId)?.exists ?? false);
+            ? (nodeMeta.get(id as NodeId)?.exists ?? graph.nodes.has(id as NodeId))
+            : (edgeMeta.get(id as EdgeId)?.exists ?? graph.edges.has(id as EdgeId));
         if (!isSatisfied) {
           // eslint-disable-next-line functional/immutable-data
           unmet.add(key);
@@ -479,7 +504,7 @@ function attemptGroup(
     }
   }
 
-  const unmet = dependenciesSatisfied(sorted, nodeMeta, edgeMeta, createdInGroup);
+  const unmet = dependenciesSatisfied(sorted, graph, nodeMeta, edgeMeta, createdInGroup);
   if (unmet.length > 0) {
     return { applied: false, graph, nodeMeta, edgeMeta, unmet };
   }

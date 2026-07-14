@@ -18,6 +18,8 @@ import {
   type NodeCreated,
   type NodePropertiesUpdated,
   type EdgeCreated,
+  SYSTEM_IDS,
+  SYSTEM_EDGE_TYPES,
 } from '@canopy/graph';
 
 /** Minimal in-process EventLogStore fake, local to this test -- @canopy/graph is a leaf package. */
@@ -217,6 +219,30 @@ describe('GraphSession', () => {
     const result = await session.commit([]);
     expect(result.ok).toBe(true);
     expect(session.graph()).toEqual(before);
+  });
+
+  it('allows creating an edge pointing to a bootstrapped node', async () => {
+    const eventLog = createTestEventLog();
+    const graphId = createGraphId();
+    const session = createGraphSession(eventLog, graphId, sessionDeviceId);
+    await session.load();
+
+    const userNode = nodeCreatedEvent();
+    const edge: EdgeCreated = {
+      type: 'EdgeCreated',
+      eventId: createEventId(),
+      id: createEdgeId(),
+      edgeType: SYSTEM_EDGE_TYPES.REFERENCES,
+      source: userNode.id,
+      target: SYSTEM_IDS.NAMESPACE_SYSTEM,
+      properties: new Map(),
+      timestamp: createInstant(),
+      deviceId: otherDeviceId,
+    };
+
+    const result = await session.commit([userNode, edge]);
+    expect(result.ok).toBe(true);
+    expect(session.graph().edges.has(edge.id)).toBe(true);
   });
 
   it('unsubscribe stops further notifications', async () => {
