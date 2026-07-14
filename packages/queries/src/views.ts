@@ -15,9 +15,9 @@ import {
   err,
   fromThrowable,
   asNodeId,
-  asDeviceId,
   SYSTEM_IDS,
   addNode,
+  SYSTEM_DEVICE_ID,
 } from '@canopy/graph';
 import type { Query, Sort } from './model';
 import { getQueryDefinition } from './stored';
@@ -44,9 +44,9 @@ export interface ResolvedView {
   readonly query: Query;
 }
 
-// Helper to wrap a scalar value
-function scalar(val: string | number | boolean): Result<ScalarValue, Error> {
-  return ok(val);
+// Helper to return a scalar value directly
+function scalar(val: string | number | boolean): ScalarValue {
+  return val;
 }
 
 // Helper to create a reference value
@@ -67,35 +67,24 @@ export function saveViewDefinition(
   const nodeId = createNodeId();
 
   const nameVal = scalar(view.name);
-  if (!nameVal.ok) return err(nameVal.error);
-
   const layoutVal = scalar(view.layout);
-  if (!layoutVal.ok) return err(layoutVal.error);
-
-  const descriptionVal = view.description ? scalar(view.description) : ok(undefined);
-  if (!descriptionVal.ok) return err(descriptionVal.error);
-
+  const descriptionVal = view.description ? scalar(view.description) : undefined;
   const sortVal =
-    view.sort && view.sort.length > 0 ? scalar(JSON.stringify(view.sort)) : ok(undefined);
-  if (!sortVal.ok) return err(sortVal.error);
-
-  const groupByVal = view.groupBy ? scalar(view.groupBy) : ok(undefined);
-  if (!groupByVal.ok) return err(groupByVal.error);
-
-  const pageSizeVal = view.pageSize ? scalar(view.pageSize) : ok(undefined);
-  if (!pageSizeVal.ok) return err(pageSizeVal.error);
+    view.sort && view.sort.length > 0 ? scalar(JSON.stringify(view.sort)) : undefined;
+  const groupByVal = view.groupBy ? scalar(view.groupBy) : undefined;
+  const pageSizeVal = view.pageSize ? scalar(view.pageSize) : undefined;
 
   const properties = new Map<string, PropertyValue>([
-    ['name', nameVal.value],
-    ['layout', layoutVal.value],
+    ['name', nameVal],
+    ['layout', layoutVal],
     ...(view.queryRef ? [['queryRef', reference(view.queryRef)] as const] : []),
-    ...(descriptionVal.value ? [['description', descriptionVal.value] as const] : []),
-    ...(sortVal.value ? [['sort', sortVal.value] as const] : []),
-    ...(groupByVal.value ? [['groupBy', groupByVal.value] as const] : []),
+    ...(descriptionVal !== undefined ? [['description', descriptionVal] as const] : []),
+    ...(sortVal !== undefined ? [['sort', sortVal] as const] : []),
+    ...(groupByVal !== undefined ? [['groupBy', groupByVal] as const] : []),
     ...(view.displayProperties && view.displayProperties.length > 0
       ? [['displayProperties', list(view.displayProperties)] as const]
       : []),
-    ...(pageSizeVal.value ? [['pageSize', pageSizeVal.value] as const] : []),
+    ...(pageSizeVal !== undefined ? [['pageSize', pageSizeVal] as const] : []),
   ]);
 
   const node: Node = {
@@ -105,7 +94,7 @@ export function saveViewDefinition(
     metadata: {
       created: createInstant(),
       modified: createInstant(),
-      modifiedBy: asDeviceId('00000000-0000-0000-0000-000000000000'),
+      modifiedBy: SYSTEM_DEVICE_ID,
     },
   };
 
