@@ -14,6 +14,8 @@ This design defines how view definitions and renderers are resolved, registered,
 - Replace the hardcoded rendering dispatch in `BlockRenderer` with a registry-based dynamic lookup.
 - Rename the settings key from `default-renderer` to `default-view` to reflect its target type.
 - Support component delegation by exposing `BlockRenderer` as a reusable component for recursive child rendering.
+- Enforce strict recursion protection to prevent infinite rendering loops on cyclic graphs.
+- Use Canopy's standard `Result<T, E>` functional wrapper for error reporting in the view resolution engine.
 
 **Non-Goals:**
 - Implementing sandboxed WASM or custom user-provided renderers (explicitly deferred).
@@ -38,9 +40,25 @@ This design defines how view definitions and renderers are resolved, registered,
 - **Rationale**: Reusing smaller, specific components within larger components (e.g. rendering list items or children inside a custom container component) should go through the same view/renderer resolution. By exporting `BlockRenderer` (or a similar delegation helper) to the registry, any custom component can render child nodes by delegating back to the system, preserving dynamic rendering resolution for all nested content.
 - **Alternatives**: Forcing components to hardcode child renderers was rejected because it breaks plugin extensibility and modularity.
 
+### Decision 5: Functional error handling in resolution engine
+- **Rationale**: The resolution engine `resolveViewDefinition` will return a `Result<Node, Error>` instead of a nullable value. This ensures that failures (such as missing nodes or invalid schema types) are tracked explicitly, avoiding silent bugs.
+- **Alternatives**: Returning `undefined` was rejected to adhere to the codebase's strict functional error-handling invariants.
+
+### Decision 6: Recursion cycle prevention via visited tracking
+- **Rationale**: To prevent browser tab crashes from infinite rendering loops on cyclic graphs, components will pass down a `ReadonlySet<NodeId>` representing already-visited nodes. If a child node has already been visited, the system will halt recursion and render a warning block.
+- **Alternatives**: Relying on database validation of cycles was rejected because schema-level constraints are warning-only and eventually consistent.
+
+### Decision 7: Shared entryPoint type safety
+- **Rationale**: Define a compile-time string union type `SystemRendererEntryPoint` in `@canopy/graph` to restrict the entry point identifiers. The React component registry will use this type to guarantee type safety and prevent drift between graph metadata and UI code.
+- **Alternatives**: Using plain string registry keys was rejected because typos would fail silently at runtime.
+
 ## Risks / Trade-offs
 
 - **[Risk]** Broken rendering if a renderer or view node is deleted or missing.
   - *Mitigation*: The `BlockRenderer` will fall back to a generic property list renderer if resolution fails.
 - **[Risk]** Large schema size from bootstrapping view and renderer nodes.
   - *Mitigation*: We only seed three basic system renderers and views, which has negligible storage overhead.
+- **[Risk]** Infinite recursion crashing client browser on cyclic graphs.
+  - *Mitigation*: Track visited node IDs using a `ReadonlySet<NodeId>` prop passed down the component tree.
+- **[Risk]** Typo in entryPoint in registry or bootstrap data causing silent blank screens.
+  - *Mitigation*: Type check entryPoint values with the `SystemRendererEntryPoint` union.
