@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'bun:test';
 import { createGraph } from './create-graph';
-import { asGraphId, unwrap } from '@canopy/graph';
+import { asGraphId, asNodeId, unwrap } from '@canopy/graph';
 import { SYSTEM_IDS } from './system';
 import { getNodeTypes, getEdgeTypes, getNodeType } from './queries';
 import { parseNamespace } from './resolve-namespace';
@@ -94,13 +94,95 @@ describe('Meta-circular bootstrap', () => {
     expect(userSettingDef).toBeDefined();
     expect(userSettingDef?.type).toBe(SYSTEM_IDS.NODE_TYPE);
 
-    const defaultRenderer = graph.nodes.get(SYSTEM_IDS.SETTING_DEFAULT_RENDERER);
-    expect(defaultRenderer).toBeDefined();
-    expect(defaultRenderer?.type).toBe(SYSTEM_IDS.SETTINGS_SCHEMA);
+    const defaultView = graph.nodes.get(SYSTEM_IDS.SETTING_DEFAULT_VIEW);
+    expect(defaultView).toBeDefined();
+    expect(defaultView?.type).toBe(SYSTEM_IDS.SETTINGS_SCHEMA);
+    expect(defaultView?.properties.get('key')).toBe('default-view');
 
     const displayDensity = graph.nodes.get(SYSTEM_IDS.SETTING_DISPLAY_DENSITY);
     expect(displayDensity).toBeDefined();
     expect(displayDensity?.type).toBe(SYSTEM_IDS.SETTINGS_SCHEMA);
+  });
+
+  it('seeds renderers, view definitions, and default view mappings', () => {
+    const graph = unwrap(createGraph(asGraphId('test-graph'), 'Test Graph'));
+
+    // Check system edge types definitions
+    const usesRendererDef = graph.nodes.get(SYSTEM_IDS.EDGE_USES_RENDERER);
+    expect(usesRendererDef).toBeDefined();
+    expect(usesRendererDef?.type).toBe(SYSTEM_IDS.EDGE_TYPE);
+    expect(usesRendererDef?.properties.get('name')).toBe('uses_renderer');
+
+    const viewOverrideDef = graph.nodes.get(SYSTEM_IDS.EDGE_VIEW_OVERRIDE);
+    expect(viewOverrideDef).toBeDefined();
+    expect(viewOverrideDef?.type).toBe(SYSTEM_IDS.EDGE_TYPE);
+    expect(viewOverrideDef?.properties.get('name')).toBe('view_override');
+
+    const defaultViewEdgeDef = graph.nodes.get(SYSTEM_IDS.EDGE_DEFAULT_VIEW);
+    expect(defaultViewEdgeDef).toBeDefined();
+    expect(defaultViewEdgeDef?.type).toBe(SYSTEM_IDS.EDGE_TYPE);
+    expect(defaultViewEdgeDef?.properties.get('name')).toBe('default_view');
+
+    // Check system Renderers
+    const textRenderer = graph.nodes.get(asNodeId('system:renderer:text'));
+    expect(textRenderer).toBeDefined();
+    expect(textRenderer?.type).toBe(SYSTEM_IDS.RENDERER_DEF);
+    expect(textRenderer?.properties.get('name')).toBe('Text Renderer');
+    expect(textRenderer?.properties.get('rendererKind')).toBe('system');
+    expect(textRenderer?.properties.get('entryPoint')).toBe('system:text');
+    expect(textRenderer?.properties.get('permissions')).toEqual([]);
+
+    const codeRenderer = graph.nodes.get(asNodeId('system:renderer:code'));
+    expect(codeRenderer).toBeDefined();
+    expect(codeRenderer?.type).toBe(SYSTEM_IDS.RENDERER_DEF);
+    expect(codeRenderer?.properties.get('name')).toBe('Code Renderer');
+    expect(codeRenderer?.properties.get('rendererKind')).toBe('system');
+    expect(codeRenderer?.properties.get('entryPoint')).toBe('system:code');
+    expect(codeRenderer?.properties.get('permissions')).toEqual([]);
+
+    const mdRenderer = graph.nodes.get(asNodeId('system:renderer:markdown'));
+    expect(mdRenderer).toBeDefined();
+    expect(mdRenderer?.type).toBe(SYSTEM_IDS.RENDERER_DEF);
+    expect(mdRenderer?.properties.get('name')).toBe('Markdown Renderer');
+    expect(mdRenderer?.properties.get('rendererKind')).toBe('system');
+    expect(mdRenderer?.properties.get('entryPoint')).toBe('system:markdown');
+    expect(mdRenderer?.properties.get('permissions')).toEqual([]);
+
+    // Check system ViewDefinitions
+    const textView = graph.nodes.get(asNodeId('system:view:text-block'));
+    expect(textView).toBeDefined();
+    expect(textView?.type).toBe(SYSTEM_IDS.VIEW_DEFINITION_DEF);
+    expect(textView?.properties.get('name')).toBe('Text Block View');
+    expect(textView?.properties.get('layout')).toBe('document');
+
+    const codeView = graph.nodes.get(asNodeId('system:view:code-block'));
+    expect(codeView).toBeDefined();
+    expect(codeView?.type).toBe(SYSTEM_IDS.VIEW_DEFINITION_DEF);
+    expect(codeView?.properties.get('name')).toBe('Code Block View');
+    expect(codeView?.properties.get('layout')).toBe('document');
+
+    const mdView = graph.nodes.get(asNodeId('system:view:markdown'));
+    expect(mdView).toBeDefined();
+    expect(mdView?.type).toBe(SYSTEM_IDS.VIEW_DEFINITION_DEF);
+    expect(mdView?.properties.get('name')).toBe('Markdown View');
+    expect(mdView?.properties.get('layout')).toBe('document');
+
+    // Helper to find edge by type, source, target
+    const findEdge = (type: string, source: string, target: string) => {
+      return [...graph.edges.values()].find(
+        (e) => e.type === type && e.source === source && e.target === target
+      );
+    };
+
+    // Check uses_renderer edges
+    expect(findEdge('system:edgetype:uses-renderer', 'system:view:text-block', 'system:renderer:text')).toBeDefined();
+    expect(findEdge('system:edgetype:uses-renderer', 'system:view:code-block', 'system:renderer:code')).toBeDefined();
+    expect(findEdge('system:edgetype:uses-renderer', 'system:view:markdown', 'system:renderer:markdown')).toBeDefined();
+
+    // Check default_view edges
+    expect(findEdge('system:edgetype:default-view', 'system:nodetype:text-block', 'system:view:text-block')).toBeDefined();
+    expect(findEdge('system:edgetype:default-view', 'system:nodetype:code-block', 'system:view:code-block')).toBeDefined();
+    expect(findEdge('system:edgetype:default-view', 'system:nodetype:markdown', 'system:view:markdown')).toBeDefined();
   });
 
   it('migrates the 4 previously-hardcoded namespaces so they resolve as valid', () => {

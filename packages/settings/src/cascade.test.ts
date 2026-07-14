@@ -83,9 +83,9 @@ describe('Settings Resolver', () => {
       id: asNodeId('user:setting:global'),
       type: SYSTEM_IDS.USER_SETTING,
       properties: new Map([
-        ['schemaId', SYSTEM_IDS.SETTING_DEFAULT_RENDERER],
+        ['schemaId', SYSTEM_IDS.SETTING_DEFAULT_VIEW],
         ['scopeType', 'global'],
-        ['value', '"global-renderer"'],
+        ['value', '"global-view"'],
       ]),
       metadata: {
         created: createInstant(),
@@ -100,10 +100,10 @@ describe('Settings Resolver', () => {
       id: asNodeId('user:setting:namespace'),
       type: SYSTEM_IDS.USER_SETTING,
       properties: new Map([
-        ['schemaId', SYSTEM_IDS.SETTING_DEFAULT_RENDERER],
+        ['schemaId', SYSTEM_IDS.SETTING_DEFAULT_VIEW],
         ['scopeType', 'namespace'],
         ['scopeTarget', 'user'],
-        ['value', '"namespace-renderer"'],
+        ['value', '"namespace-view"'],
       ]),
       metadata: {
         created: createInstant(),
@@ -117,12 +117,12 @@ describe('Settings Resolver', () => {
     const typeId = asTypeId('test:type');
 
     // user namespace should hit namespace setting
-    let value = resolveSetting(graph, 'default-renderer', nodeId, typeId, asNamespace('user'));
-    expect(value).toBe('namespace-renderer');
+    let value = resolveSetting(graph, 'default-view', nodeId, typeId, asNamespace('user'));
+    expect(value).toBe('namespace-view');
 
     // system namespace should fallback to global setting
-    value = resolveSetting(graph, 'default-renderer', nodeId, typeId, asNamespace('system'));
-    expect(value).toBe('global-renderer');
+    value = resolveSetting(graph, 'default-view', nodeId, typeId, asNamespace('system'));
+    expect(value).toBe('global-view');
   });
 
   it('resolveSetting returns per-type UserSetting over per-namespace', () => {
@@ -132,10 +132,10 @@ describe('Settings Resolver', () => {
       id: asNodeId('user:setting:namespace'),
       type: SYSTEM_IDS.USER_SETTING,
       properties: new Map([
-        ['schemaId', SYSTEM_IDS.SETTING_DEFAULT_RENDERER],
+        ['schemaId', SYSTEM_IDS.SETTING_DEFAULT_VIEW],
         ['scopeType', 'namespace'],
         ['scopeTarget', 'user'],
-        ['value', '"namespace-renderer"'],
+        ['value', '"namespace-view"'],
       ]),
       metadata: {
         created: createInstant(),
@@ -150,10 +150,10 @@ describe('Settings Resolver', () => {
       id: asNodeId('user:setting:type'),
       type: SYSTEM_IDS.USER_SETTING,
       properties: new Map([
-        ['schemaId', SYSTEM_IDS.SETTING_DEFAULT_RENDERER],
+        ['schemaId', SYSTEM_IDS.SETTING_DEFAULT_VIEW],
         ['scopeType', 'type'],
         ['scopeTarget', typeId],
-        ['value', '"type-renderer"'],
+        ['value', '"type-view"'],
       ]),
       metadata: {
         created: createInstant(),
@@ -166,13 +166,13 @@ describe('Settings Resolver', () => {
     const nodeId = asNodeId('test:node');
 
     // Specific type should hit type setting
-    let value = resolveSetting(graph, 'default-renderer', nodeId, typeId, asNamespace('user'));
-    expect(value).toBe('type-renderer');
+    let value = resolveSetting(graph, 'default-view', nodeId, typeId, asNamespace('user'));
+    expect(value).toBe('type-view');
 
     // Other type should fallback to namespace setting
     const otherTypeId = asTypeId('test:other-type');
-    value = resolveSetting(graph, 'default-renderer', nodeId, otherTypeId, asNamespace('user'));
-    expect(value).toBe('namespace-renderer');
+    value = resolveSetting(graph, 'default-view', nodeId, otherTypeId, asNamespace('user'));
+    expect(value).toBe('namespace-view');
   });
 
   it('resolveSetting returns per-node UserSetting over per-type', () => {
@@ -183,10 +183,10 @@ describe('Settings Resolver', () => {
       id: asNodeId('user:setting:type'),
       type: SYSTEM_IDS.USER_SETTING,
       properties: new Map([
-        ['schemaId', SYSTEM_IDS.SETTING_DEFAULT_RENDERER],
+        ['schemaId', SYSTEM_IDS.SETTING_DEFAULT_VIEW],
         ['scopeType', 'type'],
         ['scopeTarget', typeId],
-        ['value', '"type-renderer"'],
+        ['value', '"type-view"'],
       ]),
       metadata: {
         created: createInstant(),
@@ -201,10 +201,10 @@ describe('Settings Resolver', () => {
       id: asNodeId('user:setting:node'),
       type: SYSTEM_IDS.USER_SETTING,
       properties: new Map([
-        ['schemaId', SYSTEM_IDS.SETTING_DEFAULT_RENDERER],
+        ['schemaId', SYSTEM_IDS.SETTING_DEFAULT_VIEW],
         ['scopeType', 'node'],
         ['scopeTarget', nodeId],
-        ['value', '"node-renderer"'],
+        ['value', '"node-view"'],
       ]),
       metadata: {
         created: createInstant(),
@@ -215,12 +215,12 @@ describe('Settings Resolver', () => {
     graph = unwrap(addNode(graph, nodeSetting, { deviceId: SYSTEM_DEVICE_ID })).graph;
 
     // Specific node should hit node setting
-    let value = resolveSetting(graph, 'default-renderer', nodeId, typeId, asNamespace('user'));
-    expect(value).toBe('node-renderer');
+    let value = resolveSetting(graph, 'default-view', nodeId, typeId, asNamespace('user'));
+    expect(value).toBe('node-view');
 
     // Other node should fallback to type setting
     const otherNodeId = asNodeId('test:other-node');
-    value = resolveSetting(graph, 'default-renderer', otherNodeId, typeId, asNamespace('user'));
-    expect(value).toBe('type-renderer');
+    value = resolveSetting(graph, 'default-view', otherNodeId, typeId, asNamespace('user'));
+    expect(value).toBe('type-view');
   });
 });
