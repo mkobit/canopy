@@ -8,6 +8,7 @@ import { createGraph } from './create-graph';
 import { projectGraph } from './projection';
 import { mergeEvents, createMergeState, type MergeState } from './incremental-projection';
 import { validateNode, validateEdge } from './validation';
+import { isSystemNodeId } from './system';
 
 export interface GraphSessionDelta {
   readonly applied: readonly GraphEvent[];
@@ -42,6 +43,13 @@ const SESSION_GRAPH_NAME = 'graph';
  * validateNode/validateEdge against the entities the dry run produced.
  */
 function validateCommit(graph: Graph, events: readonly GraphEvent[]): Result<void, Error> {
+  // eslint-disable-next-line functional/no-loop-statements
+  for (const event of events) {
+    if (event.type === 'NodeDeleted' && isSystemNodeId(event.id)) {
+      return err(new Error(`Cannot delete system node: ${event.id}`));
+    }
+  }
+
   const dryRun = projectGraph(events, graph);
   if (!dryRun.ok) return dryRun;
   const dryRunGraph = dryRun.value;
