@@ -249,20 +249,20 @@ git commit -m "feat: validate and reject system node deletion in GraphSession co
 - Create: [bootstrap-definitions.ts](file:///home/mkobit/workspace/mkobit/canopy/packages/graph/src/bootstrap-definitions.ts)
 - Modify: [bootstrap.ts](file:///home/mkobit/workspace/mkobit/canopy/packages/graph/src/bootstrap.ts)
 
-- [ ] **Step 1: Extract definition constants**
+- [x] **Step 1: Extract definition constants**
 
 Move `nodeTypeProperties`, `edgeTypeProperties`, `namespaceMigrations`, `coreNodeTypes`, `coreEdgeTypes`, `systemQueries`, `systemViews`, `systemSettings`, `systemRenderers`, `defaultViews` and their local helper functions (`createProperties`, `text`, `reference`, `createBootstrapNode`) from `bootstrap.ts` to `bootstrap-definitions.ts`.
 
-- [ ] **Step 2: Clean up imports and exports**
+- [x] **Step 2: Clean up imports and exports**
 
 Ensure that `bootstrap-definitions.ts` exports these constants, and that `bootstrap.ts` imports them.
 
-- [ ] **Step 3: Run all tests to verify correctness**
+- [x] **Step 3: Run all tests to verify correctness**
 
 Run: `bun test`
 Expected: PASS (all 351+ tests should pass without any issue).
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add packages/graph/src/bootstrap.ts packages/graph/src/bootstrap-definitions.ts
