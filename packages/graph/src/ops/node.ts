@@ -7,6 +7,7 @@ import type { PropertyValue } from '../properties';
 import { createInstant, createEventId } from '../factories';
 import { ok, err } from '../result';
 import { validateNode } from '../validation';
+import { isSystemNodeId } from '../system';
 
 export type NodeOperationOptions = Readonly<{
   deviceId: DeviceId;
@@ -78,6 +79,10 @@ export function removeNode(
   nodeId: NodeId,
   options: NodeOperationOptions,
 ): Result<GraphResult<Graph>, Error> {
+  if (isSystemNodeId(nodeId)) {
+    return err(new Error(`Cannot delete system node: ${nodeId}`));
+  }
+
   if (!graph.nodes.has(nodeId)) {
     return ok({
       graph,

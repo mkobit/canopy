@@ -21,6 +21,7 @@ import {
   createInstant,
   unwrap,
   asDeviceId,
+  asNodeId,
 } from '@canopy/graph';
 import type { Node, Edge } from '@canopy/graph';
 import { Temporal } from 'temporal-polyfill';
@@ -195,6 +196,17 @@ describe('Core Graph Engine', () => {
       eventId: expect.any(String),
       id: edgeId,
     });
+  });
+
+  it('should reject deleting system-defined nodes', () => {
+    const systemNodeId = asNodeId('system:renderer:text');
+    const result = removeNode(emptyGraph, systemNodeId, {
+      deviceId: asDeviceId('00000000-0000-0000-0000-000000000000'),
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.message).toContain('Cannot delete system node');
+    }
   });
 
   it('should query nodes and edges', () => {

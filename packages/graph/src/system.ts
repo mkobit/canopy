@@ -1,3 +1,4 @@
+import type { NodeId } from './identifiers';
 import { asNodeId, asTypeId } from './factories';
 
 export const SYSTEM_IDS = {
@@ -82,3 +83,19 @@ export const SYSTEM_EDGE_TYPES = {
 };
 
 export type SystemRendererEntryPoint = 'system:text' | 'system:code' | 'system:markdown';
+
+/**
+ * Checks if a NodeId belongs to a system-defined node.
+ */
+export function isSystemNodeId(nodeId: NodeId | string): boolean {
+  const prefixes = [
+    'system:',
+    'namespace:',
+    'node:type:',
+    'edge:type:',
+    'query:system:',
+    'view:system:',
+    'meta:',
+  ];
+  return prefixes.some((prefix) => nodeId.startsWith(prefix));
+}

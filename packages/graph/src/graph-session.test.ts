@@ -8,6 +8,7 @@ import {
   createNodeId,
   createEdgeId,
   asTypeId,
+  asNodeId,
   createEventId,
   asDeviceId,
   createInstant,
@@ -261,5 +262,26 @@ describe('GraphSession', () => {
     await session.commit([nodeCreatedEvent()]);
 
     expect(callCount).toBe(1);
+  });
+
+  it('rejects commits containing NodeDeleted events for system nodes', async () => {
+    const eventLog = createTestEventLog();
+    const graphId = createGraphId();
+    const session = createGraphSession(eventLog, graphId, sessionDeviceId);
+    await session.load();
+
+    const deleteEvent: GraphEvent = {
+      type: 'NodeDeleted',
+      eventId: createEventId(),
+      id: asNodeId('system:renderer:text'),
+      timestamp: createInstant(),
+      deviceId: sessionDeviceId,
+    };
+
+    const result = await session.commit([deleteEvent]);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.message).toContain('Cannot delete system node');
+    }
   });
 });
