@@ -414,6 +414,7 @@ export default tseslint.config(
   {
     files: [
       'packages/storage/src/**/*.ts',
+      'packages/storage-file/src/**/*.ts',
       'packages/storage-indexeddb/src/**/*.ts',
       'packages/storage-sqlite/src/**/*.ts',
     ],
