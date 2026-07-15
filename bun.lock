@@ -151,6 +151,18 @@
         "typescript": "6.0.3",
       },
     },
+    "packages/storage-file": {
+      "name": "@canopy/storage-file",
+      "version": "0.0.0",
+      "dependencies": {
+        "@canopy/graph": "workspace:*",
+        "zod": "^4.4.1",
+      },
+      "devDependencies": {
+        "temporal-polyfill": "^0.3.2",
+        "typescript": "6.0.3",
+      },
+    },
     "packages/storage-indexeddb": {
       "name": "@canopy/storage-indexeddb",
       "version": "0.0.0",
@@ -231,6 +243,8 @@
     "@canopy/settings": ["@canopy/settings@workspace:packages/settings"],
 
     "@canopy/storage": ["@canopy/storage@workspace:packages/storage"],
+
+    "@canopy/storage-file": ["@canopy/storage-file@workspace:packages/storage-file"],
 
     "@canopy/storage-indexeddb": ["@canopy/storage-indexeddb@workspace:packages/storage-indexeddb"],
 

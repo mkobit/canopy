@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.build.json",
+  "compilerOptions": {
+    "paths": {
+      "@canopy/graph": ["../../packages/graph/src/index.ts"]
+    },
+    "composite": false,
+    "noEmit": true
+  }
+}
