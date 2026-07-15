@@ -310,6 +310,8 @@ export const createFileEventLog = (config: FileEventLogConfig): FileEventLog => 
     cacheLoaded = true;
   };
 
+
+
   return {
     init: async (): Promise<Result<void, Error>> => {
       if (isInitialized) return ok(undefined);
@@ -419,4 +421,71 @@ export const createFileEventLog = (config: FileEventLogConfig): FileEventLog => 
       });
     },
   };
+};
+
+export const scanRemoteManifests = async (
+  rootDir: string,
+  localDeviceId: string,
+): Promise<Result<ReadonlyMap<string, FileStoreManifest>, Error>> => {
+  const eventsDir = path.join(rootDir, 'events');
+  return fromAsyncThrowable(async () => {
+    // eslint-disable-next-line functional/no-try-statements
+    try {
+      const entries = await fs.readdir(eventsDir, { withFileTypes: true });
+      const dirNames = entries
+        .filter((entry) => entry.isDirectory() && entry.name !== localDeviceId)
+        .map((entry) => entry.name);
+
+      const manifestPromises = dirNames.map(async (remoteDeviceId) => {
+        const remoteManifestPath = path.join(eventsDir, remoteDeviceId, 'manifest.json');
+        // eslint-disable-next-line functional/no-try-statements
+        try {
+          const content = await fs.readFile(remoteManifestPath, 'utf8');
+          const parsed = FileStoreManifestSchema.parse(JSON.parse(content));
+          return [remoteDeviceId, parsed] as const;
+        } catch {
+          return null;
+        }
+      });
+
+      const manifestResults = await Promise.all(manifestPromises);
+      const validResults = manifestResults.filter((r): r is readonly [string, FileStoreManifest] => r !== null);
+      return new Map(validResults);
+    } catch (error) {
+      if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+        return new Map<string, FileStoreManifest>();
+      }
+      throw error;
+    }
+  });
+};
+
+export const getRemoteSegmentsInOrder = async (
+  remoteDeviceDir: string,
+): Promise<Result<readonly string[], Error>> => {
+  return fromAsyncThrowable(async () => {
+    // eslint-disable-next-line functional/no-try-statements
+    try {
+      const files = await fs.readdir(remoteDeviceDir);
+      const jsonlFiles = files.filter((f) => f.endsWith('.jsonl'));
+      return jsonlFiles.toSorted((a, b) => a.localeCompare(b));
+    } catch (error) {
+      if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+        return [];
+      }
+      throw error;
+    }
+  });
+};
+
+export const readRemoteSegmentEvents = async (
+  remoteDeviceDir: string,
+  segmentFilename: string,
+): Promise<Result<readonly GraphEvent[], Error>> => {
+  return fromAsyncThrowable(async () => {
+    const filePath = path.join(remoteDeviceDir, segmentFilename);
+    const content = await fs.readFile(filePath, 'utf8');
+    const lines = content.split('\n').filter((line) => line.trim() !== '');
+    return lines.map((line) => deserializeEvent(JSON.parse(line)));
+  });
 };

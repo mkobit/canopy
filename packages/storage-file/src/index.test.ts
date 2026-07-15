@@ -10,7 +10,12 @@ import {
   createInstant,
 } from '@canopy/graph';
 import type { GraphEvent } from '@canopy/graph';
-import { createFileEventLog } from './file-event-log';
+import {
+  createFileEventLog,
+  scanRemoteManifests,
+  getRemoteSegmentsInOrder,
+  readRemoteSegmentEvents,
+} from './file-event-log';
 import type { FileEventLog } from './file-event-log';
 
 describe('FileEventLog', () => {
@@ -275,4 +280,92 @@ describe('FileEventLog', () => {
 
     await unwrap(await watermarkStore.close());
   });
+
+  describe('remote device helpers', () => {
+    it('scanRemoteManifests returns empty map if events dir does not exist', async () => {
+      const nonExistentDir = path.join(tempDir, 'does-not-exist');
+      const result = unwrap(await scanRemoteManifests(nonExistentDir, 'device-1'));
+      expect(result.size).toBe(0);
+    });
+
+    it('scanRemoteManifests scans manifests and ignores local device', async () => {
+      const eventsDir = path.join(tempDir, 'events');
+      await fs.mkdir(path.join(eventsDir, 'device-1'), { recursive: true });
+      await fs.mkdir(path.join(eventsDir, 'device-2'), { recursive: true });
+      await fs.mkdir(path.join(eventsDir, 'device-3'), { recursive: true });
+
+      const manifest2 = {
+        sealed: ['1.jsonl'],
+        lastEventId: 'event-2',
+        watermarks: {},
+      };
+      const manifest3 = {
+        sealed: ['2.jsonl'],
+        lastEventId: 'event-3',
+        watermarks: { 'device-2': 'event-1' },
+      };
+
+      await fs.writeFile(
+        path.join(eventsDir, 'device-2', 'manifest.json'),
+        JSON.stringify(manifest2),
+        'utf8',
+      );
+      await fs.writeFile(
+        path.join(eventsDir, 'device-3', 'manifest.json'),
+        JSON.stringify(manifest3),
+        'utf8',
+      );
+
+      const result = unwrap(await scanRemoteManifests(tempDir, 'device-1'));
+      expect(result.size).toBe(2);
+      expect(result.has('device-2')).toBe(true);
+      expect(result.has('device-3')).toBe(true);
+      expect(result.has('device-1')).toBe(false);
+
+      const scanned2 = result.get('device-2');
+      expect(scanned2?.lastEventId).toBe('event-2');
+      expect(scanned2?.sealed).toEqual(['1.jsonl']);
+
+      const scanned3 = result.get('device-3');
+      expect(scanned3?.lastEventId).toBe('event-3');
+      expect(scanned3?.watermarks).toEqual({ 'device-2': 'event-1' });
+    });
+
+    it('getRemoteSegmentsInOrder returns sorted segments and handles empty/missing dir', async () => {
+      const remoteDeviceDir = path.join(tempDir, 'events/device-2');
+      const missingDirResult = unwrap(await getRemoteSegmentsInOrder(remoteDeviceDir));
+      expect(missingDirResult).toEqual([]);
+
+      await fs.mkdir(remoteDeviceDir, { recursive: true });
+      await fs.writeFile(path.join(remoteDeviceDir, 'b.jsonl'), 'data');
+      await fs.writeFile(path.join(remoteDeviceDir, 'a.jsonl'), 'data');
+      await fs.writeFile(path.join(remoteDeviceDir, 'other.txt'), 'data');
+
+      const result = unwrap(await getRemoteSegmentsInOrder(remoteDeviceDir));
+      expect(result).toEqual(['a.jsonl', 'b.jsonl']);
+    });
+
+    it('readRemoteSegmentEvents reads and deserializes events correctly', async () => {
+      const remoteDeviceDir = path.join(tempDir, 'events/device-2');
+      await fs.mkdir(remoteDeviceDir, { recursive: true });
+
+      const event1 = createTestEvent();
+      const event2 = createTestEvent();
+      const serializeEventForTest = (event: GraphEvent) => {
+        return JSON.stringify({
+          ...event,
+          properties: Object.fromEntries(event.properties),
+        });
+      };
+
+      const content = `${serializeEventForTest(event1)}\n${serializeEventForTest(event2)}\n`;
+      await fs.writeFile(path.join(remoteDeviceDir, 'a.jsonl'), content, 'utf8');
+
+      const result = unwrap(await readRemoteSegmentEvents(remoteDeviceDir, 'a.jsonl'));
+      expect(result).toHaveLength(2);
+      expect(result[0]?.eventId).toBe(event1.eventId);
+      expect(result[1]?.eventId).toBe(event2.eventId);
+    });
+  });
 });
+
