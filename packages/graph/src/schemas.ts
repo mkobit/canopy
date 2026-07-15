@@ -18,6 +18,7 @@ import {
   asPlainDate,
   asDeviceId,
   asNamespace,
+  asEventId,
 } from './factories';
 
 // Helpers to transform strings to branded types using the "as" casters from types.
@@ -172,3 +173,103 @@ export const EdgeTypeDefinitionSchema: z.ZodType<EdgeTypeDefinition, unknown> = 
     description: val.description ?? undefined,
     inverse: val.inverse ?? undefined,
   }));
+
+export const EventIdSchema = z.string().uuid().transform(asEventId);
+
+export const WorkflowStartedSchema = z.object({
+  type: z.literal('WorkflowStarted'),
+  eventId: EventIdSchema,
+  workflowId: NodeIdSchema,
+  triggerId: NodeIdSchema,
+  timestamp: InstantSchema,
+  deviceId: DeviceIdSchema,
+  batchId: z.string().optional(),
+});
+
+export const WorkflowCompletedSchema = z.object({
+  type: z.literal('WorkflowCompleted'),
+  eventId: EventIdSchema,
+  executionId: EventIdSchema,
+  timestamp: InstantSchema,
+  deviceId: DeviceIdSchema,
+  batchId: z.string().optional(),
+});
+
+export const NodeCreatedSchema = z.object({
+  type: z.literal('NodeCreated'),
+  eventId: EventIdSchema,
+  id: NodeIdSchema,
+  nodeType: TypeIdSchema,
+  properties: PropertyMapSchema,
+  timestamp: InstantSchema,
+  deviceId: DeviceIdSchema,
+  batchId: z.string().optional(),
+  migrationId: z.string().optional(),
+});
+
+export const NodePropertiesUpdatedSchema = z.object({
+  type: z.literal('NodePropertiesUpdated'),
+  eventId: EventIdSchema,
+  id: NodeIdSchema,
+  changes: PropertyMapSchema,
+  timestamp: InstantSchema,
+  deviceId: DeviceIdSchema,
+  batchId: z.string().optional(),
+  migrationId: z.string().optional(),
+});
+
+export const NodeDeletedSchema = z.object({
+  type: z.literal('NodeDeleted'),
+  eventId: EventIdSchema,
+  id: NodeIdSchema,
+  timestamp: InstantSchema,
+  deviceId: DeviceIdSchema,
+  batchId: z.string().optional(),
+  migrationId: z.string().optional(),
+});
+
+export const EdgeCreatedSchema = z.object({
+  type: z.literal('EdgeCreated'),
+  eventId: EventIdSchema,
+  id: EdgeIdSchema,
+  edgeType: TypeIdSchema,
+  source: NodeIdSchema,
+  target: NodeIdSchema,
+  properties: PropertyMapSchema,
+  timestamp: InstantSchema,
+  deviceId: DeviceIdSchema,
+  batchId: z.string().optional(),
+  migrationId: z.string().optional(),
+});
+
+export const EdgePropertiesUpdatedSchema = z.object({
+  type: z.literal('EdgePropertiesUpdated'),
+  eventId: EventIdSchema,
+  id: EdgeIdSchema,
+  changes: PropertyMapSchema,
+  timestamp: InstantSchema,
+  deviceId: DeviceIdSchema,
+  batchId: z.string().optional(),
+  migrationId: z.string().optional(),
+});
+
+export const EdgeDeletedSchema = z.object({
+  type: z.literal('EdgeDeleted'),
+  eventId: EventIdSchema,
+  id: EdgeIdSchema,
+  timestamp: InstantSchema,
+  deviceId: DeviceIdSchema,
+  batchId: z.string().optional(),
+  migrationId: z.string().optional(),
+});
+
+export const GraphEventSchema = z.discriminatedUnion('type', [
+  WorkflowStartedSchema,
+  WorkflowCompletedSchema,
+  NodeCreatedSchema,
+  NodePropertiesUpdatedSchema,
+  NodeDeletedSchema,
+  EdgeCreatedSchema,
+  EdgePropertiesUpdatedSchema,
+  EdgeDeletedSchema,
+]);

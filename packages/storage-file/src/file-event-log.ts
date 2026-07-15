@@ -2,18 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { z } from 'zod';
 import type { Result, GraphEvent, EventLogStore, EventLogQueryOptions } from '@canopy/graph';
-import {
-  ok,
-  err,
-  fromAsyncThrowable,
-  NodeIdSchema,
-  EdgeIdSchema,
-  TypeIdSchema,
-  DeviceIdSchema,
-  InstantSchema,
-  PropertyMapSchema,
-  asEventId,
-} from '@canopy/graph';
+import { ok, err, fromAsyncThrowable, GraphEventSchema } from '@canopy/graph';
 
 export interface FileEventLogConfig {
   readonly rootDir: string;
@@ -33,11 +22,7 @@ export const CanopyConfigSchema = z.object({
   name: z.string(),
 });
 
-export interface CanopyConfig {
-  readonly version: 1;
-  readonly graphId: string;
-  readonly name: string;
-}
+export type CanopyConfig = z.infer<typeof CanopyConfigSchema>;
 
 export const FileStoreManifestSchema = z.object({
   sealed: z.array(z.string()),
@@ -48,90 +33,6 @@ export interface FileStoreManifest {
   readonly sealed: readonly string[];
   readonly lastEventId: string | null;
 }
-
-const EventIdSchema = z.string().uuid().transform(asEventId);
-
-export const GraphEventSchema: z.ZodType<GraphEvent, unknown> = z.discriminatedUnion('type', [
-  z.object({
-    type: z.literal('NodeCreated'),
-    eventId: EventIdSchema,
-    id: NodeIdSchema,
-    nodeType: TypeIdSchema,
-    properties: PropertyMapSchema,
-    timestamp: InstantSchema,
-    deviceId: DeviceIdSchema,
-    batchId: z.string().optional(),
-    migrationId: z.string().optional(),
-  }),
-  z.object({
-    type: z.literal('NodePropertiesUpdated'),
-    eventId: EventIdSchema,
-    id: NodeIdSchema,
-    changes: PropertyMapSchema,
-    timestamp: InstantSchema,
-    deviceId: DeviceIdSchema,
-    batchId: z.string().optional(),
-    migrationId: z.string().optional(),
-  }),
-  z.object({
-    type: z.literal('NodeDeleted'),
-    eventId: EventIdSchema,
-    id: NodeIdSchema,
-    timestamp: InstantSchema,
-    deviceId: DeviceIdSchema,
-    batchId: z.string().optional(),
-    migrationId: z.string().optional(),
-  }),
-  z.object({
-    type: z.literal('EdgeCreated'),
-    eventId: EventIdSchema,
-    id: EdgeIdSchema,
-    edgeType: TypeIdSchema,
-    source: NodeIdSchema,
-    target: NodeIdSchema,
-    properties: PropertyMapSchema,
-    timestamp: InstantSchema,
-    deviceId: DeviceIdSchema,
-    batchId: z.string().optional(),
-    migrationId: z.string().optional(),
-  }),
-  z.object({
-    type: z.literal('EdgePropertiesUpdated'),
-    eventId: EventIdSchema,
-    id: EdgeIdSchema,
-    changes: PropertyMapSchema,
-    timestamp: InstantSchema,
-    deviceId: DeviceIdSchema,
-    batchId: z.string().optional(),
-    migrationId: z.string().optional(),
-  }),
-  z.object({
-    type: z.literal('EdgeDeleted'),
-    eventId: EventIdSchema,
-    id: EdgeIdSchema,
-    timestamp: InstantSchema,
-    deviceId: DeviceIdSchema,
-    batchId: z.string().optional(),
-    migrationId: z.string().optional(),
-  }),
-  z.object({
-    type: z.literal('WorkflowStarted'),
-    eventId: EventIdSchema,
-    workflowId: NodeIdSchema,
-    triggerId: NodeIdSchema,
-    timestamp: InstantSchema,
-    deviceId: DeviceIdSchema,
-    batchId: z.string().optional(),
-  }),
-  z.object({
-    type: z.literal('WorkflowCompleted'),
-    eventId: EventIdSchema,
-    executionId: EventIdSchema,
-    timestamp: InstantSchema,
-    deviceId: DeviceIdSchema,
-    batchId: z.string().optional(),
-  }),
-]);
 
 const serializeEvent = (event: GraphEvent): unknown => {
   switch (event.type) {
@@ -168,21 +69,35 @@ interface EventGroup {
 }
 
 const groupEventsByBatch = (events: readonly GraphEvent[]): readonly EventGroup[] => {
-  // eslint-disable-next-line unicorn/no-array-reduce
-  return events.reduce<readonly EventGroup[]>((acc, event) => {
+  let groups: readonly EventGroup[] = [];
+  let currentGroup: readonly GraphEvent[] = [];
+  let currentBatchId: string | undefined = undefined;
+
+  // eslint-disable-next-line functional/no-loop-statements
+  for (const event of events) {
     if (event.batchId === undefined) {
-      return [...acc, { batchId: undefined, events: [event] }];
+      if (currentGroup.length > 0) {
+        groups = [...groups, { batchId: currentBatchId, events: currentGroup }];
+        currentGroup = [];
+        currentBatchId = undefined;
+      }
+      groups = [...groups, { batchId: undefined, events: [event] }];
+    } else if (event.batchId === currentBatchId) {
+      currentGroup = [...currentGroup, event];
+    } else {
+      if (currentGroup.length > 0) {
+        groups = [...groups, { batchId: currentBatchId, events: currentGroup }];
+      }
+      currentGroup = [event];
+      currentBatchId = event.batchId;
     }
-    const lastGroup = acc.at(-1);
-    if (lastGroup !== undefined && lastGroup.batchId === event.batchId) {
-      const updatedGroup: EventGroup = {
-        batchId: event.batchId,
-        events: [...lastGroup.events, event],
-      };
-      return [...acc.slice(0, -1), updatedGroup];
-    }
-    return [...acc, { batchId: event.batchId, events: [event] }];
-  }, []);
+  }
+
+  if (currentGroup.length > 0) {
+    groups = [...groups, { batchId: currentBatchId, events: currentGroup }];
+  }
+
+  return groups;
 };
 
 const applyQueryOptions = (
@@ -204,52 +119,35 @@ const writeAtomically = async (filePath: string, content: string): Promise<void>
   await fs.rename(tmpPath, filePath);
 };
 
-const filterUniqueEvents = async (
-  events: readonly GraphEvent[],
-  manifest: FileStoreManifest,
-  activeSegmentTemp: string | null,
-  readSegmentEvents: (filename: string) => Promise<readonly GraphEvent[]>,
-): Promise<readonly GraphEvent[]> => {
-  const sealedSegmentsEventsPromises = manifest.sealed.map(readSegmentEvents);
-  const sealedEventsLists = await Promise.all(sealedSegmentsEventsPromises);
-  const sealedEvents = sealedEventsLists.flat();
-  const activeEventsLoaded =
-    activeSegmentTemp === null ? [] : await readSegmentEvents(activeSegmentTemp);
-
-  const existingEventIds = new Set([
-    ...sealedEvents.map((e) => e.eventId),
-    ...activeEventsLoaded.map((e) => e.eventId),
-  ]);
-
-  return events.filter((e) => !existingEventIds.has(e.eventId));
-};
-
-interface ProcessConfig {
-  readonly maxEventsPerSegment: number;
-  readonly maxBytesPerSegment: number;
-  readonly deviceDir: string;
+interface AppendWritesResult {
+  readonly manifest: FileStoreManifest;
+  readonly filesToWrite: ReadonlyMap<string, string>;
 }
 
-const processEventGroups = async (
+const buildAppendWrites = (
   groups: readonly EventGroup[],
   manifest: FileStoreManifest,
   activeSegment: string | null,
   activeEvents: readonly GraphEvent[],
-  config: ProcessConfig,
-): Promise<FileStoreManifest> => {
+  config: {
+    readonly maxEventsPerSegment: number;
+    readonly maxBytesPerSegment: number;
+    readonly deviceDir: string;
+  },
+): AppendWritesResult => {
   const { maxEventsPerSegment, maxBytesPerSegment, deviceDir } = config;
   let currentManifest = manifest;
   let currentActiveSegment = activeSegment;
   let currentActiveEvents = activeEvents;
-
-  let nActive = currentActiveEvents.length;
-  let sActive =
-    currentActiveEvents.map((e) => JSON.stringify(serializeEvent(e))).join('\n').length +
-    (nActive > 0 ? 1 : 0);
+  const filesToWrite = new Map<string, string>();
 
   // eslint-disable-next-line functional/no-loop-statements
   for (const group of groups) {
     const groupJsonl = group.events.map((e) => JSON.stringify(serializeEvent(e))).join('\n') + '\n';
+    const nActive = currentActiveEvents.length;
+    const sActive =
+      currentActiveEvents.map((e) => JSON.stringify(serializeEvent(e))).join('\n').length +
+      (nActive > 0 ? 1 : 0);
     const nGroup = group.events.length;
     const sGroup = groupJsonl.length;
 
@@ -257,13 +155,15 @@ const processEventGroups = async (
       nActive > 0 &&
       (nActive + nGroup > maxEventsPerSegment || sActive + sGroup > maxBytesPerSegment)
     ) {
-      currentManifest =
-        currentActiveSegment === null
-          ? currentManifest
-          : {
-              ...currentManifest,
-              sealed: [...currentManifest.sealed, currentActiveSegment],
-            };
+      if (currentActiveSegment !== null) {
+        currentManifest = {
+          ...currentManifest,
+          sealed: [...currentManifest.sealed, currentActiveSegment],
+        };
+        const sealedJsonl =
+          currentActiveEvents.map((e) => JSON.stringify(serializeEvent(e))).join('\n') + '\n';
+        filesToWrite.set(path.join(deviceDir, currentActiveSegment), sealedJsonl);
+      }
       currentActiveSegment = null;
       currentActiveEvents = [];
     }
@@ -271,6 +171,7 @@ const processEventGroups = async (
     if (currentActiveSegment === null) {
       const firstEvent = group.events[0];
       if (!firstEvent) {
+        // eslint-disable-next-line functional/no-throw-statements
         throw new Error('Group events list is empty');
       }
       currentActiveSegment = `${firstEvent.eventId}.jsonl`;
@@ -279,16 +180,9 @@ const processEventGroups = async (
       currentActiveEvents = [...currentActiveEvents, ...group.events];
     }
 
-    const segmentPath = path.join(deviceDir, currentActiveSegment);
-    const fullJsonl =
-      currentActiveEvents.map((e) => JSON.stringify(serializeEvent(e))).join('\n') + '\n';
-    await writeAtomically(segmentPath, fullJsonl);
-
-    nActive = currentActiveEvents.length;
-    sActive = fullJsonl.length;
-
     const lastEvent = group.events.at(-1);
     if (!lastEvent) {
+      // eslint-disable-next-line functional/no-throw-statements
       throw new Error('Group events list is empty');
     }
     currentManifest = {
@@ -296,19 +190,32 @@ const processEventGroups = async (
       lastEventId: lastEvent.eventId,
     };
 
-    if (nActive >= maxEventsPerSegment || sActive >= maxBytesPerSegment) {
+    const fullJsonl =
+      currentActiveEvents.map((e) => JSON.stringify(serializeEvent(e))).join('\n') + '\n';
+    const curN = currentActiveEvents.length;
+    const curS = fullJsonl.length;
+
+    if (curN >= maxEventsPerSegment || curS >= maxBytesPerSegment) {
       currentManifest = {
         ...currentManifest,
         sealed: [...currentManifest.sealed, currentActiveSegment],
       };
+      filesToWrite.set(path.join(deviceDir, currentActiveSegment), fullJsonl);
       currentActiveSegment = null;
       currentActiveEvents = [];
-      nActive = 0;
-      sActive = 0;
     }
   }
 
-  return currentManifest;
+  if (currentActiveSegment !== null) {
+    const fullJsonl =
+      currentActiveEvents.map((e) => JSON.stringify(serializeEvent(e))).join('\n') + '\n';
+    filesToWrite.set(path.join(deviceDir, currentActiveSegment), fullJsonl);
+  }
+
+  return {
+    manifest: currentManifest,
+    filesToWrite,
+  };
 };
 
 // eslint-disable-next-line max-lines-per-function
@@ -326,6 +233,8 @@ export const createFileEventLog = (config: FileEventLogConfig): FileEventLog => 
 
   let initializedGraphId: string | null = null;
   let isInitialized = false;
+  let cacheLoaded = false;
+  const knownEventIds = new Set<string>();
 
   const loadManifest = async (): Promise<FileStoreManifest> => {
     // eslint-disable-next-line functional/no-try-statements
@@ -370,6 +279,33 @@ export const createFileEventLog = (config: FileEventLogConfig): FileEventLog => 
     return lines.map((line) => deserializeEvent(JSON.parse(line)));
   };
 
+  const ensureCacheLoaded = async (): Promise<void> => {
+    if (cacheLoaded) {
+      return;
+    }
+    const manifest = await loadManifest();
+    const activeSegment = await getActiveSegmentBasename(manifest);
+
+    // eslint-disable-next-line functional/no-loop-statements
+    for (const segment of manifest.sealed) {
+      const segEvents = await readSegmentEvents(segment);
+      // eslint-disable-next-line functional/no-loop-statements
+      for (const e of segEvents) {
+        knownEventIds.add(e.eventId);
+      }
+    }
+
+    if (activeSegment !== null) {
+      const activeList = await readSegmentEvents(activeSegment);
+      // eslint-disable-next-line functional/no-loop-statements
+      for (const e of activeList) {
+        knownEventIds.add(e.eventId);
+      }
+    }
+
+    cacheLoaded = true;
+  };
+
   return {
     init: async (): Promise<Result<void, Error>> => {
       if (isInitialized) return ok(undefined);
@@ -404,15 +340,8 @@ export const createFileEventLog = (config: FileEventLogConfig): FileEventLog => 
       }
 
       return fromAsyncThrowable(async () => {
-        const manifest = await loadManifest();
-        const activeSegmentTemp = await getActiveSegmentBasename(manifest);
-
-        const uniqueIncomingEvents = await filterUniqueEvents(
-          events,
-          manifest,
-          activeSegmentTemp,
-          readSegmentEvents,
-        );
+        await ensureCacheLoaded();
+        const uniqueIncomingEvents = events.filter((e) => !knownEventIds.has(e.eventId));
         if (uniqueIncomingEvents.length === 0) {
           return;
         }
@@ -423,19 +352,31 @@ export const createFileEventLog = (config: FileEventLogConfig): FileEventLog => 
           initializedGraphId = graphId;
         }
 
-        const groups = groupEventsByBatch(uniqueIncomingEvents);
-        const activeEventsLoaded =
-          activeSegmentTemp === null ? [] : await readSegmentEvents(activeSegmentTemp);
+        const manifest = await loadManifest();
+        const activeSegment = await getActiveSegmentBasename(manifest);
+        const activeEvents = activeSegment === null ? [] : await readSegmentEvents(activeSegment);
 
-        const finalManifest = await processEventGroups(
+        const groups = groupEventsByBatch(uniqueIncomingEvents);
+        const { manifest: updatedManifest, filesToWrite } = buildAppendWrites(
           groups,
           manifest,
-          activeSegmentTemp,
-          activeEventsLoaded,
+          activeSegment,
+          activeEvents,
           { maxEventsPerSegment, maxBytesPerSegment, deviceDir },
         );
 
-        await writeAtomically(manifestPath, JSON.stringify(finalManifest, null, 2));
+        const allFilesToWrite = new Map(filesToWrite);
+        allFilesToWrite.set(manifestPath, JSON.stringify(updatedManifest, null, 2));
+
+        // eslint-disable-next-line functional/no-loop-statements
+        for (const [filePath, content] of allFilesToWrite) {
+          await writeAtomically(filePath, content);
+        }
+
+        // eslint-disable-next-line functional/no-loop-statements
+        for (const e of uniqueIncomingEvents) {
+          knownEventIds.add(e.eventId);
+        }
       });
     },
 
@@ -463,6 +404,12 @@ export const createFileEventLog = (config: FileEventLogConfig): FileEventLog => 
         const uniqueEvents = sortedEvents.filter(
           (event, index, self) => index === 0 || event.eventId !== self[index - 1]?.eventId,
         );
+
+        // eslint-disable-next-line functional/no-loop-statements
+        for (const e of uniqueEvents) {
+          knownEventIds.add(e.eventId);
+        }
+        cacheLoaded = true;
 
         return applyQueryOptions(uniqueEvents, options);
       });
