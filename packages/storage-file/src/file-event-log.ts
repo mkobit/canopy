@@ -138,6 +138,113 @@ const writeAtomically = async (filePath: string, content: string): Promise<void>
   await fs.rename(tmpPath, filePath);
 };
 
+const filterUniqueEvents = async (
+  events: readonly GraphEvent[],
+  manifest: FileStoreManifest,
+  activeSegmentTemp: string | null,
+  readSegmentEvents: (filename: string) => Promise<readonly GraphEvent[]>,
+): Promise<readonly GraphEvent[]> => {
+  const sealedSegmentsEventsPromises = manifest.sealed.map(readSegmentEvents);
+  const sealedEventsLists = await Promise.all(sealedSegmentsEventsPromises);
+  const sealedEvents = sealedEventsLists.flat();
+  const activeEventsLoaded =
+    activeSegmentTemp === null ? [] : await readSegmentEvents(activeSegmentTemp);
+
+  const existingEventIds = new Set([
+    ...sealedEvents.map((e) => e.eventId),
+    ...activeEventsLoaded.map((e) => e.eventId),
+  ]);
+
+  return events.filter((e) => !existingEventIds.has(e.eventId));
+};
+
+interface ProcessConfig {
+  readonly maxEventsPerSegment: number;
+  readonly maxBytesPerSegment: number;
+  readonly deviceDir: string;
+}
+
+const processEventGroups = async (
+  groups: readonly EventGroup[],
+  manifest: FileStoreManifest,
+  activeSegment: string | null,
+  activeEvents: readonly GraphEvent[],
+  config: ProcessConfig,
+): Promise<FileStoreManifest> => {
+  const { maxEventsPerSegment, maxBytesPerSegment, deviceDir } = config;
+  let currentManifest = manifest;
+  let currentActiveSegment = activeSegment;
+  let currentActiveEvents = activeEvents;
+
+  let nActive = currentActiveEvents.length;
+  let sActive =
+    currentActiveEvents.map((e) => JSON.stringify(serializeEvent(e))).join('\n').length +
+    (nActive > 0 ? 1 : 0);
+
+  // eslint-disable-next-line functional/no-loop-statements
+  for (const group of groups) {
+    const groupJsonl = group.events.map((e) => JSON.stringify(serializeEvent(e))).join('\n') + '\n';
+    const nGroup = group.events.length;
+    const sGroup = groupJsonl.length;
+
+    if (
+      nActive > 0 &&
+      (nActive + nGroup > maxEventsPerSegment || sActive + sGroup > maxBytesPerSegment)
+    ) {
+      currentManifest =
+        currentActiveSegment === null
+          ? currentManifest
+          : {
+              ...currentManifest,
+              sealed: [...currentManifest.sealed, currentActiveSegment],
+            };
+      currentActiveSegment = null;
+      currentActiveEvents = [];
+    }
+
+    if (currentActiveSegment === null) {
+      const firstEvent = group.events[0];
+      if (!firstEvent) {
+        throw new Error('Group events list is empty');
+      }
+      currentActiveSegment = `${firstEvent.eventId}.jsonl`;
+      currentActiveEvents = [...group.events];
+    } else {
+      currentActiveEvents = [...currentActiveEvents, ...group.events];
+    }
+
+    const segmentPath = path.join(deviceDir, currentActiveSegment);
+    const fullJsonl =
+      currentActiveEvents.map((e) => JSON.stringify(serializeEvent(e))).join('\n') + '\n';
+    await writeAtomically(segmentPath, fullJsonl);
+
+    nActive = currentActiveEvents.length;
+    sActive = fullJsonl.length;
+
+    const lastEvent = group.events.at(-1);
+    if (!lastEvent) {
+      throw new Error('Group events list is empty');
+    }
+    currentManifest = {
+      ...currentManifest,
+      lastEventId: lastEvent.eventId,
+    };
+
+    if (nActive >= maxEventsPerSegment || sActive >= maxBytesPerSegment) {
+      currentManifest = {
+        ...currentManifest,
+        sealed: [...currentManifest.sealed, currentActiveSegment],
+      };
+      currentActiveSegment = null;
+      currentActiveEvents = [];
+      nActive = 0;
+      sActive = 0;
+    }
+  }
+
+  return currentManifest;
+};
+
 // eslint-disable-next-line max-lines-per-function
 export const createFileEventLog = (config: FileEventLogConfig): FileEventLog => {
   const {
@@ -233,107 +340,38 @@ export const createFileEventLog = (config: FileEventLogConfig): FileEventLog => 
       }
 
       return fromAsyncThrowable(async () => {
-        let manifest = await loadManifest();
+        const manifest = await loadManifest();
         const activeSegmentTemp = await getActiveSegmentBasename(manifest);
 
-        const sealedSegmentsEventsPromises = manifest.sealed.map(readSegmentEvents);
-        const sealedEventsLists = await Promise.all(sealedSegmentsEventsPromises);
-        const sealedEvents = sealedEventsLists.flat();
-        const activeEventsLoaded =
-          activeSegmentTemp === null ? [] : await readSegmentEvents(activeSegmentTemp);
-
-        const existingEventIds = new Set([
-          ...sealedEvents.map((e) => e.eventId),
-          ...activeEventsLoaded.map((e) => e.eventId),
-        ]);
-
-        const uniqueIncomingEvents = events.filter((e) => !existingEventIds.has(e.eventId));
+        const uniqueIncomingEvents = await filterUniqueEvents(
+          events,
+          manifest,
+          activeSegmentTemp,
+          readSegmentEvents,
+        );
         if (uniqueIncomingEvents.length === 0) {
           return;
         }
 
         if (initializedGraphId === null) {
-          const canopyConfig = {
-            version: 1 as const,
-            graphId,
-            name: graphId,
-          };
+          const canopyConfig = { version: 1 as const, graphId, name: graphId };
           await writeAtomically(canopyJsonPath, JSON.stringify(canopyConfig, null, 2));
           initializedGraphId = graphId;
         }
 
         const groups = groupEventsByBatch(uniqueIncomingEvents);
-        let activeSegment = activeSegmentTemp;
-        let activeEvents: readonly GraphEvent[] = activeEventsLoaded;
+        const activeEventsLoaded =
+          activeSegmentTemp === null ? [] : await readSegmentEvents(activeSegmentTemp);
 
-        let nActive = activeEvents.length;
-        let sActive =
-          activeEvents.map((e) => JSON.stringify(serializeEvent(e))).join('\n').length +
-          (activeEvents.length > 0 ? 1 : 0);
+        const finalManifest = await processEventGroups(
+          groups,
+          manifest,
+          activeSegmentTemp,
+          activeEventsLoaded,
+          { maxEventsPerSegment, maxBytesPerSegment, deviceDir },
+        );
 
-        // eslint-disable-next-line functional/no-loop-statements
-        for (const group of groups) {
-          const groupJsonl =
-            group.events.map((e) => JSON.stringify(serializeEvent(e))).join('\n') + '\n';
-          const nGroup = group.events.length;
-          const sGroup = groupJsonl.length;
-
-          if (
-            nActive > 0 &&
-            (nActive + nGroup > maxEventsPerSegment || sActive + sGroup > maxBytesPerSegment)
-          ) {
-            manifest =
-              activeSegment === null
-                ? manifest
-                : {
-                    ...manifest,
-                    sealed: [...manifest.sealed, activeSegment],
-                  };
-            activeSegment = null;
-            activeEvents = [];
-          }
-
-          if (activeSegment === null) {
-            const firstEvent = group.events[0];
-            if (!firstEvent) {
-              throw new Error('Group events list is empty');
-            }
-            activeSegment = `${firstEvent.eventId}.jsonl`;
-            activeEvents = [...group.events];
-          } else {
-            activeEvents = [...activeEvents, ...group.events];
-          }
-
-          const segmentPath = path.join(deviceDir, activeSegment);
-          const fullJsonl =
-            activeEvents.map((e) => JSON.stringify(serializeEvent(e))).join('\n') + '\n';
-          await writeAtomically(segmentPath, fullJsonl);
-
-          nActive = activeEvents.length;
-          sActive = fullJsonl.length;
-
-          const lastEvent = group.events.at(-1);
-          if (!lastEvent) {
-            throw new Error('Group events list is empty');
-          }
-          manifest = {
-            ...manifest,
-            lastEventId: lastEvent.eventId,
-          };
-
-          if (nActive >= maxEventsPerSegment || sActive >= maxBytesPerSegment) {
-            manifest = {
-              ...manifest,
-              sealed: [...manifest.sealed, activeSegment],
-            };
-            activeSegment = null;
-            activeEvents = [];
-            nActive = 0;
-            sActive = 0;
-          }
-        }
-
-        await writeAtomically(manifestPath, JSON.stringify(manifest, null, 2));
+        await writeAtomically(manifestPath, JSON.stringify(finalManifest, null, 2));
       });
     },
 

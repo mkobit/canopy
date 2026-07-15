@@ -56,7 +56,9 @@ describe('FileEventLog', () => {
     await store.appendEvents('graph1', [event3]);
 
     const result = unwrap(await store.getEvents('graph1'));
-    const expected = [event1, event2, event3].sort((a, b) => a.eventId.localeCompare(b.eventId));
+    const expected = [event1, event2, event3].toSorted((a, b) =>
+      a.eventId.localeCompare(b.eventId),
+    );
     expect(result).toEqual(expected);
   });
 
@@ -69,13 +71,13 @@ describe('FileEventLog', () => {
 
     const result = unwrap(await store.getEvents('graph1'));
     expect(result).toHaveLength(2);
-    const expected = [event1, event2].sort((a, b) => a.eventId.localeCompare(b.eventId));
+    const expected = [event1, event2].toSorted((a, b) => a.eventId.localeCompare(b.eventId));
     expect(result).toEqual(expected);
   });
 
   it('filters events using the "after" option', async () => {
-    const sortedEvents = [createTestEvent(), createTestEvent(), createTestEvent()].sort((a, b) =>
-      a.eventId.localeCompare(b.eventId),
+    const sortedEvents = [createTestEvent(), createTestEvent(), createTestEvent()].toSorted(
+      (a, b) => a.eventId.localeCompare(b.eventId),
     );
     const [event1, event2, event3] = sortedEvents;
 
@@ -86,8 +88,8 @@ describe('FileEventLog', () => {
   });
 
   it('filters events using the "before" option', async () => {
-    const sortedEvents = [createTestEvent(), createTestEvent(), createTestEvent()].sort((a, b) =>
-      a.eventId.localeCompare(b.eventId),
+    const sortedEvents = [createTestEvent(), createTestEvent(), createTestEvent()].toSorted(
+      (a, b) => a.eventId.localeCompare(b.eventId),
     );
     const [event1, event2, event3] = sortedEvents;
 
@@ -98,10 +100,10 @@ describe('FileEventLog', () => {
   });
 
   it('limits the number of returned events using the "limit" option', async () => {
-    const sortedEvents = [createTestEvent(), createTestEvent(), createTestEvent()].sort((a, b) =>
-      a.eventId.localeCompare(b.eventId),
+    const sortedEvents = [createTestEvent(), createTestEvent(), createTestEvent()].toSorted(
+      (a, b) => a.eventId.localeCompare(b.eventId),
     );
-    const [event1, event2, _event3] = sortedEvents;
+    const [event1, event2] = sortedEvents;
 
     await store.appendEvents('graph1', sortedEvents);
 
@@ -110,8 +112,8 @@ describe('FileEventLog', () => {
   });
 
   it('reverses the returned events using the "reverse" option', async () => {
-    const sortedEvents = [createTestEvent(), createTestEvent(), createTestEvent()].sort((a, b) =>
-      a.eventId.localeCompare(b.eventId),
+    const sortedEvents = [createTestEvent(), createTestEvent(), createTestEvent()].toSorted(
+      (a, b) => a.eventId.localeCompare(b.eventId),
     );
     const [event1, event2, event3] = sortedEvents;
 
@@ -130,14 +132,19 @@ describe('FileEventLog', () => {
     await store.appendEvents('graph1', [event1, event2, event3]);
     await store.appendEvents('graph1', [event4]);
 
-    const manifestContent = await fs.readFile(path.join(tempDir, 'events/device-1/manifest.json'), 'utf8');
+    const manifestContent = await fs.readFile(
+      path.join(tempDir, 'events/device-1/manifest.json'),
+      'utf8',
+    );
     const manifest = JSON.parse(manifestContent);
 
     expect(manifest.sealed).toHaveLength(1);
     expect(manifest.lastEventId).toBe(event4.eventId);
 
     const result = unwrap(await store.getEvents('graph1'));
-    const expected = [event1, event2, event3, event4].sort((a, b) => a.eventId.localeCompare(b.eventId));
+    const expected = [event1, event2, event3, event4].toSorted((a, b) =>
+      a.eventId.localeCompare(b.eventId),
+    );
     expect(result).toEqual(expected);
   });
 });
