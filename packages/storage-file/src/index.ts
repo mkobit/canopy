@@ -1,2 +1,2 @@
-// Scaffolding for @canopy/storage-file
-export const version = '0.0.0';
+export { createFileEventLog } from './file-event-log';
+export type { FileEventLog, FileEventLogConfig } from './file-event-log';
