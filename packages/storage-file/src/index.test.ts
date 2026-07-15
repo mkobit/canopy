@@ -147,4 +147,96 @@ describe('FileEventLog', () => {
     );
     expect(result).toEqual(expected);
   });
+
+  it('reconstructs events after reload', async () => {
+    const event1 = createTestEvent();
+    const event2 = createTestEvent();
+
+    await store.appendEvents('graph1', [event1, event2]);
+
+    await unwrap(await store.close());
+
+    const newStore = createFileEventLog({
+      rootDir: tempDir,
+      deviceId: 'device-1',
+      maxEventsPerSegment: 3,
+      maxBytesPerSegment: 1024,
+    });
+    await unwrap(await newStore.init());
+
+    const result = unwrap(await newStore.getEvents('graph1'));
+    const expected = [event1, event2].toSorted((a, b) => a.eventId.localeCompare(b.eventId));
+    expect(result).toEqual(expected);
+
+    await unwrap(await newStore.close());
+  });
+
+  it('maintains batch integrity when batch size exceeds maxEventsPerSegment', async () => {
+    const batchStore = createFileEventLog({
+      rootDir: tempDir,
+      deviceId: 'device-1',
+      maxEventsPerSegment: 2,
+      maxBytesPerSegment: 1024,
+    });
+    await unwrap(await batchStore.init());
+
+    const batchId = 'batch-1';
+    const event1 = { ...createTestEvent(), batchId };
+    const event2 = { ...createTestEvent(), batchId };
+    const event3 = { ...createTestEvent(), batchId };
+
+    await batchStore.appendEvents('graph1', [event1, event2, event3]);
+
+    const manifestContent = await fs.readFile(
+      path.join(tempDir, 'events/device-1/manifest.json'),
+      'utf8',
+    );
+    const manifest = JSON.parse(manifestContent);
+
+    expect(manifest.sealed).toHaveLength(1);
+    expect(manifest.lastEventId).toBe(event3.eventId);
+
+    const segmentFile = manifest.sealed[0];
+    const segmentContent = await fs.readFile(
+      path.join(tempDir, 'events/device-1', segmentFile),
+      'utf8',
+    );
+    const lines = segmentContent.split('\n').filter((l) => l.trim() !== '');
+    expect(lines).toHaveLength(3);
+
+    await unwrap(await batchStore.close());
+  });
+
+  it('seals segments correctly based on maxBytesPerSegment', async () => {
+    const byteStore = createFileEventLog({
+      rootDir: tempDir,
+      deviceId: 'device-1',
+      maxEventsPerSegment: 1000,
+      maxBytesPerSegment: 300,
+    });
+    await unwrap(await byteStore.init());
+
+    const event1 = createTestEvent();
+    const event2 = createTestEvent();
+    const event3 = createTestEvent();
+
+    await byteStore.appendEvents('graph1', [event1, event2, event3]);
+
+    const manifestContent = await fs.readFile(
+      path.join(tempDir, 'events/device-1/manifest.json'),
+      'utf8',
+    );
+    const manifest = JSON.parse(manifestContent);
+
+    expect(manifest.sealed).toHaveLength(2);
+    expect(manifest.lastEventId).toBe(event3.eventId);
+
+    const result = unwrap(await byteStore.getEvents('graph1'));
+    const expected = [event1, event2, event3].toSorted((a, b) =>
+      a.eventId.localeCompare(b.eventId),
+    );
+    expect(result).toEqual(expected);
+
+    await unwrap(await byteStore.close());
+  });
 });

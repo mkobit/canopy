@@ -2,7 +2,18 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { z } from 'zod';
 import type { Result, GraphEvent, EventLogStore, EventLogQueryOptions } from '@canopy/graph';
-import { ok, err, fromAsyncThrowable } from '@canopy/graph';
+import {
+  ok,
+  err,
+  fromAsyncThrowable,
+  NodeIdSchema,
+  EdgeIdSchema,
+  TypeIdSchema,
+  DeviceIdSchema,
+  InstantSchema,
+  PropertyMapSchema,
+  asEventId,
+} from '@canopy/graph';
 
 export interface FileEventLogConfig {
   readonly rootDir: string;
@@ -38,6 +49,90 @@ export interface FileStoreManifest {
   readonly lastEventId: string | null;
 }
 
+const EventIdSchema = z.string().uuid().transform(asEventId);
+
+export const GraphEventSchema: z.ZodType<GraphEvent, unknown> = z.discriminatedUnion('type', [
+  z.object({
+    type: z.literal('NodeCreated'),
+    eventId: EventIdSchema,
+    id: NodeIdSchema,
+    nodeType: TypeIdSchema,
+    properties: PropertyMapSchema,
+    timestamp: InstantSchema,
+    deviceId: DeviceIdSchema,
+    batchId: z.string().optional(),
+    migrationId: z.string().optional(),
+  }),
+  z.object({
+    type: z.literal('NodePropertiesUpdated'),
+    eventId: EventIdSchema,
+    id: NodeIdSchema,
+    changes: PropertyMapSchema,
+    timestamp: InstantSchema,
+    deviceId: DeviceIdSchema,
+    batchId: z.string().optional(),
+    migrationId: z.string().optional(),
+  }),
+  z.object({
+    type: z.literal('NodeDeleted'),
+    eventId: EventIdSchema,
+    id: NodeIdSchema,
+    timestamp: InstantSchema,
+    deviceId: DeviceIdSchema,
+    batchId: z.string().optional(),
+    migrationId: z.string().optional(),
+  }),
+  z.object({
+    type: z.literal('EdgeCreated'),
+    eventId: EventIdSchema,
+    id: EdgeIdSchema,
+    edgeType: TypeIdSchema,
+    source: NodeIdSchema,
+    target: NodeIdSchema,
+    properties: PropertyMapSchema,
+    timestamp: InstantSchema,
+    deviceId: DeviceIdSchema,
+    batchId: z.string().optional(),
+    migrationId: z.string().optional(),
+  }),
+  z.object({
+    type: z.literal('EdgePropertiesUpdated'),
+    eventId: EventIdSchema,
+    id: EdgeIdSchema,
+    changes: PropertyMapSchema,
+    timestamp: InstantSchema,
+    deviceId: DeviceIdSchema,
+    batchId: z.string().optional(),
+    migrationId: z.string().optional(),
+  }),
+  z.object({
+    type: z.literal('EdgeDeleted'),
+    eventId: EventIdSchema,
+    id: EdgeIdSchema,
+    timestamp: InstantSchema,
+    deviceId: DeviceIdSchema,
+    batchId: z.string().optional(),
+    migrationId: z.string().optional(),
+  }),
+  z.object({
+    type: z.literal('WorkflowStarted'),
+    eventId: EventIdSchema,
+    workflowId: NodeIdSchema,
+    triggerId: NodeIdSchema,
+    timestamp: InstantSchema,
+    deviceId: DeviceIdSchema,
+    batchId: z.string().optional(),
+  }),
+  z.object({
+    type: z.literal('WorkflowCompleted'),
+    eventId: EventIdSchema,
+    executionId: EventIdSchema,
+    timestamp: InstantSchema,
+    deviceId: DeviceIdSchema,
+    batchId: z.string().optional(),
+  }),
+]);
+
 const serializeEvent = (event: GraphEvent): unknown => {
   switch (event.type) {
     case 'NodeCreated':
@@ -64,36 +159,7 @@ const serializeEvent = (event: GraphEvent): unknown => {
 };
 
 const deserializeEvent = (storable: unknown): GraphEvent => {
-  const s = storable as Record<string, unknown>;
-  const type = s.type;
-  switch (type) {
-    case 'NodeCreated':
-    case 'EdgeCreated': {
-      const props = s.properties as Record<string, unknown>;
-      return {
-        ...s,
-        properties: new Map(Object.entries(props)),
-      } as unknown as GraphEvent;
-    }
-    case 'NodePropertiesUpdated':
-    case 'EdgePropertiesUpdated': {
-      const changes = s.changes as Record<string, unknown>;
-      return {
-        ...s,
-        changes: new Map(Object.entries(changes)),
-      } as unknown as GraphEvent;
-    }
-    case 'NodeDeleted':
-    case 'EdgeDeleted':
-    case 'WorkflowStarted':
-    case 'WorkflowCompleted': {
-      return s as unknown as GraphEvent;
-    }
-    default: {
-      // eslint-disable-next-line functional/no-throw-statements -- unknown type is exceptional
-      throw new Error(`Unknown event type: ${String(type)}`);
-    }
-  }
+  return GraphEventSchema.parse(storable);
 };
 
 interface EventGroup {
@@ -270,11 +336,14 @@ export const createFileEventLog = (config: FileEventLogConfig): FileEventLog => 
         sealed: parsed.sealed,
         lastEventId: parsed.lastEventId,
       };
-    } catch {
-      return {
-        sealed: [],
-        lastEventId: null,
-      };
+    } catch (error) {
+      if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+        return {
+          sealed: [],
+          lastEventId: null,
+        };
+      }
+      throw error;
     }
   };
 
@@ -295,15 +364,10 @@ export const createFileEventLog = (config: FileEventLogConfig): FileEventLog => 
   };
 
   const readSegmentEvents = async (segmentFilename: string): Promise<readonly GraphEvent[]> => {
-    // eslint-disable-next-line functional/no-try-statements
-    try {
-      const filePath = path.join(deviceDir, segmentFilename);
-      const content = await fs.readFile(filePath, 'utf8');
-      const lines = content.split('\n').filter((line) => line.trim() !== '');
-      return lines.map((line) => deserializeEvent(JSON.parse(line)));
-    } catch {
-      return [];
-    }
+    const filePath = path.join(deviceDir, segmentFilename);
+    const content = await fs.readFile(filePath, 'utf8');
+    const lines = content.split('\n').filter((line) => line.trim() !== '');
+    return lines.map((line) => deserializeEvent(JSON.parse(line)));
   };
 
   return {
