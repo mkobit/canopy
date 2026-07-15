@@ -18,6 +18,13 @@ import {
 } from './file-event-log';
 import type { FileEventLog } from './file-event-log';
 
+const serializeEventForTest = (event: GraphEvent): string => {
+  return JSON.stringify({
+    ...event,
+    properties: Object.fromEntries(event.properties),
+  });
+};
+
 describe('FileEventLog', () => {
   const deviceId = asDeviceId('00000000-0000-0000-0000-000000000000');
   const timestamp = createInstant();
@@ -351,12 +358,6 @@ describe('FileEventLog', () => {
 
       const event1 = createTestEvent();
       const event2 = createTestEvent();
-      const serializeEventForTest = (event: GraphEvent) => {
-        return JSON.stringify({
-          ...event,
-          properties: Object.fromEntries(event.properties),
-        });
-      };
 
       const content = `${serializeEventForTest(event1)}\n${serializeEventForTest(event2)}\n`;
       await fs.writeFile(path.join(remoteDeviceDir, 'a.jsonl'), content, 'utf8');
@@ -367,5 +368,114 @@ describe('FileEventLog', () => {
       expect(result[1]?.eventId).toBe(event2.eventId);
     });
   });
-});
 
+  describe('reconcile', () => {
+    it('does nothing when no remote devices exist', async () => {
+      unwrap(await store.reconcile('graph1'));
+
+      const events = unwrap(await store.getEvents('graph1'));
+      expect(events).toHaveLength(0);
+    });
+
+    it('ingests remote events and updates local manifest watermarks', async () => {
+      const remoteDeviceId = asDeviceId('00000000-0000-4000-8000-000000000002');
+      const remoteDeviceDir = path.join(tempDir, 'events', remoteDeviceId);
+      await fs.mkdir(remoteDeviceDir, { recursive: true });
+
+      const event1 = { ...createTestEvent(), deviceId: remoteDeviceId };
+      const event2 = { ...createTestEvent(), deviceId: remoteDeviceId };
+
+      const content = `${serializeEventForTest(event1)}\n${serializeEventForTest(event2)}\n`;
+      await fs.writeFile(path.join(remoteDeviceDir, '1.jsonl'), content, 'utf8');
+
+      const remoteManifest = {
+        sealed: ['1.jsonl'],
+        lastEventId: event2.eventId,
+        watermarks: {},
+      };
+      await fs.writeFile(
+        path.join(remoteDeviceDir, 'manifest.json'),
+        JSON.stringify(remoteManifest),
+        'utf8',
+      );
+
+      unwrap(await store.reconcile('graph1'));
+
+      const localEvents = unwrap(await store.getEvents('graph1'));
+      expect(localEvents).toHaveLength(2);
+      expect(localEvents.map((e) => e.eventId)).toContain(event1.eventId);
+      expect(localEvents.map((e) => e.eventId)).toContain(event2.eventId);
+
+      const manifestContent = await fs.readFile(
+        path.join(tempDir, 'events/device-1/manifest.json'),
+        'utf8',
+      );
+      const localManifest = JSON.parse(manifestContent);
+      expect(localManifest.watermarks[remoteDeviceId]).toBe(event2.eventId);
+    });
+
+    it('only ingests new remote events beyond the watermark', async () => {
+      const remoteDeviceId = asDeviceId('00000000-0000-4000-8000-000000000002');
+      const remoteDeviceDir = path.join(tempDir, 'events', remoteDeviceId);
+      await fs.mkdir(remoteDeviceDir, { recursive: true });
+
+      const sortedEvents = [
+        { ...createTestEvent(), deviceId: remoteDeviceId },
+        { ...createTestEvent(), deviceId: remoteDeviceId },
+        { ...createTestEvent(), deviceId: remoteDeviceId },
+      ].toSorted((a, b) => a.eventId.localeCompare(b.eventId));
+
+      const [event1, event2, event3] = sortedEvents;
+
+      const initialLocalManifest = {
+        sealed: [],
+        lastEventId: null,
+        watermarks: {
+          [remoteDeviceId as string]: event1.eventId,
+        },
+      };
+      await fs.writeFile(
+        path.join(tempDir, 'events/device-1/manifest.json'),
+        JSON.stringify(initialLocalManifest),
+        'utf8',
+      );
+
+      await fs.writeFile(
+        path.join(remoteDeviceDir, '1.jsonl'),
+        serializeEventForTest(event1) + '\n',
+        'utf8',
+      );
+      await fs.writeFile(
+        path.join(remoteDeviceDir, '2.jsonl'),
+        `${serializeEventForTest(event2)}\n${serializeEventForTest(event3)}\n`,
+        'utf8',
+      );
+
+      const remoteManifest = {
+        sealed: ['1.jsonl', '2.jsonl'],
+        lastEventId: event3.eventId,
+        watermarks: {},
+      };
+      await fs.writeFile(
+        path.join(remoteDeviceDir, 'manifest.json'),
+        JSON.stringify(remoteManifest),
+        'utf8',
+      );
+
+      unwrap(await store.reconcile('graph1'));
+
+      const localEvents = unwrap(await store.getEvents('graph1'));
+      expect(localEvents).toHaveLength(2);
+      expect(localEvents.map((e) => e.eventId)).not.toContain(event1.eventId);
+      expect(localEvents.map((e) => e.eventId)).toContain(event2.eventId);
+      expect(localEvents.map((e) => e.eventId)).toContain(event3.eventId);
+
+      const manifestContent = await fs.readFile(
+        path.join(tempDir, 'events/device-1/manifest.json'),
+        'utf8',
+      );
+      const localManifest = JSON.parse(manifestContent);
+      expect(localManifest.watermarks[remoteDeviceId]).toBe(event3.eventId);
+    });
+  });
+});
