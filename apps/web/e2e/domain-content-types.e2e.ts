@@ -17,27 +17,35 @@ async function createAndOpenGraph(page: Page): Promise<void> {
   await expect(page).toHaveURL(/\/graph\/[a-f0-9-]+/);
 }
 
-async function createNamespaceAndStatusPropertyType(page: Page): Promise<void> {
-  // 2. Navigate to the Schema section and create the `content` namespace.
+async function createNamespacesAndStatusPropertyType(page: Page): Promise<void> {
+  // 2. Navigate to the Schema section and create the `tasks` and `contacts` namespaces.
   await page.getByRole('link', { name: 'Schema' }).click();
   await expect(page).toHaveURL(/\/graph\/[a-f0-9-]+\/schema$/);
-  await page.getByLabel('Name').fill('content');
+
+  // Create the tasks namespace
+  await page.getByLabel('Name').fill('tasks');
   await page.getByLabel('Kind').selectOption('user');
   await page.getByRole('button', { name: 'Create namespace' }).click();
-  // Scoped to the exact "content" heading rather than a substring match on the
-  // whole card: bootstrap's default `user` ("Default namespace for
-  // user-created content.") and `imported` ("Namespace for content imported
-  // from external sources.") namespace descriptions both also contain the
-  // substring "content", which made `hasText: 'content'` ambiguous (3 matches).
-  const namespaceLink = page
-    .locator('a')
-    .filter({ has: page.getByRole('heading', { name: 'content', exact: true }) });
-  await expect(namespaceLink).toBeVisible();
 
-  // 3. Open the `content` namespace.
-  await namespaceLink.click();
-  await expect(page).toHaveURL(/\/graph\/[a-f0-9-]+\/schema\/content$/);
-  await expect(page.getByRole('heading', { name: 'content' })).toBeVisible();
+  const tasksLink = page
+    .locator('a')
+    .filter({ has: page.getByRole('heading', { name: 'tasks', exact: true }) });
+  await expect(tasksLink).toBeVisible();
+
+  // Create the contacts namespace
+  await page.getByLabel('Name').fill('contacts');
+  await page.getByLabel('Kind').selectOption('user');
+  await page.getByRole('button', { name: 'Create namespace' }).click();
+
+  const contactsLink = page
+    .locator('a')
+    .filter({ has: page.getByRole('heading', { name: 'contacts', exact: true }) });
+  await expect(contactsLink).toBeVisible();
+
+  // 3. Open the `tasks` namespace.
+  await tasksLink.click();
+  await expect(page).toHaveURL(/\/graph\/[a-f0-9-]+\/schema\/tasks$/);
+  await expect(page.getByRole('heading', { name: 'tasks' })).toBeVisible();
 
   // 4. Create the shared `status` PropertyType.
   const propertyTypeForm = page.locator('form', {
@@ -54,8 +62,6 @@ interface InlinePropertyOptions {
   readonly valueKind?: string;
 }
 
-// Shared by createNodeTypes below: each NodeType form submission adds one or more
-// inline property rows, each requiring the same click-then-fill sequence.
 async function addInlineProperty(
   form: Locator,
   name: string,
@@ -73,33 +79,21 @@ async function addInlineProperty(
 }
 
 async function createNodeTypes(page: Page): Promise<void> {
+  // 5. Create the Project and Task NodeTypes inside the tasks namespace.
   const nodeTypeForm = page.locator('form', {
     has: page.getByRole('heading', { name: 'New NodeType' }),
   });
 
-  // 5. Create the Person NodeType: name (required), email (optional).
-  await nodeTypeForm.getByLabel('Name').fill('Person');
-  await addInlineProperty(nodeTypeForm, 'name', { required: true });
-  await addInlineProperty(nodeTypeForm, 'email');
-  await nodeTypeForm.getByRole('button', { name: 'Create NodeType' }).click();
-  const personItem = page.locator('li', { hasText: 'Person' });
-  await expect(personItem).toBeVisible();
-  await expect(personItem).toContainText('2 properties');
-
-  // 6. Create the Project NodeType: name (required), description (optional),
-  //    status (reference to the shared PropertyType).
   await nodeTypeForm.getByLabel('Name').fill('Project');
   await addInlineProperty(nodeTypeForm, 'name', { required: true });
   await addInlineProperty(nodeTypeForm, 'description');
   await nodeTypeForm.getByRole('button', { name: 'Reference PropertyType' }).click();
-  await expect(nodeTypeForm.locator('option', { hasText: 'content/status (text)' })).toBeAttached();
+  await expect(nodeTypeForm.locator('option', { hasText: 'tasks/status (text)' })).toBeAttached();
   await nodeTypeForm.getByRole('button', { name: 'Create NodeType' }).click();
   const projectItem = page.locator('li', { hasText: 'Project' });
   await expect(projectItem).toBeVisible();
   await expect(projectItem).toContainText('3 properties');
 
-  // 7. Create the Task NodeType: title (required), priority (number),
-  //    dueDate (plain-date), description (optional), status (reference).
   await nodeTypeForm.getByLabel('Name').fill('Task');
   await addInlineProperty(nodeTypeForm, 'title', { required: true });
   await addInlineProperty(nodeTypeForm, 'priority', { valueKind: 'number' });
@@ -110,47 +104,61 @@ async function createNodeTypes(page: Page): Promise<void> {
   const taskItem = page.locator('li', { hasText: 'Task' });
   await expect(taskItem).toBeVisible();
   await expect(taskItem).toContainText('5 properties');
+
+  // 6. Navigate to contacts namespace and create Person NodeType.
+  await page.getByRole('link', { name: 'Schema' }).click();
+  await expect(page).toHaveURL(/\/graph\/[a-f0-9-]+\/schema$/);
+  await page
+    .locator('a')
+    .filter({ has: page.getByRole('heading', { name: 'contacts', exact: true }) })
+    .click();
+  await expect(page).toHaveURL(/\/graph\/[a-f0-9-]+\/schema\/contacts$/);
+
+  await nodeTypeForm.getByLabel('Name').fill('Person');
+  await addInlineProperty(nodeTypeForm, 'name', { required: true });
+  await addInlineProperty(nodeTypeForm, 'email');
+  await nodeTypeForm.getByRole('button', { name: 'Create NodeType' }).click();
+  const personItem = page.locator('li', { hasText: 'Person' });
+  await expect(personItem).toBeVisible();
+  await expect(personItem).toContainText('2 properties');
 }
 
 async function createEdgeTypes(page: Page): Promise<void> {
+  // 7. Navigate back to tasks namespace to create EdgeTypes.
+  await page.getByRole('link', { name: 'Schema' }).click();
+  await expect(page).toHaveURL(/\/graph\/[a-f0-9-]+\/schema$/);
+  await page
+    .locator('a')
+    .filter({ has: page.getByRole('heading', { name: 'tasks', exact: true }) })
+    .click();
+  await expect(page).toHaveURL(/\/graph\/[a-f0-9-]+\/schema\/tasks$/);
+
   const edgeTypeForm = page.locator('form', {
     has: page.getByRole('heading', { name: 'New EdgeType' }),
   });
   const sourceTypesBox = edgeTypeForm.locator('div.max-h-32').first();
   const targetTypesBox = edgeTypeForm.locator('div.max-h-32').nth(1);
 
-  // 8. Create the belongs_to EdgeType: Task -> Project.
+  // 8. Create the belongs_to EdgeType: tasks/Task -> tasks/Project.
   await edgeTypeForm.getByLabel('Name', { exact: true }).fill('belongs_to');
-  await sourceTypesBox.getByLabel('content/Task').check();
-  await targetTypesBox.getByLabel('content/Project').check();
+  await sourceTypesBox.getByLabel('tasks/Task').check();
+  await targetTypesBox.getByLabel('tasks/Project').check();
   await edgeTypeForm.getByRole('button', { name: 'Create EdgeType' }).click();
   const belongsToItem = page.locator('li', { hasText: 'belongs_to' });
   await expect(belongsToItem).toBeVisible();
-  // sourceTypes/targetTypes render as raw NodeIds (see EdgeTypeList in
-  // schema-namespace-page.tsx), not "namespace/Name" strings, and those IDs are
-  // freshly generated so can't be predicted here -- just confirm the
-  // source/target line isn't the unrestricted "any -> any" default.
   await expect(belongsToItem.locator('p.font-mono')).not.toContainText('any -> any');
 
-  // 9. Create the assigned_to EdgeType: Task -> Person.
+  // 9. Create the assigned_to EdgeType: tasks/Task -> any (loose coupling).
+  // Leave target types unchecked to maintain domain boundary independence.
   await edgeTypeForm.getByLabel('Name', { exact: true }).fill('assigned_to');
-  await sourceTypesBox.getByLabel('content/Task').check();
-  await targetTypesBox.getByLabel('content/Person').check();
+  await sourceTypesBox.getByLabel('tasks/Task').check();
   await edgeTypeForm.getByRole('button', { name: 'Create EdgeType' }).click();
   const assignedToItem = page.locator('li', { hasText: 'assigned_to' });
   await expect(assignedToItem).toBeVisible();
-  await expect(assignedToItem.locator('p.font-mono')).not.toContainText('any -> any');
 }
 
 async function instantiateTaskNode(page: Page): Promise<void> {
-  // 10. Instantiate a real Task node via the New Node dialog -- proves the
-  //     type is usable, not just definable (also exercises the Task 1 fix).
-  // Scoped to the <dialog> element itself: the underlying `<label><span>Type</span>
-  // <select>...` markup makes the select's computed accessible name include every
-  // option's text ("TypeTextBlockCodeBlockMarkdownNodePersonProjectTask"), and an
-  // unscoped `getByLabel('Type')` substring-matches the still-mounted EdgeType
-  // form's "system/Node Type" etc. checkboxes behind the dialog -- 7-way strict
-  // mode violation without this scope.
+  // 10. Instantiate a real Task node via the New Node dialog.
   await page.getByRole('button', { name: 'New Node' }).click();
   const newNodeDialog = page.getByRole('dialog');
   await newNodeDialog.locator('select').selectOption({ label: 'Task' });
@@ -178,7 +186,7 @@ test.describe('domain content types (canopy-goi)', () => {
     page,
   }) => {
     await createAndOpenGraph(page);
-    await createNamespaceAndStatusPropertyType(page);
+    await createNamespacesAndStatusPropertyType(page);
     await createNodeTypes(page);
     await createEdgeTypes(page);
     await instantiateTaskNode(page);
