@@ -239,4 +239,40 @@ describe('FileEventLog', () => {
 
     await unwrap(await byteStore.close());
   });
+
+  it('preserves remote watermarks in the manifest across reads/writes', async () => {
+    const deviceDir = path.join(tempDir, 'events/device-1');
+    await fs.mkdir(deviceDir, { recursive: true });
+    const initialManifest = {
+      sealed: [],
+      lastEventId: null,
+      watermarks: {
+        'remote-device-1': 'event-123',
+      },
+    };
+    await fs.writeFile(
+      path.join(deviceDir, 'manifest.json'),
+      JSON.stringify(initialManifest, null, 2),
+      'utf8',
+    );
+
+    const watermarkStore = createFileEventLog({
+      rootDir: tempDir,
+      deviceId: 'device-1',
+      maxEventsPerSegment: 10,
+      maxBytesPerSegment: 1024,
+    });
+    await unwrap(await watermarkStore.init());
+
+    const event = createTestEvent();
+    await watermarkStore.appendEvents('graph1', [event]);
+
+    const manifestContent = await fs.readFile(path.join(deviceDir, 'manifest.json'), 'utf8');
+    const manifest = JSON.parse(manifestContent);
+    expect(manifest.watermarks).toEqual({
+      'remote-device-1': 'event-123',
+    });
+
+    await unwrap(await watermarkStore.close());
+  });
 });

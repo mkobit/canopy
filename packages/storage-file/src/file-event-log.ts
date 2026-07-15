@@ -27,11 +27,13 @@ export type CanopyConfig = z.infer<typeof CanopyConfigSchema>;
 export const FileStoreManifestSchema = z.object({
   sealed: z.array(z.string()),
   lastEventId: z.string().nullable(),
+  watermarks: z.record(z.string(), z.string()).default({}),
 });
 
 export interface FileStoreManifest {
   readonly sealed: readonly string[];
   readonly lastEventId: string | null;
+  readonly watermarks: Readonly<Record<string, string>>;
 }
 
 const serializeEvent = (event: GraphEvent): unknown => {
@@ -244,12 +246,14 @@ export const createFileEventLog = (config: FileEventLogConfig): FileEventLog => 
       return {
         sealed: parsed.sealed,
         lastEventId: parsed.lastEventId,
+        watermarks: parsed.watermarks,
       };
     } catch (error) {
       if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
         return {
           sealed: [],
           lastEventId: null,
+          watermarks: {},
         };
       }
       throw error;
