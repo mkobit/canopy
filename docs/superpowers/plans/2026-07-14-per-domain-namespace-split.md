@@ -14,11 +14,13 @@
 ### Task 1: Refactor the E2E test to use split domain namespaces
 
 **Files:**
+
 - Modify: `apps/web/e2e/domain-content-types.e2e.ts`
 
 - [ ] **Step 1: Write the updated test code**
 
   Replace the entire content of `apps/web/e2e/domain-content-types.e2e.ts` with the following implementation.
+
   ```typescript
   import { test, expect, type Locator, type Page } from '@playwright/test';
 
@@ -48,7 +50,7 @@
     await page.getByLabel('Name').fill('tasks');
     await page.getByLabel('Kind').selectOption('user');
     await page.getByRole('button', { name: 'Create namespace' }).click();
-    
+
     const tasksLink = page
       .locator('a')
       .filter({ has: page.getByRole('heading', { name: 'tasks', exact: true }) });

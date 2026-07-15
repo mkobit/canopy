@@ -56,6 +56,7 @@ This stateless execution pattern ensures that plugins can be loaded and unloaded
 
 All APIs between the host and the plugins are defined using WebAssembly Interface Types (WIT).
 The host imports standard interfaces that extensions can consume:
+
 - `canopy:graph/read`: Lookup nodes and query edge relationships in the graph.
 - `canopy:graph/write`: Append new events to the event log.
 - `canopy:system/events`: Subscribe and publish to transient in-memory events.

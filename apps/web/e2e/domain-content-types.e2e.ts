@@ -26,7 +26,7 @@ async function createNamespacesAndStatusPropertyType(page: Page): Promise<void> 
   await page.getByLabel('Name').fill('tasks');
   await page.getByLabel('Kind').selectOption('user');
   await page.getByRole('button', { name: 'Create namespace' }).click();
-  
+
   const tasksLink = page
     .locator('a')
     .filter({ has: page.getByRole('heading', { name: 'tasks', exact: true }) });
