@@ -14,6 +14,7 @@ export interface FileEventLogConfig {
 export interface FileEventLog extends EventLogStore {
   readonly init: () => Promise<Result<void, Error>>;
   readonly close: () => Promise<Result<void, Error>>;
+  readonly reconcile: (graphId: string) => Promise<Result<void, Error>>;
 }
 
 export const CanopyConfigSchema = z.object({
@@ -27,11 +28,13 @@ export type CanopyConfig = z.infer<typeof CanopyConfigSchema>;
 export const FileStoreManifestSchema = z.object({
   sealed: z.array(z.string()),
   lastEventId: z.string().nullable(),
+  watermarks: z.record(z.string(), z.string()).default({}),
 });
 
 export interface FileStoreManifest {
   readonly sealed: readonly string[];
   readonly lastEventId: string | null;
+  readonly watermarks: Readonly<Record<string, string>>;
 }
 
 const serializeEvent = (event: GraphEvent): unknown => {
@@ -244,12 +247,14 @@ export const createFileEventLog = (config: FileEventLogConfig): FileEventLog => 
       return {
         sealed: parsed.sealed,
         lastEventId: parsed.lastEventId,
+        watermarks: parsed.watermarks,
       };
     } catch (error) {
       if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
         return {
           sealed: [],
           lastEventId: null,
+          watermarks: {},
         };
       }
       throw error;
@@ -306,7 +311,7 @@ export const createFileEventLog = (config: FileEventLogConfig): FileEventLog => 
     cacheLoaded = true;
   };
 
-  return {
+  const store: FileEventLog = {
     init: async (): Promise<Result<void, Error>> => {
       if (isInitialized) return ok(undefined);
       return fromAsyncThrowable(async () => {
@@ -414,5 +419,161 @@ export const createFileEventLog = (config: FileEventLogConfig): FileEventLog => 
         return applyQueryOptions(uniqueEvents, options);
       });
     },
+
+    reconcile: async (graphId: string): Promise<Result<void, Error>> => {
+      if (!isInitialized) return err(new Error('Store not initialized'));
+
+      if (initializedGraphId !== null && graphId !== initializedGraphId) {
+        return err(new Error(`Graph ID mismatch: expected ${initializedGraphId}, got ${graphId}`));
+      }
+
+      return fromAsyncThrowable(async () => {
+        await ensureCacheLoaded();
+        const localManifest = await loadManifest();
+        const remoteManifestsResult = await scanRemoteManifests(rootDir, deviceId);
+        if (!remoteManifestsResult.ok) {
+          throw remoteManifestsResult.error;
+        }
+        const remoteManifests = remoteManifestsResult.value;
+
+        let manifestChanged = false;
+        let updatedWatermarks = { ...localManifest.watermarks };
+
+        // eslint-disable-next-line functional/no-loop-statements
+        for (const [remoteDeviceId, remoteManifest] of remoteManifests) {
+          const watermark = localManifest.watermarks[remoteDeviceId] ?? null;
+          if (remoteManifest.lastEventId === watermark) {
+            continue;
+          }
+
+          const remoteDeviceDir = path.join(rootDir, 'events', remoteDeviceId);
+          const segmentsResult = await getRemoteSegmentsInOrder(remoteDeviceDir);
+          if (!segmentsResult.ok) {
+            throw segmentsResult.error;
+          }
+          const segments = segmentsResult.value;
+
+          let remoteEvents: readonly GraphEvent[] = [];
+          // eslint-disable-next-line functional/no-loop-statements
+          for (const segment of segments) {
+            const eventsResult = await readRemoteSegmentEvents(remoteDeviceDir, segment);
+            if (!eventsResult.ok) {
+              throw eventsResult.error;
+            }
+            const events = eventsResult.value;
+            // eslint-disable-next-line functional/no-loop-statements
+            for (const event of events) {
+              const validated = GraphEventSchema.parse(event);
+              if (watermark === null || validated.eventId > watermark) {
+                remoteEvents = [...remoteEvents, validated];
+              }
+            }
+          }
+
+          if (remoteEvents.length > 0) {
+            const sortedRemoteEvents = remoteEvents.toSorted((a, b) =>
+              a.eventId.localeCompare(b.eventId),
+            );
+            const appendResult = await store.appendEvents(graphId, sortedRemoteEvents);
+            if (!appendResult.ok) {
+              throw appendResult.error;
+            }
+          }
+
+          if (remoteManifest.lastEventId !== null) {
+            updatedWatermarks = {
+              ...updatedWatermarks,
+              [remoteDeviceId]: remoteManifest.lastEventId,
+            };
+            manifestChanged = true;
+          }
+        }
+
+        if (manifestChanged) {
+          const currentManifest = await loadManifest();
+          const finalManifest = {
+            ...currentManifest,
+            watermarks: updatedWatermarks,
+          };
+          await writeAtomically(manifestPath, JSON.stringify(finalManifest, null, 2));
+        }
+      });
+    },
   };
+
+  return store;
+};
+
+export const scanRemoteManifests = async (
+  rootDir: string,
+  localDeviceId: string,
+): Promise<Result<ReadonlyMap<string, FileStoreManifest>, Error>> => {
+  const eventsDir = path.join(rootDir, 'events');
+  return fromAsyncThrowable(async () => {
+    // eslint-disable-next-line functional/no-try-statements
+    try {
+      const entries = await fs.readdir(eventsDir, { withFileTypes: true });
+      const dirNames = entries
+        .filter((entry) => entry.isDirectory() && entry.name !== localDeviceId)
+        .map((entry) => entry.name);
+
+      const manifestPromises = dirNames.map(async (remoteDeviceId) => {
+        const remoteManifestPath = path.join(eventsDir, remoteDeviceId, 'manifest.json');
+        // eslint-disable-next-line functional/no-try-statements
+        try {
+          const content = await fs.readFile(remoteManifestPath, 'utf8');
+          const parsed = FileStoreManifestSchema.parse(JSON.parse(content));
+          const manifest: FileStoreManifest = {
+            sealed: parsed.sealed,
+            lastEventId: parsed.lastEventId,
+            watermarks: parsed.watermarks,
+          };
+          return [remoteDeviceId, manifest] as const;
+        } catch {
+          return null;
+        }
+      });
+
+      const manifestResults = await Promise.all(manifestPromises);
+      const validResults = manifestResults.filter(
+        (r): r is readonly [string, FileStoreManifest] => r !== null,
+      );
+      return new Map(validResults);
+    } catch (error) {
+      if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+        return new Map<string, FileStoreManifest>();
+      }
+      throw error;
+    }
+  });
+};
+
+export const getRemoteSegmentsInOrder = async (
+  remoteDeviceDir: string,
+): Promise<Result<readonly string[], Error>> => {
+  return fromAsyncThrowable(async () => {
+    // eslint-disable-next-line functional/no-try-statements
+    try {
+      const files = await fs.readdir(remoteDeviceDir);
+      const jsonlFiles = files.filter((f) => f.endsWith('.jsonl'));
+      return jsonlFiles.toSorted((a, b) => a.localeCompare(b));
+    } catch (error) {
+      if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+        return [];
+      }
+      throw error;
+    }
+  });
+};
+
+export const readRemoteSegmentEvents = async (
+  remoteDeviceDir: string,
+  segmentFilename: string,
+): Promise<Result<readonly GraphEvent[], Error>> => {
+  return fromAsyncThrowable(async () => {
+    const filePath = path.join(remoteDeviceDir, segmentFilename);
+    const content = await fs.readFile(filePath, 'utf8');
+    const lines = content.split('\n').filter((line) => line.trim() !== '');
+    return lines.map((line) => deserializeEvent(JSON.parse(line)));
+  });
 };
