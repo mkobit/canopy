@@ -123,6 +123,153 @@ function extractNodeTypeDefinition(graph: Graph, node: Node): NodeTypeDefinition
   };
 }
 
+function validateRegex(
+  val: PropertyValue,
+  name: string,
+  rxStr: string,
+): readonly ValidationError[] {
+  const rxResult = fromThrowable(() => new RegExp(rxStr));
+  if (!rxResult.ok) {
+    return [
+      {
+        path: [name] as readonly string[],
+        message: `Property '${name}' has an invalid regular expression constraint`,
+        expected: 'valid regex',
+        actual: rxStr,
+      },
+    ];
+  }
+
+  const rx = rxResult.value;
+  if (typeof val === 'string' && !rx.test(val)) {
+    return [
+      {
+        path: [name] as readonly string[],
+        message: `Property '${name}' does not match the required pattern`,
+        expected: rxStr,
+        actual: val,
+      },
+    ];
+  }
+  if (Array.isArray(val)) {
+    return val
+      .map((item, index): ValidationError | null => {
+        if (typeof item !== 'string' || !rx.test(item)) {
+          return {
+            path: [name, String(index)] as readonly string[],
+            message: `Property '${name}' element at index ${index} does not match the required pattern`,
+            expected: rxStr,
+            actual: typeof item === 'string' ? item : String(item),
+          };
+        }
+        return null;
+      })
+      .filter((err): err is ValidationError => err !== null);
+  }
+  return [];
+}
+
+function validateChoices(
+  val: PropertyValue,
+  name: string,
+  choices: readonly string[],
+): readonly ValidationError[] {
+  if (typeof val === 'string' && !choices.includes(val)) {
+    return [
+      {
+        path: [name] as readonly string[],
+        message: `Property '${name}' must be one of the allowed choices`,
+        expected: choices.join(', '),
+        actual: val,
+      },
+    ];
+  }
+  if (Array.isArray(val)) {
+    return val
+      .map((item, index): ValidationError | null => {
+        if (typeof item !== 'string' || !choices.includes(item)) {
+          return {
+            path: [name, String(index)] as readonly string[],
+            message: `Property '${name}' element at index ${index} must be one of the allowed choices`,
+            expected: choices.join(', '),
+            actual: typeof item === 'string' ? item : String(item),
+          };
+        }
+        return null;
+      })
+      .filter((err): err is ValidationError => err !== null);
+  }
+  return [];
+}
+
+function validateMin(val: PropertyValue, name: string, limit: number): readonly ValidationError[] {
+  if (typeof val === 'number' && val < limit) {
+    return [
+      {
+        path: [name] as readonly string[],
+        message: `Property '${name}' must be at least ${limit}`,
+        expected: `>= ${limit}`,
+        actual: String(val),
+      },
+    ];
+  }
+  if (typeof val === 'string' && val.length < limit) {
+    return [
+      {
+        path: [name] as readonly string[],
+        message: `Property '${name}' must be at least ${limit} characters long`,
+        expected: `>= ${limit}`,
+        actual: String(val.length),
+      },
+    ];
+  }
+  if (Array.isArray(val) && val.length < limit) {
+    return [
+      {
+        path: [name] as readonly string[],
+        message: `Property '${name}' must contain at least ${limit} items`,
+        expected: `>= ${limit}`,
+        actual: String(val.length),
+      },
+    ];
+  }
+  return [];
+}
+
+function validateMax(val: PropertyValue, name: string, limit: number): readonly ValidationError[] {
+  if (typeof val === 'number' && val > limit) {
+    return [
+      {
+        path: [name] as readonly string[],
+        message: `Property '${name}' must be at most ${limit}`,
+        expected: `<= ${limit}`,
+        actual: String(val),
+      },
+    ];
+  }
+  if (typeof val === 'string' && val.length > limit) {
+    return [
+      {
+        path: [name] as readonly string[],
+        message: `Property '${name}' must be at most ${limit} characters long`,
+        expected: `<= ${limit}`,
+        actual: String(val.length),
+      },
+    ];
+  }
+  if (Array.isArray(val) && val.length > limit) {
+    return [
+      {
+        path: [name] as readonly string[],
+        message: `Property '${name}' must contain at most ${limit} items`,
+        expected: `<= ${limit}`,
+        actual: String(val.length),
+      },
+    ];
+  }
+  return [];
+}
+
 function validateValue(val: PropertyValue, def: PropertyDefinition): readonly ValidationError[] {
   const isValid = (): boolean => {
     if (def.valueKind === 'list') {
@@ -166,7 +313,13 @@ function validateValue(val: PropertyValue, def: PropertyDefinition): readonly Va
     ];
   }
 
-  return [];
+  const regexErrors = def.regex === undefined ? [] : validateRegex(val, def.name, def.regex);
+  const choicesErrors =
+    def.choices === undefined ? [] : validateChoices(val, def.name, def.choices);
+  const minErrors = def.min === undefined ? [] : validateMin(val, def.name, def.min);
+  const maxErrors = def.max === undefined ? [] : validateMax(val, def.name, def.max);
+
+  return [...regexErrors, ...choicesErrors, ...minErrors, ...maxErrors];
 }
 
 function validateProperties(

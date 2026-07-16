@@ -14,6 +14,10 @@ export interface PropertyDefinition {
   readonly valueKind: PropertyValueKind;
   readonly required: boolean;
   readonly description: string | undefined;
+  readonly regex?: string | undefined;
+  readonly min?: number | undefined;
+  readonly max?: number | undefined;
+  readonly choices?: readonly string[] | undefined;
 }
 
 /**
