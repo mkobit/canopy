@@ -411,7 +411,7 @@ describe('FileEventLog', () => {
         'utf8',
       );
       const localManifest = JSON.parse(manifestContent);
-      expect(localManifest.watermarks[remoteDeviceId]).toBe(event2.eventId);
+      expect(localManifest.watermarks[remoteDeviceId as string]).toBe(event2.eventId);
     });
 
     it('only ingests new remote events beyond the watermark', async () => {
@@ -475,7 +475,7 @@ describe('FileEventLog', () => {
         'utf8',
       );
       const localManifest = JSON.parse(manifestContent);
-      expect(localManifest.watermarks[remoteDeviceId]).toBe(event3.eventId);
+      expect(localManifest.watermarks[remoteDeviceId as string]).toBe(event3.eventId);
     });
   });
 });
