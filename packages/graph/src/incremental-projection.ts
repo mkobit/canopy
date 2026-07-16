@@ -5,7 +5,10 @@ import type { Edge } from './edge';
 import type { NodeId, EdgeId, EventId } from './identifiers';
 import type { Instant } from './temporal';
 import { Temporal } from 'temporal-polyfill';
-import { lwwWins } from './projection';
+import { lwwWins, projectGraph } from './projection';
+import type { Result } from './result';
+import { ok, err } from './result';
+import { validateNode, validateEdge } from './validation';
 
 /**
  * Per-entity merge bookkeeping: which event last wrote each property
@@ -713,4 +716,80 @@ export function mergeEvents(
   }
 
   return { state: workingState, graph: workingGraph, applied, stale };
+}
+
+function validateDraftEvents(graph: Graph, events: readonly GraphEvent[]): Result<void, Error> {
+  const dryRun = projectGraph(events, graph);
+  if (!dryRun.ok) return dryRun;
+  const dryRunGraph = dryRun.value;
+
+  const touchedNodeIds = new Set<NodeId>();
+  const touchedEdgeIds = new Set<EdgeId>();
+
+  // eslint-disable-next-line functional/no-loop-statements
+  for (const event of events) {
+    if (event.type === 'NodeCreated' || event.type === 'NodePropertiesUpdated') {
+      // eslint-disable-next-line functional/immutable-data
+      touchedNodeIds.add(event.id);
+    } else if (event.type === 'EdgeCreated' || event.type === 'EdgePropertiesUpdated') {
+      // eslint-disable-next-line functional/immutable-data
+      touchedEdgeIds.add(event.id);
+    }
+  }
+
+  // eslint-disable-next-line functional/no-loop-statements
+  for (const id of touchedNodeIds) {
+    const node = dryRunGraph.nodes.get(id);
+    if (!node) continue;
+    const result = validateNode(dryRunGraph, node);
+    if (!result.valid) {
+      const detail = result.errors.map((e) => e.message).join(', ');
+      return err(new Error(`Node ${id} failed validation: ${detail}`));
+    }
+  }
+
+  // eslint-disable-next-line functional/no-loop-statements
+  for (const id of touchedEdgeIds) {
+    const edge = dryRunGraph.edges.get(id);
+    if (!edge) continue;
+    const result = validateEdge(dryRunGraph, edge);
+    if (!result.valid) {
+      const detail = result.errors.map((e) => e.message).join(', ');
+      return err(new Error(`Edge ${id} failed validation: ${detail}`));
+    }
+  }
+
+  return ok(undefined);
+}
+
+/**
+ * Projects a combined graph overlaying staged draft events on top of a parent graph.
+ */
+export function projectDraftOverlay(
+  parentGraph: Graph,
+  draftEvents: readonly GraphEvent[],
+): Result<Graph, Error> {
+  return projectGraph(draftEvents, parentGraph);
+}
+
+/**
+ * Stages a batch of events onto the draft graph projection.
+ * Returns the updated list of draft events if validation passes.
+ */
+export function applyDraftEvents(
+  parentGraph: Graph,
+  currentDraftEvents: readonly GraphEvent[],
+  newEvents: readonly GraphEvent[],
+): Result<readonly GraphEvent[], Error> {
+  const currentProjectionResult = projectDraftOverlay(parentGraph, currentDraftEvents);
+  if (!currentProjectionResult.ok) {
+    return currentProjectionResult;
+  }
+
+  const validation = validateDraftEvents(currentProjectionResult.value, newEvents);
+  if (!validation.ok) {
+    return validation;
+  }
+
+  return ok([...currentDraftEvents, ...newEvents]);
 }
