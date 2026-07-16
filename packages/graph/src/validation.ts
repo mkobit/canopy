@@ -297,6 +297,10 @@ function validateMax(val: PropertyValue, name: string, limit: number): readonly 
 }
 
 function validateValue(val: PropertyValue, def: PropertyDefinition): readonly ValidationError[] {
+  if (val === null && def.nullable === true) {
+    return [];
+  }
+
   const isValid = (): boolean => {
     if (def.valueKind === 'list') {
       return Array.isArray(val);

@@ -18,6 +18,7 @@ export interface PropertyDefinition {
   readonly min?: number | undefined;
   readonly max?: number | undefined;
   readonly choices?: readonly string[] | undefined;
+  readonly nullable?: boolean | undefined;
 }
 
 /**

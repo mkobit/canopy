@@ -475,4 +475,58 @@ describe('validation constraints', () => {
       expect(result.success).toBe(false);
     });
   });
+
+  describe('nullable constraint', () => {
+    it('allows null value when nullable is true', () => {
+      const g = createGraphWithCustomType({
+        name: 'code',
+        valueKind: 'text',
+        required: false,
+        description: undefined,
+        nullable: true,
+      });
+      const node = createNode({
+        type: asTypeId('type-test'),
+        properties: { code: null },
+      });
+      const result = validateNode(g, node);
+      expect(result.valid).toBe(true);
+    });
+
+    it('rejects null value when nullable is false', () => {
+      const g = createGraphWithCustomType({
+        name: 'code',
+        valueKind: 'text',
+        required: false,
+        description: undefined,
+        nullable: false,
+      });
+      const node = createNode({
+        type: asTypeId('type-test'),
+        properties: { code: null },
+      });
+      const result = validateNode(g, node);
+      expect(result.valid).toBe(false);
+      expect(result.errors).toHaveLength(1);
+      expect(result.errors[0].message).toContain("expected type 'text' but got incompatible value");
+    });
+
+    it('rejects null value when nullable is undefined', () => {
+      const g = createGraphWithCustomType({
+        name: 'code',
+        valueKind: 'text',
+        required: false,
+        description: undefined,
+        nullable: undefined,
+      });
+      const node = createNode({
+        type: asTypeId('type-test'),
+        properties: { code: null },
+      });
+      const result = validateNode(g, node);
+      expect(result.valid).toBe(false);
+      expect(result.errors).toHaveLength(1);
+      expect(result.errors[0].message).toContain("expected type 'text' but got incompatible value");
+    });
+  });
 });
