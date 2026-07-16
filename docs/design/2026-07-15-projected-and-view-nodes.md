@@ -3,7 +3,7 @@
 ## Context
 
 Bead `canopy-4mo`.
-This document outlines the research and design for projected and view nodes representing ephemeral or regenerated content.
+This document outlines the final technical design for projected and view nodes representing ephemeral or regenerated content.
 It focuses on supporting "Routines" or entry wizards contributed by sandboxed WASM plugins.
 These routines allow users to build draft nodes through a sequence of steps before committing them to the persistent event log.
 
@@ -11,8 +11,9 @@ These routines allow users to build draft nodes through a sequence of steps befo
 
 - Design a transaction-like boundary for staging uncommitted events.
 - Allow standard view renderers and queries to run transparently on draft graph states.
-- Establish a WebAssembly Interface Types (WIT) compatible handle-based API.
+- Establish a WebAssembly Interface Types (WIT) compatible resource-based API.
 - Support plugin-contributed UI elements, command palette items, and multi-step entry forms.
+- Protect the host application from security exploits, performance lag, and memory leaks.
 
 ## Alternatives Considered
 
@@ -30,26 +31,58 @@ It also violates the "everything is a node" architectural invariant.
 
 We choose to implement an overlay graph projection managed via draft sessions.
 A draft session stages uncommitted events on top of a parent graph session, producing a combined projection.
-To ensure compatibility with future sandboxed WASM extensions, all APIs are designed to be handle-based and stateless.
+To ensure compatibility with future sandboxed WASM extensions, all APIs are designed using WebAssembly Component Model resources and explicit error types.
 
 ## Detailed Design
 
 ### 1. Draft Session Interface (WIT)
 
 ```wit
-interface draft-session {
-    type draft-session-id = string
-    type graph-id = string
+interface draft-session-types {
+    type revision = string
 
-    create-draft: func(parent: graph-id) -> result<draft-session-id, error>
+    enum draft-error {
+        parent-not-found,
+        unauthorized,
+        invalid-event-format,
+        validation-failure(string),
+        concurrent-modification,
+        storage-error(string)
+    }
 
-    get-graph: func(draft: draft-session-id) -> result<graph, error>
+    enum query-error {
+        invalid-query,
+        node-not-found,
+        access-denied
+    }
+}
 
-    apply-events: func(draft: draft-session-id, events: list<graph-event>) -> result<_, error>
+interface draft-session-manager {
+    use draft-session-types.{revision, draft-error, query-error}
 
-    commit: func(draft: draft-session-id) -> result<_, error>
+    /// Resource representing an active draft overlay session.
+    resource draft-session {
+        /// Creates a new draft session overlaying a parent graph.
+        static create: func(parent: graph-id) -> result<draft-session, draft-error>
 
-    discard: func(draft: draft-session-id) -> result<_, error>
+        /// Stages a batch of events onto the draft graph projection.
+        apply-events: func(events: list<graph-event>) -> result<_, draft-error>
+
+        /// Commits staged events if the parent revision matches.
+        commit: func(expected-parent-revision: revision) -> result<_, draft-error>
+
+        /// Discards the draft session.
+        discard: func() -> result<_, draft-error>
+
+        /// Gets the current revision of the parent graph.
+        get-parent-revision: func() -> result<revision, draft-error>
+
+        /// Fetches a single node from the combined projection.
+        get-node: func(id: node-id) -> result<node, query-error>
+
+        /// Executes a search on the combined projection.
+        query-nodes: func(query-string: string) -> result<list<node>, query-error>
+    }
 }
 ```
 
@@ -81,33 +114,69 @@ interface plugin-lifecycle {
 
 ```wit
 interface wizard-execution {
-    render-step: func(
+    use draft-session-manager.{draft-session}
+
+    record form-field {
+        name: string,
+        label: string,
+        field-type: string, // e.g. "text", "number", "reference", "date"
+        default-value: option<string>,
+        required: bool,
+    }
+
+    record form-schema {
+        title: string,
+        description: option<string>,
+        fields: list<form-field>,
+    }
+
+    /// Returns the schema defining the UI fields for the current step.
+    /// Uses a borrowed draft session handle to access staged data.
+    render-step-schema: func(
         step-id: string, 
-        draft: draft-session-id
-    ) -> result<string, error>
+        draft: borrow<draft-session>
+    ) -> result<form-schema, wizard-error>
 
-    handle-input: func(
+    /// Processes form input submitted by the user.
+    /// Receives all field inputs as a key-value list to avoid keystroke lag.
+    handle-step-submission: func(
         step-id: string,
-        input-name: string,
-        input-value: string
-    ) -> result<list<graph-event>, error>
+        inputs: list<tuple<string, string>>,
+        draft: borrow<draft-session>
+    ) -> result<list<graph-event>, wizard-error>
 
+    /// Determines the next step ID, or returns none if this is the final step.
     get-next-step: func(
         step-id: string, 
-        draft: draft-session-id
-    ) -> result<option<string>, error>
+        draft: borrow<draft-session>
+    ) -> result<option<string>, wizard-error>
 }
 ```
 
 ## Wizard Execution Flow
 
 1. The user triggers a plugin action via a menu or command palette shortcut.
-2. The host application starts a new `DraftSession` based on the active graph.
-3. The host requests the first step rendering from the plugin using the draft session handle.
-4. When the user interacts with the form fields, the host captures input event payloads.
-5. The host passes input events to the plugin, receives generated graph events, and stages them in the draft session.
-6. The host re-renders the current step using the updated draft session projection.
-7. Upon successful final submission, the host commits the staged events from the draft session into the primary event log.
+2. The host application starts a new `draft-session` resource based on the active graph.
+3. The host requests the form schema for the first step from the plugin using the draft session handle.
+4. The host renders the step's fields natively using safe, built-in input controls.
+5. When the user completes the step and clicks "Next", the host sends all form inputs to the plugin via `handle-step-submission`.
+6. The plugin returns the resulting graph events, which the host applies to the draft session.
+7. The host requests the next step ID from the plugin.
+8. Upon completing the final step, the host verifies that the parent graph revision has not changed.
+9. If no concurrency conflict exists, the host commits the staged events from the draft session to the persistent event log.
+
+## Risks / Trade-offs
+
+- **[Risk]** The Stale-State Commit Race (Split-Brain).
+  - *Mitigation*: The host tracks the parent graph revision token and rejects the commit if the parent graph changed concurrently.
+- **[Risk]** Memory leaks from dangling draft sessions.
+  - *Mitigation*: Leverage WebAssembly Component Model resources to tie the session lifecycle to the guest lifecycle, auto-cleaning on drop.
+- **[Risk]** Security sandbox escape via raw HTML rendering (XSS).
+  - *Mitigation*: The plugin returns a declarative form schema, and the host renders the fields natively.
+- **[Risk]** Performance lag from synchronous WASM roundtrips on every keystroke.
+  - *Mitigation*: The host buffers keystrokes locally and sends inputs in a single batch on step submission.
+- **[Risk]** High serialization overhead from transferring the entire graph.
+  - *Mitigation*: The plugin queries individual nodes or runs queries on the host side using resource handles.
 
 ## Verification Plan
 
@@ -115,7 +184,7 @@ interface wizard-execution {
 - Test creating a draft session from a populated base graph.
 - Test applying multiple sequential events to the draft session and asserting they are visible in the draft projection.
 - Test that the parent graph remains unchanged until a commit is triggered.
-- Test that committing a draft session successfully updates the parent session and persists the events.
+- Test that committing a draft session succeeds when the parent revision matches, and fails when it does not.
 - Test discarding a draft session.
 
 ### Integration Tests

@@ -7,16 +7,16 @@ The system SHALL scan and load plugin manifests to register menu items and comma
 - **WHEN** the host application loads a plugin node containing a manifest
 - **THEN** the host SHALL add the registered menu items to the application menu
 
-### Requirement: Step rendering
-The system SHALL delegate rendering of wizard steps to the active plugin by calling `render-step` with a draft session handle.
+### Requirement: Declarative step rendering
+The system SHALL delegate rendering of wizard steps to the active plugin by calling `render-step-schema` to get a declarative UI form schema.
 
-#### Scenario: Displaying step form HTML
+#### Scenario: Displaying step form fields natively
 - **WHEN** the host displays a wizard step
-- **THEN** the host SHALL call `render-step` and display the returned HTML form
+- **THEN** the host SHALL call `render-step-schema` and natively render the returned form fields
 
-### Requirement: Form input processing
-The system SHALL pass form input events to the active plugin and apply the resulting graph events to the draft session.
+### Requirement: Form step batch input submission
+The system SHALL buffer form field input locally on the host and submit them as a single batch to the active plugin upon step submission.
 
-#### Scenario: Submitting field value
-- **WHEN** the user edits a form field
-- **THEN** the host SHALL invoke `handle-input` on the plugin and stage the returned events in the draft session
+#### Scenario: Submitting batched step fields
+- **WHEN** the user completes a form step and clicks next
+- **THEN** the host SHALL invoke `handle-step-submission` on the plugin and stage the returned events in the draft session
