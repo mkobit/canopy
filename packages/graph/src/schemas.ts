@@ -84,10 +84,20 @@ export const PropertyDefinitionSchema: z.ZodType<PropertyDefinition, unknown> = 
     valueKind: PropertyValueKindSchema,
     required: z.boolean(),
     description: z.string().optional(),
+    regex: z.string().optional(),
+    min: z.number().optional(),
+    max: z.number().optional(),
+    choices: z.array(z.string()).optional(),
+    nullable: z.boolean().nullish(),
   })
   .transform((val) => ({
     ...val,
     description: val.description ?? undefined,
+    regex: val.regex ?? undefined,
+    min: val.min ?? undefined,
+    max: val.max ?? undefined,
+    choices: val.choices ?? undefined,
+    nullable: val.nullable ?? undefined,
   }));
 
 export const TemporalMetadataSchema: z.ZodType<TemporalMetadata, unknown> = z.object({
