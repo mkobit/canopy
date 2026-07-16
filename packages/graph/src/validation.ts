@@ -141,6 +141,16 @@ function validateRegex(
   }
 
   const rx = rxResult.value;
+  if (typeof val === 'string' && val.length > 8192) {
+    return [
+      {
+        path: [name] as readonly string[],
+        message: `Property '${name}' is too long for pattern validation (max 8192 characters)`,
+        expected: `<= 8192 characters`,
+        actual: String(val.length),
+      },
+    ];
+  }
   if (typeof val === 'string' && !rx.test(val)) {
     return [
       {
@@ -154,12 +164,28 @@ function validateRegex(
   if (Array.isArray(val)) {
     return val
       .map((item, index): ValidationError | null => {
-        if (typeof item !== 'string' || !rx.test(item)) {
+        if (typeof item !== 'string') {
           return {
             path: [name, String(index)] as readonly string[],
             message: `Property '${name}' element at index ${index} does not match the required pattern`,
             expected: rxStr,
-            actual: typeof item === 'string' ? item : String(item),
+            actual: String(item),
+          };
+        }
+        if (item.length > 8192) {
+          return {
+            path: [name, String(index)] as readonly string[],
+            message: `Property '${name}' element at index ${index} is too long for pattern validation (max 8192 characters)`,
+            expected: `<= 8192 characters`,
+            actual: String(item.length),
+          };
+        }
+        if (!rx.test(item)) {
+          return {
+            path: [name, String(index)] as readonly string[],
+            message: `Property '${name}' element at index ${index} does not match the required pattern`,
+            expected: rxStr,
+            actual: item,
           };
         }
         return null;

@@ -405,4 +405,96 @@ describe('validation constraints', () => {
       expect(result.errors[0].message).toContain('must contain at most 2 items');
     });
   });
+
+  describe('ReDoS mitigation', () => {
+    it('passes when string length is <= 8192 characters', () => {
+      const g = createGraphWithCustomType({
+        name: 'code',
+        valueKind: 'text',
+        required: true,
+        description: undefined,
+        regex: '^A+$',
+      });
+      const node = createNode({
+        type: asTypeId('type-test'),
+        properties: { code: 'A'.repeat(8192) },
+      });
+      const result = validateNode(g, node);
+      expect(result.valid).toBe(true);
+    });
+
+    it('fails when string length exceeds 8192 characters', () => {
+      const g = createGraphWithCustomType({
+        name: 'code',
+        valueKind: 'text',
+        required: true,
+        description: undefined,
+        regex: '^A+$',
+      });
+      const node = createNode({
+        type: asTypeId('type-test'),
+        properties: { code: 'A'.repeat(8193) },
+      });
+      const result = validateNode(g, node);
+      expect(result.valid).toBe(false);
+      expect(result.errors).toHaveLength(1);
+      expect(result.errors[0].message).toContain('too long for pattern validation');
+      expect(result.errors[0].path).toEqual(['code']);
+    });
+
+    it('fails when list element string exceeds 8192 characters', () => {
+      const g = createGraphWithCustomType({
+        name: 'codes',
+        valueKind: 'list',
+        required: true,
+        description: undefined,
+        regex: '^A+$',
+      });
+      const node = createNode({
+        type: asTypeId('type-test'),
+        properties: { codes: ['A'.repeat(8193)] },
+      });
+      const result = validateNode(g, node);
+      expect(result.valid).toBe(false);
+      expect(result.errors).toHaveLength(1);
+      expect(result.errors[0].message).toContain('too long for pattern validation');
+      expect(result.errors[0].path).toEqual(['codes', '0']);
+    });
+  });
+
+  describe('nullish constraint schemas', () => {
+    it('handles null values gracefully in property definition schemas', () => {
+      let g = unwrap(createGraph(createGraphId(), 'Test Graph'));
+      const typeNode = createNode({
+        id: asNodeId('type-test'),
+        type: SYSTEM_IDS.NODE_TYPE,
+        properties: {
+          name: 'TestType',
+          properties: JSON.stringify([
+            {
+              name: 'code',
+              valueKind: 'text',
+              required: true,
+              description: null,
+              regex: null,
+              min: null,
+              max: null,
+              choices: null,
+            },
+          ]),
+        },
+      });
+
+      g = unwrap(
+        addNode(g, typeNode, { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') }),
+      ).graph;
+
+      const node = createNode({
+        type: asTypeId('type-test'),
+        properties: { code: 'A-123' },
+      });
+      const result = validateNode(g, node);
+      expect(result.valid).toBe(true);
+    });
+  });
 });

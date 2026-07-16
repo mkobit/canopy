@@ -84,10 +84,10 @@ export const PropertyDefinitionSchema: z.ZodType<PropertyDefinition, unknown> = 
     valueKind: PropertyValueKindSchema,
     required: z.boolean(),
     description: z.string().optional(),
-    regex: z.string().optional(),
-    min: z.number().optional(),
-    max: z.number().optional(),
-    choices: z.array(z.string()).optional(),
+    regex: z.string().nullish(),
+    min: z.number().nullish(),
+    max: z.number().nullish(),
+    choices: z.array(z.string()).nullish(),
   })
   .transform((val) => ({
     ...val,
