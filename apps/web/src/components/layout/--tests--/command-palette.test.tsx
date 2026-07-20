@@ -22,7 +22,11 @@ const mockNode1: Node = {
     ['name', 'Project Alpha'],
     ['content', 'Draft content.'],
   ]),
-  metadata: { created: createInstant(), modified: createInstant(), modifiedBy: asDeviceId('dev-1') },
+  metadata: {
+    created: createInstant(),
+    modified: createInstant(),
+    modifiedBy: asDeviceId('dev-1'),
+  },
 };
 
 const mockNode2: Node = {
@@ -32,13 +36,21 @@ const mockNode2: Node = {
     ['name', 'Project Beta'],
     ['content', 'console.log("test");'],
   ]),
-  metadata: { created: createInstant(), modified: createInstant(), modifiedBy: asDeviceId('dev-1') },
+  metadata: {
+    created: createInstant(),
+    modified: createInstant(),
+    modifiedBy: asDeviceId('dev-1'),
+  },
 };
 
 const mockGraph: Graph = {
   id: asGraphId('test-graph-id'),
   name: 'Test Graph',
-  metadata: { created: createInstant(), modified: createInstant(), modifiedBy: asDeviceId('dev-1') },
+  metadata: {
+    created: createInstant(),
+    modified: createInstant(),
+    modifiedBy: asDeviceId('dev-1'),
+  },
   nodes: new Map([
     [mockNode1.id, mockNode1],
     [mockNode2.id, mockNode2],
@@ -111,7 +123,7 @@ describe('CommandPalette', () => {
     expect(screen.queryByPlaceholderText('Search nodes...')).toBeNull();
 
     // Trigger Ctrl+P.
-    fireEvent.keyDown(window, { key: 'p', ctrlKey: true });
+    fireEvent.keyDown(globalThis, { key: 'p', ctrlKey: true });
 
     expect(screen.getByPlaceholderText('Search nodes...')).toBeDefined();
   });
@@ -124,7 +136,7 @@ describe('CommandPalette', () => {
     );
 
     // Trigger Ctrl+Shift+P.
-    fireEvent.keyDown(window, { key: 'P', ctrlKey: true, shiftKey: true });
+    fireEvent.keyDown(globalThis, { key: 'P', ctrlKey: true, shiftKey: true });
 
     const input = screen.getByPlaceholderText('Type a command to run...') as HTMLInputElement;
     expect(input).toBeDefined();
@@ -139,7 +151,7 @@ describe('CommandPalette', () => {
     );
 
     // Open in node search.
-    fireEvent.keyDown(window, { key: 'p', ctrlKey: true });
+    fireEvent.keyDown(globalThis, { key: 'p', ctrlKey: true });
 
     const input = screen.getByPlaceholderText('Search nodes...') as HTMLInputElement;
     expect(input).toBeDefined();
@@ -161,7 +173,7 @@ describe('CommandPalette', () => {
     );
 
     // Open in node search.
-    fireEvent.keyDown(window, { key: 'p', ctrlKey: true });
+    fireEvent.keyDown(globalThis, { key: 'p', ctrlKey: true });
 
     const input = screen.getByPlaceholderText('Search nodes...') as HTMLInputElement;
 
@@ -183,7 +195,7 @@ describe('CommandPalette', () => {
     );
 
     // Open in command mode.
-    fireEvent.keyDown(window, { key: 'P', ctrlKey: true, shiftKey: true });
+    fireEvent.keyDown(globalThis, { key: 'P', ctrlKey: true, shiftKey: true });
 
     const input = screen.getByPlaceholderText('Type a command to run...') as HTMLInputElement;
 
@@ -205,7 +217,7 @@ describe('CommandPalette', () => {
     );
 
     // Open in node search.
-    fireEvent.keyDown(window, { key: 'p', ctrlKey: true });
+    fireEvent.keyDown(globalThis, { key: 'p', ctrlKey: true });
 
     // Select the first node (Project Alpha).
     const itemButton = screen.getByText('Project Alpha');

@@ -37,160 +37,201 @@ To ensure compatibility with future sandboxed WASM extensions, all APIs are desi
 
 ## Detailed Design
 
-### 1. Draft Session Interface (WIT)
+The detailed interface contract is specified in `apps/web/wit/plugin.wit`.
+It comprises the following components:
+
+### 1. Draft Session Interface (`canopy:graph/draft-session`)
+
+The host implements the `draft-session` interface to expose graph query and staging capabilities to the plugin.
+A `draft-session-handle` is passed to the plugin as a borrowed resource during execution.
 
 ```wit
-interface draft-session-types {
-    type revision = string
+interface draft-session {
+  type node-id = string;
+  type event-id = string;
+  type type-id = string;
 
-    enum draft-error {
-        parent-not-found,
-        unauthorized,
-        invalid-event-format,
-        validation-failure(string),
-        concurrent-modification,
-        storage-error(string)
-    }
+  record property-entry {
+    name: string,
+    value: property-value,
+  }
 
-    enum query-error {
-        invalid-query,
-        node-not-found,
-        access-denied
-    }
-}
+  variant property-value {
+    text(string),
+    integer(s64),
+    decimal(f64),
+    boolean(bool),
+    date-time(string),
+    node-id(string),
+    list-of-text(list<string>),
+    none
+  }
 
-interface draft-session-manager {
-    use draft-session-types.{revision, draft-error, query-error}
+  record node-created-event {
+    event-id: event-id,
+    id: node-id,
+    node-type: type-id,
+    properties: list<property-entry>,
+    timestamp: string,
+    device-id: string,
+    batch-id: option<string>,
+  }
 
-    /// Resource representing an active draft overlay session.
-    resource draft-session {
-        /// Creates a new draft session overlaying a parent graph.
-        static create: func(parent: graph-id) -> result<draft-session, draft-error>
+  record node-properties-updated-event {
+    event-id: event-id,
+    id: node-id,
+    changes: list<property-entry>,
+    timestamp: string,
+    device-id: string,
+    batch-id: option<string>,
+  }
 
-        /// Stages a batch of events onto the draft graph projection.
-        apply-events: func(events: list<graph-event>) -> result<_, draft-error>
+  variant draft-event {
+    node-created(node-created-event),
+    node-properties-updated(node-properties-updated-event)
+  }
 
-        /// Commits staged events if the parent revision matches.
-        commit: func(expected-parent-revision: revision) -> result<_, draft-error>
+  record graph-node {
+    id: node-id,
+    node-type: type-id,
+    properties: list<property-entry>,
+  }
 
-        /// Discards the draft session.
-        discard: func() -> result<_, draft-error>
+  enum draft-error {
+    parent-not-found,
+    unauthorized,
+    invalid-event-format,
+    validation-failure,
+    concurrent-modification,
+    storage-error
+  }
 
-        /// Gets the current revision of the parent graph.
-        get-parent-revision: func() -> result<revision, draft-error>
+  enum query-error {
+    invalid-query,
+    node-not-found,
+    access-denied
+  }
 
-        /// Fetches a single node from the combined projection.
-        get-node: func(id: node-id) -> result<node, query-error>
-
-        /// Executes a search on the combined projection.
-        query-nodes: func(query-string: string) -> result<list<node>, query-error>
-    }
+  resource draft-session-handle {
+    apply-events: func(events: list<draft-event>) -> result<_, draft-error>;
+    get-parent-revision: func() -> result<string, draft-error>;
+    get-node: func(id: node-id) -> result<graph-node, query-error>;
+    query-nodes: func(query-string: string) -> result<list<graph-node>, query-error>;
+  }
 }
 ```
 
-### 2. Plugin Registration Interface (WIT)
+### 2. Plugin Registration Interface (`canopy:graph/plugin-manifest`)
+
+This interface defines the structure of the manifest file that each plugin registers.
 
 ```wit
-record ui-contribution {
+interface plugin-manifest {
+  record menu-item {
     label: string,
-    action-id: string,
-    hotkey: option<string>,
-}
+    command: string,
+    shortcut: option<string>,
+  }
 
-record plugin-manifest {
+  record command-contribution {
+    id: string,
+    title: string,
+    category: option<string>
+  }
+
+  record plugin-manifest {
     name: string,
     version: string,
     description: option<string>,
-    menu-items: list<ui-contribution>,
-    commands: list<ui-contribution>,
-}
-
-interface plugin-lifecycle {
-    get-manifest: func() -> plugin-manifest
-
-    trigger-action: func(action-id: string) -> result<option<string>, error>
+    capabilities: list<string>,
+    menu-items: list<menu-item>,
+    commands: list<command-contribution>,
+  }
 }
 ```
 
-### 3. Wizard Step Execution Interface (WIT)
+### 3. Wizard Step Execution Interface (`canopy:graph/wizard-execution`)
+
+Instead of a stateless execution interface, the wizard is modeled as a stateful resource lifecycle managed by the plugin.
 
 ```wit
 interface wizard-execution {
-    use draft-session-manager.{draft-session}
+  use draft-session.{draft-session-handle, draft-event, property-value};
 
-    record form-field {
-        name: string,
-        label: string,
-        field-type: string, // e.g. "text", "number", "reference", "date"
-        default-value: option<string>,
-        required: bool,
-    }
+  enum field-kind {
+    text,
+    number,
+    boolean,
+    date,
+    node-reference
+  }
 
-    record form-schema {
-        title: string,
-        description: option<string>,
-        fields: list<form-field>,
-    }
+  record field-definition {
+    name: string,
+    label: string,
+    kind: field-kind,
+    required: bool,
+    default-value: option<property-value>,
+    options: option<list<string>>
+  }
 
-    /// Returns the schema defining the UI fields for the current step.
-    /// Uses a borrowed draft session handle to access staged data.
-    render-step-schema: func(
-        step-id: string,
-        draft: borrow<draft-session>
-    ) -> result<form-schema, wizard-error>
+  record form-schema {
+    title: string,
+    description: option<string>,
+    fields: list<field-definition>,
+    submit-label: string
+  }
 
-    /// Processes form input submitted by the user.
-    /// Receives all field inputs as a key-value list to avoid keystroke lag.
-    handle-step-submission: func(
-        step-id: string,
-        inputs: list<tuple<string, string>>,
-        draft: borrow<draft-session>
-    ) -> result<list<graph-event>, wizard-error>
+  record input-entry {
+    field-name: string,
+    value: property-value
+  }
 
-    /// Determines the next step ID, or returns none if this is the final step.
-    get-next-step: func(
-        step-id: string,
-        draft: borrow<draft-session>
-    ) -> result<option<string>, wizard-error>
+  variant step-destination {
+    form(form-schema),
+    complete,
+    cancel
+  }
+
+  record step-result {
+    next-step: step-destination,
+    events-to-stage: list<draft-event>
+  }
+
+  resource wizard-session {
+    constructor(draft: draft-session-handle);
+    render-step-schema: func() -> result<form-schema, string>;
+    handle-step-submission: func(inputs: list<input-entry>) -> result<step-result, string>;
+  }
 }
 ```
 
 ## Wizard Execution Flow
 
 1. The user triggers a plugin action via a menu or command palette shortcut.
-2. The host application starts a new `draft-session` resource based on the active graph.
-3. The host requests the form schema for the first step from the plugin using the draft session handle.
-4. The host renders the step's fields natively using safe, built-in input controls.
-5. When the user completes the step and clicks "Next", the host sends all form inputs to the plugin via `handle-step-submission`.
-6. The plugin returns the resulting graph events, which the host applies to the draft session.
-7. The host requests the next step ID from the plugin.
-8. Upon completing the final step, the host verifies that the parent graph revision has not changed.
-9. If no concurrency conflict exists, the host commits the staged events from the draft session to the persistent event log.
+2. The host application starts a new `DraftSession` based on the active graph.
+3. The host instantiates a new `wizard-session` resource, providing it with a handle to the draft session.
+4. The host requests the form schema for the current step by calling `render-step-schema`.
+5. The host renders the step's fields natively using safe, built-in input controls.
+6. When the user completes the step and submits the form, the host packages the inputs and calls `handle-step-submission`.
+7. The plugin processes the inputs, generates draft events, stages them via `apply-events` on the draft session handle, and returns the next step destination.
+8. If the next destination is another form step, the flow repeats from step 4.
+9. Upon completing the final step, the host checks if the parent graph revision has changed concurrently.
+10. If no concurrent conflicts are detected, the host commits the staged events from the draft session to the persistent event log.
 
 ## Risks / Trade-offs
 
 - **[Risk]** The Stale-State Commit Race (Split-Brain).
-  - _Mitigation_: The host tracks the parent graph revision token and rejects the commit if the parent graph changed concurrently.
+  - *Mitigation*: The host tracks the parent graph revision token and rejects the commit if the parent graph changed concurrently.
 - **[Risk]** Memory leaks from dangling draft sessions.
-  - _Mitigation_: Leverage WebAssembly Component Model resources to tie the session lifecycle to the guest lifecycle, auto-cleaning on drop.
+  - *Mitigation*: Leverage WebAssembly Component Model resources to tie the session lifecycle to the guest lifecycle, auto-cleaning on drop.
 - **[Risk]** Security sandbox escape via raw HTML rendering (XSS).
-  - _Mitigation_: The plugin returns a declarative form schema, and the host renders the fields natively.
+  - *Mitigation*: The plugin returns a declarative form schema, and the host renders the fields natively.
 - **[Risk]** Performance lag from synchronous WASM roundtrips on every keystroke.
-  - _Mitigation_: The host buffers keystrokes locally and sends inputs in a single batch on step submission.
+  - *Mitigation*: The host buffers keystrokes locally and sends inputs in a single batch on step submission.
 - **[Risk]** High serialization overhead from transferring the entire graph.
-  - _Mitigation_: The plugin queries individual nodes or runs queries on the host side using resource handles.
+  - *Mitigation*: The plugin queries individual nodes or runs queries on the host side using resource handles.
 
 ## Verification Plan
 
-### Core Unit Tests
-
-- Test creating a draft session from a populated base graph.
-- Test applying multiple sequential events to the draft session and asserting they are visible in the draft projection.
-- Test that the parent graph remains unchanged until a commit is triggered.
-- Test that committing a draft session succeeds when the parent revision matches, and fails when it does not.
-- Test discarding a draft session.
-
-### Integration Tests
-
-- Build a mock in-memory plugin demonstrating a two-step wizard.
-- Verify that step progression, input handling, and final transaction submission execute correctly.
+See the implementation verification details in `docs/design/2026-07-16-wasm-plugin-lifecycle-and-wizard.md`.
