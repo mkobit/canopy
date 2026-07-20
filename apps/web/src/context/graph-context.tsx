@@ -124,6 +124,7 @@ const GraphContext = createContext<GraphContextType>({
 export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = ({ children }) => {
   const { eventLog, deviceId } = useStorage();
   const sessionRef = useRef<GraphSession | null>(null);
+  const [sessionState, setSessionState] = useState<GraphSession | null>(null);
 
   const unsubscribeRef = useRef<(() => void) | null>(null);
 
@@ -150,6 +151,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
         if (!loadResult.ok) throw loadResult.error;
 
         sessionRef.current = session;
+        setSessionState(session);
         unsubscribeRef.current = session.subscribe((updatedGraph) => {
           setGraph(updatedGraph);
           return undefined;
@@ -176,6 +178,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
       unsubscribeRef.current = null;
     }
     sessionRef.current = null;
+    setSessionState(null);
     setGraph(null);
     return ok(undefined);
   }, []);
@@ -352,7 +355,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
         createNodeType,
         createEdgeType,
         createPropertyType,
-        session: sessionRef.current,
+        session: sessionState,
       }}
     >
       {children}

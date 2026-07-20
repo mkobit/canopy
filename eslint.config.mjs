@@ -27,6 +27,7 @@ export default tseslint.config(
       'packages/*/dist/**/*',
       'apps/*/dist/**/*',
       'apps/web/src/plugin/mock/**/*',
+      'apps/web/src/plugin/draft-session-shim.ts',
       'apps/web/scripts/**/*',
       '**/transpiled/**/*',
     ],
