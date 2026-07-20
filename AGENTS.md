@@ -77,6 +77,8 @@ When a third-party type triggers `functional/prefer-immutable-types` (e.g. Zod, 
 Do NOT disable `prefer-immutable-types` or `type-declaration-immutability` per-package — adapter public signatures must stay immutable even when the implementation mutates encapsulated state.
 For genuinely unreplaceable single-line cases (e.g. React 18 `createRoot(document.querySelector('#root')!)`), use a localized `// eslint-disable-next-line <rule> -- <reason>`.
 Banned: `@ts-ignore` (use `@ts-expect-error <description>`), non-null assertions `!`, and the `.*` catch-all in `ignoreTypePattern`.
+Always add transpiled guest WASM shims, third-party code, and helper scripts (e.g., `**/transpiled/**/*`) to the global `ignores` list in `eslint.config.mjs`.
+This prevents functional and prettier validation checks from failing on generated code.
 
 ## Landing the Plane (Session Completion)
 
