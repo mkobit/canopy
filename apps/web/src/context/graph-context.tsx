@@ -88,6 +88,7 @@ interface GraphContextActions {
   readonly createNodeType: (input: CreateNodeTypeInput) => Promise<Result<NodeId, Error>>;
   readonly createEdgeType: (input: CreateEdgeTypeInput) => Promise<Result<NodeId, Error>>;
   readonly createPropertyType: (input: CreatePropertyTypeInput) => Promise<Result<NodeId, Error>>;
+  readonly session: GraphSession | null;
 }
 
 type GraphContextType = GraphContextState & GraphContextActions;
@@ -116,6 +117,7 @@ const GraphContext = createContext<GraphContextType>({
   createNodeType: async () => err(new Error('Not initialized')),
   createEdgeType: async () => err(new Error('Not initialized')),
   createPropertyType: async () => err(new Error('Not initialized')),
+  session: null,
 });
 
 // eslint-disable-next-line max-lines-per-function
@@ -350,6 +352,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
         createNodeType,
         createEdgeType,
         createPropertyType,
+        session: sessionRef.current,
       }}
     >
       {children}

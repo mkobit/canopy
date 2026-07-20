@@ -636,6 +636,32 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
       ],
     },
     {
+      id: SYSTEM_IDS.NODE_TYPE_PLUGIN,
+      name: 'Plugin',
+      description: 'A WebAssembly plugin.',
+      namespace: 'system',
+      properties: [
+        {
+          name: 'wasm_binary',
+          valueKind: 'text',
+          required: true,
+          description: 'Base64 Brotli-compressed WebAssembly module',
+        },
+        {
+          name: 'manifest',
+          valueKind: 'text',
+          required: true,
+          description: 'JSON manifest defining contributions and capabilities',
+        },
+        {
+          name: 'version',
+          valueKind: 'text',
+          required: true,
+          description: 'Plugin version',
+        },
+      ],
+    },
+    {
       id: SYSTEM_IDS.NODE_TYPE_TEXT_BLOCK,
       name: 'TextBlock',
       description: 'A block of text content.',

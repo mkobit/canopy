@@ -41,6 +41,10 @@ export const SYSTEM_IDS = {
   SETTINGS_SCHEMA_DEF: asNodeId('system:nodetype:settings-schema'),
   USER_SETTING_DEF: asNodeId('system:nodetype:user-setting'),
 
+  // Plugin type definitions
+  NODE_TYPE_PLUGIN: asNodeId('system:nodetype:plugin'),
+  TYPE_PLUGIN: asTypeId('system:nodetype:plugin'),
+
   // System settings schemas
   SETTING_DEFAULT_VIEW: asNodeId('system:setting:default-view'),
   SETTING_DISPLAY_DENSITY: asNodeId('system:setting:display-density'),

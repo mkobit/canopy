@@ -26,6 +26,9 @@ export default tseslint.config(
       '**/*.d.ts',
       'packages/*/dist/**/*',
       'apps/*/dist/**/*',
+      'apps/web/src/plugin/mock/**/*',
+      'apps/web/scripts/**/*',
+      '**/transpiled/**/*',
     ],
   },
   // Base configurations

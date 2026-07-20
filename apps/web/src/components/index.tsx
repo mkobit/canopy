@@ -25,6 +25,8 @@ export { cn } from '../utils/cn';
 export { SideNavBar, type SideNavBarProps } from './layout/side-nav-bar';
 export { TopAppBar, type TopAppBarProps } from './layout/top-app-bar';
 export { NewNodeDialog, type NewNodeDialogProps } from './layout/new-node-dialog';
+export { WizardDialog } from './layout/wizard-dialog';
+export { CommandPalette } from './layout/command-palette';
 export { InspectorPanel, type InspectorPanelProps } from './explorer/inspector-panel';
 export {
   GraphExplorerCanvas,
