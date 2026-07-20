@@ -164,6 +164,17 @@
         "typescript": "6.0.3",
       },
     },
+    "packages/storage-http": {
+      "name": "@canopy/storage-http",
+      "version": "0.0.0",
+      "dependencies": {
+        "@canopy/graph": "workspace:*",
+      },
+      "devDependencies": {
+        "temporal-polyfill": "^0.3.2",
+        "typescript": "6.0.3",
+      },
+    },
     "packages/storage-indexeddb": {
       "name": "@canopy/storage-indexeddb",
       "version": "0.0.0",
@@ -274,6 +285,8 @@
     "@canopy/storage": ["@canopy/storage@workspace:packages/storage"],
 
     "@canopy/storage-file": ["@canopy/storage-file@workspace:packages/storage-file"],
+
+    "@canopy/storage-http": ["@canopy/storage-http@workspace:packages/storage-http"],
 
     "@canopy/storage-indexeddb": ["@canopy/storage-indexeddb@workspace:packages/storage-indexeddb"],
 
