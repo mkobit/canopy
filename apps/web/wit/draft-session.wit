@@ -1,0 +1,75 @@
+package canopy:graph;
+
+interface draft-session {
+  type node-id = string;
+  type event-id = string;
+  type type-id = string;
+
+  record property-entry {
+    name: string,
+    value: property-value,
+  }
+
+  variant property-value {
+    text(string),
+    integer(s64),
+    decimal(f64),
+    boolean(bool),
+    date-time(string),
+    node-id(string),
+    list-of-text(list<string>),
+    none
+  }
+
+  record node-created-event {
+    event-id: event-id,
+    id: node-id,
+    node-type: type-id,
+    properties: list<property-entry>,
+    timestamp: string,
+    device-id: string,
+    batch-id: option<string>,
+  }
+
+  record node-properties-updated-event {
+    event-id: event-id,
+    id: node-id,
+    changes: list<property-entry>,
+    timestamp: string,
+    device-id: string,
+    batch-id: option<string>,
+  }
+
+  variant draft-event {
+    node-created(node-created-event),
+    node-properties-updated(node-properties-updated-event)
+  }
+
+  record graph-node {
+    id: node-id,
+    node-type: type-id,
+    properties: list<property-entry>,
+  }
+
+  enum draft-error {
+    parent-not-found,
+    unauthorized,
+    invalid-event-format,
+    validation-failure,
+    concurrent-modification,
+    storage-error
+  }
+
+  enum query-error {
+    invalid-query,
+    node-not-found,
+    access-denied
+  }
+
+  resource draft-session-handle {
+    apply-events: func(events: list<draft-event>) -> result<_, draft-error>;
+    get-parent-revision: func() -> result<string, draft-error>;
+    get-node: func(id: node-id) -> result<graph-node, query-error>;
+    query-nodes: func(query-string: string) -> result<list<graph-node>, query-error>;
+  }
+}

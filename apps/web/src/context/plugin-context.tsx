@@ -148,6 +148,22 @@ export const PluginProvider: React.FC<{ readonly children: React.ReactNode }> = 
       return;
     }
 
+    // Verify capability and exports using reflection.
+    if (!manifest.capabilities.includes('wizard')) {
+      console.error(`Plugin '${manifest.name}' does not declare capability 'wizard'.`);
+      return;
+    }
+
+    if (
+      typeof pluginModule !== 'object' ||
+      pluginModule === null ||
+      !('wizardExecution' in pluginModule) ||
+      !pluginModule.wizardExecution
+    ) {
+      console.error(`Plugin '${manifest.name}' does not export 'wizardExecution' interface.`);
+      return;
+    }
+
     try {
       const draft = createDraftSession(parentSession);
       const draftHandle = new DraftSessionHandle(draft, parentSession.graph().metadata.modifiedBy);

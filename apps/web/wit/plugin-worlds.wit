@@ -1,0 +1,8 @@
+package canopy:graph;
+
+world wizard-plugin {
+  import draft-session;
+  
+  export plugin-lifecycle;
+  export wizard-execution;
+}

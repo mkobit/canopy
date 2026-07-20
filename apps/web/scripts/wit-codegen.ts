@@ -24,7 +24,7 @@ async function main(): Promise<void> {
       '--wit',
       'wit',
       '-n',
-      'plugin',
+      'wizard-plugin',
       '-o',
       'src/plugin/mock/plugin.wasm',
     ]);
