@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
-import { SideNavBar, NewNodeDialog } from '.';
+import { SideNavBar, NewNodeDialog, WizardDialog, CommandPalette } from '.';
 import { useGraph } from '../context/graph-context';
 import type { PropertyValue, TypeId } from '@canopy/graph';
 import { withResultAlert } from '../utils/handlers';
@@ -64,6 +64,8 @@ export const Layout = () => {
         onSubmit={handleSubmitNewNode}
         onCancel={handleCancelNewNode}
       />
+      <WizardDialog />
+      <CommandPalette />
       <main className="flex-1 ml-64 h-full relative overflow-hidden flex flex-col bg-surface">
         <Outlet />
       </main>

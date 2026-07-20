@@ -18,11 +18,13 @@ These routines allow users to build draft nodes through a sequence of steps befo
 ## Alternatives Considered
 
 ### Alternative 1: Projection-Level Virtual Providers
+
 This approach extends the core projection engine to dynamically inject virtual nodes.
 Virtual nodes use distinct ID prefixes and resolve to actual events only when edited.
 While useful for global virtual nodes like daily notes, it is poorly suited for multi-step entry wizards that require isolated draft states.
 
 ### Alternative 2: Client-Side UI Form State
+
 This approach maintains the draft state entirely within React component state, bypassing the graph system entirely.
 While simple to implement, it prevents reusing custom view renderers to preview draft nodes before submission.
 It also violates the "everything is a node" architectural invariant.
@@ -133,7 +135,7 @@ interface wizard-execution {
     /// Returns the schema defining the UI fields for the current step.
     /// Uses a borrowed draft session handle to access staged data.
     render-step-schema: func(
-        step-id: string, 
+        step-id: string,
         draft: borrow<draft-session>
     ) -> result<form-schema, wizard-error>
 
@@ -147,7 +149,7 @@ interface wizard-execution {
 
     /// Determines the next step ID, or returns none if this is the final step.
     get-next-step: func(
-        step-id: string, 
+        step-id: string,
         draft: borrow<draft-session>
     ) -> result<option<string>, wizard-error>
 }
@@ -168,19 +170,20 @@ interface wizard-execution {
 ## Risks / Trade-offs
 
 - **[Risk]** The Stale-State Commit Race (Split-Brain).
-  - *Mitigation*: The host tracks the parent graph revision token and rejects the commit if the parent graph changed concurrently.
+  - _Mitigation_: The host tracks the parent graph revision token and rejects the commit if the parent graph changed concurrently.
 - **[Risk]** Memory leaks from dangling draft sessions.
-  - *Mitigation*: Leverage WebAssembly Component Model resources to tie the session lifecycle to the guest lifecycle, auto-cleaning on drop.
+  - _Mitigation_: Leverage WebAssembly Component Model resources to tie the session lifecycle to the guest lifecycle, auto-cleaning on drop.
 - **[Risk]** Security sandbox escape via raw HTML rendering (XSS).
-  - *Mitigation*: The plugin returns a declarative form schema, and the host renders the fields natively.
+  - _Mitigation_: The plugin returns a declarative form schema, and the host renders the fields natively.
 - **[Risk]** Performance lag from synchronous WASM roundtrips on every keystroke.
-  - *Mitigation*: The host buffers keystrokes locally and sends inputs in a single batch on step submission.
+  - _Mitigation_: The host buffers keystrokes locally and sends inputs in a single batch on step submission.
 - **[Risk]** High serialization overhead from transferring the entire graph.
-  - *Mitigation*: The plugin queries individual nodes or runs queries on the host side using resource handles.
+  - _Mitigation_: The plugin queries individual nodes or runs queries on the host side using resource handles.
 
 ## Verification Plan
 
 ### Core Unit Tests
+
 - Test creating a draft session from a populated base graph.
 - Test applying multiple sequential events to the draft session and asserting they are visible in the draft projection.
 - Test that the parent graph remains unchanged until a commit is triggered.
@@ -188,5 +191,6 @@ interface wizard-execution {
 - Test discarding a draft session.
 
 ### Integration Tests
+
 - Build a mock in-memory plugin demonstrating a two-step wizard.
 - Verify that step progression, input handling, and final transaction submission execute correctly.

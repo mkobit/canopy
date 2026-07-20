@@ -4,9 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "tsc && vite build",
+    "codegen:wit": "bun run scripts/wit-codegen.ts",
+    "build": "bun run codegen:wit && tsc && vite build",
     "dev": "vite",
-    "typecheck": "tsc -p tsconfig.check.json",
+    "typecheck": "bun run codegen:wit && tsc -p tsconfig.check.json",
     "test": "bun test ./src --preload ./src/test/setup.ts",
     "test:e2e": "playwright test"
   },
@@ -32,6 +33,7 @@
     "zod": "^4.4.1"
   },
   "devDependencies": {
+    "@bytecodealliance/jco": "^1.24.6",
     "@happy-dom/global-registrator": "^20.10.6",
     "@playwright/test": "^1.61.0",
     "@tailwindcss/postcss": "^4.3.2",

@@ -2,6 +2,7 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { SYSTEM_IDS } from '@canopy/graph';
 import type { GraphId } from '@canopy/graph';
+import { usePlugin } from '../../context/plugin-context';
 
 export interface SideNavBarProps {
   readonly onNewNode?: () => unknown;
@@ -18,6 +19,8 @@ const navLinkClass = ({ isActive }: Readonly<{ isActive: boolean }>) =>
 
 // eslint-disable-next-line max-lines-per-function
 export const SideNavBar: React.FC<SideNavBarProps> = ({ onNewNode, onLogout, graphId }) => {
+  const { menuItems, startWizard } = usePlugin();
+
   return (
     <aside className="flex flex-col fixed left-0 top-0 h-full z-40 bg-[#0a0e14] border-r border-[#1a2637]/15 font-display text-xs uppercase tracking-wider w-64">
       <div className="p-6">
@@ -100,6 +103,28 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({ onNewNode, onLogout, gra
                 </span>
                 <span>Recent</span>
               </NavLink>
+            </nav>
+          </div>
+        )}
+
+        {graphId !== undefined && menuItems.length > 0 && (
+          <div className="mt-6">
+            <p className="text-[10px] text-on-surface-variant px-4 mb-2 tracking-widest">Plugins</p>
+            <nav className="space-y-1">
+              {menuItems.map((item) => (
+                <button
+                  key={item.command}
+                  onClick={() => {
+                    void startWizard(item.command);
+                  }}
+                  className="w-full flex items-center gap-3 text-[#d9e6fd]/40 py-3 px-4 hover:bg-[#121a25]/50 hover:text-[#d9e6fd] hover:translate-x-1 transition-all duration-200 cursor-pointer"
+                >
+                  <span className="material-symbols-outlined" data-icon="extension">
+                    extension
+                  </span>
+                  <span>{item.label}</span>
+                </button>
+              ))}
             </nav>
           </div>
         )}
