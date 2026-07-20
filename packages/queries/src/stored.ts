@@ -22,10 +22,7 @@ import type { Query } from './model';
 import { executeQuery } from './engine';
 import { mapValues, isPlainObject, isString } from 'remeda';
 
-// Helper to wrap a scalar value
-function scalar(val: string | number | boolean): Result<ScalarValue, Error> {
-  return ok(val);
-}
+const scalar: (val: string | number | boolean) => Result<ScalarValue, Error> = ok;
 
 // Helper to create a list property
 function list(items: readonly string[]): PropertyValue {

@@ -4,8 +4,8 @@ import React from 'react';
 import { StorageProvider, useStorage } from '../storage-context';
 import { GraphProvider, useGraph } from '../graph-context';
 import { PluginProvider, usePlugin } from '../plugin-context';
-import { asGraphId, asTypeId, SYSTEM_IDS } from '@canopy/graph';
-import type { NodeId, GraphId } from '@canopy/graph';
+import { asGraphId, asTypeId, asNodeId, SYSTEM_IDS } from '@canopy/graph';
+import type { NodeId } from '@canopy/graph';
 import type { ReactNode } from 'react';
 
 function useTestContext() {
@@ -103,7 +103,7 @@ describe('plugin wizard integration', () => {
 
     // 6. Submit step 1 form
     await act(async () => {
-      const step1Inputs = new Map<string, any>([['name', 'John Doe']]);
+      const step1Inputs = new Map<string, unknown>([['name', 'John Doe']]);
       await result.current.pluginCtx.submitWizardStep(step1Inputs);
     });
 
@@ -113,7 +113,7 @@ describe('plugin wizard integration', () => {
 
     // 7. Submit step 2 form (this finishes the wizard)
     await act(async () => {
-      const step2Inputs = new Map<string, any>([['age', 42]]);
+      const step2Inputs = new Map<string, unknown>([['age', 42]]);
       await result.current.pluginCtx.submitWizardStep(step2Inputs);
     });
 
@@ -123,7 +123,7 @@ describe('plugin wizard integration', () => {
     // Verify that the output node was created in the parent graph
     const finalGraph = result.current.graphCtx.graph;
     expect(finalGraph).not.toBeNull();
-    const outputNode = finalGraph?.nodes.get('node_mock_plugin_output' as NodeId);
+    const outputNode = finalGraph?.nodes.get(asNodeId('node_mock_plugin_output'));
     expect(outputNode).toBeDefined();
     expect(outputNode?.type).toBe(asTypeId('mock_output'));
     expect(outputNode?.properties.get('age')).toBe(42);
