@@ -104,6 +104,13 @@ Banned: `@ts-ignore` (use `@ts-expect-error <description>`), non-null assertions
 If `bun install` fails due to a package being too new (we enforce a minimum release age for newly published packages), do not retry the installation of the same version.
 Instead, find and install an older, established version of the package that meets the release age requirement.
 
+## Testing WASM and module resolution in Bun
+
+For testing paths that use Vite config aliases, duplicate the path mappings in both `tsconfig.json` and `tsconfig.check.json` under `paths` so Bun's test runner can resolve them.
+When running integration or unit tests for components that load transpiled WASM plugins, import the pure JavaScript plugin implementation (`guest.js`) instead of the transpiled WASM wrapper (`plugin.js`) to prevent Bun from throwing errors on unsupported Node.js bindings (such as `process.binding("tcp_wrap")`).
+Vite is currently used to build and serve the front-end React single-page application (`apps/web`), whereas Bun is used for packaging, running scripts, and executing tests.
+Because Bun has built-in module bundling and web-based testing capabilities, a future task is tracked under `canopy-kjg` to investigate consolidating build tools by replacing Vite with Bun's native bundler.
+
 ## Issue tracking
 
 This project uses `bd` (beads) for issue tracking.
