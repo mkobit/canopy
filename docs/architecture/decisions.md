@@ -22,10 +22,11 @@ Manual `bun run dev` is untouched and keeps Vite's normal fixed default — only
 
 ## 2026-07-05 — Block content stays on the `content` property, not `text`
 
-`docs/design/2026-02-06-content-model.md` prescribes a naming split: TextBlock/CodeBlock use `text` (literal content), MarkdownNode uses `content` (renderer-interpreted).
+`docs/design/2026-02-06-content-model.md` prescribed a naming split: TextBlock/CodeBlock use `text` (literal content), MarkdownNode uses `content` (renderer-interpreted).
 `bootstrap.ts` never implemented this — all three block `NodeType`s use `content`, and rendering is a hardcoded `switch (node.type)` in `block-renderer.tsx`, not yet resolved through the graph-resident `Renderer` concept (`meta:renderer`/`RENDERER_DEF`) that would make the split meaningful.
 Rather than bundle a schema/rendering change into the `canopy-1q5.7` storage-plumbing cutover, `content` was kept everywhere and the drift was left for a dedicated bead.
 See `canopy-a1s`.
+This property naming drift has been resolved by updating `docs/design/2026-02-06-content-model.md` to standardize on `content` across all block types to match reality.
 
 ## 2026-07-05 — Legacy Yjs vault import dropped (canopy-1q5.7 task 3.1)
 
