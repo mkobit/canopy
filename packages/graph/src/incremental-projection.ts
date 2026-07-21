@@ -9,6 +9,7 @@ import { lwwWins, projectGraph } from './projection';
 import type { Result } from './result';
 import { ok, err } from './result';
 import { validateNode, validateEdge } from './validation';
+import { incrementalUpdateIndexes } from './indexes';
 
 /**
  * Per-entity merge bookkeeping: which event last wrote each property
@@ -140,8 +141,28 @@ function touchGraphMetadata(
  * Applies a single event against working (graph, nodeMeta, edgeMeta), assuming
  * its dependencies are already satisfied. Pure function, no mutation.
  */
-// eslint-disable-next-line max-lines-per-function
 function applyOneEvent(
+  graph: Graph,
+  nodeMeta: ReadonlyMap<NodeId, EntityMergeMeta>,
+  edgeMeta: ReadonlyMap<EdgeId, EntityMergeMeta>,
+  event: GraphEvent,
+): ApplyOutcome {
+  const result = applyOneEventInternal(graph, nodeMeta, edgeMeta, event);
+  const nextGraph = result.graph;
+  const nextIndexes = graph._indexes
+    ? incrementalUpdateIndexes(graph._indexes, event, nextGraph)
+    : undefined;
+  return {
+    ...result,
+    graph: {
+      ...nextGraph,
+      _indexes: nextIndexes,
+    },
+  };
+}
+
+// eslint-disable-next-line max-lines-per-function
+function applyOneEventInternal(
   graph: Graph,
   nodeMeta: ReadonlyMap<NodeId, EntityMergeMeta>,
   edgeMeta: ReadonlyMap<EdgeId, EntityMergeMeta>,

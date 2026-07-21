@@ -1,5 +1,5 @@
 import type { Graph, Node, NodeId, TypeId, Namespace, Result } from '@canopy/graph';
-import { SYSTEM_EDGE_TYPES, SYSTEM_IDS, getEdgesFrom, ok, err, asNodeId } from '@canopy/graph';
+import { SYSTEM_IDS, ok, err, asNodeId, getGraphIndexes } from '@canopy/graph';
 import { resolveSetting } from './cascade';
 
 /**
@@ -11,11 +11,10 @@ export function resolveViewDefinition(
   nodeType: TypeId,
   nodeNamespace: Namespace,
 ): Result<Node, Error> {
-  // 1. Look for an outbound edge from nodeId of type SYSTEM_EDGE_TYPES.VIEW_OVERRIDE to a ViewDefinition node.
-  const overrideEdges = getEdgesFrom(graph, nodeId, SYSTEM_EDGE_TYPES.VIEW_OVERRIDE);
-  const overrideTarget = overrideEdges
-    .map((edge) => graph.nodes.get(edge.target))
-    .find((node): node is Node => node !== undefined && node.type === SYSTEM_IDS.VIEW_DEFINITION);
+  const indexes = getGraphIndexes(graph);
+
+  // 1. Look for an override in the pre-indexed view overrides.
+  const overrideTarget = indexes.viewOverrides.get(nodeId);
   if (overrideTarget) {
     return ok(overrideTarget);
   }
@@ -30,12 +29,8 @@ export function resolveViewDefinition(
     }
   }
 
-  // 3. Look for an outbound edge from the nodeType definition node of type SYSTEM_EDGE_TYPES.DEFAULT_VIEW to a ViewDefinition node.
-  const typeNodeId = asNodeId(nodeType);
-  const defaultEdges = getEdgesFrom(graph, typeNodeId, SYSTEM_EDGE_TYPES.DEFAULT_VIEW);
-  const defaultTarget = defaultEdges
-    .map((edge) => graph.nodes.get(edge.target))
-    .find((node): node is Node => node !== undefined && node.type === SYSTEM_IDS.VIEW_DEFINITION);
+  // 3. Look for a default view in the pre-indexed default views.
+  const defaultTarget = indexes.defaultViews.get(nodeType);
   if (defaultTarget) {
     return ok(defaultTarget);
   }

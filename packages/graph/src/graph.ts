@@ -2,6 +2,7 @@ import type { GraphId, NodeId, EdgeId } from './identifiers';
 import type { TemporalMetadata } from './temporal';
 import type { Node } from './node';
 import type { Edge } from './edge';
+import type { GraphIndexes } from './indexes';
 
 /**
  * A graph is the aggregate root—the bounded context for a collection of nodes and edges.
@@ -13,6 +14,7 @@ export type Graph = Readonly<{
   metadata: TemporalMetadata;
   nodes: ReadonlyMap<NodeId, Node>;
   edges: ReadonlyMap<EdgeId, Edge>;
+  _indexes?: GraphIndexes | undefined;
 }>;
 
 /**
