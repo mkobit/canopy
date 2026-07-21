@@ -92,7 +92,7 @@ describe('FileEventLog', () => {
       (a, b) => a.eventId.localeCompare(b.eventId),
     );
     const [event1, event2, event3] = sortedEvents;
-    if ([event1, event2, event3].includes(undefined)) {
+    if (!event1 || !event2 || !event3) {
       throw new Error('Expected 3 events');
     }
 
@@ -107,7 +107,7 @@ describe('FileEventLog', () => {
       (a, b) => a.eventId.localeCompare(b.eventId),
     );
     const [event1, event2, event3] = sortedEvents;
-    if ([event1, event2, event3].includes(undefined)) {
+    if (!event1 || !event2 || !event3) {
       throw new Error('Expected 3 events');
     }
 
@@ -137,7 +137,7 @@ describe('FileEventLog', () => {
       (a, b) => a.eventId.localeCompare(b.eventId),
     );
     const [event1, event2, event3] = sortedEvents;
-    if ([event1, event2, event3].includes(undefined)) {
+    if (!event1 || !event2 || !event3) {
       throw new Error('Expected 3 events');
     }
 
@@ -438,7 +438,7 @@ describe('FileEventLog', () => {
       ].toSorted((a, b) => a.eventId.localeCompare(b.eventId));
 
       const [event1, event2, event3] = sortedEvents;
-      if ([event1, event2, event3].includes(undefined)) {
+      if (!event1 || !event2 || !event3) {
         throw new Error('Expected 3 sorted events');
       }
 
