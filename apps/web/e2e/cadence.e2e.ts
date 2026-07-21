@@ -142,7 +142,10 @@ async function instantiateCadenceNodes(page: Page): Promise<void> {
   if (!cadenceNodeUrlMatch) {
     throw new Error(`Could not extract Cadence node ID from URL: ${page.url()}`);
   }
-  const [, cadenceNodeId] = cadenceNodeUrlMatch;
+  const cadenceNodeId = cadenceNodeUrlMatch[1];
+  if (cadenceNodeId === undefined) {
+    throw new Error('Cadence node ID match group was undefined');
+  }
 
   // 8. Instantiate a real CadenceAction node whose `target` points at the
   //    Cadence node above -- proves the `reference` PropertyValueKind is

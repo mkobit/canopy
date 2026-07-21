@@ -175,9 +175,9 @@ describe('createBatch', () => {
 
     // Verify existing properties are preserved
     expect(firstEvent.type).toBe('NodeCreated');
-    expect(firstEvent.eventId).toBe('e1');
+    expect(firstEvent.eventId).toBe(asEventId('e1'));
     expect(secondEvent.type).toBe('NodePropertiesUpdated');
-    expect(secondEvent.eventId).toBe('e2');
+    expect(secondEvent.eventId).toBe(asEventId('e2'));
   });
 
   it('returns an empty array when given an empty array', () => {

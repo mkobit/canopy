@@ -179,6 +179,7 @@ describe('createNodeType', () => {
     const parsed = JSON.parse(storedProperties as string) as readonly {
       name: string;
       valueKind: string;
+      required: boolean;
     }[];
     expect(parsed).toEqual([
       { name: 'title', valueKind: 'text', required: true },

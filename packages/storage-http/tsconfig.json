@@ -6,5 +6,7 @@
     },
     "composite": false,
     "noEmit": true
-  }
+  },
+  "include": ["src/**/*"],
+  "exclude": []
 }

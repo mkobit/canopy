@@ -3,6 +3,8 @@
   "compilerOptions": {
     "composite": false,
     "noEmit": true,
+    "incremental": true,
+    "tsBuildInfoFile": "./tsconfig.check.tsbuildinfo",
     "rootDir": "../..",
     "paths": {
       "@canopy/graph": ["../../packages/graph/src/index.ts"]

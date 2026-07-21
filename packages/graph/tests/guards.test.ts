@@ -52,7 +52,7 @@ describe('Type Guards', () => {
   });
 
   it('should identify ExternalReferenceValue', () => {
-    const value = { graph: 'g1', target: 't1' };
+    const value = { graph: 'g1', target: 't1' } as unknown as ScalarValue;
     expect(isExternalReferenceValue(value)).toBe(true);
     expect(isExternalReferenceValue('not an object' as unknown as ScalarValue)).toBe(false);
     expect(isExternalReferenceValue(null as unknown as ScalarValue)).toBe(false);

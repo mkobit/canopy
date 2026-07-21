@@ -15,4 +15,6 @@ coverage/
 playwright-report/
 test-results/
 .worktrees/
+.eslintcache
+
 

@@ -13,6 +13,7 @@ import {
   EdgeId,
   unwrap,
   ScalarValue,
+  asDeviceId,
 } from '@canopy/graph';
 import { pipe } from 'remeda';
 import {
@@ -46,6 +47,7 @@ function createMockGraph(): Graph {
       metadata: {
         created: asInstant('2023-01-01T00:00:00Z'),
         modified: asInstant('2023-01-01T00:00:00Z'),
+        modifiedBy: asDeviceId('00000000-0000-0000-0000-000000000000'),
       },
     });
   };
@@ -69,6 +71,7 @@ function createMockGraph(): Graph {
       metadata: {
         created: asInstant('2023-01-01T00:00:00Z'),
         modified: asInstant('2023-01-01T00:00:00Z'),
+        modifiedBy: asDeviceId('00000000-0000-0000-0000-000000000000'),
       },
     });
   };
@@ -84,11 +87,12 @@ function createMockGraph(): Graph {
   createEdge('e4', 'works_at', '2', '4'); // Bob works at Acme
 
   return {
-    id: createGraphId('test-graph'),
+    id: createGraphId(),
     name: 'Test Graph',
     metadata: {
       created: asInstant('2023-01-01T00:00:00Z'),
       modified: asInstant('2023-01-01T00:00:00Z'),
+      modifiedBy: asDeviceId('00000000-0000-0000-0000-000000000000'),
     },
     nodes: nodes,
     edges: edges,
@@ -118,21 +122,27 @@ describe('Query Engine', () => {
     const q = pipe(query(), nodes('Person'), where('name', 'eq', 'Alice'));
     const result = unwrap(executeQuery(graph, q));
     expect(result.nodes).toHaveLength(1);
-    expect(result.nodes[0].properties.get('name')).toBe('Alice');
+    const [firstNode] = result.nodes;
+    if (firstNode === undefined) throw new Error('Expected node');
+    expect(firstNode.properties.get('name')).toBe('Alice');
   });
 
   it('queries nodes with starts-with operator', () => {
     const q = pipe(query(), nodes('Person'), where('name', 'starts-with', 'Al'));
     const result = unwrap(executeQuery(graph, q));
     expect(result.nodes).toHaveLength(1);
-    expect(result.nodes[0].properties.get('name')).toBe('Alice');
+    const [firstNode] = result.nodes;
+    if (firstNode === undefined) throw new Error('Expected node');
+    expect(firstNode.properties.get('name')).toBe('Alice');
   });
 
   it('queries nodes with ends-with operator', () => {
     const q = pipe(query(), nodes('Person'), where('name', 'ends-with', 'ice'));
     const result = unwrap(executeQuery(graph, q));
     expect(result.nodes).toHaveLength(1);
-    expect(result.nodes[0].properties.get('name')).toBe('Alice');
+    const [firstNode] = result.nodes;
+    if (firstNode === undefined) throw new Error('Expected node');
+    expect(firstNode.properties.get('name')).toBe('Alice');
   });
 
   it('returns false when applying text operators to non-string properties', () => {
@@ -167,7 +177,7 @@ describe('Query Engine', () => {
       map(result.edges, (e) => e.type),
       (a, b) => a.localeCompare(b),
     );
-    expect(types).toEqual(['knows', 'works_at']);
+    expect(types).toEqual(['knows', 'works_at'].map(asTypeId));
   });
 
   it('traverses from a node to connected nodes', () => {
@@ -182,14 +192,18 @@ describe('Query Engine', () => {
 
     const result = unwrap(executeQuery(graph, q));
     expect(result.nodes).toHaveLength(1);
-    expect(result.nodes[0].properties.get('name')).toBe('Bob');
+    const [firstNode] = result.nodes;
+    if (firstNode === undefined) throw new Error('Expected node');
+    expect(firstNode.properties.get('name')).toBe('Bob');
   });
 
   it('combines multiple predicates', () => {
     const q = pipe(query(), nodes('Person'), where('age', 'gt', 20), where('age', 'lt', 30));
     const result = unwrap(executeQuery(graph, q));
     expect(result.nodes).toHaveLength(1);
-    expect(result.nodes[0].properties.get('name')).toBe('Bob');
+    const [firstNode] = result.nodes;
+    if (firstNode === undefined) throw new Error('Expected node');
+    expect(firstNode.properties.get('name')).toBe('Bob');
   });
 
   it('sorts results', () => {

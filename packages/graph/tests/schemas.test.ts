@@ -6,17 +6,18 @@ import {
   PlainDateSchema,
   PropertyValueSchema,
 } from '../src/schemas';
+import { asTypeId, asPlainDate, asNodeId, asInstant } from '@canopy/graph';
 import type { NodeId } from '@canopy/graph';
 
 describe('Zod Schemas', () => {
   it('should validate Instant', () => {
     const iso = '2023-10-27T10:00:00.000Z';
-    expect(InstantSchema.parse(iso)).toBe(iso);
+    expect(InstantSchema.parse(iso)).toBe(asInstant(iso));
     expect(() => InstantSchema.parse('invalid')).toThrow();
   });
 
   it('should validate PlainDate', () => {
-    expect(PlainDateSchema.parse('2023-10-27')).toBe('2023-10-27');
+    expect(PlainDateSchema.parse('2023-10-27')).toBe(asPlainDate('2023-10-27'));
     expect(() => PlainDateSchema.parse('2023/10/27')).toThrow();
   });
 
@@ -43,7 +44,7 @@ describe('Zod Schemas', () => {
     };
 
     const parsed = NodeSchema.parse(nodeData);
-    expect(parsed.id).toBe(nodeData.id);
+    expect(parsed.id).toBe(asNodeId(nodeData.id));
     expect(parsed.properties).toBeInstanceOf(Map);
   });
 
@@ -97,6 +98,6 @@ describe('Zod Schemas', () => {
     // Cast key to string to avoid branded type issue in test
     expect(
       parsed.nodes.get('123e4567-e89b-12d3-a456-426614174000' as unknown as NodeId)?.type,
-    ).toBe('Person');
+    ).toBe(asTypeId('Person'));
   });
 });

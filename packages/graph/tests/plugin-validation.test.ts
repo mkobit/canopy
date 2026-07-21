@@ -13,21 +13,26 @@ import {
   createInstant,
   unwrap,
   PropertyValue,
+  asDeviceId,
 } from '@canopy/graph';
+import type { Node } from '@canopy/graph';
 
 // Test helper to create a node
-function createTestNode(properties: Record<string, unknown>) {
+function createTestNode(properties: Record<string, unknown>): Node {
   return {
     id: createNodeId(),
     type: asTypeId('test'),
-    properties: new Map<string, PropertyValue>(),
-    metadata: { created: createInstant(), modified: createInstant() },
+    metadata: {
+      created: createInstant(),
+      modified: createInstant(),
+      modifiedBy: asDeviceId('00000000-0000-0000-0000-000000000000'),
+    },
     ...properties,
     properties:
       properties.properties && !(properties.properties instanceof Map)
         ? new Map(Object.entries(properties.properties as Record<string, PropertyValue>))
-        : (properties.properties as Map<string, PropertyValue>) || new Map(),
-  };
+        : (properties.properties as Map<string, PropertyValue>) || new Map<string, PropertyValue>(),
+  } as unknown as Node;
 }
 
 describe('WASM binary property validation', () => {

@@ -13,6 +13,7 @@ import {
   EdgeId,
   unwrap,
   ScalarValue,
+  asDeviceId,
 } from '@canopy/graph';
 import { CypherQueryEngine } from '../src/cypher';
 import { map, sort } from 'remeda';
@@ -34,6 +35,7 @@ function createMockGraph(): Graph {
       metadata: {
         created: asInstant('2023-01-01T00:00:00Z'),
         modified: asInstant('2023-01-01T00:00:00Z'),
+        modifiedBy: asDeviceId('00000000-0000-0000-0000-000000000000'),
       },
     });
   };
@@ -57,6 +59,7 @@ function createMockGraph(): Graph {
       metadata: {
         created: asInstant('2023-01-01T00:00:00Z'),
         modified: asInstant('2023-01-01T00:00:00Z'),
+        modifiedBy: asDeviceId('00000000-0000-0000-0000-000000000000'),
       },
     });
   };
@@ -72,11 +75,12 @@ function createMockGraph(): Graph {
   createEdge('e4', 'works_at', '2', '4'); // Bob works at Acme
 
   return {
-    id: createGraphId('test-graph'),
+    id: createGraphId(),
     name: 'Test Graph',
     metadata: {
       created: asInstant('2023-01-01T00:00:00Z'),
       modified: asInstant('2023-01-01T00:00:00Z'),
+      modifiedBy: asDeviceId('00000000-0000-0000-0000-000000000000'),
     },
     nodes: nodes,
     edges: edges,
@@ -118,7 +122,9 @@ describe('CypherQueryEngine', () => {
   it('queries nodes of another type', () => {
     const result = unwrap(engine.execute(graph, 'MATCH (o:Organization)'));
     expect(result.nodes).toHaveLength(1);
-    expect(result.nodes[0].properties.get('name')).toBe('Acme Corp');
+    const [firstNode] = result.nodes;
+    if (firstNode === undefined) throw new Error('Expected node');
+    expect(firstNode.properties.get('name')).toBe('Acme Corp');
   });
 
   it('returns an error for unsupported Cypher syntax', () => {

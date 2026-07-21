@@ -99,7 +99,7 @@ describe('GraphSession', () => {
     expect(result.value.nodes.has(event.id)).toBe(true);
 
     expect(notifications.length).toBe(1);
-    expect(notifications[0]?.delta.applied.map((e) => e.id)).toEqual([event.id]);
+    expect(notifications[0]?.delta.applied.map((e) => e.eventId)).toEqual([event.eventId]);
     expect(notifications[0]?.graph.nodes.has(event.id)).toBe(true);
 
     unsubscribe();
@@ -117,7 +117,7 @@ describe('GraphSession', () => {
     const storedResult = await eventLog.getEvents(graphId);
     expect(storedResult.ok).toBe(true);
     if (!storedResult.ok) return;
-    const stored = storedResult.value.find((e) => e.id === event.id);
+    const stored = storedResult.value.find((e) => e.eventId === event.eventId);
     expect(stored?.deviceId).toBe(sessionDeviceId);
   });
 

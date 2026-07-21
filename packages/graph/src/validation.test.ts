@@ -13,20 +13,23 @@ import {
   asDeviceId,
   PropertyDefinitionSchema,
 } from './index';
-import type { PropertyDefinition, PropertyValue } from './index';
+import type { PropertyDefinition, PropertyValue, Node } from './index';
 
-function createNode(properties: Record<string, unknown>) {
+function createNode(properties: Record<string, unknown>): Node {
   return {
     id: createNodeId(),
     type: asTypeId('test'),
-    properties: new Map<string, PropertyValue>(),
-    metadata: { created: createInstant(), modified: createInstant() },
+    metadata: {
+      created: createInstant(),
+      modified: createInstant(),
+      modifiedBy: asDeviceId('00000000-0000-0000-0000-000000000000'),
+    },
     ...properties,
     properties:
       properties.properties && !(properties.properties instanceof Map)
         ? new Map(Object.entries(properties.properties as Record<string, PropertyValue>))
-        : properties.properties || new Map(),
-  };
+        : (properties.properties as Map<string, PropertyValue>) || new Map<string, PropertyValue>(),
+  } as unknown as Node;
 }
 
 function createGraphWithCustomType(propDef: PropertyDefinition) {
@@ -81,8 +84,10 @@ describe('validation constraints', () => {
       const result = validateNode(g, node);
       expect(result.valid).toBe(false);
       expect(result.errors).toHaveLength(1);
-      expect(result.errors[0].message).toContain('must be one of the allowed choices');
-      expect(result.errors[0].path).toEqual(['color']);
+      const [firstError] = result.errors;
+      if (firstError === undefined) throw new Error('Expected error');
+      expect(firstError.message).toContain('must be one of the allowed choices');
+      expect(firstError.path).toEqual(['color']);
     });
 
     it('passes for list when all elements match choices', () => {
@@ -116,8 +121,10 @@ describe('validation constraints', () => {
       const result = validateNode(g, node);
       expect(result.valid).toBe(false);
       expect(result.errors).toHaveLength(1);
-      expect(result.errors[0].message).toContain('must be one of the allowed choices');
-      expect(result.errors[0].path).toEqual(['colors', '1']);
+      const [firstError] = result.errors;
+      if (firstError === undefined) throw new Error('Expected error');
+      expect(firstError.message).toContain('must be one of the allowed choices');
+      expect(firstError.path).toEqual(['colors', '1']);
     });
   });
 
@@ -153,8 +160,10 @@ describe('validation constraints', () => {
       const result = validateNode(g, node);
       expect(result.valid).toBe(false);
       expect(result.errors).toHaveLength(1);
-      expect(result.errors[0].message).toContain('does not match the required pattern');
-      expect(result.errors[0].path).toEqual(['code']);
+      const [firstError] = result.errors;
+      if (firstError === undefined) throw new Error('Expected error');
+      expect(firstError.message).toContain('does not match the required pattern');
+      expect(firstError.path).toEqual(['code']);
     });
 
     it('passes for list when all elements match regex pattern', () => {
@@ -188,8 +197,10 @@ describe('validation constraints', () => {
       const result = validateNode(g, node);
       expect(result.valid).toBe(false);
       expect(result.errors).toHaveLength(1);
-      expect(result.errors[0].message).toContain('does not match the required pattern');
-      expect(result.errors[0].path).toEqual(['codes', '1']);
+      const [firstError] = result.errors;
+      if (firstError === undefined) throw new Error('Expected error');
+      expect(firstError.message).toContain('does not match the required pattern');
+      expect(firstError.path).toEqual(['codes', '1']);
     });
 
     it('fails gracefully when regex pattern is invalid', () => {
@@ -207,7 +218,9 @@ describe('validation constraints', () => {
       const result = validateNode(g, node);
       expect(result.valid).toBe(false);
       expect(result.errors).toHaveLength(1);
-      expect(result.errors[0].message).toContain('invalid regular expression constraint');
+      const [firstError] = result.errors;
+      if (firstError === undefined) throw new Error('Expected error');
+      expect(firstError.message).toContain('invalid regular expression constraint');
     });
   });
 
@@ -241,7 +254,9 @@ describe('validation constraints', () => {
       });
       const result = validateNode(g, node);
       expect(result.valid).toBe(false);
-      expect(result.errors[0].message).toContain('must be at least 10');
+      const [firstError] = result.errors;
+      if (firstError === undefined) throw new Error('Expected error');
+      expect(firstError.message).toContain('must be at least 10');
     });
 
     it('passes when string length is >= min', () => {
@@ -273,7 +288,9 @@ describe('validation constraints', () => {
       });
       const result = validateNode(g, node);
       expect(result.valid).toBe(false);
-      expect(result.errors[0].message).toContain('must be at least 3 characters long');
+      const [firstError] = result.errors;
+      if (firstError === undefined) throw new Error('Expected error');
+      expect(firstError.message).toContain('must be at least 3 characters long');
     });
 
     it('passes when list length is >= min', () => {
@@ -305,7 +322,9 @@ describe('validation constraints', () => {
       });
       const result = validateNode(g, node);
       expect(result.valid).toBe(false);
-      expect(result.errors[0].message).toContain('must contain at least 2 items');
+      const [firstError] = result.errors;
+      if (firstError === undefined) throw new Error('Expected error');
+      expect(firstError.message).toContain('must contain at least 2 items');
     });
   });
 
@@ -339,7 +358,9 @@ describe('validation constraints', () => {
       });
       const result = validateNode(g, node);
       expect(result.valid).toBe(false);
-      expect(result.errors[0].message).toContain('must be at most 10');
+      const [firstError] = result.errors;
+      if (firstError === undefined) throw new Error('Expected error');
+      expect(firstError.message).toContain('must be at most 10');
     });
 
     it('passes when string length is <= max', () => {
@@ -371,7 +392,9 @@ describe('validation constraints', () => {
       });
       const result = validateNode(g, node);
       expect(result.valid).toBe(false);
-      expect(result.errors[0].message).toContain('must be at most 3 characters long');
+      const [firstError] = result.errors;
+      if (firstError === undefined) throw new Error('Expected error');
+      expect(firstError.message).toContain('must be at most 3 characters long');
     });
 
     it('passes when list length is <= max', () => {
@@ -403,7 +426,9 @@ describe('validation constraints', () => {
       });
       const result = validateNode(g, node);
       expect(result.valid).toBe(false);
-      expect(result.errors[0].message).toContain('must contain at most 2 items');
+      const [firstError] = result.errors;
+      if (firstError === undefined) throw new Error('Expected error');
+      expect(firstError.message).toContain('must contain at most 2 items');
     });
   });
 
@@ -439,8 +464,10 @@ describe('validation constraints', () => {
       const result = validateNode(g, node);
       expect(result.valid).toBe(false);
       expect(result.errors).toHaveLength(1);
-      expect(result.errors[0].message).toContain('too long for pattern validation');
-      expect(result.errors[0].path).toEqual(['code']);
+      const [firstError] = result.errors;
+      if (firstError === undefined) throw new Error('Expected error');
+      expect(firstError.message).toContain('too long for pattern validation');
+      expect(firstError.path).toEqual(['code']);
     });
 
     it('fails when list element string exceeds 8192 characters', () => {
@@ -458,8 +485,10 @@ describe('validation constraints', () => {
       const result = validateNode(g, node);
       expect(result.valid).toBe(false);
       expect(result.errors).toHaveLength(1);
-      expect(result.errors[0].message).toContain('too long for pattern validation');
-      expect(result.errors[0].path).toEqual(['codes', '0']);
+      const [firstError] = result.errors;
+      if (firstError === undefined) throw new Error('Expected error');
+      expect(firstError.message).toContain('too long for pattern validation');
+      expect(firstError.path).toEqual(['codes', '0']);
     });
   });
 
@@ -508,7 +537,9 @@ describe('validation constraints', () => {
       const result = validateNode(g, node);
       expect(result.valid).toBe(false);
       expect(result.errors).toHaveLength(1);
-      expect(result.errors[0].message).toContain("expected type 'text' but got incompatible value");
+      const [firstError] = result.errors;
+      if (firstError === undefined) throw new Error('Expected error');
+      expect(firstError.message).toContain("expected type 'text' but got incompatible value");
     });
 
     it('rejects null value when nullable is undefined', () => {
@@ -526,7 +557,9 @@ describe('validation constraints', () => {
       const result = validateNode(g, node);
       expect(result.valid).toBe(false);
       expect(result.errors).toHaveLength(1);
-      expect(result.errors[0].message).toContain("expected type 'text' but got incompatible value");
+      const [firstError] = result.errors;
+      if (firstError === undefined) throw new Error('Expected error');
+      expect(firstError.message).toContain("expected type 'text' but got incompatible value");
     });
   });
 });

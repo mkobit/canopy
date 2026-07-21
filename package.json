@@ -14,7 +14,7 @@
     "build": "tsc -b && bun --filter './apps/*' build",
     "check:versions": "bun tools/verify-versions.ts",
     "test": "bun --filter '*' test",
-    "lint": "bun run check:versions && eslint .",
+    "lint": "bun run check:versions && eslint . --cache",
     "format": "prettier --write .",
     "typecheck": "bun --filter '*' typecheck",
     "prepare": "husky"
