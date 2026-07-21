@@ -118,6 +118,7 @@ Because Bun has built-in module bundling and web-based testing capabilities, a f
 This project uses `bd` (beads) for issue tracking.
 Run `bd prime` for full workflow context before creating or updating any issues.
 Key commands: `bd ready` (unblocked work), `bd create "Title" --type task` (new issue), `bd close <id>` (complete).
+Task beads must not be created or set to `in_progress` until the corresponding design proposal has successfully passed the adversarial review phase.
 
 ## Specs
 
@@ -125,6 +126,12 @@ This project uses OpenSpec for spec-driven development.
 Run `bunx openspec list` to see current changes and their status.
 Use `/opsx:propose`, `/opsx:apply`, `/opsx:archive` slash commands to work with specs.
 Specs live in `openspec/changes/` and follow the `proposal → design → tasks` artifact flow.
+All design proposals must undergo a mandatory adversarial review phase prior to staging implementation tasks.
+This phase occurs after drafting the `design.md` artifact but before creating `tasks.md` or staging beads issues.
+The design proposal must include a dedicated `## Adversarial review and mitigations` section.
+This section must systematically analyze resource and performance overhead, failure modes and edge cases, security and isolation, and migration/backward compatibility risks.
+For every identified risk, the design must document a concrete, actionable mitigation.
+Implementation tasks and beads issues must not be created, claimed, or executed until the adversarial review is complete and all mitigations are approved.
 
 ## Jules agents
 

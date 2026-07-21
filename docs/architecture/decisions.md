@@ -7,6 +7,12 @@ Each entry states the decision, why, and where the full reasoning lives.
 Full design proposals still live in `design/` (dated, one file per proposal).
 This log complements those files — it's where decisions made _during_ implementation of an approved design get recorded, so they don't only live in a PR description or an agent's private memory.
 
+## 2026-07-21 — Formalized mandatory adversarial review phase for OpenSpec design proposals
+
+All design proposals must now undergo a mandatory adversarial review phase prior to staging implementation tasks.
+This requires that the `design.md` file include an `## Adversarial review and mitigations` section that analyzes resource limits, edge cases, security, and migration risks.
+No task beads or implementation tasks may be created or claimed until mitigations for these risks are approved.
+
 ## 2026-07-05 — `apps/web`'s Playwright e2e suite binds a random port, not a fixed one
 
 `playwright.config.ts` used to hardcode `http://localhost:5173` for both `webServer` and `baseURL`.
