@@ -1,0 +1,10 @@
+{
+  "plugins": [
+    {
+      "name": "Mock Wizard Plugin",
+      "entrypoint": "src/plugin/mock/guest.ts",
+      "world": "wizard-plugin",
+      "outDir": "src/plugin/mock"
+    }
+  ]
+}
