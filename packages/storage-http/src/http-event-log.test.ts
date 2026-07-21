@@ -151,7 +151,7 @@ describe('HTTPEventLog', () => {
     expect(result).toHaveLength(2);
     const [res1, res2] = result;
     const [evt1, evt2] = events;
-    if ([evt1, evt2].includes(undefined)) {
+    if (evt1 === undefined || evt2 === undefined) {
       throw new Error('Expected events to be defined');
     }
     expect(res1?.eventId).toEqual(evt1.eventId);
@@ -166,7 +166,7 @@ describe('HTTPEventLog', () => {
     expect(result).toHaveLength(3);
     const [res1, res2, res3] = result;
     const [evt1, evt2, evt3] = events;
-    if ([evt1, evt2, evt3].includes(undefined)) {
+    if (evt1 === undefined || evt2 === undefined || evt3 === undefined) {
       throw new Error('Expected events to be defined');
     }
     expect(res1?.eventId).toEqual(evt3.eventId);
