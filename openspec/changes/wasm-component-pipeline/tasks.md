@@ -1,8 +1,9 @@
 ## 1. Guest TypeScript compilation and bundling build pipeline (canopy-5hw.1)
 
-- [ ] 1.1 Create the typescript compilation script in `apps/web/scripts/` to bundle guest TS to ESM JS using `Bun.build`.
-- [ ] 1.2 Update the compilation flow to treat host packages (e.g., `@canopy/graph`) as external imports.
-- [ ] 1.3 Port the guest mock plugin (`guest.js`) to a TypeScript file (`guest.ts`) and verify it bundles cleanly.
+- [x] 1.1 Create the typescript compilation script in `apps/web/scripts/` to bundle guest TS to ESM JS using `Bun.build`.
+- [x] 1.2 Update the compilation flow to treat host packages (e.g., `@canopy/graph`) as external imports.
+- [x] 1.3 Port the guest mock plugin (`guest.js`) to a TypeScript file (`guest.ts`) and verify it bundles cleanly.
+
 
 ## 2. Brotli compression and graph node packaging tool (canopy-5hw.2)
 
