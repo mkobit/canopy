@@ -13,6 +13,6 @@
 
 ## 3. Configuration-driven multiple plugin discovery and compilation (canopy-5hw.3)
 
-- [ ] 3.1 Define `plugins.config.json` in `apps/web` to configure plugin entry points, target worlds, and output paths.
-- [ ] 3.2 Refactor `apps/web/scripts/wit-codegen.ts` to dynamically read `plugins.config.json` and compile all defined plugins.
-- [ ] 3.3 Verify the entire build and codegen pipeline runs successfully via `bun run build` and type checking.
+- [x] 3.1 Define `plugins.config.json` in `apps/web` to configure plugin entry points, target worlds, and output paths.
+- [x] 3.2 Refactor `apps/web/scripts/wit-codegen.ts` to dynamically read `plugins.config.json` and compile all defined plugins.
+- [x] 3.3 Verify the entire build and codegen pipeline runs successfully via `bun run build` and type checking.
