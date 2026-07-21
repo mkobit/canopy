@@ -26,6 +26,17 @@ interface GraphNode {
   };
 }
 
+interface PluginConfig {
+  readonly name: string;
+  readonly entrypoint: string;
+  readonly world: string;
+  readonly outDir: string;
+}
+
+interface ConfigSchema {
+  readonly plugins: readonly PluginConfig[];
+}
+
 // Extract manifest from guest.ts using regex and Function evaluation
 function extractManifest(filePath: string): PluginManifest {
   const content = readFileSync(filePath, 'utf8');
@@ -44,49 +55,57 @@ function extractManifest(filePath: string): PluginManifest {
 function main(): void {
   try {
     const cwd = process.cwd();
-    // Paths relative to apps/web (cwd when run from package.json script)
-    const wasmPath = resolve(cwd, 'src/plugin/mock/plugin.wasm');
-    const guestPath = resolve(cwd, 'src/plugin/mock/guest.ts');
-    const outputPath = resolve(cwd, 'src/plugin/mock/plugin-node.json');
+    const configPath = resolve(cwd, 'plugins.config.json');
+    console.log(`Reading plugins config for packaging from: ${configPath}`);
+    const configContent = readFileSync(configPath, 'utf8');
+    const config = JSON.parse(configContent) as ConfigSchema;
 
-    console.log(`Reading WASM binary from: ${wasmPath}`);
-    const wasmBinary = readFileSync(wasmPath);
+    for (const plugin of config.plugins) {
+      console.log(`\n--- Packaging Plugin: ${plugin.name} ---`);
+      const outDir = resolve(cwd, plugin.outDir);
+      const wasmPath = resolve(outDir, 'plugin.wasm');
+      const guestPath = resolve(cwd, plugin.entrypoint);
+      const outputPath = resolve(outDir, 'plugin-node.json');
 
-    console.log('Compressing WASM binary using Brotli...');
-    const compressed = brotliCompressSync(wasmBinary);
-    const wasmBase64 = compressed.toString('base64');
-    console.log(
-      `Original size: ${wasmBinary.length} bytes, Brotli compressed: ${compressed.length} bytes`,
-    );
+      console.log(`Reading WASM binary from: ${wasmPath}`);
+      const wasmBinary = readFileSync(wasmPath);
 
-    console.log(`Extracting manifest from: ${guestPath}`);
-    const manifest = extractManifest(guestPath);
-    const manifestJson = JSON.stringify(manifest);
+      console.log('Compressing WASM binary using Brotli...');
+      const compressed = brotliCompressSync(wasmBinary);
+      const wasmBase64 = compressed.toString('base64');
+      console.log(
+        `Original size: ${wasmBinary.length} bytes, Brotli compressed: ${compressed.length} bytes`,
+      );
 
-    // Slugify the manifest name to create a stable node ID
-    const nameSlug = manifest.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-    const nodeId = `system:node:plugin-${nameSlug}`;
+      console.log(`Extracting manifest from: ${guestPath}`);
+      const manifest = extractManifest(guestPath);
+      const manifestJson = JSON.stringify(manifest);
 
-    const timestamp = new Date().toISOString();
+      // Slugify the manifest name to create a stable node ID
+      const nameSlug = manifest.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      const nodeId = `system:node:plugin-${nameSlug}`;
 
-    const node: GraphNode = {
-      id: nodeId,
-      type: 'system:nodetype:plugin',
-      properties: {
-        wasm_binary: wasmBase64,
-        manifest: manifestJson,
-        version: manifest.version,
-      },
-      metadata: {
-        created: timestamp,
-        modified: timestamp,
-        modifiedBy: '00000000-0000-0000-0000-000000000000',
-      },
-    };
+      const timestamp = new Date().toISOString();
 
-    console.log(`Writing graph-ready plugin node JSON to: ${outputPath}`);
-    writeFileSync(outputPath, JSON.stringify(node, null, 2), 'utf8');
-    console.log('Plugin packaging completed successfully.');
+      const node: GraphNode = {
+        id: nodeId,
+        type: 'system:nodetype:plugin',
+        properties: {
+          wasm_binary: wasmBase64,
+          manifest: manifestJson,
+          version: manifest.version,
+        },
+        metadata: {
+          created: timestamp,
+          modified: timestamp,
+          modifiedBy: '00000000-0000-0000-0000-000000000000',
+        },
+      };
+
+      console.log(`Writing graph-ready plugin node JSON to: ${outputPath}`);
+      writeFileSync(outputPath, JSON.stringify(node, null, 2), 'utf8');
+      console.log(`Plugin ${plugin.name} packaging completed successfully.`);
+    }
   } catch (error) {
     console.error('Error packaging plugin:', error);
     process.exit(1);
