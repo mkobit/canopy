@@ -21,27 +21,35 @@ To support real plugin development, we need a unified build pipeline that compil
 ## Decisions
 
 ### Decision 1: Bundling TypeScript guest plugins using Bun's native bundler
+
 we will use `Bun.build` to compile TypeScript guest entry points and bundle their local dependencies into a single-file ES module before running `jco componentize`.
-* **rationale**: `Bun.build` is extremely fast, has native TypeScript transpilation, and avoids adding third-party bundling tools like `esbuild` or `webpack`.
-* **alternatives considered**: `tsc` (does not bundle dependencies, leaving import references), `esbuild` (requires installing extra npm packages).
+
+- **rationale**: `Bun.build` is extremely fast, has native TypeScript transpilation, and avoids adding third-party bundling tools like `esbuild` or `webpack`.
+- **alternatives considered**: `tsc` (does not bundle dependencies, leaving import references), `esbuild` (requires installing extra npm packages).
 
 ### Decision 2: Brotli compression for compiled WASM binaries
+
 we will compress compiled WASM components using Brotli before converting them to Base64 for database storage.
-* **rationale**: raw transpiled WASM components can be over 12 MB, which causes severe graph database bloat and sync delays. Brotli compression reduces this overhead significantly.
-* **alternatives considered**: raw storage (leads to slow sync times), Gzip compression (lower compression ratio than Brotli for WASM code).
-we will update the validation logic in `@canopy/graph` to support both raw and Brotli-compressed WASM binaries by checking the magic header before and after decompression.
-the packaging tool in `apps/web/scripts/package-plugin.ts` will automate this by compressing compiled guest WebAssembly component binaries with Node's `zlib` Brotli implementation.
-this tool will extract the manifest from the guest TS file and format a valid graph-ready plugin node JSON file.
+
+- **rationale**: raw transpiled WASM components can be over 12 MB, which causes severe graph database bloat and sync delays. Brotli compression reduces this overhead significantly.
+- **alternatives considered**: raw storage (leads to slow sync times), Gzip compression (lower compression ratio than Brotli for WASM code).
+  we will update the validation logic in `@canopy/graph` to support both raw and Brotli-compressed WASM binaries by checking the magic header before and after decompression.
+  the packaging tool in `apps/web/scripts/package-plugin.ts` will automate this by compressing compiled guest WebAssembly component binaries with Node's `zlib` Brotli implementation.
+  this tool will extract the manifest from the guest TS file and format a valid graph-ready plugin node JSON file.
 
 ### Decision 3: Centralized configuration file in `apps/web`
+
 we will introduce `plugins.config.json` to define all guest plugins, their source entry points, WIT worlds, and output paths.
-* **rationale**: avoids hardcoding compile commands for new plugins inside `wit-codegen.ts`.
-* **alternatives considered**: separate build scripts per plugin (leads to duplicate script maintenance).
+
+- **rationale**: avoids hardcoding compile commands for new plugins inside `wit-codegen.ts`.
+- **alternatives considered**: separate build scripts per plugin (leads to duplicate script maintenance).
 
 ### Decision 4: Packaging output as graph-ready JSON nodes
+
 the build pipeline will output packaged plugins as JSON files matching the Graph Node schema, making them directly importable by the Canopy database.
-* **rationale**: allows easy plugin bootstrapping and test fixture loading without needing custom database insertion scripts.
-* **alternatives considered**: raw event logs (more complex to generate and load than static node representations).
+
+- **rationale**: allows easy plugin bootstrapping and test fixture loading without needing custom database insertion scripts.
+- **alternatives considered**: raw event logs (more complex to generate and load than static node representations).
 
 ## Risks / Trade-offs
 

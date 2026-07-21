@@ -21,19 +21,25 @@ We will upgrade TypeScript to version 7 to take advantage of the Go-based compil
 ## Decisions
 
 ### Decision 1: Upgrade to TypeScript 7 in root `package.json`
+
 We will upgrade the devDependency `typescript` in the root `package.json` to version `^7.0.0` or the latest stable TS 7 release.
-* **rationale**: TypeScript 7 features a performance-optimized Go-based compiler rewrite.
-* **alternatives considered**: keeping TypeScript 6.x (misses out on 8x-12x compile speedups and modern typing alignments).
+
+- **rationale**: TypeScript 7 features a performance-optimized Go-based compiler rewrite.
+- **alternatives considered**: keeping TypeScript 6.x (misses out on 8x-12x compile speedups and modern typing alignments).
 
 ### Decision 2: Run validation and perform compiler type fixups
+
 We will run `bun run build` and `bun run typecheck` to identify compile-time type check errors introduced by TypeScript 7's stricter compiler behavior, and fix them in place.
-* **rationale**: major compiler upgrades often introduce stricter inference rules, particularly around recursive types, generics, and union intersections.
-* **alternatives considered**: disabling strict options (violates Canopy's architectural invariants regarding strict typing and quality).
+
+- **rationale**: major compiler upgrades often introduce stricter inference rules, particularly around recursive types, generics, and union intersections.
+- **alternatives considered**: disabling strict options (violates Canopy's architectural invariants regarding strict typing and quality).
 
 ### Decision 3: Update `typescript-eslint` parser if necessary
+
 We will verify that `@typescript-eslint/parser` and `@typescript-eslint/eslint-plugin` correctly parse AST features produced by the TS 7 compiler.
-* **rationale**: ESLint parsing errors will block CI pipelines.
-* **alternatives considered**: disabling ESLint on build gates (violates functional validation invariants).
+
+- **rationale**: ESLint parsing errors will block CI pipelines.
+- **alternatives considered**: disabling ESLint on build gates (violates functional validation invariants).
 
 ## Risks / Trade-offs
 
@@ -45,19 +51,23 @@ We will verify that `@typescript-eslint/parser` and `@typescript-eslint/eslint-p
 ## Adversarial review and mitigations
 
 ### Resource and Performance Overhead
-- *Risk*: A new compiler version could increase memory usage or introduce performance regression on large codebases.
-- *Mitigation*: The Go-based TS 7 compiler has a significantly smaller memory footprint and delivers 8x-12x build performance improvements, resulting in a net reduction in resource usage.
+
+- _Risk_: A new compiler version could increase memory usage or introduce performance regression on large codebases.
+- _Mitigation_: The Go-based TS 7 compiler has a significantly smaller memory footprint and delivers 8x-12x build performance improvements, resulting in a net reduction in resource usage.
 
 ### Failure Modes and Edge Cases
-- *Risk*: Third-party package typings (like React or Node types) might be incompatible with TS 7 type inference, resulting in type errors outside our control.
-- *Mitigation*: If typing errors occur within third-party packages, we will use `@ts-expect-error` comments accompanied by descriptive justifications, conforming to Canopy's linting guidelines.
+
+- _Risk_: Third-party package typings (like React or Node types) might be incompatible with TS 7 type inference, resulting in type errors outside our control.
+- _Mitigation_: If typing errors occur within third-party packages, we will use `@ts-expect-error` comments accompanied by descriptive justifications, conforming to Canopy's linting guidelines.
 
 ### Security and Isolation
-- *Risk*: A major version upgrade in the npm package registry could introduce supply chain risks if a compromised or unofficial package is selected.
-- *Mitigation*: We will specify the official Microsoft package name `typescript` and install it using Bun's lockfile mechanism to ensure integrity.
+
+- _Risk_: A major version upgrade in the npm package registry could introduce supply chain risks if a compromised or unofficial package is selected.
+- _Mitigation_: We will specify the official Microsoft package name `typescript` and install it using Bun's lockfile mechanism to ensure integrity.
 
 ### Migration and Compatibility
-- *Risk*: Developer editors (like VS Code) might default to an older TypeScript version, reporting errors that do not align with the TS 7 compiler.
-- *Mitigation*: The root `.vscode/settings.json` (if present) or editor settings should be updated to use the workspace version of TypeScript.
-- *Risk*: Custom type guards or complex branded types in Canopy might fail due to type checker refinement changes in TS 7.
-- *Mitigation*: We will systematically inspect typecheck logs and adapt type definitions to satisfy the new rules while maintaining the exact same runtime behavior.
+
+- _Risk_: Developer editors (like VS Code) might default to an older TypeScript version, reporting errors that do not align with the TS 7 compiler.
+- _Mitigation_: The root `.vscode/settings.json` (if present) or editor settings should be updated to use the workspace version of TypeScript.
+- _Risk_: Custom type guards or complex branded types in Canopy might fail due to type checker refinement changes in TS 7.
+- _Mitigation_: We will systematically inspect typecheck logs and adapt type definitions to satisfy the new rules while maintaining the exact same runtime behavior.

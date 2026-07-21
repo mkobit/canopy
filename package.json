@@ -14,10 +14,11 @@
     "build": "tsc -b && bun --filter './apps/*' build",
     "check:versions": "bun tools/verify-versions.ts",
     "test": "bun --filter '*' test",
-    "lint": "bun run check:versions && eslint . --cache",
+    "lint": "bun tools/check-commands.ts && bun run check:versions && eslint . --cache",
     "format": "prettier --write .",
     "typecheck": "bun --filter '*' typecheck",
     "prepare": "husky",
+    "preinstall": "node -e \"console.error('Error: use bun'); process.exit(1)\"",
     "postinstall": "ln -sf ../typescript-native/bin/tsc node_modules/.bin/tsc"
   },
   "overrides": {

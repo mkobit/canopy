@@ -18,17 +18,20 @@ Therefore, we recommend retaining Vite for the frontend build toolchain and defe
 We ran a proof-of-concept build using Bun's native bundler on `src/main.tsx`.
 
 ### JS/TSX Compilation
+
 - **Status**: Passed.
 - **Details**: Bun successfully bundles the React components and transpiles JSX/TSX.
 - **Output**: `dist-bun/main.js` and `dist-bun/main.js.map`.
 
 ### Development Server & HMR
+
 - **Status**: Partial.
 - **Command**: `bun index.html`.
 - **Details**: Starts a zero-config server at `http://localhost:3000/`.
 - **Limitation**: Requires running `bunx @tailwindcss/cli -i ./src/index.css -o ./src/tailwind-built.css --watch` concurrently to recompile styles on change.
 
 ### CSS and Asset Resolution
+
 - **Status**: Failed (Severe Regression).
 - **Details**: `@fontsource` font packages are referenced via `url()` imports in the CSS.
 - **Behavior**: Bun's bundler automatically encodes all font subsets (latin, cyrillic, greek, etc.) as Base64 strings directly in the CSS.

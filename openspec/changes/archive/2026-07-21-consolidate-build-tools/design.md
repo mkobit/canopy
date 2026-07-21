@@ -6,11 +6,13 @@ This document details our findings from a technical feasibility analysis and pro
 ## Goals / Non-Goals
 
 **Goals:**
+
 - Evaluate the feasibility of compiling, bundling, and serving `apps/web` using Bun's native bundler and CLI dev server.
 - Benchmark build output size, compilation speed, and developer experience (HMR, CSS compilation, asset resolution).
 - Identify compatibility blockers and performance regressions.
 
 **Non-Goals:**
+
 - Moving other workspaces or scripts away from Bun.
 - Upgrading to a third-party framework (like Next.js) or altering the React SPA architecture.
 
@@ -36,10 +38,10 @@ Based on our proof-of-concept, we recommend **retaining Vite** and deferring the
 
 - **Alternative 1: Post-processing CSS bundle / custom plugin**:
   - We could write a custom Bun plugin or post-build script to rewrite CSS `url(...)` declarations, copy font files from `node_modules` to `dist/`, and prevent the Base64 inlining.
-  - *Why rejected*: This introduces fragile file-parsing regexes and ad-hoc build scripts that increase maintenance overhead, contradicting the goal of simplifying the build system.
+  - _Why rejected_: This introduces fragile file-parsing regexes and ad-hoc build scripts that increase maintenance overhead, contradicting the goal of simplifying the build system.
 - **Alternative 2: CDN-hosted fonts**:
   - Replace `@fontsource/*` npm packages with CDN links (e.g. Google Fonts) so Bun's bundler doesn't process them.
-  - *Why rejected*: Violates local-first / offline-first capabilities of Canopy. The application must remain fully functional without internet access.
+  - _Why rejected_: Violates local-first / offline-first capabilities of Canopy. The application must remain fully functional without internet access.
 
 ## Risks / Trade-offs
 

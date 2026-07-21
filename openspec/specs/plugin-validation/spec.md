@@ -1,8 +1,11 @@
 # plugin-validation Specification
 
 ## Purpose
+
 TBD - created by archiving change plugin-validation-constraints. Update Purpose after archive.
+
 ## Requirements
+
 ### Requirement: Validate WebAssembly magic header
 
 The system SHALL check that any plugin node's `wasm_binary` property contains a valid base64-encoded string representing a WebAssembly module, which may be raw or Brotli-compressed.
@@ -35,4 +38,3 @@ The system SHALL check that any plugin node's `manifest` property is a valid JSO
 
 - **WHEN** a plugin node is validated and its `manifest` property is not valid JSON, or is missing required properties, or has incorrect property types
 - **THEN** the validation SHALL fail for that property.
-

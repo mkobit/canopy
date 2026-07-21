@@ -377,7 +377,7 @@ export default tseslint.config(
 
   // Specific file overrides
   {
-    files: ['tools/verify-versions.ts'],
+    files: ['tools/verify-versions.ts', 'tools/check-commands.ts'],
     rules: {
       'unicorn/no-process-exit': 'off',
     },

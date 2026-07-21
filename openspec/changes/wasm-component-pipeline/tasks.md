@@ -4,7 +4,6 @@
 - [x] 1.2 Update the compilation flow to treat host packages (e.g., `@canopy/graph`) as external imports.
 - [x] 1.3 Port the guest mock plugin (`guest.js`) to a TypeScript file (`guest.ts`) and verify it bundles cleanly.
 
-
 ## 2. Brotli compression and graph node packaging tool (canopy-5hw.2)
 
 - [x] 2.1 Write the packaging script `apps/web/scripts/package-plugin.ts` using node's `zlib` Brotli compression.

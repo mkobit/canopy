@@ -21,24 +21,32 @@ this design documents the custom plugin architecture to resolve both blockers an
 ## Decisions
 
 ### Decision 1: Mark woff/woff2 fonts as external in a custom Bun plugin
+
 we resolve the font inlining issue by intercepting font resolutions in the `onResolve` hook and returning `{ external: true }`.
-* **rationale**: this prevents Bun from inlining the fonts as Base64 data URLs, keeping the relative path intact and reducing the stylesheet size back to ~122 KB.
-* **alternatives considered**: setting loader to `"file"` (leads to a Bun bundler error because onLoad plugins must return contents as a string/Uint8Array).
+
+- **rationale**: this prevents Bun from inlining the fonts as Base64 data URLs, keeping the relative path intact and reducing the stylesheet size back to ~122 KB.
+- **alternatives considered**: setting loader to `"file"` (leads to a Bun bundler error because onLoad plugins must return contents as a string/Uint8Array).
 
 ### Decision 2: Process CSS with PostCSS and Tailwind v4 inside onLoad
+
 we resolve the Tailwind watch process requirement by compiling all `.css` files via PostCSS, `@tailwindcss/postcss`, and `autoprefixer` within the `onLoad` hook.
-* **rationale**: this allows Tailwind compilation to occur in-process during bundling, eliminating the need to run an external Tailwind CLI watcher.
-* **alternatives considered**: running the Tailwind CLI watcher in parallel (increases process orchestration complexity).
+
+- **rationale**: this allows Tailwind compilation to occur in-process during bundling, eliminating the need to run an external Tailwind CLI watcher.
+- **alternatives considered**: running the Tailwind CLI watcher in parallel (increases process orchestration complexity).
 
 ### Decision 3: Copy physical font files to output directory during onEnd
+
 we copy all font files referenced during compilation from their respective `node_modules` folders to the output folder inside the `onEnd` build hook.
-* **rationale**: because fonts are marked external, they are not moved to the output directory by Bun's default compiler. The custom plugin tracks absolute paths of resolved fonts in `onResolve` and copies them to the destination directory once bundling completes.
-* **alternatives considered**: using external copy scripts (decouples build phases and increases chances of stale asset folders).
+
+- **rationale**: because fonts are marked external, they are not moved to the output directory by Bun's default compiler. The custom plugin tracks absolute paths of resolved fonts in `onResolve` and copies them to the destination directory once bundling completes.
+- **alternatives considered**: using external copy scripts (decouples build phases and increases chances of stale asset folders).
 
 ### Decision 4: Retain Vite as the primary bundler
+
 we recommend keeping Vite as the active frontend bundler for Canopy at this time.
-* **rationale**: although the custom Bun plugin resolves both blockers, it introduces significant build script complexity and custom file handling logic. Vite provides highly optimized HMR (React Fast Refresh), out-of-the-box asset handling, and superior development loop speed.
-* **alternatives considered**: full migration to the custom `Bun.build` setup (increases maintenance footprint and introduces build fragility).
+
+- **rationale**: although the custom Bun plugin resolves both blockers, it introduces significant build script complexity and custom file handling logic. Vite provides highly optimized HMR (React Fast Refresh), out-of-the-box asset handling, and superior development loop speed.
+- **alternatives considered**: full migration to the custom `Bun.build` setup (increases maintenance footprint and introduces build fragility).
 
 ## Risks / Trade-offs
 

@@ -14,9 +14,11 @@ Consolidating our build toolchain by replacing Vite with Bun's native bundler re
 ## Capabilities
 
 ### New Capabilities
+
 - `web-app-bundling`: Bundle and serve the client-side React single-page application and its assets natively using Bun.
 
 ### Modified Capabilities
+
 <!-- None -->
 
 ## Impact
