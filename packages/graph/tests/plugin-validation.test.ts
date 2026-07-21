@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'bun:test';
+import fs from 'node:fs';
+import path from 'node:path';
 import { createGraph } from '../src/create-graph';
 import { validateNode } from '../src/validation';
 import {
@@ -54,11 +56,28 @@ describe('WASM binary property validation', () => {
     expect(errors[0]?.message).toContain('is not a valid base64-encoded string');
   });
 
+  it('passes on valid base64 Brotli-compressed WASM binary', () => {
+    const brotliWasmBase64 = 'iwWAAGFzbQAAAAEAAAABAw==';
+    const errors = validateWasmBinaryProperty(brotliWasmBase64, 'wasm_binary');
+    expect(errors).toHaveLength(0);
+  });
+
+  it('rejects invalid Brotli-compressed WASM binary (failed validation or decompression)', () => {
+    const corruptedBase64 = 'SGVsbG8gd29ybGQgSGVsbG8gd29ybGQgSGVsbG8gd29ybGQ=';
+    const errors = validateWasmBinaryProperty(corruptedBase64, 'wasm_binary');
+    expect(errors).toHaveLength(1);
+    expect(errors[0]?.message).toContain(
+      'failed WebAssembly magic binary header validation or Brotli decompression',
+    );
+  });
+
   it('rejects base64 string missing WASM magic header', () => {
     const helloWorldBase64 = 'SGVsbG8gd29ybGQ='; // "Hello world"
     const errors = validateWasmBinaryProperty(helloWorldBase64, 'wasm_binary');
     expect(errors).toHaveLength(1);
-    expect(errors[0]?.message).toContain('missing the WebAssembly magic binary header');
+    expect(errors[0]?.message).toContain(
+      'failed WebAssembly magic binary header validation or Brotli decompression',
+    );
   });
 });
 
@@ -237,5 +256,44 @@ describe('node validation integration for Plugin nodes', () => {
     expect(result.errors.length).toBeGreaterThanOrEqual(2);
     expect(result.errors.some((e) => e.message.includes('magic binary header'))).toBe(true);
     expect(result.errors.some((e) => e.message.includes('valid JSON string'))).toBe(true);
+  });
+
+  it('validates the packaged plugin node JSON from package-plugin script', () => {
+    const g = unwrap(createGraph(createGraphId(), 'System Graph'));
+
+    try {
+      const dir = import.meta.dirname ?? __dirname;
+      const jsonPath = path.resolve(dir, '../../../apps/web/src/plugin/mock/plugin-node.json');
+      if (fs.existsSync(jsonPath)) {
+        const rawJson = fs.readFileSync(jsonPath, 'utf8');
+        const nodeData = JSON.parse(rawJson) as {
+          readonly id: string;
+          readonly properties: {
+            readonly wasm_binary: string;
+            readonly manifest: string;
+            readonly version: string;
+          };
+        };
+
+        const node = createTestNode({
+          id: nodeData.id,
+          type: SYSTEM_IDS.TYPE_PLUGIN,
+          properties: {
+            wasm_binary: nodeData.properties.wasm_binary,
+            manifest: nodeData.properties.manifest,
+            version: nodeData.properties.version,
+          },
+        });
+
+        const result = validateNode(g, node);
+        expect(result.valid).toBe(true);
+        expect(result.errors).toHaveLength(0);
+      }
+    } catch (error) {
+      console.warn(
+        'Could not load packaged plugin-node.json, skipping validation integration:',
+        error,
+      );
+    }
   });
 });

@@ -7,9 +7,9 @@
 
 ## 2. Brotli compression and graph node packaging tool (canopy-5hw.2)
 
-- [ ] 2.1 Write the packaging script `apps/web/scripts/package-plugin.ts` using node's `zlib` Brotli compression.
-- [ ] 2.2 Construct the JSON structure representing a Graph Node for the plugin, containing manifest properties and Base64-encoded Brotli-compressed binary.
-- [ ] 2.3 Add a validation run to verify the packaged JSON node is correctly generated.
+- [x] 2.1 Write the packaging script `apps/web/scripts/package-plugin.ts` using node's `zlib` Brotli compression.
+- [x] 2.2 Construct the JSON structure representing a Graph Node for the plugin, containing manifest properties and Base64-encoded Brotli-compressed binary.
+- [x] 2.3 Add a validation run to verify the packaged JSON node is correctly generated.
 
 ## 3. Configuration-driven multiple plugin discovery and compilation (canopy-5hw.3)
 

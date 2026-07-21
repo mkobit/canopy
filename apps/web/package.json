@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "codegen:wit": "bun run scripts/wit-codegen.ts",
+    "codegen:wit": "bun run scripts/wit-codegen.ts && bun run scripts/package-plugin.ts",
+    "package:plugin": "bun run scripts/package-plugin.ts",
     "build": "bun run codegen:wit && tsc && vite build",
     "dev": "vite",
     "typecheck": "bun run codegen:wit && tsc -p tsconfig.check.json",

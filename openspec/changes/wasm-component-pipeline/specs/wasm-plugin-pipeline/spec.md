@@ -27,3 +27,14 @@ The packaging pipeline SHALL output a JSON document representing a valid `plugin
 #### Scenario: Packaging plugin node JSON
 - **WHEN** the packaging tool is run with the manifest JSON and Brotli-compressed WASM component
 - **THEN** it SHALL output a JSON payload representing a Graph Node of type `plugin` with `manifest` and `wasm_binary` properties ready for insertion.
+
+### Requirement: Raw and Brotli-compressed WebAssembly binary validation
+The graph validation pipeline SHALL support validating both raw and Brotli-compressed base64-encoded WebAssembly binaries.
+
+#### Scenario: Validation of raw WebAssembly binary
+- **WHEN** a plugin node contains a base64-encoded raw WebAssembly binary
+- **THEN** the validator SHALL pass validation if it starts with the standard WebAssembly magic header.
+
+#### Scenario: Validation of Brotli-compressed WebAssembly binary
+- **WHEN** a plugin node contains a base64-encoded Brotli-compressed WebAssembly binary
+- **THEN** the validator SHALL decompress it and pass validation if the decompressed bytes start with the standard WebAssembly magic header.

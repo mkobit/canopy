@@ -1,6 +1,52 @@
 import type { ValidationError } from './validation-types';
 import type { PropertyValue } from './properties';
 
+const brotliDecompressSync = (() => {
+  // eslint-disable-next-line functional/no-try-statements
+  try {
+    const hasImportMeta = import.meta !== undefined;
+    const req =
+      hasImportMeta && 'require' in import.meta
+        ? (import.meta as Readonly<{ require?: unknown }>).require
+        : // eslint-disable-next-line unicorn/prefer-module
+          typeof require === 'undefined'
+          ? undefined
+          : // eslint-disable-next-line unicorn/prefer-module
+            require;
+
+    if (typeof req === 'function') {
+      const zlib = req('node:zlib') as Readonly<{ brotliDecompressSync?: unknown }> | undefined;
+      if (zlib && typeof zlib.brotliDecompressSync === 'function') {
+        return zlib.brotliDecompressSync as (buffer: Uint8Array) => Uint8Array;
+      }
+    }
+  } catch {
+    // Ignore errors in browser or environments without require
+  }
+  return null;
+})();
+
+function decodeBase64(base64: string): Uint8Array {
+  // eslint-disable-next-line functional/no-try-statements
+  try {
+    if (typeof Buffer !== 'undefined') {
+      // eslint-disable-next-line unicorn/prefer-uint8array-base64 -- compatibility fallback for Node environment
+      return Buffer.from(base64, 'base64');
+    }
+  } catch {
+    // ignore and fall back to browser atob
+  }
+  // eslint-disable-next-line unicorn/prefer-uint8array-base64 -- compatibility fallback for browser environment
+  const binaryString = atob(base64);
+  const bytes = new Uint8Array(binaryString.length);
+  // eslint-disable-next-line functional/no-loop-statements -- standard loop to populate typed array
+  for (let i = 0; i < binaryString.length; i++) {
+    // eslint-disable-next-line functional/immutable-data -- standard code point assignment
+    bytes[i] = binaryString.codePointAt(i) || 0;
+  }
+  return bytes;
+}
+
 export function validateWasmBinaryProperty(
   value: PropertyValue,
   propertyName: string,
@@ -39,22 +85,36 @@ export function validateWasmBinaryProperty(
       raw.codePointAt(2) === 0x73 &&
       raw.codePointAt(3) === 0x6d;
 
-    if (!isWasmMagic) {
-      return [
-        {
-          path: [propertyName],
-          message: `Property '${propertyName}' is missing the WebAssembly magic binary header`,
-          expected: 'WebAssembly magic header (0x00 0x61 0x73 0x6d)',
-          actual: cleaned.slice(0, 8),
-        },
-      ];
+    if (isWasmMagic) {
+      return [];
+    }
+
+    if (brotliDecompressSync !== null) {
+      const compressedBytes = decodeBase64(cleaned);
+      const decompressed = brotliDecompressSync(compressedBytes);
+      const isDecompressedWasmMagic =
+        decompressed[0] === 0x00 &&
+        decompressed[1] === 0x61 &&
+        decompressed[2] === 0x73 &&
+        decompressed[3] === 0x6d;
+
+      if (!isDecompressedWasmMagic) {
+        return [
+          {
+            path: [propertyName],
+            message: `Property '${propertyName}' is missing the WebAssembly magic binary header`,
+            expected: 'WebAssembly magic header (0x00 0x61 0x73 0x6d)',
+            actual: cleaned.slice(0, 8),
+          },
+        ];
+      }
     }
   } catch {
     return [
       {
         path: [propertyName],
-        message: `Property '${propertyName}' failed base64 decoding`,
-        expected: 'valid base64',
+        message: `Property '${propertyName}' failed WebAssembly magic binary header validation or Brotli decompression`,
+        expected: 'valid WebAssembly binary (raw or Brotli-compressed)',
         actual: value,
       },
     ];
