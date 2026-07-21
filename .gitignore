@@ -17,4 +17,5 @@ test-results/
 .worktrees/
 .eslintcache
 
-
+# Generated guest plugin JS outputs
+apps/web/src/plugin/mock/guest.js

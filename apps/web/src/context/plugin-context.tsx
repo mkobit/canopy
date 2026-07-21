@@ -23,7 +23,6 @@ import type { DraftSession, GraphEvent } from '@canopy/graph';
 import { createDraftSession, SYSTEM_IDS } from '@canopy/graph';
 import { DraftSessionHandle } from '../plugin/draft-session-shim';
 import { Temporal } from 'temporal-polyfill';
-// @ts-expect-error mock JavaScript guest plugin has no type declarations
 // eslint-disable-next-line import/extensions -- Mock javascript plugin must be loaded directly
 import * as mockPlugin from '../plugin/mock/guest.js';
 
