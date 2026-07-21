@@ -17,7 +17,8 @@
     "lint": "bun run check:versions && eslint . --cache",
     "format": "prettier --write .",
     "typecheck": "bun --filter '*' typecheck",
-    "prepare": "husky"
+    "prepare": "husky",
+    "postinstall": "ln -sf ../typescript-native/bin/tsc node_modules/.bin/tsc"
   },
   "overrides": {
     "@typescript-eslint/utils": "8.54.0"
@@ -51,6 +52,7 @@
     "prettier": "^3.8.4",
     "tsx": "^4.22.4",
     "typescript": "6.0.3",
+    "typescript-native": "npm:typescript@7.0.1-rc",
     "typescript-eslint": "^8.59.1",
     "uuid": "^14.0.0",
     "vite": "^8.1.2"
