@@ -7,6 +7,12 @@ Each entry states the decision, why, and where the full reasoning lives.
 Full design proposals still live in `design/` (dated, one file per proposal).
 This log complements those files — it's where decisions made _during_ implementation of an approved design get recorded, so they don't only live in a PR description or an agent's private memory.
 
+## 2026-07-21 — Mandated TypeScript for all developer scripts and Git hooks
+
+To maintain consistency with project tooling (Vite, Bun, Vitest, ESLint), we will only author developer scripts and Git hooks in TypeScript.
+This avoids introducing external runtimes and package managers (like Python and `uv`) into the project's build and lint pipelines.
+Any new hooks or scripts must run via Bun and TypeScript, and are verified by the existing lint and typecheck gates.
+
 ## 2026-07-21 — Formalized mandatory adversarial review phase for OpenSpec design proposals
 
 All design proposals must now undergo a mandatory adversarial review phase prior to staging implementation tasks.
