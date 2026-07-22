@@ -12,6 +12,7 @@ import { getNodeType } from './queries';
 import { parseNamespace } from './resolve-namespace';
 import { SYSTEM_IDS } from './system';
 import { pipe, map, flatMap, filter } from 'remeda';
+import { validateWasmBinaryProperty, validatePluginManifestProperty } from './plugin-validation';
 
 export const getNodeTypeDefinition = getNodeType;
 
@@ -392,8 +393,25 @@ export function validateNode(graph: Graph, node: Node): ValidationResult {
   // 2. Validate properties
   const errors = validateProperties(node.properties, def.properties);
 
-  if (errors.length > 0) {
-    return failure(errors);
+  const wasmBinaryVal = node.properties.get('wasm_binary');
+  const manifestVal = node.properties.get('manifest');
+
+  const pluginErrors =
+    node.type === SYSTEM_IDS.TYPE_PLUGIN
+      ? [
+          ...(wasmBinaryVal === undefined
+            ? []
+            : validateWasmBinaryProperty(wasmBinaryVal, 'wasm_binary')),
+          ...(manifestVal === undefined
+            ? []
+            : validatePluginManifestProperty(manifestVal, 'manifest')),
+        ]
+      : [];
+
+  const allErrors = [...errors, ...pluginErrors];
+
+  if (allErrors.length > 0) {
+    return failure(allErrors);
   }
 
   return SUCCESS;

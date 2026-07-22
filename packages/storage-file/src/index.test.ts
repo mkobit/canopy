@@ -21,7 +21,7 @@ import type { FileEventLog } from './file-event-log';
 const serializeEventForTest = (event: GraphEvent): string => {
   return JSON.stringify({
     ...event,
-    properties: Object.fromEntries(event.properties),
+    properties: 'properties' in event ? Object.fromEntries(event.properties) : undefined,
   });
 };
 
@@ -92,6 +92,9 @@ describe('FileEventLog', () => {
       (a, b) => a.eventId.localeCompare(b.eventId),
     );
     const [event1, event2, event3] = sortedEvents;
+    if (!event1 || !event2 || !event3) {
+      throw new Error('Expected 3 events');
+    }
 
     await store.appendEvents('graph1', [event1, event2, event3]);
 
@@ -104,6 +107,9 @@ describe('FileEventLog', () => {
       (a, b) => a.eventId.localeCompare(b.eventId),
     );
     const [event1, event2, event3] = sortedEvents;
+    if (!event1 || !event2 || !event3) {
+      throw new Error('Expected 3 events');
+    }
 
     await store.appendEvents('graph1', [event1, event2, event3]);
 
@@ -116,6 +122,9 @@ describe('FileEventLog', () => {
       (a, b) => a.eventId.localeCompare(b.eventId),
     );
     const [event1, event2] = sortedEvents;
+    if (event1 === undefined || event2 === undefined) {
+      throw new Error('Expected 2 events');
+    }
 
     await store.appendEvents('graph1', sortedEvents);
 
@@ -128,6 +137,9 @@ describe('FileEventLog', () => {
       (a, b) => a.eventId.localeCompare(b.eventId),
     );
     const [event1, event2, event3] = sortedEvents;
+    if (!event1 || !event2 || !event3) {
+      throw new Error('Expected 3 events');
+    }
 
     await store.appendEvents('graph1', sortedEvents);
 
@@ -426,6 +438,9 @@ describe('FileEventLog', () => {
       ].toSorted((a, b) => a.eventId.localeCompare(b.eventId));
 
       const [event1, event2, event3] = sortedEvents;
+      if (!event1 || !event2 || !event3) {
+        throw new Error('Expected 3 sorted events');
+      }
 
       const initialLocalManifest = {
         sealed: [],

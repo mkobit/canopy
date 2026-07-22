@@ -32,9 +32,9 @@ Each block type carries a simple set of properties.
 A plain text block.
 The renderer decides how to display it (paragraph, heading, list item, etc.).
 
-| Property | Type   | Required | Description                   |
-| -------- | ------ | -------- | ----------------------------- |
-| `text`   | string | yes      | The text content of the block |
+| Property  | Type   | Required | Description                   |
+| --------- | ------ | -------- | ----------------------------- |
+| `content` | string | yes      | The text content of the block |
 
 ### CodeBlock
 
@@ -42,7 +42,7 @@ A block of source code or preformatted text.
 
 | Property   | Type   | Required | Description                                 |
 | ---------- | ------ | -------- | ------------------------------------------- |
-| `text`     | string | yes      | The code content                            |
+| `content`  | string | yes      | The code content                            |
 | `language` | string | no       | Language identifier for syntax highlighting |
 
 ### MarkdownNode
@@ -61,9 +61,8 @@ It offers the richest rendering without requiring multiple block nodes for simpl
 
 ### Property naming convention
 
-TextBlock and CodeBlock use `text` for their content property because their content is plain text with no special interpretation at the data layer.
-MarkdownNode uses `content` because its value is interpreted by the renderer as markdown.
-This distinction is intentional: `text` means literal text, `content` means text with semantic structure that a renderer will parse.
+All content-carrying block types (`TextBlock`, `CodeBlock`, and `MarkdownNode`) use `content` as the standard property name for their primary text payload.
+This uniform naming convention simplifies graph operations, schemas, and renderer implementations across the codebase.
 
 ### Common node properties
 
@@ -195,7 +194,7 @@ These are explicitly out of scope for this document:
 ## 9. Open questions
 
 1. Root node identification: topological (no outgoing `child_of`) vs explicit marker vs query-based.
-2. Additional system properties on blocks: minimal (just `text`/`content`) vs enforced metadata.
+2. Additional system properties on blocks: minimal (just `content`) vs enforced metadata.
 3. Whether TextBlock should carry a `role` or `level` property (e.g., heading level) or whether that is purely a renderer/view concern.
 4. Maximum practical depth for nested `child_of` hierarchies and whether to set a configurable limit.
 5. Inline syntax for embedding query results or linking to nodes within markdown content (deferred).

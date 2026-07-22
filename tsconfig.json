@@ -21,6 +21,9 @@
     },
     {
       "path": "./packages/storage-sqlite/tsconfig.build.json"
+    },
+    {
+      "path": "./packages/storage-http/tsconfig.build.json"
     }
   ]
 }

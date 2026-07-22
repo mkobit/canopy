@@ -9,5 +9,7 @@
     },
     "composite": false,
     "noEmit": true
-  }
+  },
+  "include": ["src/**/*", "tests/**/*"],
+  "exclude": []
 }

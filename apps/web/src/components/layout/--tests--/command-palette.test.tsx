@@ -123,7 +123,8 @@ describe('CommandPalette', () => {
     expect(screen.queryByPlaceholderText('Search nodes...')).toBeNull();
 
     // Trigger Ctrl+P.
-    fireEvent.keyDown(globalThis, { key: 'p', ctrlKey: true });
+    // eslint-disable-next-line unicorn/prefer-global-this -- window is required for fireEvent target type compatibility
+    fireEvent.keyDown(window, { key: 'p', ctrlKey: true });
 
     expect(screen.getByPlaceholderText('Search nodes...')).toBeDefined();
   });
@@ -136,7 +137,8 @@ describe('CommandPalette', () => {
     );
 
     // Trigger Ctrl+Shift+P.
-    fireEvent.keyDown(globalThis, { key: 'P', ctrlKey: true, shiftKey: true });
+    // eslint-disable-next-line unicorn/prefer-global-this -- window is required for fireEvent target type compatibility
+    fireEvent.keyDown(window, { key: 'P', ctrlKey: true, shiftKey: true });
 
     const input = screen.getByPlaceholderText('Type a command to run...') as HTMLInputElement;
     expect(input).toBeDefined();
@@ -151,7 +153,8 @@ describe('CommandPalette', () => {
     );
 
     // Open in node search.
-    fireEvent.keyDown(globalThis, { key: 'p', ctrlKey: true });
+    // eslint-disable-next-line unicorn/prefer-global-this -- window is required for fireEvent target type compatibility
+    fireEvent.keyDown(window, { key: 'p', ctrlKey: true });
 
     const input = screen.getByPlaceholderText('Search nodes...') as HTMLInputElement;
     expect(input).toBeDefined();
@@ -173,7 +176,8 @@ describe('CommandPalette', () => {
     );
 
     // Open in node search.
-    fireEvent.keyDown(globalThis, { key: 'p', ctrlKey: true });
+    // eslint-disable-next-line unicorn/prefer-global-this -- window is required for fireEvent target type compatibility
+    fireEvent.keyDown(window, { key: 'p', ctrlKey: true });
 
     const input = screen.getByPlaceholderText('Search nodes...') as HTMLInputElement;
 
@@ -195,7 +199,8 @@ describe('CommandPalette', () => {
     );
 
     // Open in command mode.
-    fireEvent.keyDown(globalThis, { key: 'P', ctrlKey: true, shiftKey: true });
+    // eslint-disable-next-line unicorn/prefer-global-this -- window is required for fireEvent target type compatibility
+    fireEvent.keyDown(window, { key: 'P', ctrlKey: true, shiftKey: true });
 
     const input = screen.getByPlaceholderText('Type a command to run...') as HTMLInputElement;
 
@@ -217,7 +222,8 @@ describe('CommandPalette', () => {
     );
 
     // Open in node search.
-    fireEvent.keyDown(globalThis, { key: 'p', ctrlKey: true });
+    // eslint-disable-next-line unicorn/prefer-global-this -- window is required for fireEvent target type compatibility
+    fireEvent.keyDown(window, { key: 'p', ctrlKey: true });
 
     // Select the first node (Project Alpha).
     const itemButton = screen.getByText('Project Alpha');

@@ -1,13 +1,13 @@
 import { describe, it, expect } from 'bun:test';
 import { createNodeId, createTypeId, createInstant, createPlainDate } from '../src/constructors';
-import { unwrap, isErr } from '@canopy/graph';
+import { unwrap, isErr, asNodeId, asTypeId, asInstant, asPlainDate } from '@canopy/graph';
 import { Temporal } from 'temporal-polyfill';
 
 describe('Constructors', () => {
   it('should create valid NodeId from valid UUID', () => {
     const validUuid = '123e4567-e89b-12d3-a456-426614174000';
     const nodeId = unwrap(createNodeId(validUuid));
-    expect(nodeId).toBe(validUuid);
+    expect(nodeId).toBe(asNodeId(validUuid));
   });
 
   it('should return Error for invalid NodeId', () => {
@@ -20,8 +20,8 @@ describe('Constructors', () => {
   });
 
   it('should create valid TypeId', () => {
-    expect(unwrap(createTypeId('MyType'))).toBe('MyType');
-    expect(unwrap(createTypeId('my-type_1'))).toBe('my-type_1');
+    expect(unwrap(createTypeId('MyType'))).toBe(asTypeId('MyType'));
+    expect(unwrap(createTypeId('my-type_1'))).toBe(asTypeId('my-type_1'));
   });
 
   it('should return Error for invalid TypeId', () => {
@@ -34,7 +34,7 @@ describe('Constructors', () => {
     // Temporal might drop milliseconds if zero, or format it differently.
     // We expect the canonical format returned by Temporal.
     const expected = Temporal.Instant.from(iso).toString();
-    expect(unwrap(createInstant(iso))).toBe(expected);
+    expect(unwrap(createInstant(iso))).toBe(asInstant(expected));
   });
 
   it('should return Error for invalid Instant', () => {
@@ -42,7 +42,7 @@ describe('Constructors', () => {
   });
 
   it('should create valid PlainDate', () => {
-    expect(unwrap(createPlainDate('2023-10-27'))).toBe('2023-10-27');
+    expect(unwrap(createPlainDate('2023-10-27'))).toBe(asPlainDate('2023-10-27'));
   });
 
   it('should return Error for invalid PlainDate', () => {

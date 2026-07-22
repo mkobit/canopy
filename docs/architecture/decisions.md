@@ -7,6 +7,12 @@ Each entry states the decision, why, and where the full reasoning lives.
 Full design proposals still live in `design/` (dated, one file per proposal).
 This log complements those files — it's where decisions made _during_ implementation of an approved design get recorded, so they don't only live in a PR description or an agent's private memory.
 
+## 2026-07-21 — Formalized mandatory adversarial review phase for OpenSpec design proposals
+
+All design proposals must now undergo a mandatory adversarial review phase prior to staging implementation tasks.
+This requires that the `design.md` file include an `## Adversarial review and mitigations` section that analyzes resource limits, edge cases, security, and migration risks.
+No task beads or implementation tasks may be created or claimed until mitigations for these risks are approved.
+
 ## 2026-07-05 — `apps/web`'s Playwright e2e suite binds a random port, not a fixed one
 
 `playwright.config.ts` used to hardcode `http://localhost:5173` for both `webServer` and `baseURL`.
@@ -16,10 +22,11 @@ Manual `bun run dev` is untouched and keeps Vite's normal fixed default — only
 
 ## 2026-07-05 — Block content stays on the `content` property, not `text`
 
-`docs/design/2026-02-06-content-model.md` prescribes a naming split: TextBlock/CodeBlock use `text` (literal content), MarkdownNode uses `content` (renderer-interpreted).
+`docs/design/2026-02-06-content-model.md` prescribed a naming split: TextBlock/CodeBlock use `text` (literal content), MarkdownNode uses `content` (renderer-interpreted).
 `bootstrap.ts` never implemented this — all three block `NodeType`s use `content`, and rendering is a hardcoded `switch (node.type)` in `block-renderer.tsx`, not yet resolved through the graph-resident `Renderer` concept (`meta:renderer`/`RENDERER_DEF`) that would make the split meaningful.
 Rather than bundle a schema/rendering change into the `canopy-1q5.7` storage-plumbing cutover, `content` was kept everywhere and the drift was left for a dedicated bead.
 See `canopy-a1s`.
+This property naming drift has been resolved by updating `docs/design/2026-02-06-content-model.md` to standardize on `content` across all block types to match reality.
 
 ## 2026-07-05 — Legacy Yjs vault import dropped (canopy-1q5.7 task 3.1)
 

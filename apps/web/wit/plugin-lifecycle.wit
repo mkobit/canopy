@@ -1,0 +1,9 @@
+package canopy:graph;
+
+interface plugin-lifecycle {
+  use plugin-manifest.{plugin-manifest};
+
+  get-manifest: func() -> plugin-manifest;
+  initialize: func() -> result<_, string>;
+  shutdown: func() -> result<_, string>;
+}

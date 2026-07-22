@@ -1,4 +1,16 @@
-export const pluginLifecycle = {
+import type {
+  pluginLifecycle as PluginLifecycleInterface,
+  wizardExecution as WizardExecutionInterface,
+} from 'canopy:graph/plugin';
+import type {
+  FormSchema,
+  InputEntry,
+  StepResult,
+  WizardSession as WizardSessionClass,
+} from 'canopy:graph/wizard-execution';
+import type { DraftSessionHandle } from 'canopy:graph/draft-session';
+
+export const pluginLifecycle: typeof PluginLifecycleInterface = {
   getManifest() {
     return {
       name: 'Mock Wizard Plugin',
@@ -21,17 +33,24 @@ export const pluginLifecycle = {
       ],
     };
   },
-  initialize() {},
-  shutdown() {},
+  initialize() {
+    return { tag: 'ok' as const, val: undefined };
+  },
+  shutdown() {
+    return { tag: 'ok' as const, val: undefined };
+  },
 };
 
-export class WizardSession {
-  constructor(draft) {
+export class WizardSession implements WizardSessionClass {
+  private readonly draft: DraftSessionHandle;
+  private step: number;
+
+  constructor(draft: DraftSessionHandle) {
     this.draft = draft;
     this.step = 0;
   }
 
-  renderStepSchema() {
+  public renderStepSchema(): FormSchema {
     if (this.step === 0) {
       return {
         title: 'Mock Step 1',
@@ -63,7 +82,7 @@ export class WizardSession {
     }
   }
 
-  handleStepSubmission(inputs) {
+  public handleStepSubmission(inputs: readonly InputEntry[]): StepResult {
     if (this.step === 0) {
       this.step = 1;
       return {
@@ -75,9 +94,9 @@ export class WizardSession {
       };
     } else {
       const ageInput = inputs.find((i) => i.fieldName === 'age');
-      const age = ageInput ? ageInput.value.val : 0;
+      const age = ageInput && ageInput.value.tag === 'integer' ? ageInput.value.val : 0n;
       const event = {
-        tag: 'node-created',
+        tag: 'node-created' as const,
         val: {
           eventId: 'evt_mock_node',
           id: 'node_mock_plugin_output',
@@ -85,22 +104,21 @@ export class WizardSession {
           properties: [
             {
               name: 'age',
-              value: { tag: 'integer', val: BigInt(age) },
+              value: { tag: 'integer' as const, val: age },
             },
           ],
           timestamp: new Date().toISOString(),
           deviceId: 'host_device',
-          batchId: undefined,
         },
       };
       return {
-        nextStep: { tag: 'complete' },
+        nextStep: { tag: 'complete' as const },
         eventsToStage: [event],
       };
     }
   }
 }
 
-export const wizardExecution = {
+export const wizardExecution: typeof WizardExecutionInterface = {
   WizardSession,
 };

@@ -6,6 +6,7 @@ import type { Result } from './result';
 import type { Instant } from './temporal';
 import type { DeviceId } from './identifiers';
 import { ok, err, fromThrowable, unwrap } from './result';
+import { incrementalUpdateIndexes } from './indexes';
 
 /**
  * Returns true if the incoming event should win over the current state.
@@ -30,7 +31,7 @@ export function lwwWins(
 
 // eslint-disable-next-line max-lines-per-function
 export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error> {
-  return unwrap(
+  const result = unwrap(
     fromThrowable(
       // eslint-disable-next-line max-lines-per-function
       () => {
@@ -296,6 +297,17 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
       },
     ),
   );
+  if (!result.ok) {
+    return result;
+  }
+  const nextGraph = result.value;
+  const nextIndexes = graph._indexes
+    ? incrementalUpdateIndexes(graph._indexes, event, nextGraph)
+    : undefined;
+  return ok({
+    ...nextGraph,
+    _indexes: nextIndexes,
+  });
 }
 
 /**

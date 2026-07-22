@@ -1,5 +1,5 @@
 import type { Graph, Node, NodeId, TypeId, PropertyValue, Namespace } from '@canopy/graph';
-import { fromThrowable, SYSTEM_IDS } from '@canopy/graph';
+import { fromThrowable, getGraphIndexes } from '@canopy/graph';
 
 export type ScopeType = 'node' | 'type' | 'namespace' | 'global';
 
@@ -52,13 +52,8 @@ export function resolveSetting(
  * Finds a SettingsSchema node by its key property.
  */
 export function findSettingsSchema(graph: Graph, key: string): Node | undefined {
-  // eslint-disable-next-line functional/no-loop-statements
-  for (const node of graph.nodes.values()) {
-    if (node.type === SYSTEM_IDS.SETTINGS_SCHEMA && node.properties.get('key') === key) {
-      return node;
-    }
-  }
-  return undefined;
+  const indexes = getGraphIndexes(graph);
+  return indexes.settingsSchemas.get(key);
 }
 
 /**
@@ -71,22 +66,7 @@ function findUserSetting(
   scopeType: ScopeType,
   scopeTarget?: string,
 ): PropertyValue | undefined {
-  // eslint-disable-next-line functional/no-loop-statements
-  for (const node of graph.nodes.values()) {
-    if (node.type !== SYSTEM_IDS.USER_SETTING) continue;
-    if (node.properties.get('schemaId') !== schemaNodeId) continue;
-    if (node.properties.get('scopeType') !== scopeType) continue;
-    if (scopeTarget !== undefined && node.properties.get('scopeTarget') !== scopeTarget) continue;
-    if (scopeTarget === undefined && node.properties.has('scopeTarget')) continue;
-
-    const raw = node.properties.get('value');
-    if (typeof raw === 'string') {
-      const result = fromThrowable(() => JSON.parse(raw) as PropertyValue);
-      if (result.ok) {
-        return result.value;
-      }
-      return undefined;
-    }
-  }
-  return undefined;
+  const indexes = getGraphIndexes(graph);
+  const key = `${schemaNodeId}\0${scopeType}\0${scopeTarget ?? ''}`;
+  return indexes.userSettings.get(key);
 }

@@ -8,7 +8,7 @@ import {
   isEdgeCompatible,
   validatePropertyByType,
 } from '../src/validation';
-import type { EdgeTypeDefinition } from '@canopy/graph';
+import type { EdgeTypeDefinition, Node, Edge } from '@canopy/graph';
 import { SYSTEM_IDS } from '../src/system';
 import {
   asNodeId,
@@ -21,37 +21,44 @@ import {
   createInstant,
   unwrap,
   asDeviceId,
+  asNamespace,
 } from '@canopy/graph';
 
 // Test helpers to replace missing factories
-function createNode(properties: Record<string, unknown>) {
+function createNode(properties: Record<string, unknown>): Node {
   return {
     id: createNodeId(),
     type: asTypeId('test'),
-    properties: new Map<string, PropertyValue>(),
-    metadata: { created: createInstant(), modified: createInstant() },
+    metadata: {
+      created: createInstant(),
+      modified: createInstant(),
+      modifiedBy: asDeviceId('00000000-0000-0000-0000-000000000000'),
+    },
     ...properties,
     properties:
       properties.properties && !(properties.properties instanceof Map)
         ? new Map(Object.entries(properties.properties as Record<string, PropertyValue>))
-        : properties.properties || new Map(),
-  };
+        : (properties.properties as Map<string, PropertyValue>) || new Map<string, PropertyValue>(),
+  } as unknown as Node;
 }
 
-function createEdge(properties: Record<string, unknown>) {
+function createEdge(properties: Record<string, unknown>): Edge {
   return {
     id: createEdgeId(),
     type: asTypeId('test'),
     source: createNodeId(),
     target: createNodeId(),
-    properties: new Map<string, PropertyValue>(),
-    metadata: { created: createInstant(), modified: createInstant() },
+    metadata: {
+      created: createInstant(),
+      modified: createInstant(),
+      modifiedBy: asDeviceId('00000000-0000-0000-0000-000000000000'),
+    },
     ...properties,
     properties:
       properties.properties && !(properties.properties instanceof Map)
         ? new Map(Object.entries(properties.properties as Record<string, PropertyValue>))
-        : properties.properties || new Map(),
-  };
+        : (properties.properties as Map<string, PropertyValue>) || new Map<string, PropertyValue>(),
+  } as unknown as Edge;
 }
 
 // Setup helper to create a graph with a type definition
@@ -139,8 +146,10 @@ describe('validation', () => {
 
     const result = validateNode(g, node);
     expect(result.valid).toBe(false);
-    expect(result.errors[0].message).toContain('Missing required property');
-    expect(result.errors[0].path).toContain('name');
+    const [firstError] = result.errors;
+    if (firstError === undefined) throw new Error('Expected error');
+    expect(firstError.message).toContain('Missing required property');
+    expect(firstError.path).toContain('name');
   });
 
   it('validates a node with wrong property type', () => {
@@ -155,8 +164,10 @@ describe('validation', () => {
 
     const result = validateNode(g, node);
     expect(result.valid).toBe(false);
-    expect(result.errors[0].message).toContain('expected type');
-    expect(result.errors[0].actual).toBe('string');
+    const [firstError] = result.errors;
+    if (firstError === undefined) throw new Error('Expected error');
+    expect(firstError.message).toContain('expected type');
+    expect(firstError.actual).toBe('string');
   });
 
   it('passes validation if type definition is missing', () => {
@@ -217,7 +228,9 @@ describe('validation', () => {
 
     const result = validateEdge(g, edge);
     expect(result.valid).toBe(false);
-    expect(result.errors[0].message).toContain('Source node type');
+    const [firstError] = result.errors;
+    if (firstError === undefined) throw new Error('Expected error');
+    expect(firstError.message).toContain('Source node type');
   });
 
   it('validates edge with missing required property', () => {
@@ -240,7 +253,9 @@ describe('validation', () => {
 
     const result = validateEdge(g, edge);
     expect(result.valid).toBe(false);
-    expect(result.errors[0].message).toContain('Missing required property');
+    const [firstError] = result.errors;
+    if (firstError === undefined) throw new Error('Expected error');
+    expect(firstError.message).toContain('Missing required property');
   });
 
   it('validates a malformed NODE_TYPE node against the system definition', () => {
@@ -656,7 +671,8 @@ describe('isEdgeCompatible', () => {
   const mockDef = (sourceTypes: string[], targetTypes: string[]): EdgeTypeDefinition => ({
     id: asTypeId('test-edge-type'),
     name: 'Test Edge Type',
-    namespace: 'user',
+    namespace: asNamespace('user'),
+    description: undefined,
     properties: [],
     sourceTypes: sourceTypes.map(asTypeId),
     targetTypes: targetTypes.map(asTypeId),

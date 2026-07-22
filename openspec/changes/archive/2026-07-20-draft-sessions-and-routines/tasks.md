@@ -12,4 +12,3 @@
 - [x] 2.3 Build the wizard step manager and HTML form renderer.
 - [x] 2.4 Hook user inputs into `handle-input` callbacks to stage events in the draft session.
 - [x] 2.5 Add integration tests using a mock in-memory plugin wizard.
-

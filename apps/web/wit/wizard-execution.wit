@@ -1,0 +1,51 @@
+package canopy:graph;
+
+interface wizard-execution {
+  use draft-session.{draft-session-handle, draft-event, property-value};
+
+  enum field-kind {
+    text,
+    number,
+    boolean,
+    date,
+    node-reference
+  }
+
+  record field-definition {
+    name: string,
+    label: string,
+    kind: field-kind,
+    required: bool,
+    default-value: option<property-value>,
+    options: option<list<string>>
+  }
+
+  record form-schema {
+    title: string,
+    description: option<string>,
+    fields: list<field-definition>,
+    submit-label: string
+  }
+
+  record input-entry {
+    field-name: string,
+    value: property-value
+  }
+
+  variant step-destination {
+    form(form-schema),
+    complete,
+    cancel
+  }
+
+  record step-result {
+    next-step: step-destination,
+    events-to-stage: list<draft-event>
+  }
+
+  resource wizard-session {
+    constructor(draft: draft-session-handle);
+    render-step-schema: func() -> result<form-schema, string>;
+    handle-step-submission: func(inputs: list<input-entry>) -> result<step-result, string>;
+  }
+}

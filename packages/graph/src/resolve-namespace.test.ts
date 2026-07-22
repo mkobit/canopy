@@ -11,6 +11,7 @@ import {
   type Node,
   asDeviceId,
   unwrap,
+  asNamespace,
 } from '@canopy/graph';
 import { SYSTEM_IDS } from './system';
 import { createNamespace, removeNode } from './ops';
@@ -77,7 +78,7 @@ describe('resolveNamespace', () => {
       properties: new Map([['namespace', 'user-settings']]),
       metadata: dummyMetadata,
     };
-    expect(resolveNamespace(graph, node)).toBe('user-settings');
+    expect(resolveNamespace(graph, node)).toBe(asNamespace('user-settings'));
   });
 
   it('falls back to type definition namespace if no override', () => {
@@ -87,7 +88,7 @@ describe('resolveNamespace', () => {
       properties: new Map(),
       metadata: dummyMetadata,
     };
-    expect(resolveNamespace(graph, node)).toBe('imported');
+    expect(resolveNamespace(graph, node)).toBe(asNamespace('imported'));
   });
 
   it('returns user if type definition has no namespace', () => {
@@ -97,7 +98,7 @@ describe('resolveNamespace', () => {
       properties: new Map(),
       metadata: dummyMetadata,
     };
-    expect(resolveNamespace(graph, node)).toBe('user');
+    expect(resolveNamespace(graph, node)).toBe(asNamespace('user'));
   });
 
   it('returns user if type is unknown', () => {
@@ -107,7 +108,7 @@ describe('resolveNamespace', () => {
       properties: new Map(),
       metadata: dummyMetadata,
     };
-    expect(resolveNamespace(graph, node)).toBe('user');
+    expect(resolveNamespace(graph, node)).toBe(asNamespace('user'));
   });
 
   it('ignores an override that does not match any Namespace node', () => {
@@ -118,7 +119,7 @@ describe('resolveNamespace', () => {
       metadata: dummyMetadata,
     };
     // Falls through the invalid override to the type definition's namespace.
-    expect(resolveNamespace(graph, node)).toBe('imported');
+    expect(resolveNamespace(graph, node)).toBe(asNamespace('imported'));
   });
 });
 
@@ -153,7 +154,7 @@ describe('parseNamespace', () => {
   it('succeeds for a name matching an existing Namespace node', () => {
     const result = parseNamespace(graph, 'user');
     expect(result.ok).toBe(true);
-    expect(result.ok && result.value).toBe('user');
+    expect(result.ok && result.value).toBe(asNamespace('user'));
   });
 
   it('fails for a name with no matching Namespace node', () => {

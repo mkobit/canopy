@@ -1,0 +1,24 @@
+package canopy:graph;
+
+interface plugin-manifest {
+  record menu-item {
+    label: string,
+    command: string,
+    shortcut: option<string>,
+  }
+
+  record command-contribution {
+    id: string,
+    title: string,
+    category: option<string>
+  }
+
+  record plugin-manifest {
+    name: string,
+    version: string,
+    description: option<string>,
+    capabilities: list<string>,
+    menu-items: list<menu-item>,
+    commands: list<command-contribution>,
+  }
+}

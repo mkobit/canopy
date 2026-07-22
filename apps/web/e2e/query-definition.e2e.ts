@@ -88,7 +88,10 @@ async function instantiateNodes(page: Page): Promise<void> {
   if (!queryNodeUrlMatch) {
     throw new Error(`Could not extract Query Definition node ID from URL: ${page.url()}`);
   }
-  const [, queryNodeId] = queryNodeUrlMatch;
+  const queryNodeId = queryNodeUrlMatch[1];
+  if (queryNodeId === undefined) {
+    throw new Error('Query node ID match group was undefined');
+  }
 
   // 6. Instantiate a real CadenceAction node whose `target` points at the Query Definition.
   await page.getByRole('button', { name: 'New Node' }).click();

@@ -79,12 +79,13 @@ It accesses graph and plugin contexts via hooks.
 ```typescript
 export const CommandPalette: React.FC = () => {
   // Logic here
-}
+};
 ```
 
 ### State Management
 
 The component manages:
+
 - `isOpen`: boolean state for visibility.
 - `query`: string state for the text input.
 - `selectedIndex`: number state for keyboard selection.

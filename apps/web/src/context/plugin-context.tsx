@@ -23,7 +23,6 @@ import type { DraftSession, GraphEvent } from '@canopy/graph';
 import { createDraftSession, SYSTEM_IDS } from '@canopy/graph';
 import { DraftSessionHandle } from '../plugin/draft-session-shim';
 import { Temporal } from 'temporal-polyfill';
-// @ts-expect-error mock JavaScript guest plugin has no type declarations
 // eslint-disable-next-line import/extensions -- Mock javascript plugin must be loaded directly
 import * as mockPlugin from '../plugin/mock/guest.js';
 
@@ -145,6 +144,22 @@ export const PluginProvider: React.FC<{ readonly children: React.ReactNode }> = 
     const pluginModule = STATIC_PLUGINS.get(manifest.name);
     if (!pluginModule) {
       console.error(`Plugin implementation not found in registry: ${manifest.name}`);
+      return;
+    }
+
+    // Verify capability and exports using reflection.
+    if (!manifest.capabilities.includes('wizard')) {
+      console.error(`Plugin '${manifest.name}' does not declare capability 'wizard'.`);
+      return;
+    }
+
+    if (
+      typeof pluginModule !== 'object' ||
+      pluginModule === null ||
+      !('wizardExecution' in pluginModule) ||
+      !pluginModule.wizardExecution
+    ) {
+      console.error(`Plugin '${manifest.name}' does not export 'wizardExecution' interface.`);
       return;
     }
 

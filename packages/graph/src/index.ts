@@ -36,6 +36,7 @@ export { PROPERTY_VALUE_KINDS } from './properties';
 export type { Node } from './node';
 export type { Edge } from './edge';
 export type { Graph, QueryResult } from './graph';
+export * from './indexes';
 
 export type { NodeTypeDefinition, EdgeTypeDefinition } from './definitions';
 
@@ -98,3 +99,4 @@ export * from './event-log';
 export * from './incremental-projection';
 export * from './graph-session';
 export * from './draft-session';
+export * from './plugin-validation';

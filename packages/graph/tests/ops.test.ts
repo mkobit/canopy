@@ -18,20 +18,24 @@ import {
   asDeviceId,
   NodePropertiesUpdated,
 } from '@canopy/graph';
+import type { Node } from '@canopy/graph';
 
 // Test helpers
-function createNode(properties: Record<string, unknown>) {
+function createNode(properties: Record<string, unknown>): Node {
   return {
     id: createNodeId(),
     type: asTypeId('test'),
-    properties: new Map<string, PropertyValue>(),
-    metadata: { created: createInstant(), modified: createInstant() },
+    metadata: {
+      created: createInstant(),
+      modified: createInstant(),
+      modifiedBy: asDeviceId('00000000-0000-0000-0000-000000000000'),
+    },
     ...properties,
     properties:
       properties.properties && !(properties.properties instanceof Map)
         ? new Map(Object.entries(properties.properties as Record<string, PropertyValue>))
-        : properties.properties || new Map(),
-  };
+        : (properties.properties as Map<string, PropertyValue>) || new Map<string, PropertyValue>(),
+  } as unknown as Node;
 }
 
 function createGraphWithTypes() {
@@ -130,10 +134,10 @@ describe('ops with validation', () => {
   it('updateNode emits only changed properties in the event', () => {
     let graph = unwrap(createGraph(createGraphId(), 'Test'));
     const nodeId = createNodeId();
-    const node = {
+    const node: Node = {
       id: nodeId,
       type: SYSTEM_IDS.NODE_TYPE,
-      properties: new Map([
+      properties: new Map<string, PropertyValue>([
         ['name', 'Alice'],
         ['age', 30],
       ]),
@@ -154,7 +158,7 @@ describe('ops with validation', () => {
         nodeId,
         (n) => ({
           ...n,
-          properties: new Map([
+          properties: new Map<string, PropertyValue>([
             ['name', 'Bob'],
             ['age', 30],
           ]),
@@ -163,7 +167,8 @@ describe('ops with validation', () => {
       ),
     );
 
-    const event = result.events[0];
+    const [event] = result.events;
+    if (event === undefined) throw new Error('Expected event');
     expect(event.type).toBe('NodePropertiesUpdated');
     // Only 'name' changed, so changes should only contain 'name'
     const changes = (event as NodePropertiesUpdated).changes;
@@ -175,10 +180,10 @@ describe('ops with validation', () => {
   it('updateNode emits empty changes when no properties changed', () => {
     let graph = unwrap(createGraph(createGraphId(), 'Test'));
     const nodeId = createNodeId();
-    const node = {
+    const node: Node = {
       id: nodeId,
       type: SYSTEM_IDS.NODE_TYPE,
-      properties: new Map([['name', 'Alice']]),
+      properties: new Map<string, PropertyValue>([['name', 'Alice']]),
       metadata: {
         created: createInstant(),
         modified: createInstant(),
@@ -196,13 +201,14 @@ describe('ops with validation', () => {
         nodeId,
         (n) => ({
           ...n,
-          properties: new Map([['name', 'Alice']]),
+          properties: new Map<string, PropertyValue>([['name', 'Alice']]),
         }),
         { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') },
       ),
     );
 
-    const event = result.events[0];
+    const [event] = result.events;
+    if (event === undefined) throw new Error('Expected event');
     const changes = (event as NodePropertiesUpdated).changes;
     expect(changes.size).toBe(0);
   });

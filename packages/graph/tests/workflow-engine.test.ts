@@ -51,6 +51,7 @@ describe('WorkflowTriggerRegistry', () => {
 describe('WorkflowEngine', () => {
   const mockGraph: Graph = {
     id: createGraphId(),
+    name: 'Mock Graph',
     nodes: new Map(),
     edges: new Map(),
     metadata: {
@@ -106,7 +107,10 @@ describe('WorkflowEngine', () => {
       const newGraph = result.value.graph;
       expect(newGraph.edges.size).toBe(1);
 
-      const newEdge = [...newGraph.edges.values()][0];
+      const [newEdge] = [...newGraph.edges.values()];
+      if (newEdge === undefined) {
+        throw new Error('Expected new edge to be created');
+      }
       expect(newEdge.type).toBe(typeId);
       expect(newEdge.source).toBe(sourceId);
       expect(newEdge.target).toBe(targetId);

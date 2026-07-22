@@ -11,5 +11,7 @@
     },
     "composite": false,
     "noEmit": true
-  }
+  },
+  "include": ["src/**/*", "e2e/**/*", "*.ts"],
+  "exclude": []
 }

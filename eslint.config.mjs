@@ -104,7 +104,9 @@ export default tseslint.config(
     files: ['**/*.ts', '**/*.tsx'],
     languageOptions: {
       parserOptions: {
-        project: ['./tsconfig.base.json', 'packages/*/tsconfig.json', 'apps/*/tsconfig.json'],
+        projectService: {
+          allowDefaultProject: ['tools/*.ts'],
+        },
         tsconfigRootDir: __dirname,
       },
     },
@@ -375,7 +377,7 @@ export default tseslint.config(
 
   // Specific file overrides
   {
-    files: ['tools/verify-versions.ts'],
+    files: ['tools/verify-versions.ts', 'tools/check-commands.ts'],
     rules: {
       'unicorn/no-process-exit': 'off',
     },

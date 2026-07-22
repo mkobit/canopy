@@ -1,7 +1,7 @@
 import { describe, expect, test, mock } from 'bun:test';
 import { onNodeCreated } from '../src/event-bus';
 import { asTypeId, asNodeId, asEventId, asDeviceId, asInstant } from '@canopy/graph';
-import type { NodeCreated, NodeDeleted } from '@canopy/graph';
+import type { NodeCreated, NodeDeleted, PropertyValue } from '@canopy/graph';
 
 describe('EventBus Helpers', () => {
   describe('onNodeCreated', () => {
@@ -15,7 +15,7 @@ describe('EventBus Helpers', () => {
         eventId: asEventId('e-1'),
         id: asNodeId('n-1'),
         nodeType: targetTypeId,
-        properties: {},
+        properties: new Map<string, PropertyValue>(),
         timestamp: asInstant('2024-01-01T00:00:00Z'),
         deviceId: asDeviceId('d-1'),
       };
@@ -37,7 +37,7 @@ describe('EventBus Helpers', () => {
         eventId: asEventId('e-1'),
         id: asNodeId('n-1'),
         nodeType: otherTypeId,
-        properties: {},
+        properties: new Map<string, PropertyValue>(),
         timestamp: asInstant('2024-01-01T00:00:00Z'),
         deviceId: asDeviceId('d-1'),
       };
@@ -76,7 +76,7 @@ describe('EventBus Helpers', () => {
         eventId: asEventId('e-1'),
         id: asNodeId('n-1'),
         nodeType: targetTypeId,
-        properties: {},
+        properties: new Map<string, PropertyValue>(),
         timestamp: asInstant('2024-01-01T00:00:00Z'),
         deviceId: asDeviceId('d-1'),
       };
@@ -86,7 +86,7 @@ describe('EventBus Helpers', () => {
         eventId: asEventId('e-2'),
         id: asNodeId('n-2'),
         nodeType: otherTypeId,
-        properties: {},
+        properties: new Map<string, PropertyValue>(),
         timestamp: asInstant('2024-01-01T00:00:00Z'),
         deviceId: asDeviceId('d-1'),
       };
@@ -96,7 +96,7 @@ describe('EventBus Helpers', () => {
         eventId: asEventId('e-3'),
         id: asNodeId('n-3'),
         nodeType: targetTypeId,
-        properties: {},
+        properties: new Map<string, PropertyValue>(),
         timestamp: asInstant('2024-01-01T00:00:00Z'),
         deviceId: asDeviceId('d-1'),
       };
@@ -104,8 +104,13 @@ describe('EventBus Helpers', () => {
       handler([matchingEvent1, nonMatchingEvent, matchingEvent2]);
 
       expect(callback).toHaveBeenCalledTimes(2);
-      expect(callback.mock.calls[0][0]).toBe(matchingEvent1);
-      expect(callback.mock.calls[1][0]).toBe(matchingEvent2);
+      const firstCall = callback.mock.calls[0];
+      const secondCall = callback.mock.calls[1];
+      if (firstCall === undefined || secondCall === undefined) {
+        throw new Error('Expected 2 calls');
+      }
+      expect(firstCall[0]).toBe(matchingEvent1);
+      expect(secondCall[0]).toBe(matchingEvent2);
     });
   });
 });

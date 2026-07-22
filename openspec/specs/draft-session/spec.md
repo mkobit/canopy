@@ -1,8 +1,11 @@
 # draft-session Specification
 
 ## Purpose
+
 TBD - created by archiving change draft-sessions-and-routines. Update Purpose after archive.
+
 ## Requirements
+
 ### Requirement: Draft overlay graph projection
 
 The system SHALL support creating a draft session that overlays uncommitted events on top of a parent graph.
@@ -34,4 +37,3 @@ The system SHALL allow discarding a draft session, removing all uncommitted even
 
 - **WHEN** the user discards a draft session
 - **THEN** all uncommitted events SHALL be deleted and the parent graph SHALL remain unchanged
-

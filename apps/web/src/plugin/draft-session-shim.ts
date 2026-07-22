@@ -1,4 +1,9 @@
-import type { DraftSession, GraphEvent, Node, PropertyValue as TsPropertyValue } from '@canopy/graph';
+import type {
+  DraftSession,
+  GraphEvent,
+  Node,
+  PropertyValue as TsPropertyValue,
+} from '@canopy/graph';
 import { asEventId, asNodeId, asTypeId, asInstant, asDeviceId } from '@canopy/graph';
 
 // Mapping from WIT property value to TS property value

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'bun:test';
 import { createGraph } from './create-graph';
 import { asGraphId, asNodeId, unwrap } from '@canopy/graph';
+import type { NodeId } from '@canopy/graph';
 import { SYSTEM_IDS } from './system';
 import { getNodeTypes, getEdgeTypes, getNodeType } from './queries';
 import { parseNamespace } from './resolve-namespace';
@@ -126,7 +127,7 @@ describe('Meta-circular bootstrap', () => {
     // Check system Renderers
     const textRenderer = graph.nodes.get(asNodeId('system:renderer:text'));
     expect(textRenderer).toBeDefined();
-    expect(textRenderer?.type).toBe(SYSTEM_IDS.RENDERER_DEF);
+    expect(textRenderer?.type).toBe(SYSTEM_IDS.RENDERER);
     expect(textRenderer?.properties.get('name')).toBe('Text Renderer');
     expect(textRenderer?.properties.get('rendererKind')).toBe('system');
     expect(textRenderer?.properties.get('entryPoint')).toBe('system:text');
@@ -134,7 +135,7 @@ describe('Meta-circular bootstrap', () => {
 
     const codeRenderer = graph.nodes.get(asNodeId('system:renderer:code'));
     expect(codeRenderer).toBeDefined();
-    expect(codeRenderer?.type).toBe(SYSTEM_IDS.RENDERER_DEF);
+    expect(codeRenderer?.type).toBe(SYSTEM_IDS.RENDERER);
     expect(codeRenderer?.properties.get('name')).toBe('Code Renderer');
     expect(codeRenderer?.properties.get('rendererKind')).toBe('system');
     expect(codeRenderer?.properties.get('entryPoint')).toBe('system:code');
@@ -142,7 +143,7 @@ describe('Meta-circular bootstrap', () => {
 
     const mdRenderer = graph.nodes.get(asNodeId('system:renderer:markdown'));
     expect(mdRenderer).toBeDefined();
-    expect(mdRenderer?.type).toBe(SYSTEM_IDS.RENDERER_DEF);
+    expect(mdRenderer?.type).toBe(SYSTEM_IDS.RENDERER);
     expect(mdRenderer?.properties.get('name')).toBe('Markdown Renderer');
     expect(mdRenderer?.properties.get('rendererKind')).toBe('system');
     expect(mdRenderer?.properties.get('entryPoint')).toBe('system:markdown');
@@ -218,8 +219,7 @@ describe('Meta-circular bootstrap', () => {
   it('gives each migrated namespace the kind matching its restriction status', () => {
     const graph = unwrap(createGraph(asGraphId('test-graph'), 'Test Graph'));
 
-    const kindOf = (id: (typeof SYSTEM_IDS)[keyof typeof SYSTEM_IDS]): unknown =>
-      graph.nodes.get(id)?.properties.get('kind');
+    const kindOf = (id: NodeId): unknown => graph.nodes.get(id)?.properties.get('kind');
 
     // 'system' is the only migrated namespace RESTRICTED_NAMESPACE_KINDS blocks writes to --
     // its kind must match, and the other 3 must not collide with a restricted kind.

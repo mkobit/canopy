@@ -222,15 +222,15 @@ interface wizard-execution {
 ## Risks / Trade-offs
 
 - **[Risk]** The Stale-State Commit Race (Split-Brain).
-  - *Mitigation*: The host tracks the parent graph revision token and rejects the commit if the parent graph changed concurrently.
+  - _Mitigation_: The host tracks the parent graph revision token and rejects the commit if the parent graph changed concurrently.
 - **[Risk]** Memory leaks from dangling draft sessions.
-  - *Mitigation*: Leverage WebAssembly Component Model resources to tie the session lifecycle to the guest lifecycle, auto-cleaning on drop.
+  - _Mitigation_: Leverage WebAssembly Component Model resources to tie the session lifecycle to the guest lifecycle, auto-cleaning on drop.
 - **[Risk]** Security sandbox escape via raw HTML rendering (XSS).
-  - *Mitigation*: The plugin returns a declarative form schema, and the host renders the fields natively.
+  - _Mitigation_: The plugin returns a declarative form schema, and the host renders the fields natively.
 - **[Risk]** Performance lag from synchronous WASM roundtrips on every keystroke.
-  - *Mitigation*: The host buffers keystrokes locally and sends inputs in a single batch on step submission.
+  - _Mitigation_: The host buffers keystrokes locally and sends inputs in a single batch on step submission.
 - **[Risk]** High serialization overhead from transferring the entire graph.
-  - *Mitigation*: The plugin queries individual nodes or runs queries on the host side using resource handles.
+  - _Mitigation_: The plugin queries individual nodes or runs queries on the host side using resource handles.
 
 ## Verification Plan
 

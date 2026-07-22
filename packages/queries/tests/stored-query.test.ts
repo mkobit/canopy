@@ -30,7 +30,7 @@ describe('Stored Queries', () => {
     const result = unwrap(
       saveQueryDefinition(graph, 'High Priority Tasks', q, {
         description: 'Finds all high priority tasks',
-        nodeTypes: ['node:type:task'],
+        nodeTypes: [asTypeId('node:type:task')],
         parameters: [],
         deviceId: asDeviceId('00000000-0000-0000-0000-000000000000'),
       }),
@@ -71,6 +71,7 @@ describe('Stored Queries', () => {
           metadata: {
             created: createInstant(Temporal.Instant.from('2023-01-01T00:00:00Z')),
             modified: createInstant(Temporal.Instant.from('2023-01-01T00:00:00Z')),
+            modifiedBy: asDeviceId('00000000-0000-0000-0000-000000000000'),
           },
         },
         { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') },
@@ -90,6 +91,7 @@ describe('Stored Queries', () => {
           metadata: {
             created: createInstant(Temporal.Instant.from('2023-01-01T00:00:00Z')),
             modified: createInstant(Temporal.Instant.from('2023-01-01T00:00:00Z')),
+            modifiedBy: asDeviceId('00000000-0000-0000-0000-000000000000'),
           },
         },
         { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') },
@@ -109,11 +111,19 @@ describe('Stored Queries', () => {
     const result = unwrap(executeStoredQuery(graph, saveResult.nodeId, { priority: 'high' }));
 
     expect(result.nodes.length).toBe(1);
-    expect(result.nodes[0].id).toBe(task1);
+    const [firstHighNode] = result.nodes;
+    if (firstHighNode === undefined) {
+      throw new Error('Expected high priority node to be returned');
+    }
+    expect(firstHighNode.id).toBe(task1);
 
     const resultLow = unwrap(executeStoredQuery(graph, saveResult.nodeId, { priority: 'low' }));
     expect(resultLow.nodes.length).toBe(1);
-    expect(resultLow.nodes[0].id).toBe(task2);
+    const [firstLowNode] = resultLow.nodes;
+    if (firstLowNode === undefined) {
+      throw new Error('Expected low priority node to be returned');
+    }
+    expect(firstLowNode.id).toBe(task2);
   });
 
   it('should return Error for non-existent or invalid query nodes', () => {

@@ -1,8 +1,11 @@
 # plugin-wizard-execution Specification
 
 ## Purpose
+
 TBD - created by archiving change draft-sessions-and-routines. Update Purpose after archive.
+
 ## Requirements
+
 ### Requirement: Plugin UI contribution
 
 The system SHALL scan and load plugin manifests to register menu items and command palette items.
@@ -29,4 +32,3 @@ The system SHALL buffer form field input locally on the host and submit them as 
 
 - **WHEN** the user completes a form step and clicks next
 - **THEN** the host SHALL invoke `handle-step-submission` on the plugin and stage the returned events in the draft session
-
