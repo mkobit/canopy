@@ -41,7 +41,7 @@ export const createApiAdapterError = (
   code: category,
   message,
   category,
-  details,
+  ...(details && { details }),
 });
 
 export const inferCategoryFromError = (error: Error): ApiErrorCategory => {
@@ -134,7 +134,7 @@ export const toGrpcStatus = (
   return {
     code: codeMap[error.category],
     message: error.message,
-    details: error.details,
+    ...(error.details && { details: error.details }),
   };
 };
 
@@ -147,7 +147,7 @@ export const toGraphQLExtensions = (
 }> => ({
   code: error.code,
   category: error.category,
-  details: error.details,
+  ...(error.details && { details: error.details }),
 });
 
 export const toWitError = (

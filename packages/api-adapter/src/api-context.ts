@@ -39,8 +39,8 @@ export const createApiAdapterContext = (
   }>,
 ): ApiAdapterContext => ({
   graph: params.graph,
-  session: params.session,
-  eventLogStore: params.eventLogStore,
-  authContext: params.authContext,
   limits: params.limits ?? defaultApiLimits,
+  ...(params.session && { session: params.session }),
+  ...(params.eventLogStore && { eventLogStore: params.eventLogStore }),
+  ...(params.authContext && { authContext: params.authContext }),
 });
