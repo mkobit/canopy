@@ -1,6 +1,6 @@
 ## Context
 
-[canopy-kjg](file:///home/mkobit/workspace/mkobit/canopy/node_modules/@fontsource/inter/300.css) identified two primary blockers for replacing Vite with Bun's native bundler (`Bun.build`) in `apps/web`.
+[canopy-kjg](../../../node_modules/@fontsource/inter/300.css) identified two primary blockers for replacing Vite with Bun's native bundler (`Bun.build`) in `apps/web`.
 first, Bun's built-in CSS bundler automatically inlines all referenced font assets (`.woff` and `.woff2`) as Base64 data URLs in the bundled CSS file, bloating the bundle size from 107 KB to 2.3 MB.
 second, Bun lacks native integration for compiling Tailwind CSS v4 on the fly, requiring a background Tailwind CLI compiler watch process.
 this design documents the custom plugin architecture to resolve both blockers and provides a feasibility recommendation.

@@ -16,7 +16,7 @@ we investigate if we can resolve these blockers cleanly via custom Bun build plu
 
 ### New Capabilities
 
-- `bun-native-bundler-investigation`: research and document custom Bun plugins to resolve font inlining and Tailwind compilation in [proposal.md](file:///home/mkobit/workspace/mkobit/canopy/openspec/changes/bun-css-bundler/proposal.md).
+- `bun-native-bundler-investigation`: research and document custom Bun plugins to resolve font inlining and Tailwind compilation in [proposal.md](proposal.md).
 
 ### Modified Capabilities
 

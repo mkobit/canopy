@@ -5,7 +5,7 @@ TBD - created by archiving change block-npm-node. Update Purpose after archive.
 ## Requirements
 ### Requirement: Block npm install
 
-The system SHALL block any installation commands starting with `npm` by using a `preinstall` hook in [package.json](file:///home/mkobit/workspace/mkobit/canopy/package.json).
+The system SHALL block any installation commands starting with `npm` by using a `preinstall` hook in [package.json](../../../package.json).
 
 #### Scenario: blocker triggers on npm install
 
@@ -14,7 +14,7 @@ The system SHALL block any installation commands starting with `npm` by using a 
 
 ### Requirement: Validate developer scripts and hooks
 
-The static script scanner SHALL inspect all [package.json](file:///home/mkobit/workspace/mkobit/canopy/package.json) scripts and Husky hooks in the workspace.
+The static script scanner SHALL inspect all [package.json](../../../package.json) scripts and Husky hooks in the workspace.
 It SHALL fail the check if any script or hook contains a command starting with `npm`, `npx`, or `node`.
 
 #### Scenario: static validator fails on npm/node command
