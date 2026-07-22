@@ -1,8 +1,8 @@
 ## 1. Package setup and adapter foundation
 
-- [ ] 1.1 Create `packages/api-adapter` directory with `@canopy/api-adapter` package manifest, workspace configuration, TypeScript configuration, and root entry exports
-- [ ] 1.2 Wire `@canopy/api-adapter` into workspace root `package.json`, TypeScript project references, and build pipeline
-- [ ] 1.3 Define core API adapter context, unified request and response payload types, and result error mapping utilities
+- [x] 1.1 Create `packages/api-adapter` directory with `@canopy/api-adapter` package manifest, workspace configuration, TypeScript configuration, and root entry exports
+- [x] 1.2 Wire `@canopy/api-adapter` into workspace root `package.json`, TypeScript project references, and build pipeline
+- [x] 1.3 Define core API adapter context, unified request and response payload types, and result error mapping utilities
 
 ## 2. Core query execution handlers
 

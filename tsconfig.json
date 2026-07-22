@@ -24,6 +24,9 @@
     },
     {
       "path": "./packages/storage-http/tsconfig.build.json"
+    },
+    {
+      "path": "./packages/api-adapter/tsconfig.build.json"
     }
   ]
 }
