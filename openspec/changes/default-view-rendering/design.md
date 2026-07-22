@@ -61,13 +61,26 @@ This design defines how view definitions and renderers are resolved, registered,
 - **Rationale**: Define a compile-time string union type `SystemRendererEntryPoint` in `@canopy/graph` to restrict the entry point identifiers. The React component registry will use this type to guarantee type safety and prevent drift between graph metadata and UI code.
 - **Alternatives**: Using plain string registry keys was rejected because typos would fail silently at runtime.
 
-## Risks / Trade-offs
+## Adversarial review and mitigations
 
-- **[Risk]** Broken rendering if a renderer or view node is deleted or missing.
-  - _Mitigation_: The `BlockRenderer` will fall back to a generic property list renderer if resolution fails.
-- **[Risk]** Large schema size from bootstrapping view and renderer nodes.
-  - _Mitigation_: We only seed three basic system renderers and views, which has negligible storage overhead.
-- **[Risk]** Infinite recursion crashing client browser on cyclic graphs.
-  - _Mitigation_: Track visited node IDs using a `ReadonlySet<NodeId>` prop passed down the component tree.
-- **[Risk]** Typo in entryPoint in registry or bootstrap data causing silent blank screens.
-  - _Mitigation_: Type check entryPoint values with the `SystemRendererEntryPoint` union.
+### 1. Resource and performance overhead
+- **[Risk]** Traverse overhead during the settings cascade for every rendered block.
+  - _Mitigation_: Leverage the settings pre-indexing added in canopy-o20 to perform O(1) namespace and type schema lookups. Keep the cascade resolution logic highly optimized by terminating early once a matching setting is resolved.
+- **[Risk]** Component lookup overhead in React render loops.
+  - _Mitigation_: Use a static TypeScript registry map for O(1) direct lookup, bypassing any dynamic module loading or parsing overhead.
+
+### 2. Failure modes and edge cases
+- **[Risk]** Cyclic rendering loop from nested nodes causing client browser tabs to crash.
+  - _Mitigation_: Enforce strict cycle detection by passing a `ReadonlySet<NodeId>` representing already-visited nodes down the rendering context. Halt recursion immediately and render a clean inline error block if a cycle is detected.
+- **[Risk]** Missing or deleted ViewDefinition or Renderer nodes.
+  - _Mitigation_: Fall back gracefully to a hardcoded generic property-list renderer if `resolveViewDefinition` returns an error or resolves to a missing entry point.
+- **[Risk]** Settings database entry mapping to a malformed or non-existent NodeId.
+  - _Mitigation_: Return a structured `Result<Node, Error>` from the resolution cascade rather than throwing, allowing caller components to catch failures and apply the default fallback layout.
+
+### 3. Security and isolation
+- **[Risk]** Arbitrary or malicious component execution if a user creates custom entryPoint strings.
+  - _Mitigation_: Restrict component resolution strictly to the `SystemRendererEntryPoint` compile-time string union type. Only allow components registered in the static code-defined React registry to execute, avoiding any runtime script injection pathways.
+
+### 4. Migration and backward compatibility
+- **[Risk]** Broken graphs due to renaming the `default-renderer` setting key to `default-view`.
+  - _Mitigation_: Since the system is pre-1.0 and has zero active user vaults, no data migration path is required. Re-bootstrap all system settings schemas during startup to overwrite the old keys cleanly.
