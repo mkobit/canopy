@@ -26,7 +26,6 @@ import type {
   PropertyLookupPayload,
   PropertyLookupResult,
   ReplayRequestPayload,
-  StreamMessageKind,
   TraversalQueryPayload,
 } from '../src';
 import { createApiAdapterContext } from '../src/api-context';
@@ -235,4 +234,3 @@ describe('Event Streaming Payload Definitions', () => {
     expect(replayPayload.tenantId).toBe('tenant-1');
   });
 });
-
