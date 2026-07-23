@@ -1,8 +1,11 @@
 # npm-node-blocking Specification
 
 ## Purpose
+
 TBD - created by archiving change block-npm-node. Update Purpose after archive.
+
 ## Requirements
+
 ### Requirement: Block npm install
 
 The system SHALL block any installation commands starting with `npm` by using a `preinstall` hook in [package.json](file:///home/mkobit/workspace/mkobit/canopy/package.json).
@@ -26,4 +29,3 @@ It SHALL fail the check if any script or hook contains a command starting with `
 
 - **WHEN** the script scanner runs and all commands use `bun` or other allowed tools
 - **THEN** it SHALL exit with status code 0.
-
