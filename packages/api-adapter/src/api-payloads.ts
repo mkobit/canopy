@@ -1,4 +1,4 @@
-import type { EdgeId, NodeId, PropertyValue, Result, TypeId } from '@canopy/graph';
+import type { EdgeId, EventId, GraphEvent, NodeId, PropertyValue, Result, TypeId } from '@canopy/graph';
 import type { Filter, Sort } from '@canopy/queries';
 import { Temporal } from 'temporal-polyfill';
 import type { ApiAdapterContext } from './api-context';
@@ -78,7 +78,6 @@ export type MutationResultPayload = Readonly<{
   affectedEventsCount: number;
 }>;
 
-
 export type ApiRequest<TPayload = unknown> = Readonly<{
   id: string;
   context: ApiAdapterContext;
@@ -108,6 +107,29 @@ export type ApiTraversalPayload = Readonly<{
   nodes: readonly ApiNodePayload[];
   edges: readonly ApiEdgePayload[];
 }>;
+
+export type StreamMessageKind = 'event' | 'gap' | 'overflow_disconnect' | 'end';
+
+export interface EventStreamMessage {
+  readonly kind: StreamMessageKind;
+  readonly event?: GraphEvent;
+  readonly events?: readonly GraphEvent[];
+  readonly gapCount?: number;
+  readonly lastSeenEventId?: EventId | string;
+  readonly reason?: string;
+}
+
+export interface EventStreamOptions {
+  readonly bufferCapacity?: number;
+  readonly maxReplayCount?: number;
+}
+
+export interface ReplayRequestPayload {
+  readonly tenantId: string;
+  readonly graphId: string;
+  readonly lastSeenEventId: string;
+  readonly maxReplayCount?: number;
+}
 
 export const createApiRequest = <TPayload>(
   id: string,

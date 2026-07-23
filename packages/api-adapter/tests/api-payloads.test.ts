@@ -1,7 +1,10 @@
 import { describe, expect, it, test } from 'bun:test';
 import {
+  asDeviceId,
   asEdgeId,
+  asEventId,
   asGraphId,
+  asInstant,
   asNodeId,
   asTypeId,
   createGraph,
@@ -13,6 +16,8 @@ import type {
   EdgeCreatePayload,
   EdgeDeletePayload,
   EdgeQueryPayload,
+  EventStreamMessage,
+  EventStreamOptions,
   MutationResultPayload,
   NodeCreatePayload,
   NodeDeletePayload,
@@ -20,6 +25,8 @@ import type {
   NodeUpdatePropertiesPayload,
   PropertyLookupPayload,
   PropertyLookupResult,
+  ReplayRequestPayload,
+  StreamMessageKind,
   TraversalQueryPayload,
 } from '../src';
 import { createApiAdapterContext } from '../src/api-context';
@@ -175,6 +182,57 @@ describe('Mutation payload types', () => {
     expect(payload.id).toBe('node-1');
     expect(payload.success).toBe(true);
     expect(payload.affectedEventsCount).toBe(1);
+  });
+});
+
+describe('Event Streaming Payload Definitions', () => {
+  it('instantiates valid EventStreamMessage structures', () => {
+    const msg: EventStreamMessage = {
+      kind: 'event',
+      event: {
+        type: 'NodeCreated',
+        eventId: asEventId('evt-1'),
+        id: asNodeId('node-1'),
+        nodeType: asTypeId('Markdown'),
+        properties: new Map(),
+        timestamp: asInstant('2024-01-01T00:00:00Z'),
+        deviceId: asDeviceId('dev-1'),
+      },
+    };
+    expect(msg.kind).toBe('event');
+    expect(msg.event?.eventId).toBe(asEventId('evt-1'));
+  });
+
+  it('instantiates valid gap and disconnect message structures', () => {
+    const gapMsg: EventStreamMessage = {
+      kind: 'gap',
+      gapCount: 15,
+      lastSeenEventId: 'evt-50',
+      reason: 'Replay window exceeded max limit',
+    };
+    const overflowMsg: EventStreamMessage = {
+      kind: 'overflow_disconnect',
+      gapCount: 100,
+      reason: 'Subscriber buffer overflowed',
+    };
+    expect(gapMsg.kind).toBe('gap');
+    expect(gapMsg.gapCount).toBe(15);
+    expect(overflowMsg.kind).toBe('overflow_disconnect');
+  });
+
+  it('instantiates valid EventStreamOptions and ReplayRequestPayload structures', () => {
+    const opts: EventStreamOptions = {
+      bufferCapacity: 100,
+      maxReplayCount: 50,
+    };
+    const replayPayload: ReplayRequestPayload = {
+      tenantId: 'tenant-1',
+      graphId: 'graph-1',
+      lastSeenEventId: 'evt-10',
+      maxReplayCount: 20,
+    };
+    expect(opts.bufferCapacity).toBe(100);
+    expect(replayPayload.tenantId).toBe('tenant-1');
   });
 });
 
