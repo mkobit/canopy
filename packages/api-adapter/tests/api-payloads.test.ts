@@ -1,5 +1,21 @@
-import { describe, expect, it } from 'bun:test';
-import { asGraphId, createGraph, isErr, isOk, unwrap } from '@canopy/graph';
+import { describe, expect, it, test } from 'bun:test';
+import {
+  asEdgeId,
+  asGraphId,
+  asNodeId,
+  asTypeId,
+  createGraph,
+  isErr,
+  isOk,
+  unwrap,
+} from '@canopy/graph';
+import type {
+  EdgeQueryPayload,
+  NodeQueryPayload,
+  PropertyLookupPayload,
+  PropertyLookupResult,
+  TraversalQueryPayload,
+} from '../src';
 import { createApiAdapterContext } from '../src/api-context';
 import {
   createApiErrorResponse,
@@ -36,5 +52,50 @@ describe('ApiPayloads', () => {
     if (isErr(errorResponse)) {
       expect(errorResponse.error).toEqual(apiError);
     }
+  });
+});
+
+describe('Query payload types', () => {
+  test('constructs valid NodeQueryPayload', () => {
+    const payload: NodeQueryPayload = {
+      id: asNodeId('node-1'),
+      type: asTypeId('doc'),
+      limit: 10,
+    };
+    expect(payload.id).toBe(asNodeId('node-1'));
+  });
+
+  test('constructs valid EdgeQueryPayload', () => {
+    const payload: EdgeQueryPayload = {
+      id: asEdgeId('edge-1'),
+      source: asNodeId('node-1'),
+      target: asNodeId('node-2'),
+      direction: 'out',
+      limit: 5,
+    };
+    expect(payload.id).toBe(asEdgeId('edge-1'));
+    expect(payload.direction).toBe('out');
+  });
+
+  test('constructs valid PropertyLookupPayload and Result', () => {
+    const payload: PropertyLookupPayload = {
+      entityId: asNodeId('node-1'),
+      propertyKey: 'title',
+    };
+    const result: PropertyLookupResult = {
+      entityId: asNodeId('node-1'),
+      properties: { title: 'Test' },
+    };
+    expect(payload.propertyKey).toBe('title');
+    expect(result.properties.title).toBe('Test');
+  });
+
+  test('constructs valid TraversalQueryPayload', () => {
+    const payload: TraversalQueryPayload = {
+      startNodeIds: [asNodeId('node-1')],
+      maxDepth: 3,
+      maxCost: 100,
+    };
+    expect(payload.startNodeIds).toHaveLength(1);
   });
 });
