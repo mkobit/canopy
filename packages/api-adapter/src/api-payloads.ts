@@ -40,6 +40,45 @@ export type PropertyLookupResult = Readonly<{
   properties: Readonly<Record<string, PropertyValue>>;
 }>;
 
+export type NodeCreatePayload = Readonly<{
+  id?: NodeId;
+  type: TypeId;
+  properties: Readonly<Record<string, PropertyValue>>;
+  expectedSequence?: number;
+}>;
+
+export type NodeUpdatePropertiesPayload = Readonly<{
+  id: NodeId;
+  properties: Readonly<Record<string, PropertyValue>>;
+  expectedSequence?: number;
+}>;
+
+export type NodeDeletePayload = Readonly<{
+  id: NodeId;
+  expectedSequence?: number;
+}>;
+
+export type EdgeCreatePayload = Readonly<{
+  id?: EdgeId;
+  type: TypeId;
+  source: NodeId;
+  target: NodeId;
+  properties?: Readonly<Record<string, PropertyValue>>;
+  expectedSequence?: number;
+}>;
+
+export type EdgeDeletePayload = Readonly<{
+  id: EdgeId;
+  expectedSequence?: number;
+}>;
+
+export type MutationResultPayload = Readonly<{
+  id: string;
+  success: boolean;
+  affectedEventsCount: number;
+}>;
+
+
 export type ApiRequest<TPayload = unknown> = Readonly<{
   id: string;
   context: ApiAdapterContext;

@@ -10,8 +10,14 @@ import {
   unwrap,
 } from '@canopy/graph';
 import type {
+  EdgeCreatePayload,
+  EdgeDeletePayload,
   EdgeQueryPayload,
+  MutationResultPayload,
+  NodeCreatePayload,
+  NodeDeletePayload,
   NodeQueryPayload,
+  NodeUpdatePropertiesPayload,
   PropertyLookupPayload,
   PropertyLookupResult,
   TraversalQueryPayload,
@@ -99,3 +105,76 @@ describe('Query payload types', () => {
     expect(payload.startNodeIds).toHaveLength(1);
   });
 });
+
+describe('Mutation payload types', () => {
+  test('constructs valid NodeCreatePayload', () => {
+    const payload: NodeCreatePayload = {
+      id: asNodeId('node-1'),
+      type: asTypeId('doc'),
+      properties: { title: 'Test Node' },
+      expectedSequence: 1,
+    };
+    expect(payload.id).toBe(asNodeId('node-1'));
+    expect(payload.type).toBe(asTypeId('doc'));
+    expect(payload.properties.title).toBe('Test Node');
+    expect(payload.expectedSequence).toBe(1);
+  });
+
+  test('constructs valid NodeUpdatePropertiesPayload', () => {
+    const payload: NodeUpdatePropertiesPayload = {
+      id: asNodeId('node-1'),
+      properties: { title: 'Updated Title' },
+      expectedSequence: 2,
+    };
+    expect(payload.id).toBe(asNodeId('node-1'));
+    expect(payload.properties.title).toBe('Updated Title');
+    expect(payload.expectedSequence).toBe(2);
+  });
+
+  test('constructs valid NodeDeletePayload', () => {
+    const payload: NodeDeletePayload = {
+      id: asNodeId('node-1'),
+      expectedSequence: 3,
+    };
+    expect(payload.id).toBe(asNodeId('node-1'));
+    expect(payload.expectedSequence).toBe(3);
+  });
+
+  test('constructs valid EdgeCreatePayload', () => {
+    const payload: EdgeCreatePayload = {
+      id: asEdgeId('edge-1'),
+      type: asTypeId('references'),
+      source: asNodeId('node-1'),
+      target: asNodeId('node-2'),
+      properties: { weight: 1 },
+      expectedSequence: 1,
+    };
+    expect(payload.id).toBe(asEdgeId('edge-1'));
+    expect(payload.type).toBe(asTypeId('references'));
+    expect(payload.source).toBe(asNodeId('node-1'));
+    expect(payload.target).toBe(asNodeId('node-2'));
+    expect(payload.properties?.weight).toBe(1);
+    expect(payload.expectedSequence).toBe(1);
+  });
+
+  test('constructs valid EdgeDeletePayload', () => {
+    const payload: EdgeDeletePayload = {
+      id: asEdgeId('edge-1'),
+      expectedSequence: 4,
+    };
+    expect(payload.id).toBe(asEdgeId('edge-1'));
+    expect(payload.expectedSequence).toBe(4);
+  });
+
+  test('constructs valid MutationResultPayload', () => {
+    const payload: MutationResultPayload = {
+      id: 'node-1',
+      success: true,
+      affectedEventsCount: 1,
+    };
+    expect(payload.id).toBe('node-1');
+    expect(payload.success).toBe(true);
+    expect(payload.affectedEventsCount).toBe(1);
+  });
+});
+
