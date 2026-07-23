@@ -115,6 +115,12 @@ export const executeEdgeQuery = (
     if (!edge) {
       return err(createApiAdapterError('NOT_FOUND', `Edge not found: ${id}`));
     }
+    if (authContext?.tenantId) {
+      const sourceNode = graph.nodes.get(edge.source);
+      if (!sourceNode || sourceNode.properties.get('tenantId') !== authContext.tenantId) {
+        return err(createApiAdapterError('NOT_FOUND', `Edge not found: ${id}`));
+      }
+    }
     return ok([mapEdgeToPayload(edge)]);
   }
 
@@ -129,7 +135,7 @@ export const executeEdgeQuery = (
 
       if (authContext?.tenantId) {
         const sourceNode = graph.nodes.get(edge.source);
-        if (sourceNode && sourceNode.properties.get('tenantId') !== authContext.tenantId) {
+        if (!sourceNode || sourceNode.properties.get('tenantId') !== authContext.tenantId) {
           return false;
         }
       }
@@ -146,7 +152,7 @@ export const executeEdgeQuery = (
 export const executePropertyLookup = (
   request: ApiRequest<PropertyLookupPayload>,
 ): ApiResponse<PropertyLookupResult> => {
-  const { graph } = request.context;
+  const { graph, authContext } = request.context;
   const { entityId, propertyKey } = request.payload;
 
   const node = graph.nodes.get(entityId as never);
@@ -157,9 +163,21 @@ export const executePropertyLookup = (
     return err(createApiAdapterError('NOT_FOUND', `Entity not found: ${entityId}`));
   }
 
+  if (authContext?.tenantId) {
+    if (node) {
+      if (node.properties.get('tenantId') !== authContext.tenantId) {
+        return err(createApiAdapterError('NOT_FOUND', `Entity not found: ${entityId}`));
+      }
+    } else if (edge) {
+      const sourceNode = graph.nodes.get(edge.source);
+      if (!sourceNode || sourceNode.properties.get('tenantId') !== authContext.tenantId) {
+        return err(createApiAdapterError('NOT_FOUND', `Entity not found: ${entityId}`));
+      }
+    }
+  }
+
   if (propertyKey !== undefined) {
-    const propValue = entity.properties.get(propertyKey);
-    if (propValue === undefined) {
+    if (!entity.properties.has(propertyKey)) {
       return err(
         createApiAdapterError(
           'NOT_FOUND',
@@ -167,6 +185,7 @@ export const executePropertyLookup = (
         ),
       );
     }
+    const propValue = entity.properties.get(propertyKey);
     return ok({
       entityId,
       properties: { [propertyKey]: propValue },
@@ -189,7 +208,7 @@ interface QueueItem {
 export const executeGraphTraversal = (
   request: ApiRequest<TraversalQueryPayload>,
 ): ApiResponse<ApiTraversalPayload> => {
-  const { graph, limits } = request.context;
+  const { graph, authContext, limits } = request.context;
   const { startNodeIds, edgeType, direction = 'out', maxDepth, maxCost } = request.payload;
 
   if (!startNodeIds || startNodeIds.length === 0) {
@@ -214,53 +233,59 @@ export const executeGraphTraversal = (
   // eslint-disable-next-line functional/prefer-immutable-types -- local BFS queue
   const queue: QueueItem[] = [];
 
-  // eslint-disable-next-line functional/no-loop-statements
+  // eslint-disable-next-line functional/no-loop-statements -- BFS graph traversal start nodes
   for (const id of startNodeIds) {
     const node = graph.nodes.get(id);
     if (node) {
-      // eslint-disable-next-line functional/immutable-data
+      if (authContext?.tenantId && node.properties.get('tenantId') !== authContext.tenantId) {
+        continue;
+      }
+      // eslint-disable-next-line functional/immutable-data -- track visited nodes
       visitedNodes.add(id);
-      // eslint-disable-next-line functional/immutable-data
+      // eslint-disable-next-line functional/immutable-data -- accumulate node payloads
       nodePayloads.push(mapNodeToPayload(node));
-      // eslint-disable-next-line functional/immutable-data
+      // eslint-disable-next-line functional/immutable-data -- enqueue start node
       queue.push({ nodeId: id, depth: 0 });
     }
   }
 
-  // eslint-disable-next-line functional/no-loop-statements
+  // eslint-disable-next-line functional/no-loop-statements -- BFS graph traversal loop
   while (queue.length > 0) {
-    // eslint-disable-next-line functional/immutable-data
+    // eslint-disable-next-line functional/immutable-data -- dequeue current node from BFS queue
     const current = queue.shift();
     if (current && current.depth < effectiveMaxDepth) {
-      // eslint-disable-next-line functional/no-loop-statements
+      // eslint-disable-next-line functional/no-loop-statements -- scan outgoing edges for current node
       for (const edge of graph.edges.values()) {
         const nextNodeId = resolveNextNodeId(edge, current.nodeId, direction, edgeType);
 
         if (nextNodeId) {
-          if (!visitedEdges.has(edge.id)) {
-            // eslint-disable-next-line functional/immutable-data
-            visitedEdges.add(edge.id);
-            // eslint-disable-next-line functional/immutable-data
-            edgePayloads.push(mapEdgeToPayload(edge));
-          }
+          const nextNode = graph.nodes.get(nextNodeId as never);
+          const isTenantMatch =
+            !authContext?.tenantId || nextNode?.properties.get('tenantId') === authContext.tenantId;
 
-          if (!visitedNodes.has(nextNodeId)) {
-            if (visitedNodes.size >= effectiveMaxCost) {
-              return err(
-                createApiAdapterError(
-                  'RESOURCE_EXHAUSTED',
-                  `Traversal cost exceeded maximum limit of ${effectiveMaxCost}`,
-                ),
-              );
+          if (nextNode && isTenantMatch) {
+            if (!visitedEdges.has(edge.id)) {
+              // eslint-disable-next-line functional/immutable-data -- track visited edges
+              visitedEdges.add(edge.id);
+              // eslint-disable-next-line functional/immutable-data -- accumulate edge payloads
+              edgePayloads.push(mapEdgeToPayload(edge));
             }
 
-            const nextNode = graph.nodes.get(nextNodeId as never);
-            if (nextNode) {
-              // eslint-disable-next-line functional/immutable-data
+            if (!visitedNodes.has(nextNodeId)) {
+              if (visitedNodes.size >= effectiveMaxCost) {
+                return err(
+                  createApiAdapterError(
+                    'RESOURCE_EXHAUSTED',
+                    `Traversal cost exceeded maximum limit of ${effectiveMaxCost}`,
+                  ),
+                );
+              }
+
+              // eslint-disable-next-line functional/immutable-data -- track visited nodes
               visitedNodes.add(nextNodeId);
-              // eslint-disable-next-line functional/immutable-data
+              // eslint-disable-next-line functional/immutable-data -- accumulate node payloads
               nodePayloads.push(mapNodeToPayload(nextNode));
-              // eslint-disable-next-line functional/immutable-data
+              // eslint-disable-next-line functional/immutable-data -- enqueue next node for BFS
               queue.push({ nodeId: nextNodeId, depth: current.depth + 1 });
             }
           }
