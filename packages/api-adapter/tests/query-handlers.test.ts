@@ -106,7 +106,7 @@ describe('Query execution handlers', () => {
     expect(res.ok).toBe(true);
     if (res.ok) {
       expect(res.value).toHaveLength(1);
-      expect(res.value[0].id).toBe(asNodeId('n1'));
+      expect(res.value[0]?.id).toBe(asNodeId('n1'));
     }
   });
 
@@ -143,7 +143,7 @@ describe('Query execution handlers', () => {
     expect(res.ok).toBe(true);
     if (res.ok) {
       expect(res.value).toHaveLength(1);
-      expect(res.value[0].id).toBe(asEdgeId('e1'));
+      expect(res.value[0]?.id).toBe(asEdgeId('e1'));
     }
   });
 
@@ -264,7 +264,7 @@ describe('Query execution handlers', () => {
     expect(resMatching.ok).toBe(true);
     if (resMatching.ok) {
       expect(resMatching.value).toHaveLength(1);
-      expect(resMatching.value[0].id).toBe(asEdgeId('e1'));
+      expect(resMatching.value[0]?.id).toBe(asEdgeId('e1'));
     }
 
     const reqMismatching = createApiRequest('req-edge-tenant-2', contextMismatching, {

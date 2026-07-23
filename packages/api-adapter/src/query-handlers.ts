@@ -177,7 +177,8 @@ export const executePropertyLookup = (
   }
 
   if (propertyKey !== undefined) {
-    if (!entity.properties.has(propertyKey)) {
+    const propValue = entity.properties.get(propertyKey);
+    if (propValue === undefined) {
       return err(
         createApiAdapterError(
           'NOT_FOUND',
@@ -185,7 +186,6 @@ export const executePropertyLookup = (
         ),
       );
     }
-    const propValue = entity.properties.get(propertyKey);
     return ok({
       entityId,
       properties: { [propertyKey]: propValue },
