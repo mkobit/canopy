@@ -6,16 +6,16 @@
 
 ## 2. Core query execution handlers
 
-- [ ] 2.1 Implement node query handlers delegating to `@canopy/queries` to fetch projected nodes by identifier, type, or property criteria
-- [ ] 2.2 Implement edge relationship query handlers to return inbound and outbound edge traversals with target node summaries from projected memory
-- [ ] 2.3 Implement property lookup and graph traversal query handlers using `@canopy/queries` over projected in-memory graph state
+- [x] 2.1 Implement node query handlers delegating to `@canopy/queries` to fetch projected nodes by identifier, type, or property criteria
+- [x] 2.2 Implement edge relationship query handlers to return inbound and outbound edge traversals with target node summaries from projected memory
+- [x] 2.3 Implement property lookup and graph traversal query handlers using `@canopy/queries` over projected in-memory graph state
 
 ## 3. Core GraphSession mutation handlers
 
-- [ ] 3.1 Implement node creation, property update, and node deletion mutation handlers using `GraphSession` kernel operations
-- [ ] 3.2 Implement edge creation and edge deletion mutation handlers routing write requests through `GraphSession`
-- [ ] 3.3 Wire mutation handlers to validate schemas, enforce referential integrity, check optimistic concurrency sequence numbers, and commit atomic events to `EventLogStore`
-- [ ] 3.4 Implement structured result error handling to reject invalid mutation payloads without modifying graph state or persistent event logs
+- [x] 3.1 Implement node creation, property update, and node deletion mutation handlers using `GraphSession` kernel operations
+- [x] 3.2 Implement edge creation and edge deletion mutation handlers routing write requests through `GraphSession`
+- [x] 3.3 Wire mutation handlers to validate schemas, enforce referential integrity, check optimistic concurrency sequence numbers, and commit atomic events to `EventLogStore`
+- [x] 3.4 Implement structured result error handling to reject invalid mutation payloads without modifying graph state or persistent event logs
 
 ## 4. Event log streaming interface
 
