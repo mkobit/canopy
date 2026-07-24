@@ -234,6 +234,7 @@ export default tseslint.config(
             '^Connection$', // xyflow Connection
             '^Page$', // Playwright Page fixture (e2e helper function params)
             '^Locator$', // Playwright Locator (e2e helper function params)
+            '^GraphQLSchema$', // GraphQL schema instance (graphql-js class)
           ],
         },
       ],

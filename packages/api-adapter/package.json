@@ -12,6 +12,7 @@
   "dependencies": {
     "@canopy/graph": "workspace:*",
     "@canopy/queries": "workspace:*",
+    "graphql": "^16.10.0",
     "temporal-polyfill": "^0.3.2"
   },
   "devDependencies": {
@@ -19,4 +20,3 @@
     "typescript": "6.0.3"
   }
 }
-
