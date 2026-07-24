@@ -1,8 +1,10 @@
 export * from './api-context';
 export * from './api-payloads';
+export * from './connect/connect-adapter';
 export * from './connect/grpc-errors';
 export * from './connect/handlers/event-streaming';
 export * from './connect/handlers/queries-mutations';
+export * from './connect/proto-sdl';
 export * from './connect/schema';
 export * from './event-stream-handlers';
 
