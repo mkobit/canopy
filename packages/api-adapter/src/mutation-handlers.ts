@@ -1,12 +1,5 @@
 import type { GraphEvent, PropertyValue } from '@canopy/graph';
-import {
-  createEdgeId,
-  createEventId,
-  createInstant,
-  createNodeId,
-  err,
-  ok,
-} from '@canopy/graph';
+import { createEdgeId, createEventId, createInstant, createNodeId, err, ok } from '@canopy/graph';
 import type {
   ApiEdgePayload,
   ApiNodePayload,
@@ -20,11 +13,13 @@ import type {
   NodeUpdatePropertiesPayload,
 } from './api-payloads';
 import { createApiAdapterError } from './result-errors';
+import { createApiRequest } from './api-payloads';
+import type { ApiAdapterContext } from './api-context';
 
-// Converts a properties record to a Map for domain events.
+// Converts a properties record to a ReadonlyMap for domain events.
 const convertPropertiesToMap = (
   props: Readonly<Record<string, PropertyValue>>,
-): Map<string, PropertyValue> => new Map(Object.entries(props));
+): ReadonlyMap<string, PropertyValue> => new Map(Object.entries(props));
 
 // Creates a new graph node within a session context.
 export const executeCreateNode = async (
@@ -55,10 +50,9 @@ export const executeCreateNode = async (
     }
   }
 
-  const finalProperties: Record<string, PropertyValue> = {
-    ...properties,
-    ...(authContext?.tenantId ? { tenantId: authContext.tenantId } : {}),
-  };
+  const finalProperties: Record<string, PropertyValue> = authContext?.tenantId
+    ? { ...properties, tenantId: authContext.tenantId }
+    : properties;
 
   const currentGraph = session.graph();
   if (currentGraph.nodes.has(nodeId)) {
@@ -94,7 +88,7 @@ export const executeCreateNode = async (
   return ok({
     id: createdNode.id,
     type: createdNode.type,
-    properties: Object.fromEntries(createdNode.properties.entries()),
+    properties: Object.fromEntries(createdNode.properties),
     createdAt: createdNode.metadata.created,
     updatedAt: createdNode.metadata.modified,
   });
@@ -153,7 +147,7 @@ export const executeUpdateNodeProperties = async (
   return ok({
     id: updatedNode.id,
     type: updatedNode.type,
-    properties: Object.fromEntries(updatedNode.properties.entries()),
+    properties: Object.fromEntries(updatedNode.properties),
     createdAt: updatedNode.metadata.created,
     updatedAt: updatedNode.metadata.modified,
   });
@@ -292,7 +286,7 @@ export const executeCreateEdge = async (
     type: createdEdge.type,
     source: createdEdge.source,
     target: createdEdge.target,
-    properties: Object.fromEntries(createdEdge.properties.entries()),
+    properties: Object.fromEntries(createdEdge.properties),
   });
 };
 
@@ -343,4 +337,49 @@ export const executeDeleteEdge = async (
     success: true,
     affectedEventsCount: 1,
   });
+};
+
+export const executeMutation = {
+  createNode: async (
+    context: ApiAdapterContext,
+    payload: NodeCreatePayload,
+  ): Promise<ApiResponse<MutationResultPayload>> => {
+    const res = await executeCreateNode(createApiRequest('gql-create-node', context, payload));
+    if (!res.ok) return res;
+    return ok({ id: res.value.id, success: true, affectedEventsCount: 1 });
+  },
+
+  updateNodeProperties: async (
+    context: ApiAdapterContext,
+    payload: NodeUpdatePropertiesPayload,
+  ): Promise<ApiResponse<MutationResultPayload>> => {
+    const res = await executeUpdateNodeProperties(
+      createApiRequest('gql-update-node-props', context, payload),
+    );
+    if (!res.ok) return res;
+    return ok({ id: res.value.id, success: true, affectedEventsCount: 1 });
+  },
+
+  deleteNode: async (
+    context: ApiAdapterContext,
+    payload: NodeDeletePayload,
+  ): Promise<ApiResponse<MutationResultPayload>> => {
+    return executeDeleteNode(createApiRequest('gql-delete-node', context, payload));
+  },
+
+  createEdge: async (
+    context: ApiAdapterContext,
+    payload: EdgeCreatePayload,
+  ): Promise<ApiResponse<MutationResultPayload>> => {
+    const res = await executeCreateEdge(createApiRequest('gql-create-edge', context, payload));
+    if (!res.ok) return res;
+    return ok({ id: res.value.id, success: true, affectedEventsCount: 1 });
+  },
+
+  deleteEdge: async (
+    context: ApiAdapterContext,
+    payload: EdgeDeletePayload,
+  ): Promise<ApiResponse<MutationResultPayload>> => {
+    return executeDeleteEdge(createApiRequest('gql-delete-edge', context, payload));
+  },
 };
