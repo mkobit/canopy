@@ -1,6 +1,7 @@
 export * from './api-context';
 export * from './api-payloads';
 export * from './connect/grpc-errors';
+export * from './connect/handlers/queries-mutations';
 export * from './connect/schema';
 export * from './event-stream-handlers';
 
