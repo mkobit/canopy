@@ -13,34 +13,34 @@ import type { ApiAdapterContext } from './api-context';
 import type { ApiAdapterError } from './result-errors';
 
 export type NodeQueryPayload = Readonly<{
-  id?: NodeId;
-  type?: TypeId;
-  filter?: Filter;
-  sort?: Sort;
-  limit?: number;
+  id?: NodeId | undefined;
+  type?: TypeId | undefined;
+  filter?: Filter | undefined;
+  sort?: Sort | undefined;
+  limit?: number | undefined;
 }>;
 
 export type EdgeQueryPayload = Readonly<{
-  id?: EdgeId;
-  type?: TypeId;
-  source?: NodeId;
-  target?: NodeId;
-  direction?: 'in' | 'out' | 'both';
-  includeTargetSummary?: boolean;
-  limit?: number;
+  id?: EdgeId | undefined;
+  type?: TypeId | undefined;
+  source?: NodeId | undefined;
+  target?: NodeId | undefined;
+  direction?: 'in' | 'out' | 'both' | undefined;
+  includeTargetSummary?: boolean | undefined;
+  limit?: number | undefined;
 }>;
 
 export type PropertyLookupPayload = Readonly<{
   entityId: NodeId | EdgeId;
-  propertyKey?: string;
+  propertyKey?: string | undefined;
 }>;
 
 export type TraversalQueryPayload = Readonly<{
   startNodeIds: readonly NodeId[];
-  edgeType?: TypeId;
-  direction?: 'in' | 'out' | 'both';
-  maxDepth?: number;
-  maxCost?: number;
+  edgeType?: TypeId | undefined;
+  direction?: 'in' | 'out' | 'both' | undefined;
+  maxDepth?: number | undefined;
+  maxCost?: number | undefined;
 }>;
 
 export type PropertyLookupResult = Readonly<{

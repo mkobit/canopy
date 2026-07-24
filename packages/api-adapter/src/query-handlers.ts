@@ -1,7 +1,7 @@
-import type { Edge, Node, TypeId } from '@canopy/graph';
+import type { Edge, Node, NodeId, TypeId } from '@canopy/graph';
 import { err, ok } from '@canopy/graph';
 import type { QueryStep } from '@canopy/queries';
-import { executeQuery } from '@canopy/queries';
+import { executeQuery as executeQueryEngine } from '@canopy/queries';
 import type {
   ApiEdgePayload,
   ApiNodePayload,
@@ -14,6 +14,8 @@ import type {
   PropertyLookupResult,
   TraversalQueryPayload,
 } from './api-payloads';
+import { createApiRequest } from './api-payloads';
+import type { ApiAdapterContext } from './api-context';
 import { createApiAdapterError } from './result-errors';
 
 // Maps a graph node to API payload format.
@@ -94,7 +96,7 @@ export const executeNodeQuery = (
     ...limitStep,
   ];
 
-  const queryResult = executeQuery(graph, { steps });
+  const queryResult = executeQueryEngine(graph, { steps });
   if (!queryResult.ok) {
     return err(createApiAdapterError('INTERNAL_ERROR', queryResult.error.message));
   }
@@ -298,4 +300,59 @@ export const executeGraphTraversal = (
     nodes: nodePayloads,
     edges: edgePayloads,
   });
+};
+
+export const executeQuery = {
+  getNode: (context: ApiAdapterContext, id: NodeId): ApiResponse<ApiNodePayload> => {
+    const res = executeNodeQuery(createApiRequest('gql-get-node', context, { id }));
+    if (!res.ok) return res;
+    const node = res.value[0];
+    if (!node) {
+      return err(createApiAdapterError('NOT_FOUND', `Node not found: ${id}`));
+    }
+    return ok(node);
+  },
+  getNodes: (
+    context: ApiAdapterContext,
+    options: Readonly<{ type?: TypeId | undefined; limit?: number | undefined }>,
+  ): ApiResponse<readonly ApiNodePayload[]> => {
+    return executeNodeQuery(
+      createApiRequest('gql-get-nodes', context, {
+        type: options.type,
+        limit: options.limit,
+      }),
+    );
+  },
+  getEdges: (
+    context: ApiAdapterContext,
+    options: Readonly<{
+      source?: NodeId | undefined;
+      target?: NodeId | undefined;
+      type?: TypeId | undefined;
+    }>,
+  ): ApiResponse<readonly ApiEdgePayload[]> => {
+    return executeEdgeQuery(
+      createApiRequest('gql-get-edges', context, {
+        source: options.source,
+        target: options.target,
+        type: options.type,
+      }),
+    );
+  },
+  traverse: (
+    context: ApiAdapterContext,
+    options: Readonly<{
+      startNodeIds: readonly NodeId[];
+      edgeType?: TypeId | undefined;
+      maxDepth?: number | undefined;
+    }>,
+  ): ApiResponse<ApiTraversalPayload> => {
+    return executeGraphTraversal(
+      createApiRequest('gql-traverse', context, {
+        startNodeIds: options.startNodeIds,
+        edgeType: options.edgeType,
+        maxDepth: options.maxDepth,
+      }),
+    );
+  },
 };
