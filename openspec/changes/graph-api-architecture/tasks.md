@@ -31,9 +31,9 @@
 
 ## 6. Connect-Web and gRPC protocol adapter
 
-- [ ] 6.1 Define Protocol Buffer service schemas for node, edge, property, mutation, and streaming endpoints
-- [ ] 6.2 Generate Connect-Web service interfaces and implement RPC handlers binding requests to core query and `GraphSession` mutation handlers
-- [ ] 6.3 Implement gRPC server streaming handlers for event log subscription and catch-up replay RPCs
+- [x] 6.1 Define Protocol Buffer service schemas for node, edge, property, mutation, and streaming endpoints
+- [x] 6.2 Generate Connect-Web service interfaces and implement RPC handlers binding requests to core query and `GraphSession` mutation handlers
+- [x] 6.3 Implement gRPC server streaming handlers for event log subscription and catch-up replay RPCs
 
 ## 7. WASM WIT host bindings adapter
 
