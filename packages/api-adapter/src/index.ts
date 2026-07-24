@@ -3,6 +3,7 @@ export * from './api-payloads';
 export * from './event-stream-handlers';
 export * from './graphql/schema';
 export * from './graphql/schema-sdl';
+export * from './graphql/scalars';
 export * from './mutation-handlers';
 export * from './query-handlers';
 export * from './result-errors';
