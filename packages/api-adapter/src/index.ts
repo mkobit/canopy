@@ -1,6 +1,9 @@
 export * from './api-context';
 export * from './api-payloads';
+export * from './connect/grpc-errors';
+export * from './connect/schema';
 export * from './event-stream-handlers';
+
 export * from './graphql/connection';
 export * from './graphql/graphql-adapter';
 export * from './graphql/resolvers/mutations';

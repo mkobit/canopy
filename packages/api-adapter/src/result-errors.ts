@@ -10,13 +10,9 @@ export type ApiErrorCategory =
   | 'RESOURCE_EXHAUSTED'
   | 'INTERNAL_ERROR';
 
-export type GrpcStatusCode =
-  | 3 // INVALID_ARGUMENT
-  | 5 // NOT_FOUND
-  | 7 // PERMISSION_DENIED
-  | 8 // RESOURCE_EXHAUSTED
-  | 10 // ABORTED
-  | 13; // INTERNAL
+import { GrpcStatusCode } from './connect/grpc-errors';
+
+export { GrpcStatusCode } from './connect/grpc-errors';
 
 export type WitErrorCode =
   | 'ValidationError'
@@ -123,13 +119,13 @@ export const toGrpcStatus = (
   details?: Readonly<Record<string, unknown>>;
 }> => {
   const codeMap: Readonly<Record<ApiErrorCategory, GrpcStatusCode>> = {
-    VALIDATION_ERROR: 3,
-    NOT_FOUND: 5,
-    UNAUTHORIZED: 7,
-    FORBIDDEN: 7,
-    RESOURCE_EXHAUSTED: 8,
-    CONCURRENCY_CONFLICT: 10,
-    INTERNAL_ERROR: 13,
+    VALIDATION_ERROR: GrpcStatusCode.INVALID_ARGUMENT,
+    NOT_FOUND: GrpcStatusCode.NOT_FOUND,
+    UNAUTHORIZED: GrpcStatusCode.PERMISSION_DENIED,
+    FORBIDDEN: GrpcStatusCode.PERMISSION_DENIED,
+    RESOURCE_EXHAUSTED: GrpcStatusCode.RESOURCE_EXHAUSTED,
+    CONCURRENCY_CONFLICT: GrpcStatusCode.ABORTED,
+    INTERNAL_ERROR: GrpcStatusCode.INTERNAL,
   };
   return {
     code: codeMap[error.category],
