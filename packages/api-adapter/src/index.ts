@@ -4,6 +4,7 @@ export * from './event-stream-handlers';
 export * from './graphql/connection';
 export * from './graphql/resolvers/mutations';
 export * from './graphql/resolvers/queries';
+export * from './graphql/resolvers/subscriptions';
 export * from './graphql/scalars';
 export * from './graphql/schema';
 export * from './graphql/schema-sdl';
