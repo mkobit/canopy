@@ -57,7 +57,9 @@ const resolveNextNodeId = (
 export const executeNodeQuery = (
   request: ApiRequest<NodeQueryPayload>,
 ): ApiResponse<readonly ApiNodePayload[]> => {
-  const { graph, authContext } = request.context;
+  const graph = request.context.session?.graph() ?? request.context.graph;
+  const { authContext } = request.context;
+
   const { id, type, filter, sort, limit } = request.payload;
 
   if (id !== undefined) {
@@ -109,7 +111,8 @@ export const executeNodeQuery = (
 export const executeEdgeQuery = (
   request: ApiRequest<EdgeQueryPayload>,
 ): ApiResponse<readonly ApiEdgePayload[]> => {
-  const { graph, authContext } = request.context;
+  const graph = request.context.session?.graph() ?? request.context.graph;
+  const { authContext } = request.context;
   const { id, type, source, target, limit } = request.payload;
 
   if (id !== undefined) {
@@ -154,7 +157,8 @@ export const executeEdgeQuery = (
 export const executePropertyLookup = (
   request: ApiRequest<PropertyLookupPayload>,
 ): ApiResponse<PropertyLookupResult> => {
-  const { graph, authContext } = request.context;
+  const graph = request.context.session?.graph() ?? request.context.graph;
+  const { authContext } = request.context;
   const { entityId, propertyKey } = request.payload;
 
   const node = graph.nodes.get(entityId as never);
@@ -210,7 +214,8 @@ interface QueueItem {
 export const executeGraphTraversal = (
   request: ApiRequest<TraversalQueryPayload>,
 ): ApiResponse<ApiTraversalPayload> => {
-  const { graph, authContext, limits } = request.context;
+  const graph = request.context.session?.graph() ?? request.context.graph;
+  const { authContext, limits } = request.context;
   const { startNodeIds, edgeType, direction = 'out', maxDepth, maxCost } = request.payload;
 
   if (!startNodeIds || startNodeIds.length === 0) {

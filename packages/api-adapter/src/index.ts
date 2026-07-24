@@ -2,6 +2,7 @@ export * from './api-context';
 export * from './api-payloads';
 export * from './event-stream-handlers';
 export * from './graphql/connection';
+export * from './graphql/graphql-adapter';
 export * from './graphql/resolvers/mutations';
 export * from './graphql/resolvers/queries';
 export * from './graphql/resolvers/subscriptions';
