@@ -19,15 +19,15 @@
 
 ## 4. Event log streaming interface
 
-- [ ] 4.1 Implement real-time event subscription handler to broadcast newly committed operational events to active stream listeners
-- [ ] 4.2 Implement event catch-up replay handler to fetch and stream unacknowledged events from `EventLogStore` when provided a last-seen event identifier
+- [x] 4.1 Implement real-time event subscription handler to broadcast newly committed operational events to active stream listeners
+- [x] 4.2 Implement event catch-up replay handler to fetch and stream unacknowledged events from `EventLogStore` when provided a last-seen event identifier
 
 ## 5. GraphQL protocol adapter
 
-- [ ] 5.1 Define GraphQL schema definition for graph query, mutation, and event subscription types
-- [ ] 5.2 Implement GraphQL query resolvers binding node, edge, and traversal operations to core query handlers
-- [ ] 5.3 Implement GraphQL mutation resolvers delegating write operations to core `GraphSession` mutation handlers
-- [ ] 5.4 Implement GraphQL subscription resolvers mapping live event streams and catch-up replay to the event log streaming interface
+- [x] 5.1 Define GraphQL schema definition for graph query, mutation, and event subscription types
+- [x] 5.2 Implement GraphQL query resolvers binding node, edge, and traversal operations to core query handlers
+- [x] 5.3 Implement GraphQL mutation resolvers delegating write operations to core `GraphSession` mutation handlers
+- [x] 5.4 Implement GraphQL subscription resolvers mapping live event streams and catch-up replay to the event log streaming interface
 
 ## 6. Connect-Web and gRPC protocol adapter
 
