@@ -105,7 +105,7 @@ export default tseslint.config(
     languageOptions: {
       parserOptions: {
         projectService: {
-          allowDefaultProject: ['tools/*.ts'],
+          allowDefaultProject: ['tools/*.ts', 'tools/lib/*.ts'],
         },
         tsconfigRootDir: __dirname,
       },
