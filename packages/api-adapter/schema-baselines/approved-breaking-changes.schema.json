@@ -1,0 +1,59 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ApprovedBreakingChanges",
+  "type": "object",
+  "required": [
+    "waivers"
+  ],
+  "properties": {
+    "waivers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "protocol",
+          "path",
+          "changeType",
+          "reason",
+          "author",
+          "expiresAt",
+          "ticket"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "protocol": {
+            "type": "string",
+            "enum": [
+              "graphql",
+              "connect",
+              "wit",
+              "all"
+            ]
+          },
+          "path": {
+            "type": "string"
+          },
+          "changeType": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "author": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date"
+          },
+          "ticket": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
