@@ -20,11 +20,13 @@
 ### Task 1: Mutation request and response payload types in `@canopy/api-adapter`
 
 **Files:**
+
 - Modify: `packages/api-adapter/src/api-payloads.ts`
 - Modify: `packages/api-adapter/tests/api-payloads.test.ts`
 - Modify: `packages/api-adapter/src/index.ts`
 
 **Interfaces:**
+
 - Consumes: `NodeId`, `EdgeId`, `TypeId`, `PropertyValue` from `@canopy/graph`.
 - Produces: `NodeCreatePayload`, `NodeUpdatePropertiesPayload`, `NodeDeletePayload`, `EdgeCreatePayload`, `EdgeDeletePayload`, `MutationResultPayload`.
 
@@ -175,11 +177,13 @@ git commit -m "feat(api-adapter): define mutation request payloads and result ty
 ### Task 2: Implement core GraphSession mutation handlers in `@canopy/api-adapter`
 
 **Files:**
+
 - Create: `packages/api-adapter/src/mutation-handlers.ts`
 - Modify: `packages/api-adapter/src/index.ts`
 - Create: `packages/api-adapter/tests/mutation-handlers.test.ts`
 
 **Interfaces:**
+
 - Consumes: `ApiRequest`, `ApiResponse`, `ApiNodePayload`, `ApiEdgePayload`, `NodeCreatePayload`, `NodeUpdatePropertiesPayload`, `NodeDeletePayload`, `EdgeCreatePayload`, `EdgeDeletePayload`, `MutationResultPayload` from `./api-payloads`.
 - Produces: `executeCreateNode`, `executeUpdateNodeProperties`, `executeDeleteNode`, `executeCreateEdge`, `executeDeleteEdge`.
 
@@ -454,14 +458,7 @@ Create `packages/api-adapter/src/mutation-handlers.ts`:
 
 ```typescript
 import type { GraphEvent, NodeId, PropertyValue } from '@canopy/graph';
-import {
-  createEdgeId,
-  createEventId,
-  createInstant,
-  createNodeId,
-  err,
-  ok,
-} from '@canopy/graph';
+import { createEdgeId, createEventId, createInstant, createNodeId, err, ok } from '@canopy/graph';
 import type {
   ApiEdgePayload,
   ApiNodePayload,
@@ -822,6 +819,7 @@ git commit -m "feat(api-adapter): implement core GraphSession mutation execution
 ### Task 3: Quality gates and full verification
 
 **Files:**
+
 - None (verification phase across workspace)
 
 - [ ] **Step 1: Build all packages**

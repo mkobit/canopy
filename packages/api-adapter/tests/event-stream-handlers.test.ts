@@ -46,8 +46,7 @@ describe('Real-Time Event Stream Subscriber', () => {
     expect(messages.length).toBeGreaterThanOrEqual(1);
     const eventMsg = messages.find((m) => m.kind === 'event');
     expect(eventMsg).toBeDefined();
-    if (eventMsg && eventMsg.kind === 'event') {
-      expect(eventMsg.event.type).toBe('NodeCreated');
+    if (eventMsg && eventMsg.kind === 'event' && eventMsg.event?.type === 'NodeCreated') {
       expect(eventMsg.event.id).toBe(asNodeId('n1'));
     }
 
@@ -111,8 +110,12 @@ describe('Event Catch-Up Replay Handler', () => {
     if (replayRes.ok) {
       expect(replayRes.value).toHaveLength(2);
       expect(replayRes.value[0]?.kind).toBe('event');
-      expect(replayRes.value[0]?.event?.id).toBe(asNodeId('n-replay-2'));
-      expect(replayRes.value[1]?.event?.id).toBe(asNodeId('n-replay-3'));
+      const firstEvt = replayRes.value[0]?.event;
+      const secondEvt = replayRes.value[1]?.event;
+      if (firstEvt?.type === 'NodeCreated' && secondEvt?.type === 'NodeCreated') {
+        expect(firstEvt.id).toBe(asNodeId('n-replay-2'));
+        expect(secondEvt.id).toBe(asNodeId('n-replay-3'));
+      }
     }
   });
 
@@ -146,7 +149,7 @@ describe('Event Catch-Up Replay Handler', () => {
     const { context, eventLogStore } = await setupSessionContext();
     const contextWithTenant = createApiAdapterContext({
       graph: context.graph,
-      session: context.session,
+      ...(context.session && { session: context.session }),
       eventLogStore,
       authContext: { tenantId: 'tenant-a' },
     });

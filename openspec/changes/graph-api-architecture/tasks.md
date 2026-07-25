@@ -37,9 +37,9 @@
 
 ## 7. WASM WIT host bindings adapter
 
-- [ ] 7.1 Define WebAssembly Interface Type (WIT) specifications for graph query and mutation host capabilities
-- [ ] 7.2 Implement WASM host import bindings delegating plugin calls to `GraphSession` mutations and query handlers
-- [ ] 7.3 Implement sandboxed execution boundaries and memory safety checks for WebAssembly guest plugin invocations
+- [x] 7.1 Define WebAssembly Interface Type (WIT) specifications for graph query and mutation host capabilities
+- [x] 7.2 Implement WASM host import bindings delegating plugin calls to `GraphSession` mutations and query handlers
+- [x] 7.3 Implement sandboxed execution boundaries and memory safety checks for WebAssembly guest plugin invocations
 
 ## 8. Testing and quality assurance
 

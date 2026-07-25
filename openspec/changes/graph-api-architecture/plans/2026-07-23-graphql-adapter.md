@@ -21,12 +21,14 @@
 ### Task 1: Dependency Setup & GraphQL SDL Schema Definition
 
 **Files:**
+
 - Modify: `packages/api-adapter/package.json`
 - Create: `packages/api-adapter/src/graphql/schema-sdl.ts`
 - Create: `packages/api-adapter/src/graphql/schema.ts`
 - Test: `packages/api-adapter/tests/graphql-schema.test.ts`
 
 **Interfaces:**
+
 - Consumes: `@canopy/api-adapter` types
 - Produces: `GRAPHQL_SDL_SCHEMA: string`, `buildGraphQLSchema(): GraphQLSchema`
 
@@ -61,6 +63,7 @@ Expected: FAIL with module/package resolution error or missing file.
 In `packages/api-adapter/package.json`, add `"graphql": "^16.10.0"`.
 
 Create `packages/api-adapter/src/graphql/schema-sdl.ts`:
+
 ```typescript
 export const GRAPHQL_SDL_SCHEMA = `
 scalar JSON
@@ -263,6 +266,7 @@ type Subscription {
 ```
 
 Create `packages/api-adapter/src/graphql/schema.ts`:
+
 ```typescript
 import { buildSchema, type GraphQLSchema } from 'graphql';
 import { GRAPHQL_SDL_SCHEMA } from './schema-sdl';
@@ -289,10 +293,12 @@ git commit -m "feat(api-adapter): define GraphQL SDL schema for canopy graph pro
 ### Task 2: Implement Custom `JSON` and `PropertyMap` Scalars
 
 **Files:**
+
 - Create: `packages/api-adapter/src/graphql/scalars.ts`
 - Test: `packages/api-adapter/tests/graphql-scalars.test.ts`
 
 **Interfaces:**
+
 - Consumes: `graphql` custom scalar types
 - Produces: `GraphQLJSON: GraphQLScalarType`, `GraphQLPropertyMap: GraphQLScalarType`
 
@@ -320,6 +326,7 @@ Expected: FAIL
 - [ ] **Step 3: Implement custom scalars producing deeply immutable objects**
 
 Create `packages/api-adapter/src/graphql/scalars.ts`:
+
 ```typescript
 import { GraphQLScalarType, Kind } from 'graphql';
 
@@ -389,11 +396,13 @@ git commit -m "feat(api-adapter): implement custom JSON and PropertyMap scalars 
 ### Task 3: Relay Connection Helpers & Query Resolvers
 
 **Files:**
+
 - Create: `packages/api-adapter/src/graphql/connection.ts`
 - Create: `packages/api-adapter/src/graphql/resolvers/queries.ts`
 - Test: `packages/api-adapter/tests/graphql-queries.test.ts`
 
 **Interfaces:**
+
 - Consumes: `@canopy/api-adapter` query handlers (`executeQuery`), `@canopy/graph` branded ID constructors (`asNodeId`, `asEdgeId`, `asTypeId`)
 - Produces: `encodeCursor()`, `decodeCursor()`, `buildConnection()`, `queryResolvers`
 
@@ -428,6 +437,7 @@ Expected: FAIL
 - [ ] **Step 3: Implement Relay Connection helpers and query resolvers**
 
 Create `packages/api-adapter/src/graphql/connection.ts`:
+
 ```typescript
 export interface PageInfo {
   readonly hasNextPage: boolean;
@@ -490,6 +500,7 @@ export const buildConnection = <T>(
 ```
 
 Create `packages/api-adapter/src/graphql/resolvers/queries.ts`:
+
 ```typescript
 import { asEdgeId, asNodeId, asTypeId, SYSTEM_IDS, SYSTEM_EDGE_TYPES } from '@canopy/graph';
 import { executeQuery } from '../../query-handlers';
@@ -515,7 +526,10 @@ export const createQueryResolvers = (context: ApiAdapterContext) => ({
     return buildConnection(slice, offset, all.length);
   },
 
-  edges: (_parent: unknown, args: { source?: string; target?: string; type?: string; first?: number; after?: string }) => {
+  edges: (
+    _parent: unknown,
+    args: { source?: string; target?: string; type?: string; first?: number; after?: string },
+  ) => {
     const offset = args.after ? decodeCursor(args.after) + 1 : 0;
     const limit = Math.min(args.first ?? 50, 100);
     const result = executeQuery.getEdges(context, {
@@ -531,10 +545,23 @@ export const createQueryResolvers = (context: ApiAdapterContext) => ({
     return buildConnection(slice, offset, all.length, true);
   },
 
-  traversal: (_parent: unknown, args: { startNodeIds: readonly string[]; edgeType?: string; maxDepth?: number; maxNodes?: number; maxEdges?: number }) => {
+  traversal: (
+    _parent: unknown,
+    args: {
+      startNodeIds: readonly string[];
+      edgeType?: string;
+      maxDepth?: number;
+      maxNodes?: number;
+      maxEdges?: number;
+    },
+  ) => {
     const startNodeIds = args.startNodeIds.map(asNodeId);
     const edgeType = args.edgeType ? asTypeId(args.edgeType) : undefined;
-    const result = executeQuery.traverse(context, { startNodeIds, edgeType, maxDepth: args.maxDepth ?? 5 });
+    const result = executeQuery.traverse(context, {
+      startNodeIds,
+      edgeType,
+      maxDepth: args.maxDepth ?? 5,
+    });
     if (!result.ok) {
       return { nodes: [], edges: [], truncated: false };
     }
@@ -582,7 +609,11 @@ export const createQueryResolvers = (context: ApiAdapterContext) => ({
   systemIds: () => ({
     nodeTypes: Object.values(SYSTEM_IDS),
     edgeTypes: Object.values(SYSTEM_EDGE_TYPES),
-    namespaces: [SYSTEM_IDS.NAMESPACE_SYSTEM, SYSTEM_IDS.NAMESPACE_USER, SYSTEM_IDS.NAMESPACE_IMPORTED],
+    namespaces: [
+      SYSTEM_IDS.NAMESPACE_SYSTEM,
+      SYSTEM_IDS.NAMESPACE_USER,
+      SYSTEM_IDS.NAMESPACE_IMPORTED,
+    ],
   }),
 });
 ```
@@ -604,10 +635,12 @@ git commit -m "feat(api-adapter): implement Relay Connection helpers and GraphQL
 ### Task 4: Implement Mutation Resolvers & Agent Delegation Protocol
 
 **Files:**
+
 - Create: `packages/api-adapter/src/graphql/resolvers/mutations.ts`
 - Test: `packages/api-adapter/tests/graphql-mutations.test.ts`
 
 **Interfaces:**
+
 - Consumes: `@canopy/api-adapter` mutation handlers (`executeMutation`), `@canopy/graph` branded ID constructors (`asNodeId`, `asEdgeId`, `asTypeId`)
 - Produces: `mutationResolvers`, agent delegation token validator
 
@@ -646,6 +679,7 @@ Expected: FAIL
 - [ ] **Step 3: Implement mutation resolvers and agent delegation protocol**
 
 Create `packages/api-adapter/src/graphql/resolvers/mutations.ts`:
+
 ```typescript
 import { asEdgeId, asNodeId, asTypeId } from '@canopy/graph';
 import { GraphQLError } from 'graphql';
@@ -704,7 +738,15 @@ export const validateActorDelegation = (
 export const createMutationResolvers = (context: ApiAdapterContext) => ({
   createNode: async (
     _parent: unknown,
-    args: { input: { id?: string; type: string; properties: Record<string, unknown>; expectedSequence?: number }; actor?: ActorContextInput },
+    args: {
+      input: {
+        id?: string;
+        type: string;
+        properties: Record<string, unknown>;
+        expectedSequence?: number;
+      };
+      actor?: ActorContextInput;
+    },
   ) => {
     const actorContext = validateActorDelegation(context, args.actor);
     const result = await executeMutation.createNode(context, {
@@ -730,7 +772,10 @@ export const createMutationResolvers = (context: ApiAdapterContext) => ({
 
   updateNodeProperties: async (
     _parent: unknown,
-    args: { input: { id: string; properties: Record<string, unknown>; expectedSequence?: number }; actor?: ActorContextInput },
+    args: {
+      input: { id: string; properties: Record<string, unknown>; expectedSequence?: number };
+      actor?: ActorContextInput;
+    },
   ) => {
     const actorContext = validateActorDelegation(context, args.actor);
     const result = await executeMutation.updateNodeProperties(context, {
@@ -779,7 +824,17 @@ export const createMutationResolvers = (context: ApiAdapterContext) => ({
 
   createEdge: async (
     _parent: unknown,
-    args: { input: { id?: string; type: string; source: string; target: string; properties?: Record<string, unknown>; expectedSequence?: number }; actor?: ActorContextInput },
+    args: {
+      input: {
+        id?: string;
+        type: string;
+        source: string;
+        target: string;
+        properties?: Record<string, unknown>;
+        expectedSequence?: number;
+      };
+      actor?: ActorContextInput;
+    },
   ) => {
     const actorContext = validateActorDelegation(context, args.actor);
     const result = await executeMutation.createEdge(context, {
@@ -848,10 +903,12 @@ git commit -m "feat(api-adapter): implement GraphQL mutation resolvers with agen
 ### Task 5: Implement Subscription Resolvers & Stream Bridge
 
 **Files:**
+
 - Create: `packages/api-adapter/src/graphql/resolvers/subscriptions.ts`
 - Test: `packages/api-adapter/tests/graphql-subscriptions.test.ts`
 
 **Interfaces:**
+
 - Consumes: `@canopy/api-adapter` stream subscriber (`createEventStreamSubscriber`)
 - Produces: `subscriptionResolvers`
 
@@ -882,15 +939,13 @@ Expected: FAIL
 - [ ] **Step 3: Implement subscription resolvers**
 
 Create `packages/api-adapter/src/graphql/resolvers/subscriptions.ts`:
+
 ```typescript
 import type { EventBus } from '@canopy/graph';
 import type { ApiAdapterContext } from '../../api-context';
 import { createEventStreamSubscriber } from '../../event-stream-handlers';
 
-export const createSubscriptionResolvers = (
-  _context: ApiAdapterContext,
-  eventBus?: EventBus,
-) => ({
+export const createSubscriptionResolvers = (_context: ApiAdapterContext, eventBus?: EventBus) => ({
   eventStream: {
     subscribe: (_parent: unknown, args: { lastSeenEventId?: string; bufferCapacity?: number }) => {
       const subscriber = createEventStreamSubscriber({
@@ -948,11 +1003,13 @@ git commit -m "feat(api-adapter): implement GraphQL subscription resolvers for r
 ### Task 6: Universal GraphQL Transport Bridge & Integration Suite
 
 **Files:**
+
 - Create: `packages/api-adapter/src/graphql/graphql-adapter.ts`
 - Modify: `packages/api-adapter/src/index.ts`
 - Test: `packages/api-adapter/tests/graphql-adapter-integration.test.ts`
 
 **Interfaces:**
+
 - Consumes: All GraphQL resolvers, custom scalars, and schema builders
 - Produces: `createGraphQLAdapter(context: ApiAdapterContext)` returning `execute()` and `subscribe()`
 
@@ -1015,6 +1072,7 @@ Expected: FAIL
 - [ ] **Step 3: Implement `createGraphQLAdapter` and export from `@canopy/api-adapter` root**
 
 Create `packages/api-adapter/src/graphql/graphql-adapter.ts`:
+
 ```typescript
 import type { EventBus } from '@canopy/graph';
 import { graphql, subscribe, type ExecutionResult } from 'graphql';
@@ -1074,6 +1132,7 @@ export const createGraphQLAdapter = (
 ```
 
 Update `packages/api-adapter/src/index.ts`:
+
 ```typescript
 export * from './api-context';
 export * from './api-payloads';
@@ -1088,11 +1147,13 @@ export * from './graphql/schema';
 - [ ] **Step 4: Run test to verify it passes and verify all quality gates**
 
 Run:
+
 ```bash
 bun test packages/api-adapter/tests/graphql-adapter-integration.test.ts
 bun run typecheck
 bun run lint
 ```
+
 Expected: All tests pass, typecheck clean, lint clean.
 
 - [ ] **Step 5: Commit**

@@ -7,6 +7,7 @@ import {
   asTypeId,
   createGraph,
   createGraphSession,
+  unwrap,
 } from '@canopy/graph';
 import { createInMemoryEventStore } from '@canopy/storage';
 import {
@@ -31,7 +32,7 @@ const setupSessionContext = async () => {
 
 describe('Mutation execution handlers', () => {
   test('fails if session is missing in ApiAdapterContext', async () => {
-    const graph = createGraph(graphId, 'test').value;
+    const graph = unwrap(createGraph(graphId, 'test'));
     const context = createApiAdapterContext({ graph });
     const req = createApiRequest('req-1', context, {
       type: asTypeId('doc'),
@@ -58,7 +59,7 @@ describe('Mutation execution handlers', () => {
     const res = await executeCreateNode(req);
     expect(res.ok).toBe(true);
     if (res.ok) {
-      expect(res.value.id).toBe('n1');
+      expect(res.value.id).toBe(asNodeId('n1'));
       expect(res.value.properties.title).toBe('My Document');
     }
     expect(session.graph().nodes.has(asNodeId('n1'))).toBe(true);
@@ -234,9 +235,9 @@ describe('Mutation execution handlers', () => {
     const resEdge = await executeCreateEdge(reqEdge);
     expect(resEdge.ok).toBe(true);
     if (resEdge.ok) {
-      expect(resEdge.value.id).toBe('e1');
-      expect(resEdge.value.source).toBe('src');
-      expect(resEdge.value.target).toBe('tgt');
+      expect(resEdge.value.id).toBe(asEdgeId('e1'));
+      expect(resEdge.value.source).toBe(asNodeId('src'));
+      expect(resEdge.value.target).toBe(asNodeId('tgt'));
     }
   });
 

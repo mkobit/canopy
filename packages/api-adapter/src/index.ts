@@ -19,3 +19,4 @@ export * from './graphql/schema-sdl';
 export * from './mutation-handlers';
 export * from './query-handlers';
 export * from './result-errors';
+export * from './wasm';

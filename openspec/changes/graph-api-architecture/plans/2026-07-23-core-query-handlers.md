@@ -20,11 +20,13 @@
 ### Task 1: Payload and result types in `@canopy/api-adapter`
 
 **Files:**
+
 - Modify: `packages/api-adapter/src/api-payloads.ts`
 - Modify: `packages/api-adapter/tests/api-payloads.test.ts`
 - Modify: `packages/api-adapter/src/index.ts`
 
 **Interfaces:**
+
 - Consumes: `NodeId`, `EdgeId`, `TypeId`, `PropertyValue` from `@canopy/graph`, `Filter`, `Sort` from `@canopy/queries`.
 - Produces: `NodeQueryPayload`, `EdgeQueryPayload`, `PropertyLookupPayload`, `TraversalQueryPayload`, `PropertyLookupResult`.
 
@@ -165,11 +167,13 @@ git commit -m "feat(api-adapter): define query request payloads and result types
 ### Task 2: Query execution handlers in `@canopy/api-adapter`
 
 **Files:**
+
 - Create: `packages/api-adapter/src/query-handlers.ts`
 - Modify: `packages/api-adapter/src/index.ts`
 - Create: `packages/api-adapter/tests/query-handlers.test.ts`
 
 **Interfaces:**
+
 - Consumes: `ApiRequest`, `ApiResponse`, `ApiNodePayload`, `ApiEdgePayload`, `ApiTraversalPayload`, `NodeQueryPayload`, `EdgeQueryPayload`, `PropertyLookupPayload`, `TraversalQueryPayload`, `PropertyLookupResult` from `./api-payloads`.
 - Produces: `executeNodeQuery`, `executeEdgeQuery`, `executePropertyLookup`, `executeGraphTraversal`.
 
@@ -203,20 +207,41 @@ const setupTestGraph = () => {
   const node1 = {
     id: createNodeId('n1'),
     type: createTypeId('doc'),
-    properties: new Map([['title', 'Doc 1'], ['tenantId', 't1']]),
-    metadata: { created: '2026-01-01T00:00:00.000Z', modified: '2026-01-01T00:00:00.000Z', modifiedBy: deviceId },
+    properties: new Map([
+      ['title', 'Doc 1'],
+      ['tenantId', 't1'],
+    ]),
+    metadata: {
+      created: '2026-01-01T00:00:00.000Z',
+      modified: '2026-01-01T00:00:00.000Z',
+      modifiedBy: deviceId,
+    },
   };
   const node2 = {
     id: createNodeId('n2'),
     type: createTypeId('doc'),
-    properties: new Map([['title', 'Doc 2'], ['tenantId', 't1']]),
-    metadata: { created: '2026-01-01T00:00:00.000Z', modified: '2026-01-01T00:00:00.000Z', modifiedBy: deviceId },
+    properties: new Map([
+      ['title', 'Doc 2'],
+      ['tenantId', 't1'],
+    ]),
+    metadata: {
+      created: '2026-01-01T00:00:00.000Z',
+      modified: '2026-01-01T00:00:00.000Z',
+      modifiedBy: deviceId,
+    },
   };
   const node3 = {
     id: createNodeId('n3'),
     type: createTypeId('tag'),
-    properties: new Map([['name', 'Tag 1'], ['tenantId', 't2']]),
-    metadata: { created: '2026-01-01T00:00:00.000Z', modified: '2026-01-01T00:00:00.000Z', modifiedBy: deviceId },
+    properties: new Map([
+      ['name', 'Tag 1'],
+      ['tenantId', 't2'],
+    ]),
+    metadata: {
+      created: '2026-01-01T00:00:00.000Z',
+      modified: '2026-01-01T00:00:00.000Z',
+      modifiedBy: deviceId,
+    },
   };
   const edge1 = {
     id: createEdgeId('e1'),
@@ -224,7 +249,11 @@ const setupTestGraph = () => {
     source: node1.id,
     target: node2.id,
     properties: new Map([['weight', 1]]),
-    metadata: { created: '2026-01-01T00:00:00.000Z', modified: '2026-01-01T00:00:00.000Z', modifiedBy: deviceId },
+    metadata: {
+      created: '2026-01-01T00:00:00.000Z',
+      modified: '2026-01-01T00:00:00.000Z',
+      modifiedBy: deviceId,
+    },
   };
   const cycleEdge = {
     id: createEdgeId('e2'),
@@ -232,7 +261,11 @@ const setupTestGraph = () => {
     source: node2.id,
     target: node1.id,
     properties: new Map(),
-    metadata: { created: '2026-01-01T00:00:00.000Z', modified: '2026-01-01T00:00:00.000Z', modifiedBy: deviceId },
+    metadata: {
+      created: '2026-01-01T00:00:00.000Z',
+      modified: '2026-01-01T00:00:00.000Z',
+      modifiedBy: deviceId,
+    },
   };
 
   let g = createGraph();
@@ -310,8 +343,14 @@ describe('Query execution handlers', () => {
   test('executePropertyLookup with key returns specified property or NOT_FOUND', () => {
     const graph = setupTestGraph();
     const context = createApiAdapterContext({ graph });
-    const reqFound = createApiRequest('req-6', context, { entityId: createNodeId('n1'), propertyKey: 'title' });
-    const reqMissing = createApiRequest('req-7', context, { entityId: createNodeId('n1'), propertyKey: 'missing' });
+    const reqFound = createApiRequest('req-6', context, {
+      entityId: createNodeId('n1'),
+      propertyKey: 'title',
+    });
+    const reqMissing = createApiRequest('req-7', context, {
+      entityId: createNodeId('n1'),
+      propertyKey: 'missing',
+    });
 
     const resFound = executePropertyLookup(reqFound);
     expect(resFound.ok).toBe(true);
@@ -356,7 +395,10 @@ describe('Query execution handlers', () => {
 
   test('executeGraphTraversal fails with RESOURCE_EXHAUSTED when exceeding cost limit', () => {
     const graph = setupTestGraph();
-    const context = createApiAdapterContext({ graph, limits: { maxQueryCost: 1, maxQueryDepth: 10 } });
+    const context = createApiAdapterContext({
+      graph,
+      limits: { maxQueryCost: 1, maxQueryDepth: 10 },
+    });
     const req = createApiRequest('req-10', context, {
       startNodeIds: [createNodeId('n1')],
       maxCost: 1,
@@ -531,7 +573,10 @@ export const executePropertyLookup = (
   if (propertyKey !== undefined) {
     if (!Object.prototype.hasOwnProperty.call(allProps, propertyKey)) {
       return err(
-        createApiAdapterError('NOT_FOUND', `Property key '${propertyKey}' not found on entity ${entityId}`),
+        createApiAdapterError(
+          'NOT_FOUND',
+          `Property key '${propertyKey}' not found on entity ${entityId}`,
+        ),
       );
     }
     return ok({
@@ -660,6 +705,7 @@ git commit -m "feat(api-adapter): implement core query execution handlers"
 ### Task 3: Quality gates and full verification
 
 **Files:**
+
 - None (verification phase across workspace)
 
 - [ ] **Step 1: Build all packages**

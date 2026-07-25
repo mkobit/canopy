@@ -84,9 +84,11 @@ Implement four public handler functions:
 ### Resource and performance overhead
 
 #### Risk
+
 Unbounded edge queries and BFS queue memory growth can cause memory exhaustion and event loop blocking.
 
 #### Mitigation
+
 - Add `limit?: number` to `EdgeQueryPayload` with a mandatory maximum default limit (e.g. 1000 items).
 - Enforce strict visited entity count checks before queueing neighbor nodes in `executeGraphTraversal`.
 - Return `RESOURCE_EXHAUSTED` error if total traversed entity count exceeds `maxCost`.
@@ -94,9 +96,11 @@ Unbounded edge queries and BFS queue memory growth can cause memory exhaustion a
 ### Failure modes and edge cases
 
 #### Risk
+
 Graph cycles, missing versus undefined property lookups, and empty `startNodeIds` cause infinite loops or ambiguous query results.
 
 #### Mitigation
+
 - Maintain `visitedNodes` and `visitedEdges` sets during BFS graph traversals to ensure cycle safety and response deduplication.
 - Check property existence using `Object.prototype.hasOwnProperty` instead of direct property access in `executePropertyLookup`.
 - Return `VALIDATION_ERROR` when `startNodeIds` array is empty in `executeGraphTraversal`.
@@ -104,18 +108,22 @@ Graph cycles, missing versus undefined property lookups, and empty `startNodeIds
 ### Security and isolation
 
 #### Risk
+
 Queries executing without tenant scope or authentication checks risk multi-tenant data leakage.
 
 #### Mitigation
+
 - Filter graph entities by `context.authContext.tenantId` when tenant isolation is configured.
 - Require valid `authContext` and read scopes in all query execution entry points, returning `UNAUTHORIZED` or `FORBIDDEN` errors on failure.
 
 ### API signature stability and immutability
 
 #### Risk
+
 Mutable data structures or inconsistent error types risk API drift across transport adapters.
 
 #### Mitigation
+
 - Enforce `readonly` modifiers on all payload interfaces, function parameters, and return types.
 - Standardize canonical mapping of `ApiAdapterError` categories to gRPC status codes, GraphQL extensions, and WIT error types.
 

@@ -238,9 +238,30 @@ input DeleteEdgeInput {
 type Query {
   node(id: ID!): NodePayload
   nodes(type: ID, first: Int, after: String, last: Int, before: String): NodeConnection!
-  edges(source: ID, target: ID, type: ID, first: Int, after: String, last: Int, before: String): EdgeConnection!
-  traversal(startNodeIds: [ID!]!, edgeType: ID, maxDepth: Int, maxNodes: Int, maxEdges: Int): TraversalPayload!
-  gqlQuery(query: String!, params: JSON, first: Int, after: String, last: Int, before: String): NodeConnection!
+  edges(
+    source: ID
+    target: ID
+    type: ID
+    first: Int
+    after: String
+    last: Int
+    before: String
+  ): EdgeConnection!
+  traversal(
+    startNodeIds: [ID!]!
+    edgeType: ID
+    maxDepth: Int
+    maxNodes: Int
+    maxEdges: Int
+  ): TraversalPayload!
+  gqlQuery(
+    query: String!
+    params: JSON
+    first: Int
+    after: String
+    last: Int
+    before: String
+  ): NodeConnection!
   nodeTypes: [NodeTypeDefinition!]!
   nodeType(id: ID!): NodeTypeDefinition
   edgeTypes: [EdgeTypeDefinition!]!
@@ -250,7 +271,10 @@ type Query {
 
 type Mutation {
   createNode(input: CreateNodeInput!, actor: ActorContextInput): MutationResultPayload!
-  updateNodeProperties(input: UpdateNodePropertiesInput!, actor: ActorContextInput): MutationResultPayload!
+  updateNodeProperties(
+    input: UpdateNodePropertiesInput!
+    actor: ActorContextInput
+  ): MutationResultPayload!
   deleteNode(input: DeleteNodeInput!, actor: ActorContextInput): MutationResultPayload!
   createEdge(input: CreateEdgeInput!, actor: ActorContextInput): MutationResultPayload!
   deleteEdge(input: DeleteEdgeInput!, actor: ActorContextInput): MutationResultPayload!

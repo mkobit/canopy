@@ -21,11 +21,13 @@
 ### Task 1: Protocol Buffer Schema Definitions & Descriptor Types
 
 **Files:**
+
 - Create: `packages/api-adapter/src/connect/proto-sdl.ts`
 - Create: `packages/api-adapter/src/connect/schema.ts`
 - Test: `packages/api-adapter/tests/connect-schema.test.ts`
 
 **Interfaces:**
+
 - Consumes: `@canopy/api-adapter` payload definitions (`api-payloads.ts`)
 - Produces: `PROTO_SERVICES_SDL: string`, `CONNECT_SERVICE_DESCRIPTORS: ReadonlyArray<ConnectServiceDescriptor>`
 
@@ -65,6 +67,7 @@ Expected: FAIL with module resolution error for missing `src/connect/schema.ts`.
 - [ ] **Step 3: Implement Protobuf SDL definitions and service descriptors**
 
 Create `packages/api-adapter/src/connect/proto-sdl.ts`:
+
 ```typescript
 export const PROTO_SERVICES_SDL = `
 syntax = "proto3";
@@ -266,6 +269,7 @@ service EventStreamService {
 ```
 
 Create `packages/api-adapter/src/connect/schema.ts`:
+
 ```typescript
 import { PROTO_SERVICES_SDL } from './proto-sdl';
 
@@ -287,39 +291,104 @@ export const CONNECT_SERVICE_DESCRIPTORS: ReadonlyArray<ConnectServiceDescriptor
   {
     typeName: 'canopy.api.v1.NodeService',
     methods: [
-      { name: 'getNodeById', requestType: 'GetNodeByIdRequest', responseType: 'NodeResponse', isStreaming: false },
-      { name: 'getNodesByType', requestType: 'GetNodesByTypeRequest', responseType: 'NodeListResponse', isStreaming: false },
-      { name: 'getNodesByProperty', requestType: 'GetNodesByPropertyRequest', responseType: 'NodeListResponse', isStreaming: false },
+      {
+        name: 'getNodeById',
+        requestType: 'GetNodeByIdRequest',
+        responseType: 'NodeResponse',
+        isStreaming: false,
+      },
+      {
+        name: 'getNodesByType',
+        requestType: 'GetNodesByTypeRequest',
+        responseType: 'NodeListResponse',
+        isStreaming: false,
+      },
+      {
+        name: 'getNodesByProperty',
+        requestType: 'GetNodesByPropertyRequest',
+        responseType: 'NodeListResponse',
+        isStreaming: false,
+      },
     ],
   },
   {
     typeName: 'canopy.api.v1.EdgeService',
     methods: [
-      { name: 'getInboundEdges', requestType: 'GetInboundEdgesRequest', responseType: 'EdgeListResponse', isStreaming: false },
-      { name: 'getOutboundEdges', requestType: 'GetOutboundEdgesRequest', responseType: 'EdgeListResponse', isStreaming: false },
+      {
+        name: 'getInboundEdges',
+        requestType: 'GetInboundEdgesRequest',
+        responseType: 'EdgeListResponse',
+        isStreaming: false,
+      },
+      {
+        name: 'getOutboundEdges',
+        requestType: 'GetOutboundEdgesRequest',
+        responseType: 'EdgeListResponse',
+        isStreaming: false,
+      },
     ],
   },
   {
     typeName: 'canopy.api.v1.PropertyService',
     methods: [
-      { name: 'executeTraversalQuery', requestType: 'ExecuteTraversalQueryRequest', responseType: 'TraversalResponse', isStreaming: false },
+      {
+        name: 'executeTraversalQuery',
+        requestType: 'ExecuteTraversalQueryRequest',
+        responseType: 'TraversalResponse',
+        isStreaming: false,
+      },
     ],
   },
   {
     typeName: 'canopy.api.v1.GraphMutationService',
     methods: [
-      { name: 'createNode', requestType: 'CreateNodeRequest', responseType: 'MutationResultResponse', isStreaming: false },
-      { name: 'updateNodeProperties', requestType: 'UpdatePropertiesRequest', responseType: 'MutationResultResponse', isStreaming: false },
-      { name: 'deleteNode', requestType: 'DeleteNodeRequest', responseType: 'MutationResultResponse', isStreaming: false },
-      { name: 'createEdge', requestType: 'CreateEdgeRequest', responseType: 'MutationResultResponse', isStreaming: false },
-      { name: 'deleteEdge', requestType: 'DeleteEdgeRequest', responseType: 'MutationResultResponse', isStreaming: false },
+      {
+        name: 'createNode',
+        requestType: 'CreateNodeRequest',
+        responseType: 'MutationResultResponse',
+        isStreaming: false,
+      },
+      {
+        name: 'updateNodeProperties',
+        requestType: 'UpdatePropertiesRequest',
+        responseType: 'MutationResultResponse',
+        isStreaming: false,
+      },
+      {
+        name: 'deleteNode',
+        requestType: 'DeleteNodeRequest',
+        responseType: 'MutationResultResponse',
+        isStreaming: false,
+      },
+      {
+        name: 'createEdge',
+        requestType: 'CreateEdgeRequest',
+        responseType: 'MutationResultResponse',
+        isStreaming: false,
+      },
+      {
+        name: 'deleteEdge',
+        requestType: 'DeleteEdgeRequest',
+        responseType: 'MutationResultResponse',
+        isStreaming: false,
+      },
     ],
   },
   {
     typeName: 'canopy.api.v1.EventStreamService',
     methods: [
-      { name: 'subscribeEventStream', requestType: 'EventStreamRequest', responseType: 'EventStreamItem', isStreaming: true },
-      { name: 'replayEventStream', requestType: 'EventStreamRequest', responseType: 'EventStreamItem', isStreaming: true },
+      {
+        name: 'subscribeEventStream',
+        requestType: 'EventStreamRequest',
+        responseType: 'EventStreamItem',
+        isStreaming: true,
+      },
+      {
+        name: 'replayEventStream',
+        requestType: 'EventStreamRequest',
+        responseType: 'EventStreamItem',
+        isStreaming: true,
+      },
     ],
   },
 ];
@@ -335,10 +404,12 @@ Expected: PASS.
 ### Task 2: gRPC Status Code & Result Error Mapping
 
 **Files:**
+
 - Create: `packages/api-adapter/src/connect/grpc-errors.ts`
 - Test: `packages/api-adapter/tests/connect-errors.test.ts`
 
 **Interfaces:**
+
 - Consumes: `@canopy/api-adapter` result error types (`result-errors.ts`)
 - Produces: `GrpcStatusCode`, `mapResultErrorToGrpcStatusCode`, `createConnectErrorPayload`
 
@@ -386,6 +457,7 @@ Expected: FAIL with module resolution error.
 - [ ] **Step 3: Implement `grpc-errors.ts`**
 
 Create `packages/api-adapter/src/connect/grpc-errors.ts`:
+
 ```typescript
 import type { ApiAdapterErrorPayload } from '../result-errors';
 
@@ -416,9 +488,7 @@ export type ConnectRpcError = Readonly<{
   details?: Readonly<Record<string, unknown>>;
 }>;
 
-export const mapResultErrorToGrpcStatusCode = (
-  error: ApiAdapterErrorPayload,
-): GrpcStatusCode => {
+export const mapResultErrorToGrpcStatusCode = (error: ApiAdapterErrorPayload): GrpcStatusCode => {
   switch (error.code) {
     case 'INVALID_INPUT':
     case 'VALIDATION_ERROR':
@@ -447,9 +517,7 @@ export const mapResultErrorToGrpcStatusCode = (
   }
 };
 
-export const createConnectErrorPayload = (
-  error: ApiAdapterErrorPayload,
-): ConnectRpcError => {
+export const createConnectErrorPayload = (error: ApiAdapterErrorPayload): ConnectRpcError => {
   return {
     code: mapResultErrorToGrpcStatusCode(error),
     errorCode: error.code,
@@ -469,10 +537,12 @@ Expected: PASS.
 ### Task 3: Connect-Web RPC Handlers for Queries and Mutations
 
 **Files:**
+
 - Create: `packages/api-adapter/src/connect/handlers/queries-mutations.ts`
 - Test: `packages/api-adapter/tests/connect-rpc-handlers.test.ts`
 
 **Interfaces:**
+
 - Consumes: `@canopy/api-adapter` core query and mutation handlers (`query-handlers.ts`, `mutation-handlers.ts`)
 - Produces: `createConnectQueryHandlers(context)`, `createConnectMutationHandlers(context)`
 
@@ -526,6 +596,7 @@ Expected: FAIL with missing module error.
 - [ ] **Step 3: Implement Connect-Web query and mutation RPC handlers**
 
 Create `packages/api-adapter/src/connect/handlers/queries-mutations.ts`:
+
 ```typescript
 import type { ApiAdapterContext } from '../../api-context';
 import { createMutationHandlers } from '../../mutation-handlers';
@@ -627,7 +698,10 @@ export const createConnectQueryHandlers = (context: ApiAdapterContext) => {
       };
     },
 
-    getNodesByProperty: async (req: { key: string; value_json: string }): Promise<ConnectNodeListResponse> => {
+    getNodesByProperty: async (req: {
+      key: string;
+      value_json: string;
+    }): Promise<ConnectNodeListResponse> => {
       let parsedValue: unknown;
       try {
         parsedValue = JSON.parse(req.value_json);
@@ -652,7 +726,10 @@ export const createConnectQueryHandlers = (context: ApiAdapterContext) => {
       };
     },
 
-    getInboundEdges: async (req: { target_node_id: string; predicate_type_id?: string }): Promise<ConnectEdgeListResponse> => {
+    getInboundEdges: async (req: {
+      target_node_id: string;
+      predicate_type_id?: string;
+    }): Promise<ConnectEdgeListResponse> => {
       const res = await queryHandlers.getInboundEdges(req.target_node_id, req.predicate_type_id);
       if (!res.ok) {
         const err = createConnectErrorPayload(res.error);
@@ -671,7 +748,10 @@ export const createConnectQueryHandlers = (context: ApiAdapterContext) => {
       };
     },
 
-    getOutboundEdges: async (req: { source_node_id: string; predicate_type_id?: string }): Promise<ConnectEdgeListResponse> => {
+    getOutboundEdges: async (req: {
+      source_node_id: string;
+      predicate_type_id?: string;
+    }): Promise<ConnectEdgeListResponse> => {
       const res = await queryHandlers.getOutboundEdges(req.source_node_id, req.predicate_type_id);
       if (!res.ok) {
         const err = createConnectErrorPayload(res.error);
@@ -690,7 +770,11 @@ export const createConnectQueryHandlers = (context: ApiAdapterContext) => {
       };
     },
 
-    executeTraversalQuery: async (req: { start_node_id: string; max_depth?: number; filter_predicate_type_ids?: ReadonlyArray<string> }): Promise<ConnectTraversalResponse> => {
+    executeTraversalQuery: async (req: {
+      start_node_id: string;
+      max_depth?: number;
+      filter_predicate_type_ids?: ReadonlyArray<string>;
+    }): Promise<ConnectTraversalResponse> => {
       const res = await queryHandlers.executeTraversalQuery({
         startNodeId: req.start_node_id,
         maxDepth: req.max_depth,
@@ -716,9 +800,15 @@ export const createConnectMutationHandlers = (context: ApiAdapterContext) => {
   const mutationHandlers = createMutationHandlers(context);
 
   return {
-    createNode: async (req: { type_id: string; properties_json?: string; expected_sequence?: string }): Promise<ConnectMutationResultResponse> => {
+    createNode: async (req: {
+      type_id: string;
+      properties_json?: string;
+      expected_sequence?: string;
+    }): Promise<ConnectMutationResultResponse> => {
       const properties = req.properties_json ? JSON.parse(req.properties_json) : {};
-      const expectedSequenceNumber = req.expected_sequence ? Number.parseInt(req.expected_sequence, 10) : undefined;
+      const expectedSequenceNumber = req.expected_sequence
+        ? Number.parseInt(req.expected_sequence, 10)
+        : undefined;
       const res = await mutationHandlers.createNode({
         typeId: req.type_id,
         properties,
@@ -736,9 +826,15 @@ export const createConnectMutationHandlers = (context: ApiAdapterContext) => {
       };
     },
 
-    updateNodeProperties: async (req: { id: string; properties_json: string; expected_sequence?: string }): Promise<ConnectMutationResultResponse> => {
+    updateNodeProperties: async (req: {
+      id: string;
+      properties_json: string;
+      expected_sequence?: string;
+    }): Promise<ConnectMutationResultResponse> => {
       const properties = JSON.parse(req.properties_json);
-      const expectedSequenceNumber = req.expected_sequence ? Number.parseInt(req.expected_sequence, 10) : undefined;
+      const expectedSequenceNumber = req.expected_sequence
+        ? Number.parseInt(req.expected_sequence, 10)
+        : undefined;
       const res = await mutationHandlers.updateNodeProperties({
         id: req.id,
         properties,
@@ -756,8 +852,13 @@ export const createConnectMutationHandlers = (context: ApiAdapterContext) => {
       };
     },
 
-    deleteNode: async (req: { id: string; expected_sequence?: string }): Promise<ConnectMutationResultResponse> => {
-      const expectedSequenceNumber = req.expected_sequence ? Number.parseInt(req.expected_sequence, 10) : undefined;
+    deleteNode: async (req: {
+      id: string;
+      expected_sequence?: string;
+    }): Promise<ConnectMutationResultResponse> => {
+      const expectedSequenceNumber = req.expected_sequence
+        ? Number.parseInt(req.expected_sequence, 10)
+        : undefined;
       const res = await mutationHandlers.deleteNode({
         id: req.id,
         expectedSequenceNumber,
@@ -774,9 +875,17 @@ export const createConnectMutationHandlers = (context: ApiAdapterContext) => {
       };
     },
 
-    createEdge: async (req: { source_node_id: string; target_node_id: string; predicate_type_id: string; properties_json?: string; expected_sequence?: string }): Promise<ConnectMutationResultResponse> => {
+    createEdge: async (req: {
+      source_node_id: string;
+      target_node_id: string;
+      predicate_type_id: string;
+      properties_json?: string;
+      expected_sequence?: string;
+    }): Promise<ConnectMutationResultResponse> => {
       const properties = req.properties_json ? JSON.parse(req.properties_json) : {};
-      const expectedSequenceNumber = req.expected_sequence ? Number.parseInt(req.expected_sequence, 10) : undefined;
+      const expectedSequenceNumber = req.expected_sequence
+        ? Number.parseInt(req.expected_sequence, 10)
+        : undefined;
       const res = await mutationHandlers.createEdge({
         sourceNodeId: req.source_node_id,
         targetNodeId: req.target_node_id,
@@ -796,8 +905,13 @@ export const createConnectMutationHandlers = (context: ApiAdapterContext) => {
       };
     },
 
-    deleteEdge: async (req: { id: string; expected_sequence?: string }): Promise<ConnectMutationResultResponse> => {
-      const expectedSequenceNumber = req.expected_sequence ? Number.parseInt(req.expected_sequence, 10) : undefined;
+    deleteEdge: async (req: {
+      id: string;
+      expected_sequence?: string;
+    }): Promise<ConnectMutationResultResponse> => {
+      const expectedSequenceNumber = req.expected_sequence
+        ? Number.parseInt(req.expected_sequence, 10)
+        : undefined;
       const res = await mutationHandlers.deleteEdge({
         id: req.id,
         expectedSequenceNumber,
@@ -827,10 +941,12 @@ Expected: PASS.
 ### Task 4: gRPC Event Log Streaming & Replay Handlers
 
 **Files:**
+
 - Create: `packages/api-adapter/src/connect/handlers/event-streaming.ts`
 - Test: `packages/api-adapter/tests/connect-event-streaming.test.ts`
 
 **Interfaces:**
+
 - Consumes: `event-stream-handlers.ts`, `EventBus`
 - Produces: `createConnectEventStreamHandlers(context, options)` returning gRPC server streaming iterators for `subscribeEventStream` and `replayEventStream`.
 
@@ -873,6 +989,7 @@ Expected: FAIL with module resolution error.
 - [ ] **Step 3: Implement `event-streaming.ts`**
 
 Create `packages/api-adapter/src/connect/handlers/event-streaming.ts`:
+
 ```typescript
 import type { EventBus } from '@canopy/graph';
 import type { ApiAdapterContext } from '../../api-context';
@@ -897,7 +1014,9 @@ export const createConnectEventStreamHandlers = (
   const streamHandlers = createEventStreamHandlers(context, options?.eventBus);
 
   return {
-    subscribeEventStream: (req: { last_seen_event_id?: string }): AsyncIterator<ConnectEventStreamItem> => {
+    subscribeEventStream: (req: {
+      last_seen_event_id?: string;
+    }): AsyncIterator<ConnectEventStreamItem> => {
       const coreStream = streamHandlers.subscribeEventStream(req.last_seen_event_id);
       return (async function* () {
         for await (const event of coreStream) {
@@ -912,7 +1031,9 @@ export const createConnectEventStreamHandlers = (
       })();
     },
 
-    replayEventStream: (req: { last_seen_event_id?: string }): AsyncIterator<ConnectEventStreamItem> => {
+    replayEventStream: (req: {
+      last_seen_event_id?: string;
+    }): AsyncIterator<ConnectEventStreamItem> => {
       const coreReplay = streamHandlers.replayEventStream(req.last_seen_event_id);
       return (async function* () {
         for await (const event of coreReplay) {
@@ -940,11 +1061,13 @@ Expected: PASS.
 ### Task 5: Connect-Web/gRPC Adapter Assembly & Package Exports
 
 **Files:**
+
 - Create: `packages/api-adapter/src/connect/connect-adapter.ts`
 - Modify: `packages/api-adapter/src/index.ts`
 - Test: `packages/api-adapter/tests/connect-adapter.test.ts`
 
 **Interfaces:**
+
 - Consumes: All `src/connect/` modules
 - Produces: `createConnectAdapter(context, options)`, `ConnectAdapter`, full package exports in `src/index.ts`.
 
@@ -982,6 +1105,7 @@ Expected: FAIL with `createConnectAdapter` undefined.
 - [ ] **Step 3: Implement `connect-adapter.ts` and update `index.ts`**
 
 Create `packages/api-adapter/src/connect/connect-adapter.ts`:
+
 ```typescript
 import type { EventBus } from '@canopy/graph';
 import type { ApiAdapterContext } from '../api-context';
@@ -1046,6 +1170,7 @@ export const createConnectAdapter = (
 ```
 
 Update `packages/api-adapter/src/index.ts` to export all Connect adapter items:
+
 ```typescript
 export * from './api-context';
 export * from './api-payloads';
