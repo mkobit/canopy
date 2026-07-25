@@ -34,7 +34,9 @@ describe('Schema Baseline Snapshots', () => {
     expect(witContent).toContain('package canopy:graph-api@0.1.0;');
     expect(witContent).toContain(CANOPY_WIT_SPECIFICATION.trim());
 
-    const waiverContent = JSON.parse(fs.readFileSync(waiverPath, 'utf8')) as { readonly waivers: readonly unknown[] };
+    const waiverContent = JSON.parse(fs.readFileSync(waiverPath, 'utf8')) as {
+      readonly waivers: readonly unknown[];
+    };
     expect(waiverContent.waivers).toEqual([]);
   });
 });
