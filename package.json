@@ -12,9 +12,10 @@
   },
   "scripts": {
     "build": "tsc -b && bun --filter './apps/*' build",
+    "check:api-compatibility": "bun tools/check-api-compatibility.ts",
     "check:versions": "bun tools/verify-versions.ts",
     "test": "bun --filter '*' test",
-    "lint": "bun tools/check-commands.ts && bun run check:versions && eslint . --cache",
+    "lint": "bun tools/check-commands.ts && bun run check:versions && bun run check:api-compatibility && eslint . --cache",
     "format": "prettier --write .",
     "typecheck": "bun --filter '*' typecheck",
     "prepare": "husky",

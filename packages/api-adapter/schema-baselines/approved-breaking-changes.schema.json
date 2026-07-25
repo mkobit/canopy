@@ -2,9 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "ApprovedBreakingChanges",
   "type": "object",
-  "required": [
-    "waivers"
-  ],
+  "required": ["waivers"],
   "properties": {
     "waivers": {
       "type": "array",
@@ -26,12 +24,7 @@
           },
           "protocol": {
             "type": "string",
-            "enum": [
-              "graphql",
-              "connect",
-              "wit",
-              "all"
-            ]
+            "enum": ["graphql", "connect", "wit", "all"]
           },
           "path": {
             "type": "string"
