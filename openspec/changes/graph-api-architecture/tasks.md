@@ -43,7 +43,7 @@
 
 ## 8. Testing and quality assurance
 
-- [ ] 8.1 Write unit tests for core query handlers, `GraphSession` mutation handlers, validation rejection, and event log streaming replay
-- [ ] 8.2 Write integration tests for GraphQL resolvers, Connect-Web/gRPC endpoints, and WASM WIT host bindings
-- [ ] 8.3 Write concurrency tests asserting write conflict rejection and state consistency under concurrent mutations
-- [ ] 8.4 Run `bun test`, `bun run typecheck`, and `bun run lint` to verify quality gates across all packages
+- [x] 8.1 Write unit tests for core query handlers, `GraphSession` mutation handlers, validation rejection, and event log streaming replay
+- [x] 8.2 Write integration tests for GraphQL resolvers, Connect-Web/gRPC endpoints, and WASM WIT host bindings
+- [x] 8.3 Write concurrency tests asserting write conflict rejection and state consistency under concurrent mutations
+- [x] 8.4 Run `bun test`, `bun run typecheck`, and `bun run lint` to verify quality gates across all packages
