@@ -114,6 +114,7 @@ To match the compatibility guarantees of Protobuf/gRPC and GraphQL, the IPC prot
 ### Event stream subscriptions
 
 To stream events over the socket:
+
 1. Client sends request to `canopy.v1.eventStream.subscribe` with parameters `{ graphId?, fromSequence? }`.
 2. Server responds with `{ jsonrpc: "2.0", result: { subscriptionId: "sub_123" }, id: reqId }`.
 3. Server emits JSON-RPC notification objects for each event:
@@ -138,12 +139,14 @@ To stream events over the socket:
 ## Server-side implementation (`packages/api-adapter/src/ipc/`)
 
 ### File structure
+
 - `packages/api-adapter/src/ipc/ipc-schema.ts`: Request/response/notification schemas and Zod validators.
 - `packages/api-adapter/src/ipc/ipc-server.ts`: `IpcServer` class and `createIpcServer` factory.
 - `packages/api-adapter/src/ipc/ipc-handlers.ts`: Router mapping JSON-RPC methods to `QueryHandlers`, `MutationHandlers`, `EventStreamHandlers`.
 - `packages/api-adapter/src/ipc/index.ts`: Re-exports IPC server API.
 
 ### Socket lifecycle & stale socket cleanup
+
 1. **Probe**: Before calling `netServer.listen(socketPath)`, `createIpcServer` attempts a connection to `socketPath` using `net.connect`.
 2. **Cleanup**: If connection fails with `ECONNREFUSED` or `ENOENT`, the socket file is stale; the server calls `fs.unlinkSync(socketPath)` to remove it cleanly.
 3. **Collision guard**: If connection succeeds, another process is actively listening on the socket; server creation fails with `Result.err(new Error("IPC socket already in use"))`.
@@ -151,6 +154,7 @@ To stream events over the socket:
 5. **Shutdown**: On `stop()`, server notifies active clients, closes connections, unbinds, and unlinks `socketPath`.
 
 ### Backpressure & stream safety
+
 - Emitting subscription events checks `socket.write(payload)`. If `write` returns `false`, server pauses the event bus queue for that subscriber until the `drain` event fires, preventing memory exhaustion.
 
 ## Client-side implementation (`apps/cli/src/ipc/`)
@@ -164,28 +168,34 @@ To stream events over the socket:
 ## Adversarial review and mitigations
 
 ### Resource and performance
+
 - **Risk**: Unbounded client messages or fast event streams overloading socket memory.
 - **Mitigation**: Implement 10MB line buffer limit in NDJSON parser; enforce socket drain backpressure on subscription streaming.
 
 ### Failure modes and edge cases
+
 - **Risk**: Unclean server exit leaving stale socket file or orphan client connections.
 - **Mitigation**: Stale socket probe on startup (`ECONNREFUSED` -> `unlinkSync`); `SIGINT`/`SIGTERM` hooks for graceful `stop()`.
 
 ### Security and isolation
+
 - **Risk**: Other local system users connecting to socket.
 - **Mitigation**: Strict `0o600` file permissions on socket creation.
 
 ### Compatibility
+
 - **Risk**: Schema changes breaking existing client binaries.
 - **Mitigation**: `passthrough()` Zod validation for additive fields, `canopy.v1.*` versioned method namespaces, explicit `canopy.v1.handshake` capability exchange.
 
 ## Testing strategy
 
 ### Unit tests
+
 - Test NDJSON line buffer parsing (partial chunks, back-to-back messages, long lines).
 - Test JSON-RPC error mapping and Zod schema validation tolerance.
 
 ### Integration tests
+
 - Test full socket lifecycle: server startup, `0o600` permissions verification, stale socket cleanup, client connection, unary query/mutation RPC calls, subscription event streaming, and graceful shutdown.
 - Test forward/backward compatibility: client sending unknown extra fields; server returning additive fields.
 
