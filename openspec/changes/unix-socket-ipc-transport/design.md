@@ -43,7 +43,10 @@ This document details the architectural design for exposing a Unix domain socket
        {
          "jsonrpc": "2.0",
          "method": "canopy.v1.handshake",
-         "params": { "clientVersion": "0.1.0", "supportedCapabilities": ["queries", "mutations", "subscriptions"] },
+         "params": {
+           "clientVersion": "0.1.0",
+           "supportedCapabilities": ["queries", "mutations", "subscriptions"]
+         },
          "id": 1
        }
        ```
@@ -51,7 +54,11 @@ This document details the architectural design for exposing a Unix domain socket
        ```json
        {
          "jsonrpc": "2.0",
-         "result": { "apiVersion": "v1", "serverVersion": "0.1.0", "capabilities": ["queries", "mutations", "subscriptions"] },
+         "result": {
+           "apiVersion": "v1",
+           "serverVersion": "0.1.0",
+           "capabilities": ["queries", "mutations", "subscriptions"]
+         },
          "id": 1
        }
        ```

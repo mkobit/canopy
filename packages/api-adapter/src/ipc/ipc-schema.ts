@@ -88,7 +88,7 @@ export type JsonRpcRequest = Readonly<{
   jsonrpc: '2.0';
   method: string;
   params?: unknown;
-  id?: JsonRpcId;
+  id?: JsonRpcId | undefined;
 }>;
 
 // Generic JSON-RPC Error object schema.

@@ -16,6 +16,7 @@ export * from './graphql/resolvers/subscriptions';
 export * from './graphql/scalars';
 export * from './graphql/schema';
 export * from './graphql/schema-sdl';
+export * from './ipc';
 export * from './mutation-handlers';
 export * from './query-handlers';
 export * from './result-errors';
