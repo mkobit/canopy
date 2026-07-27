@@ -1,0 +1,22 @@
+{
+  "name": "@canopy/api-adapter",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -b tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.check.json",
+    "test": "bun test ./src ./tests"
+  },
+  "dependencies": {
+    "@canopy/graph": "workspace:*",
+    "@canopy/queries": "workspace:*",
+    "graphql": "^16.10.0",
+    "temporal-polyfill": "^0.3.2"
+  },
+  "devDependencies": {
+    "@canopy/storage": "workspace:*",
+    "typescript": "6.0.3"
+  }
+}

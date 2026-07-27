@@ -1,0 +1,59 @@
+// WebAssembly Interface Type (WIT) specifications for Canopy Graph API host interfaces.
+export const CANOPY_WIT_SPECIFICATION = `package canopy:graph-api@0.1.0;
+
+interface graph-types {
+  type node-id = string;
+  type edge-id = string;
+  type type-id = string;
+  type capability-token = string;
+
+  enum error-code {
+    validation-error,
+    not-found,
+    concurrency-conflict,
+    permission-denied,
+    resource-exhausted,
+    internal-error,
+  }
+
+  record adapter-error {
+    code: error-code,
+    message: string,
+    details: option<string>,
+  }
+}
+
+interface host-queries {
+  use graph-types.{capability-token, adapter-error};
+
+  query-nodes: func(token: capability-token, payload-json: string) -> result<string, adapter-error>;
+  query-edges: func(token: capability-token, payload-json: string) -> result<string, adapter-error>;
+  lookup-properties: func(token: capability-token, payload-json: string) -> result<string, adapter-error>;
+  traverse-graph: func(token: capability-token, payload-json: string) -> result<string, adapter-error>;
+}
+
+interface host-mutations {
+  use graph-types.{capability-token, adapter-error};
+
+  create-node: func(token: capability-token, payload-json: string) -> result<string, adapter-error>;
+  update-node-properties: func(token: capability-token, payload-json: string) -> result<string, adapter-error>;
+  delete-node: func(token: capability-token, payload-json: string) -> result<string, adapter-error>;
+  create-edge: func(token: capability-token, payload-json: string) -> result<string, adapter-error>;
+  delete-edge: func(token: capability-token, payload-json: string) -> result<string, adapter-error>;
+}
+
+interface host-events {
+  use graph-types.{capability-token, adapter-error};
+
+  subscribe-events: func(token: capability-token, payload-json: string) -> result<string, adapter-error>;
+  replay-events: func(token: capability-token, payload-json: string) -> result<string, adapter-error>;
+}
+
+world graph-plugin {
+  import host-queries;
+  import host-mutations;
+  import host-events;
+
+  export execute: func(input-json: string) -> result<string, adapter-error>;
+}
+`;

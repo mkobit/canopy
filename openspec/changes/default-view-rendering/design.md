@@ -64,12 +64,14 @@ This design defines how view definitions and renderers are resolved, registered,
 ## Adversarial review and mitigations
 
 ### 1. Resource and performance overhead
+
 - **[Risk]** Traverse overhead during the settings cascade for every rendered block.
   - _Mitigation_: Leverage the settings pre-indexing added in canopy-o20 to perform O(1) namespace and type schema lookups. Keep the cascade resolution logic highly optimized by terminating early once a matching setting is resolved.
 - **[Risk]** Component lookup overhead in React render loops.
   - _Mitigation_: Use a static TypeScript registry map for O(1) direct lookup, bypassing any dynamic module loading or parsing overhead.
 
 ### 2. Failure modes and edge cases
+
 - **[Risk]** Cyclic rendering loop from nested nodes causing client browser tabs to crash.
   - _Mitigation_: Enforce strict cycle detection by passing a `ReadonlySet<NodeId>` representing already-visited nodes down the rendering context. Halt recursion immediately and render a clean inline error block if a cycle is detected.
 - **[Risk]** Missing or deleted ViewDefinition or Renderer nodes.
@@ -78,9 +80,11 @@ This design defines how view definitions and renderers are resolved, registered,
   - _Mitigation_: Return a structured `Result<Node, Error>` from the resolution cascade rather than throwing, allowing caller components to catch failures and apply the default fallback layout.
 
 ### 3. Security and isolation
+
 - **[Risk]** Arbitrary or malicious component execution if a user creates custom entryPoint strings.
   - _Mitigation_: Restrict component resolution strictly to the `SystemRendererEntryPoint` compile-time string union type. Only allow components registered in the static code-defined React registry to execute, avoiding any runtime script injection pathways.
 
 ### 4. Migration and backward compatibility
+
 - **[Risk]** Broken graphs due to renaming the `default-renderer` setting key to `default-view`.
   - _Mitigation_: Since the system is pre-1.0 and has zero active user vaults, no data migration path is required. Re-bootstrap all system settings schemas during startup to overwrite the old keys cleanly.
