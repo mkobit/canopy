@@ -12,29 +12,29 @@ export function findNodes(
     if (!properties) return true;
 
     return Object.entries(properties).every(([key, value]) => {
-      const prop = node.properties.get(key);
-      if (prop === undefined) return false;
+      const property = node.properties.get(key);
+      if (property === undefined) return false;
 
       // Deep equality check needed for arrays/objects?
       // For now assume simple comparison for primitives
-      if (prop === value) return true;
+      if (property === value) return true;
 
       // If array?
-      if (Array.isArray(prop) && Array.isArray(value)) {
-        if (prop.length !== value.length) return false;
-        return prop.every((v, i) => v === value[i]);
+      if (Array.isArray(property) && Array.isArray(value)) {
+        if (property.length !== value.length) return false;
+        return property.every((v, index) => v === value[index]);
       }
 
       // If object (ExternalReferenceValue)?
       if (
-        typeof prop === 'object' &&
-        prop !== null &&
+        typeof property === 'object' &&
+        property !== null &&
         typeof value === 'object' &&
         value !== null &&
-        'graph' in prop &&
+        'graph' in property &&
         'graph' in value
       ) {
-        return prop.graph === value.graph && prop.target === value.target;
+        return property.graph === value.graph && property.target === value.target;
       }
 
       return false;

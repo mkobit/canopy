@@ -86,18 +86,18 @@ describe('GraphIndexes', () => {
     const indexes = buildGraphIndexes(graph);
     // Compound key: schemaId\0scopeType\0scopeTarget
     const key = `custom-schema\0node\0target-node-1`;
-    const val = indexes.userSettings.get(key) as unknown as {
+    const value = indexes.userSettings.get(key) as unknown as {
       readonly nested: string;
       readonly arr: readonly number[];
     };
 
-    expect(val).toBeDefined();
-    expect(val.nested).toBe('value');
-    expect(val.arr).toEqual([1, 2, 3]);
+    expect(value).toBeDefined();
+    expect(value.nested).toBe('value');
+    expect(value.arr).toEqual([1, 2, 3]);
 
     // Verify deep freezing
-    expect(Object.isFrozen(val)).toBe(true);
-    expect(Object.isFrozen(val.arr)).toBe(true);
+    expect(Object.isFrozen(value)).toBe(true);
+    expect(Object.isFrozen(value.arr)).toBe(true);
   });
 
   it('prevents key collisions with null-byte compound keys', () => {
@@ -133,11 +133,11 @@ describe('GraphIndexes', () => {
     };
 
     const indexes = buildGraphIndexes(graph);
-    const valA = indexes.userSettings.get('A:B\0C\0');
-    const valB = indexes.userSettings.get('A\0B:C\0');
+    const valueA = indexes.userSettings.get('A:B\0C\0');
+    const valueB = indexes.userSettings.get('A\0B:C\0');
 
-    expect(valA).toBe('valA');
-    expect(valB).toBe('valB');
+    expect(valueA).toBe('valA');
+    expect(valueB).toBe('valB');
   });
 
   it('resolves multiple view override edges deterministically using newest timestamp and lexicographical ID', () => {

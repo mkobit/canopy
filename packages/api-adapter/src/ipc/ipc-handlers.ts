@@ -22,16 +22,16 @@ import type {
   UnsubscribeResult,
 } from './ipc-schema';
 import {
-  CreateEdgeParamsSchema,
-  CreateNodeParamsSchema,
-  DeleteEdgeParamsSchema,
-  DeleteNodeParamsSchema,
-  ExecuteQueryParamsSchema,
-  GetEdgeParamsSchema,
-  GetEdgesParamsSchema,
-  GetNodeParamsSchema,
-  GetNodesParamsSchema,
-  HandshakeParamsSchema,
+  CreateEdgeParamsSchema as CreateEdgeParametersSchema,
+  CreateNodeParamsSchema as CreateNodeParametersSchema,
+  DeleteEdgeParamsSchema as DeleteEdgeParametersSchema,
+  DeleteNodeParamsSchema as DeleteNodeParametersSchema,
+  ExecuteQueryParamsSchema as ExecuteQueryParametersSchema,
+  GetEdgeParamsSchema as GetEdgeParametersSchema,
+  GetEdgesParamsSchema as GetEdgesParametersSchema,
+  GetNodeParamsSchema as GetNodeParametersSchema,
+  GetNodesParamsSchema as GetNodesParametersSchema,
+  HandshakeParamsSchema as HandshakeParametersSchema,
   IPC_METHODS,
   JSON_RPC_ERROR_CODES,
   JsonRpcRequestSchema,
@@ -107,7 +107,7 @@ export const handleIpcRequestLine = async (
 
     switch (req.method) {
       case IPC_METHODS.HANDSHAKE: {
-        const paramsResult = HandshakeParamsSchema.safeParse(req.params ?? {});
+        const paramsResult = HandshakeParametersSchema.safeParse(req.params ?? {});
         if (!paramsResult.success) {
           return ok({
             response: makeErrorResponse(
@@ -127,19 +127,19 @@ export const handleIpcRequestLine = async (
       }
 
       case IPC_METHODS.QUERY_GET_NODE: {
-        const paramsResult = GetNodeParamsSchema.safeParse(req.params);
-        if (!paramsResult.success) {
+        const parametersResult = GetNodeParametersSchema.safeParse(req.params);
+        if (!parametersResult.success) {
           return ok({
             response: makeErrorResponse(
               reqId,
               JSON_RPC_ERROR_CODES.INVALID_PARAMS,
               'Invalid getNode parameters',
-              paramsResult.error.format(),
+              parametersResult.error.format(),
             ),
           });
         }
         const res = executeNodeQuery(
-          createApiRequest('ipc-get-node', context, { id: asNodeId(paramsResult.data.id) }),
+          createApiRequest('ipc-get-node', context, { id: asNodeId(parametersResult.data.id) }),
         );
         if (!res.ok) {
           return ok({
@@ -157,7 +157,7 @@ export const handleIpcRequestLine = async (
             response: makeErrorResponse(
               reqId,
               JSON_RPC_ERROR_CODES.CANOPY_DOMAIN_ERROR,
-              `Node not found: ${paramsResult.data.id}`,
+              `Node not found: ${parametersResult.data.id}`,
             ),
           });
         }
@@ -165,21 +165,21 @@ export const handleIpcRequestLine = async (
       }
 
       case IPC_METHODS.QUERY_GET_NODES: {
-        const paramsResult = GetNodesParamsSchema.safeParse(req.params ?? {});
-        if (!paramsResult.success) {
+        const parametersResult = GetNodesParametersSchema.safeParse(req.params ?? {});
+        if (!parametersResult.success) {
           return ok({
             response: makeErrorResponse(
               reqId,
               JSON_RPC_ERROR_CODES.INVALID_PARAMS,
               'Invalid getNodes parameters',
-              paramsResult.error.format(),
+              parametersResult.error.format(),
             ),
           });
         }
         const res = executeNodeQuery(
           createApiRequest('ipc-get-nodes', context, {
-            type: paramsResult.data.type ? asTypeId(paramsResult.data.type) : undefined,
-            limit: paramsResult.data.limit,
+            type: parametersResult.data.type ? asTypeId(parametersResult.data.type) : undefined,
+            limit: parametersResult.data.limit,
           }),
         );
         if (!res.ok) {
@@ -196,19 +196,19 @@ export const handleIpcRequestLine = async (
       }
 
       case IPC_METHODS.QUERY_GET_EDGE: {
-        const paramsResult = GetEdgeParamsSchema.safeParse(req.params);
-        if (!paramsResult.success) {
+        const parametersResult = GetEdgeParametersSchema.safeParse(req.params);
+        if (!parametersResult.success) {
           return ok({
             response: makeErrorResponse(
               reqId,
               JSON_RPC_ERROR_CODES.INVALID_PARAMS,
               'Invalid getEdge parameters',
-              paramsResult.error.format(),
+              parametersResult.error.format(),
             ),
           });
         }
         const res = executeEdgeQuery(
-          createApiRequest('ipc-get-edge', context, { id: asEdgeId(paramsResult.data.id) }),
+          createApiRequest('ipc-get-edge', context, { id: asEdgeId(parametersResult.data.id) }),
         );
         if (!res.ok) {
           return ok({
@@ -226,7 +226,7 @@ export const handleIpcRequestLine = async (
             response: makeErrorResponse(
               reqId,
               JSON_RPC_ERROR_CODES.CANOPY_DOMAIN_ERROR,
-              `Edge not found: ${paramsResult.data.id}`,
+              `Edge not found: ${parametersResult.data.id}`,
             ),
           });
         }
@@ -234,24 +234,28 @@ export const handleIpcRequestLine = async (
       }
 
       case IPC_METHODS.QUERY_GET_EDGES: {
-        const paramsResult = GetEdgesParamsSchema.safeParse(req.params ?? {});
-        if (!paramsResult.success) {
+        const parametersResult = GetEdgesParametersSchema.safeParse(req.params ?? {});
+        if (!parametersResult.success) {
           return ok({
             response: makeErrorResponse(
               reqId,
               JSON_RPC_ERROR_CODES.INVALID_PARAMS,
               'Invalid getEdges parameters',
-              paramsResult.error.format(),
+              parametersResult.error.format(),
             ),
           });
         }
         const res = executeEdgeQuery(
           createApiRequest('ipc-get-edges', context, {
-            type: paramsResult.data.type ? asTypeId(paramsResult.data.type) : undefined,
-            source: paramsResult.data.source ? asNodeId(paramsResult.data.source) : undefined,
-            target: paramsResult.data.target ? asNodeId(paramsResult.data.target) : undefined,
-            direction: paramsResult.data.direction,
-            limit: paramsResult.data.limit,
+            type: parametersResult.data.type ? asTypeId(parametersResult.data.type) : undefined,
+            source: parametersResult.data.source
+              ? asNodeId(parametersResult.data.source)
+              : undefined,
+            target: parametersResult.data.target
+              ? asNodeId(parametersResult.data.target)
+              : undefined,
+            direction: parametersResult.data.direction,
+            limit: parametersResult.data.limit,
           }),
         );
         if (!res.ok) {
@@ -268,14 +272,14 @@ export const handleIpcRequestLine = async (
       }
 
       case IPC_METHODS.QUERY_EXECUTE_QUERY: {
-        const paramsResult = ExecuteQueryParamsSchema.safeParse(req.params ?? {});
-        if (!paramsResult.success) {
+        const parametersResult = ExecuteQueryParametersSchema.safeParse(req.params ?? {});
+        if (!parametersResult.success) {
           return ok({
             response: makeErrorResponse(
               reqId,
               JSON_RPC_ERROR_CODES.INVALID_PARAMS,
               'Invalid executeQuery parameters',
-              paramsResult.error.format(),
+              parametersResult.error.format(),
             ),
           });
         }
@@ -299,24 +303,24 @@ export const handleIpcRequestLine = async (
       }
 
       case IPC_METHODS.MUTATION_CREATE_NODE: {
-        const paramsResult = CreateNodeParamsSchema.safeParse(req.params);
-        if (!paramsResult.success) {
+        const parametersResult = CreateNodeParametersSchema.safeParse(req.params);
+        if (!parametersResult.success) {
           return ok({
             response: makeErrorResponse(
               reqId,
               JSON_RPC_ERROR_CODES.INVALID_PARAMS,
               'Invalid createNode parameters',
-              paramsResult.error.format(),
+              parametersResult.error.format(),
             ),
           });
         }
         const res = await executeCreateNode(
           createApiRequest('ipc-create-node', context, {
-            ...(paramsResult.data.id && { id: asNodeId(paramsResult.data.id) }),
-            type: asTypeId(paramsResult.data.type),
-            properties: paramsResult.data.properties as Readonly<Record<string, PropertyValue>>,
-            ...(paramsResult.data.expectedSequence !== undefined && {
-              expectedSequence: paramsResult.data.expectedSequence,
+            ...(parametersResult.data.id && { id: asNodeId(parametersResult.data.id) }),
+            type: asTypeId(parametersResult.data.type),
+            properties: parametersResult.data.properties as Readonly<Record<string, PropertyValue>>,
+            ...(parametersResult.data.expectedSequence !== undefined && {
+              expectedSequence: parametersResult.data.expectedSequence,
             }),
           }),
         );
@@ -334,23 +338,23 @@ export const handleIpcRequestLine = async (
       }
 
       case IPC_METHODS.MUTATION_UPDATE_NODE_PROPERTIES: {
-        const paramsResult = UpdateNodePropertiesParamsSchema.safeParse(req.params);
-        if (!paramsResult.success) {
+        const parametersResult = UpdateNodePropertiesParamsSchema.safeParse(req.params);
+        if (!parametersResult.success) {
           return ok({
             response: makeErrorResponse(
               reqId,
               JSON_RPC_ERROR_CODES.INVALID_PARAMS,
               'Invalid updateNodeProperties parameters',
-              paramsResult.error.format(),
+              parametersResult.error.format(),
             ),
           });
         }
         const res = await executeUpdateNodeProperties(
           createApiRequest('ipc-update-node-properties', context, {
-            id: asNodeId(paramsResult.data.id),
-            properties: paramsResult.data.properties as Readonly<Record<string, PropertyValue>>,
-            ...(paramsResult.data.expectedSequence !== undefined && {
-              expectedSequence: paramsResult.data.expectedSequence,
+            id: asNodeId(parametersResult.data.id),
+            properties: parametersResult.data.properties as Readonly<Record<string, PropertyValue>>,
+            ...(parametersResult.data.expectedSequence !== undefined && {
+              expectedSequence: parametersResult.data.expectedSequence,
             }),
           }),
         );
@@ -368,22 +372,22 @@ export const handleIpcRequestLine = async (
       }
 
       case IPC_METHODS.MUTATION_DELETE_NODE: {
-        const paramsResult = DeleteNodeParamsSchema.safeParse(req.params);
-        if (!paramsResult.success) {
+        const parametersResult = DeleteNodeParametersSchema.safeParse(req.params);
+        if (!parametersResult.success) {
           return ok({
             response: makeErrorResponse(
               reqId,
               JSON_RPC_ERROR_CODES.INVALID_PARAMS,
               'Invalid deleteNode parameters',
-              paramsResult.error.format(),
+              parametersResult.error.format(),
             ),
           });
         }
         const res = await executeDeleteNode(
           createApiRequest('ipc-delete-node', context, {
-            id: asNodeId(paramsResult.data.id),
-            ...(paramsResult.data.expectedSequence !== undefined && {
-              expectedSequence: paramsResult.data.expectedSequence,
+            id: asNodeId(parametersResult.data.id),
+            ...(parametersResult.data.expectedSequence !== undefined && {
+              expectedSequence: parametersResult.data.expectedSequence,
             }),
           }),
         );
@@ -401,28 +405,28 @@ export const handleIpcRequestLine = async (
       }
 
       case IPC_METHODS.MUTATION_CREATE_EDGE: {
-        const paramsResult = CreateEdgeParamsSchema.safeParse(req.params);
-        if (!paramsResult.success) {
+        const parametersResult = CreateEdgeParametersSchema.safeParse(req.params);
+        if (!parametersResult.success) {
           return ok({
             response: makeErrorResponse(
               reqId,
               JSON_RPC_ERROR_CODES.INVALID_PARAMS,
               'Invalid createEdge parameters',
-              paramsResult.error.format(),
+              parametersResult.error.format(),
             ),
           });
         }
         const res = await executeCreateEdge(
           createApiRequest('ipc-create-edge', context, {
-            ...(paramsResult.data.id && { id: asEdgeId(paramsResult.data.id) }),
-            type: asTypeId(paramsResult.data.type),
-            source: asNodeId(paramsResult.data.source),
-            target: asNodeId(paramsResult.data.target),
-            properties: (paramsResult.data.properties ?? {}) as Readonly<
+            ...(parametersResult.data.id && { id: asEdgeId(parametersResult.data.id) }),
+            type: asTypeId(parametersResult.data.type),
+            source: asNodeId(parametersResult.data.source),
+            target: asNodeId(parametersResult.data.target),
+            properties: (parametersResult.data.properties ?? {}) as Readonly<
               Record<string, PropertyValue>
             >,
-            ...(paramsResult.data.expectedSequence !== undefined && {
-              expectedSequence: paramsResult.data.expectedSequence,
+            ...(parametersResult.data.expectedSequence !== undefined && {
+              expectedSequence: parametersResult.data.expectedSequence,
             }),
           }),
         );
@@ -440,22 +444,22 @@ export const handleIpcRequestLine = async (
       }
 
       case IPC_METHODS.MUTATION_DELETE_EDGE: {
-        const paramsResult = DeleteEdgeParamsSchema.safeParse(req.params);
-        if (!paramsResult.success) {
+        const parametersResult = DeleteEdgeParametersSchema.safeParse(req.params);
+        if (!parametersResult.success) {
           return ok({
             response: makeErrorResponse(
               reqId,
               JSON_RPC_ERROR_CODES.INVALID_PARAMS,
               'Invalid deleteEdge parameters',
-              paramsResult.error.format(),
+              parametersResult.error.format(),
             ),
           });
         }
         const res = await executeDeleteEdge(
           createApiRequest('ipc-delete-edge', context, {
-            id: asEdgeId(paramsResult.data.id),
-            ...(paramsResult.data.expectedSequence !== undefined && {
-              expectedSequence: paramsResult.data.expectedSequence,
+            id: asEdgeId(parametersResult.data.id),
+            ...(parametersResult.data.expectedSequence !== undefined && {
+              expectedSequence: parametersResult.data.expectedSequence,
             }),
           }),
         );
@@ -473,14 +477,14 @@ export const handleIpcRequestLine = async (
       }
 
       case IPC_METHODS.EVENT_STREAM_SUBSCRIBE: {
-        const paramsResult = SubscribeParamsSchema.safeParse(req.params ?? {});
-        if (!paramsResult.success) {
+        const parametersResult = SubscribeParamsSchema.safeParse(req.params ?? {});
+        if (!parametersResult.success) {
           return ok({
             response: makeErrorResponse(
               reqId,
               JSON_RPC_ERROR_CODES.INVALID_PARAMS,
               'Invalid subscribe parameters',
-              paramsResult.error.format(),
+              parametersResult.error.format(),
             ),
           });
         }
@@ -499,21 +503,21 @@ export const handleIpcRequestLine = async (
       }
 
       case IPC_METHODS.EVENT_STREAM_UNSUBSCRIBE: {
-        const paramsResult = UnsubscribeParamsSchema.safeParse(req.params);
-        if (!paramsResult.success) {
+        const parametersResult = UnsubscribeParamsSchema.safeParse(req.params);
+        if (!parametersResult.success) {
           return ok({
             response: makeErrorResponse(
               reqId,
               JSON_RPC_ERROR_CODES.INVALID_PARAMS,
               'Invalid unsubscribe parameters',
-              paramsResult.error.format(),
+              parametersResult.error.format(),
             ),
           });
         }
         const unsubscribeResult: UnsubscribeResult = { success: true };
         return ok({
           response: makeSuccessResponse(reqId, unsubscribeResult),
-          unsubscribeId: paramsResult.data.subscriptionId,
+          unsubscribeId: parametersResult.data.subscriptionId,
         });
       }
 

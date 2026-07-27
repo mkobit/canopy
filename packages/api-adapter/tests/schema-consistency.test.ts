@@ -92,18 +92,18 @@ describe('Single-source Schema Consistency Verification', () => {
     ];
 
     for (const category of categories) {
-      const errPayload = createApiAdapterError(category, `Test error for ${category}`);
+      const errorPayload = createApiAdapterError(category, `Test error for ${category}`);
 
-      const gqlExt = toGraphQLExtensions(errPayload);
-      expect(gqlExt.category).toBe(category);
+      const gqlExtension = toGraphQLExtensions(errorPayload);
+      expect(gqlExtension.category).toBe(category);
 
-      const grpcStatus = toGrpcStatus(errPayload);
+      const grpcStatus = toGrpcStatus(errorPayload);
       expect(typeof grpcStatus.code).toBe('number');
       expect(Object.values(GrpcStatusCode)).toContain(grpcStatus.code);
 
-      const witErr = toWitError(errPayload);
-      expect(witErr.code).toBeDefined();
-      expect(witErr.message).toBe(errPayload.message);
+      const witError = toWitError(errorPayload);
+      expect(witError.code).toBeDefined();
+      expect(witError.message).toBe(errorPayload.message);
     }
   });
 });

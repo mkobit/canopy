@@ -21,13 +21,13 @@ interface GraphCanvasEvents {
   readonly onBackgroundClick?: () => unknown;
 }
 
-type GraphCanvasProps = GraphCanvasData & GraphCanvasEvents;
+type GraphCanvasProperties = GraphCanvasData & GraphCanvasEvents;
 
 const noop = () => {
   /* noop */ return undefined;
 };
 
-export const GraphCanvas: React.FC<GraphCanvasProps> = ({
+export const GraphCanvas: React.FC<GraphCanvasProperties> = ({
   nodes,
   edges,
   selectedNodeIds = new Set(),

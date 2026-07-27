@@ -27,12 +27,12 @@ const failure = (errors: readonly ValidationError[]): ValidationResult => ({
 
 // Extract properties from a definition node
 function extractProperties(node: Node): readonly PropertyDefinition[] {
-  const prop = node.properties.get('properties');
-  if (typeof prop !== 'string') {
+  const property = node.properties.get('properties');
+  if (typeof property !== 'string') {
     return [];
   }
 
-  const raw = fromThrowable(() => JSON.parse(prop));
+  const raw = fromThrowable(() => JSON.parse(property));
   if (raw.ok && Array.isArray(raw.value)) {
     // Validate against schema using Zod safely
     const result = PropertyDefinitionSchema.array().safeParse(raw.value);
@@ -44,15 +44,15 @@ function extractProperties(node: Node): readonly PropertyDefinition[] {
 }
 
 // Extract a list of TypeIds from a property value (supports both array and JSON string formats)
-function extractTypeIdList(val: PropertyValue | undefined): readonly TypeId[] {
-  if (val === undefined) {
+function extractTypeIdList(value: PropertyValue | undefined): readonly TypeId[] {
+  if (value === undefined) {
     return [];
   }
-  if (Array.isArray(val)) {
-    return val.map((i) => asTypeId(typeof i === 'string' ? i : 'unknown'));
+  if (Array.isArray(value)) {
+    return value.map((index) => asTypeId(typeof index === 'string' ? index : 'unknown'));
   }
-  if (typeof val === 'string') {
-    const result = fromThrowable(() => JSON.parse(val) as readonly string[]);
+  if (typeof value === 'string') {
+    const result = fromThrowable(() => JSON.parse(value) as readonly string[]);
     if (result.ok && Array.isArray(result.value)) {
       return result.value.map(asTypeId);
     }
@@ -62,9 +62,9 @@ function extractTypeIdList(val: PropertyValue | undefined): readonly TypeId[] {
 }
 
 // Resolves a raw 'namespace' property value against known Namespace nodes, defaulting to 'user'.
-function extractNamespace(graph: Graph, namespaceProp: PropertyValue | undefined): Namespace {
-  if (typeof namespaceProp === 'string') {
-    const parsed = parseNamespace(graph, namespaceProp);
+function extractNamespace(graph: Graph, namespaceProperty: PropertyValue | undefined): Namespace {
+  if (typeof namespaceProperty === 'string') {
+    const parsed = parseNamespace(graph, namespaceProperty);
     if (parsed.ok) {
       return parsed.value;
     }
@@ -83,11 +83,11 @@ function extractEdgeTypeDefinition(graph: Graph, node: Node): EdgeTypeDefinition
   const sourceTypes = extractTypeIdList(node.properties.get('sourceTypes'));
   const targetTypes = extractTypeIdList(node.properties.get('targetTypes'));
 
-  const transitiveProp = node.properties.get('transitive');
-  const isTransitive = transitiveProp === true;
+  const transitiveProperty = node.properties.get('transitive');
+  const isTransitive = transitiveProperty === true;
 
-  const inverseProp = node.properties.get('inverse');
-  const inverse = typeof inverseProp === 'string' ? asTypeId(inverseProp) : undefined;
+  const inverseProperty = node.properties.get('inverse');
+  const inverse = typeof inverseProperty === 'string' ? asTypeId(inverseProperty) : undefined;
 
   return {
     id: asTypeId(node.id),
@@ -125,51 +125,51 @@ function extractNodeTypeDefinition(graph: Graph, node: Node): NodeTypeDefinition
 }
 
 function validateRegex(
-  val: PropertyValue,
+  value: PropertyValue,
   name: string,
-  rxStr: string,
+  rxString: string,
 ): readonly ValidationError[] {
-  const rxResult = fromThrowable(() => new RegExp(rxStr));
+  const rxResult = fromThrowable(() => new RegExp(rxString));
   if (!rxResult.ok) {
     return [
       {
         path: [name] as readonly string[],
         message: `Property '${name}' has an invalid regular expression constraint`,
         expected: 'valid regex',
-        actual: rxStr,
+        actual: rxString,
       },
     ];
   }
 
   const rx = rxResult.value;
-  if (typeof val === 'string' && val.length > 8192) {
+  if (typeof value === 'string' && value.length > 8192) {
     return [
       {
         path: [name] as readonly string[],
         message: `Property '${name}' is too long for pattern validation (max 8192 characters)`,
         expected: `<= 8192 characters`,
-        actual: String(val.length),
+        actual: String(value.length),
       },
     ];
   }
-  if (typeof val === 'string' && !rx.test(val)) {
+  if (typeof value === 'string' && !rx.test(value)) {
     return [
       {
         path: [name] as readonly string[],
         message: `Property '${name}' does not match the required pattern`,
-        expected: rxStr,
-        actual: val,
+        expected: rxString,
+        actual: value,
       },
     ];
   }
-  if (Array.isArray(val)) {
-    return val
+  if (Array.isArray(value)) {
+    return value
       .map((item, index): ValidationError | null => {
         if (typeof item !== 'string') {
           return {
             path: [name, String(index)] as readonly string[],
             message: `Property '${name}' element at index ${index} does not match the required pattern`,
-            expected: rxStr,
+            expected: rxString,
             actual: String(item),
           };
         }
@@ -185,34 +185,34 @@ function validateRegex(
           return {
             path: [name, String(index)] as readonly string[],
             message: `Property '${name}' element at index ${index} does not match the required pattern`,
-            expected: rxStr,
+            expected: rxString,
             actual: item,
           };
         }
         return null;
       })
-      .filter((err): err is ValidationError => err !== null);
+      .filter((error): error is ValidationError => error !== null);
   }
   return [];
 }
 
 function validateChoices(
-  val: PropertyValue,
+  value: PropertyValue,
   name: string,
   choices: readonly string[],
 ): readonly ValidationError[] {
-  if (typeof val === 'string' && !choices.includes(val)) {
+  if (typeof value === 'string' && !choices.includes(value)) {
     return [
       {
         path: [name] as readonly string[],
         message: `Property '${name}' must be one of the allowed choices`,
         expected: choices.join(', '),
-        actual: val,
+        actual: value,
       },
     ];
   }
-  if (Array.isArray(val)) {
-    return val
+  if (Array.isArray(value)) {
+    return value
       .map((item, index): ValidationError | null => {
         if (typeof item !== 'string' || !choices.includes(item)) {
           return {
@@ -224,90 +224,98 @@ function validateChoices(
         }
         return null;
       })
-      .filter((err): err is ValidationError => err !== null);
+      .filter((error): error is ValidationError => error !== null);
   }
   return [];
 }
 
-function validateMin(val: PropertyValue, name: string, limit: number): readonly ValidationError[] {
-  if (typeof val === 'number' && val < limit) {
+function validateMin(
+  value: PropertyValue,
+  name: string,
+  limit: number,
+): readonly ValidationError[] {
+  if (typeof value === 'number' && value < limit) {
     return [
       {
         path: [name] as readonly string[],
         message: `Property '${name}' must be at least ${limit}`,
         expected: `>= ${limit}`,
-        actual: String(val),
+        actual: String(value),
       },
     ];
   }
-  if (typeof val === 'string' && val.length < limit) {
+  if (typeof value === 'string' && value.length < limit) {
     return [
       {
         path: [name] as readonly string[],
         message: `Property '${name}' must be at least ${limit} characters long`,
         expected: `>= ${limit}`,
-        actual: String(val.length),
+        actual: String(value.length),
       },
     ];
   }
-  if (Array.isArray(val) && val.length < limit) {
+  if (Array.isArray(value) && value.length < limit) {
     return [
       {
         path: [name] as readonly string[],
         message: `Property '${name}' must contain at least ${limit} items`,
         expected: `>= ${limit}`,
-        actual: String(val.length),
+        actual: String(value.length),
       },
     ];
   }
   return [];
 }
 
-function validateMax(val: PropertyValue, name: string, limit: number): readonly ValidationError[] {
-  if (typeof val === 'number' && val > limit) {
+function validateMax(
+  value: PropertyValue,
+  name: string,
+  limit: number,
+): readonly ValidationError[] {
+  if (typeof value === 'number' && value > limit) {
     return [
       {
         path: [name] as readonly string[],
         message: `Property '${name}' must be at most ${limit}`,
         expected: `<= ${limit}`,
-        actual: String(val),
+        actual: String(value),
       },
     ];
   }
-  if (typeof val === 'string' && val.length > limit) {
+  if (typeof value === 'string' && value.length > limit) {
     return [
       {
         path: [name] as readonly string[],
         message: `Property '${name}' must be at most ${limit} characters long`,
         expected: `<= ${limit}`,
-        actual: String(val.length),
+        actual: String(value.length),
       },
     ];
   }
-  if (Array.isArray(val) && val.length > limit) {
+  if (Array.isArray(value) && value.length > limit) {
     return [
       {
         path: [name] as readonly string[],
         message: `Property '${name}' must contain at most ${limit} items`,
         expected: `<= ${limit}`,
-        actual: String(val.length),
+        actual: String(value.length),
       },
     ];
   }
   return [];
 }
 
-function validateValue(val: PropertyValue, def: PropertyDefinition): readonly ValidationError[] {
-  if (val === null && def.nullable === true) {
+function validateValue(value: PropertyValue, def: PropertyDefinition): readonly ValidationError[] {
+  if (value === null && def.nullable === true) {
     return [];
   }
 
   const isValid = (): boolean => {
     if (def.valueKind === 'list') {
-      return Array.isArray(val);
+      return Array.isArray(value);
     }
 
-    if (Array.isArray(val)) {
+    if (Array.isArray(value)) {
       return false;
     }
 
@@ -316,16 +324,16 @@ function validateValue(val: PropertyValue, def: PropertyDefinition): readonly Va
       case 'instant':
       case 'plain-date':
       case 'reference': {
-        return typeof val === 'string';
+        return typeof value === 'string';
       }
       case 'number': {
-        return typeof val === 'number';
+        return typeof value === 'number';
       }
       case 'boolean': {
-        return typeof val === 'boolean';
+        return typeof value === 'boolean';
       }
       case 'external-reference': {
-        return typeof val === 'object' && val !== null && 'graph' in val;
+        return typeof value === 'object' && value !== null && 'graph' in value;
       }
       default: {
         return false;
@@ -339,16 +347,16 @@ function validateValue(val: PropertyValue, def: PropertyDefinition): readonly Va
         path: [def.name],
         message: `Property '${def.name}' expected type '${def.valueKind}' but got incompatible value`,
         expected: def.valueKind,
-        actual: Array.isArray(val) ? 'list' : typeof val,
+        actual: Array.isArray(value) ? 'list' : typeof value,
       },
     ];
   }
 
-  const regexErrors = def.regex === undefined ? [] : validateRegex(val, def.name, def.regex);
+  const regexErrors = def.regex === undefined ? [] : validateRegex(value, def.name, def.regex);
   const choicesErrors =
-    def.choices === undefined ? [] : validateChoices(val, def.name, def.choices);
-  const minErrors = def.min === undefined ? [] : validateMin(val, def.name, def.min);
-  const maxErrors = def.max === undefined ? [] : validateMax(val, def.name, def.max);
+    def.choices === undefined ? [] : validateChoices(value, def.name, def.choices);
+  const minErrors = def.min === undefined ? [] : validateMin(value, def.name, def.min);
+  const maxErrors = def.max === undefined ? [] : validateMax(value, def.name, def.max);
 
   return [...regexErrors, ...choicesErrors, ...minErrors, ...maxErrors];
 }
@@ -360,9 +368,9 @@ function validateProperties(
   return pipe(
     definitions,
     flatMap((propDef): readonly ValidationError[] => {
-      const val = properties.get(propDef.name);
+      const value = properties.get(propDef.name);
 
-      if (propDef.required && val === undefined) {
+      if (propDef.required && value === undefined) {
         return [
           {
             path: [propDef.name],
@@ -373,8 +381,8 @@ function validateProperties(
         ];
       }
 
-      if (val !== undefined) {
-        return validateValue(val, propDef);
+      if (value !== undefined) {
+        return validateValue(value, propDef);
       }
       return [];
     }),
@@ -393,18 +401,18 @@ export function validateNode(graph: Graph, node: Node): ValidationResult {
   // 2. Validate properties
   const errors = validateProperties(node.properties, def.properties);
 
-  const wasmBinaryVal = node.properties.get('wasm_binary');
-  const manifestVal = node.properties.get('manifest');
+  const wasmBinaryValue = node.properties.get('wasm_binary');
+  const manifestValue = node.properties.get('manifest');
 
   const pluginErrors =
     node.type === SYSTEM_IDS.TYPE_PLUGIN
       ? [
-          ...(wasmBinaryVal === undefined
+          ...(wasmBinaryValue === undefined
             ? []
-            : validateWasmBinaryProperty(wasmBinaryVal, 'wasm_binary')),
-          ...(manifestVal === undefined
+            : validateWasmBinaryProperty(wasmBinaryValue, 'wasm_binary')),
+          ...(manifestValue === undefined
             ? []
-            : validatePluginManifestProperty(manifestVal, 'manifest')),
+            : validatePluginManifestProperty(manifestValue, 'manifest')),
         ]
       : [];
 
@@ -448,11 +456,11 @@ export function validatePropertyByType(
     ]);
   }
 
-  const nameProp = defNode.properties.get('name');
-  const name = typeof nameProp === 'string' ? nameProp : 'unknown';
+  const nameProperty = defNode.properties.get('name');
+  const name = typeof nameProperty === 'string' ? nameProperty : 'unknown';
 
-  const valueKindProp = defNode.properties.get('valueKind');
-  if (typeof valueKindProp !== 'string') {
+  const valueKindProperty = defNode.properties.get('valueKind');
+  if (typeof valueKindProperty !== 'string') {
     return failure([
       {
         path: [name],
@@ -463,7 +471,7 @@ export function validatePropertyByType(
 
   const def: PropertyDefinition = {
     name,
-    valueKind: valueKindProp as PropertyValueKind,
+    valueKind: valueKindProperty as PropertyValueKind,
     required: true,
     description: undefined,
   };

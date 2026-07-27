@@ -31,23 +31,27 @@ describe('Real-Time Event Stream Subscriber', () => {
     const subscriber = createEventStreamSubscriber(context);
     const messages: EventStreamMessage[] = [];
 
-    const unsubscribe = subscriber.subscribe((msg) => {
-      messages.push(msg);
+    const unsubscribe = subscriber.subscribe((message) => {
+      messages.push(message);
     });
 
-    const req = createApiRequest('req-1', context, {
+    const request = createApiRequest('req-1', context, {
       id: asNodeId('n1'),
       type: asTypeId('doc'),
       properties: { title: 'Live Streaming Node' },
     });
-    const res = await executeCreateNode(req);
+    const res = await executeCreateNode(request);
     expect(res.ok).toBe(true);
 
     expect(messages.length).toBeGreaterThanOrEqual(1);
-    const eventMsg = messages.find((m) => m.kind === 'event');
-    expect(eventMsg).toBeDefined();
-    if (eventMsg && eventMsg.kind === 'event' && eventMsg.event?.type === 'NodeCreated') {
-      expect(eventMsg.event.id).toBe(asNodeId('n1'));
+    const eventMessage = messages.find((m) => m.kind === 'event');
+    expect(eventMessage).toBeDefined();
+    if (
+      eventMessage &&
+      eventMessage.kind === 'event' &&
+      eventMessage.event?.type === 'NodeCreated'
+    ) {
+      expect(eventMessage.event.id).toBe(asNodeId('n1'));
     }
 
     unsubscribe();
@@ -59,23 +63,23 @@ describe('Real-Time Event Stream Subscriber', () => {
     const subscriber = createEventStreamSubscriber(context, { bufferCapacity: 2 });
     const messages: EventStreamMessage[] = [];
 
-    subscriber.subscribe((msg) => {
-      messages.push(msg);
+    subscriber.subscribe((message) => {
+      messages.push(message);
     });
 
-    for (let i = 1; i <= 5; i++) {
-      const req = createApiRequest(`req-overflow-${i}`, context, {
-        id: asNodeId(`n-overflow-${i}`),
+    for (let index = 1; index <= 5; index++) {
+      const request = createApiRequest(`req-overflow-${index}`, context, {
+        id: asNodeId(`n-overflow-${index}`),
         type: asTypeId('doc'),
-        properties: { count: i },
+        properties: { count: index },
       });
-      await executeCreateNode(req);
+      await executeCreateNode(request);
     }
 
-    const overflowMsg = messages.find((m) => m.kind === 'overflow_disconnect');
-    expect(overflowMsg).toBeDefined();
-    if (overflowMsg && overflowMsg.kind === 'overflow_disconnect') {
-      expect(overflowMsg.reason).toContain('capacity of 2 exceeded');
+    const overflowMessage = messages.find((m) => m.kind === 'overflow_disconnect');
+    expect(overflowMessage).toBeDefined();
+    if (overflowMessage && overflowMessage.kind === 'overflow_disconnect') {
+      expect(overflowMessage.reason).toContain('capacity of 2 exceeded');
     }
 
     expect(subscriber.isClosed()).toBe(true);
@@ -85,13 +89,13 @@ describe('Real-Time Event Stream Subscriber', () => {
 describe('Event Catch-Up Replay Handler', () => {
   it('replays unacknowledged events from EventLogStore after lastSeenEventId', async () => {
     const { context, eventLogStore } = await setupSessionContext();
-    for (let i = 1; i <= 3; i++) {
-      const req = createApiRequest(`req-replay-${i}`, context, {
-        id: asNodeId(`n-replay-${i}`),
+    for (let index = 1; index <= 3; index++) {
+      const request = createApiRequest(`req-replay-${index}`, context, {
+        id: asNodeId(`n-replay-${index}`),
         type: asTypeId('doc'),
-        properties: { count: i },
+        properties: { count: index },
       });
-      const res = await executeCreateNode(req);
+      const res = await executeCreateNode(request);
       expect(res.ok).toBe(true);
     }
 
@@ -110,24 +114,24 @@ describe('Event Catch-Up Replay Handler', () => {
     if (replayRes.ok) {
       expect(replayRes.value).toHaveLength(2);
       expect(replayRes.value[0]?.kind).toBe('event');
-      const firstEvt = replayRes.value[0]?.event;
-      const secondEvt = replayRes.value[1]?.event;
-      if (firstEvt?.type === 'NodeCreated' && secondEvt?.type === 'NodeCreated') {
-        expect(firstEvt.id).toBe(asNodeId('n-replay-2'));
-        expect(secondEvt.id).toBe(asNodeId('n-replay-3'));
+      const firstEvent = replayRes.value[0]?.event;
+      const secondEvent = replayRes.value[1]?.event;
+      if (firstEvent?.type === 'NodeCreated' && secondEvent?.type === 'NodeCreated') {
+        expect(firstEvent.id).toBe(asNodeId('n-replay-2'));
+        expect(secondEvent.id).toBe(asNodeId('n-replay-3'));
       }
     }
   });
 
   it('emits gap notification when requested replay count exceeds maxReplayCount limit', async () => {
     const { context } = await setupSessionContext();
-    for (let i = 1; i <= 15; i++) {
-      const req = createApiRequest(`req-limit-${i}`, context, {
-        id: asNodeId(`n-limit-${i}`),
+    for (let index = 1; index <= 15; index++) {
+      const request = createApiRequest(`req-limit-${index}`, context, {
+        id: asNodeId(`n-limit-${index}`),
         type: asTypeId('doc'),
-        properties: { count: i },
+        properties: { count: index },
       });
-      await executeCreateNode(req);
+      await executeCreateNode(request);
     }
 
     const replayRes = await executeReplayEventStream(context, {

@@ -19,19 +19,19 @@ import {
 } from '@canopy/graph';
 
 function createNode(properties: Record<string, unknown> = {}): Node {
-  const innerProps =
+  const innerProperties =
     properties.properties && typeof properties.properties === 'object'
       ? properties.properties
       : properties;
-  const filteredProps = { ...innerProps };
-  delete (filteredProps as Record<string, unknown>).id;
-  delete (filteredProps as Record<string, unknown>).type;
+  const filteredProperties = { ...innerProperties };
+  delete (filteredProperties as Record<string, unknown>).id;
+  delete (filteredProperties as Record<string, unknown>).type;
 
   return {
     id: (properties.id as NodeId) ?? createNodeId(),
     type: (properties.type as TypeId) ?? asTypeId('test-type'),
     properties: new Map<string, PropertyValue>(
-      Object.entries(filteredProps) as [string, PropertyValue][],
+      Object.entries(filteredProperties) as [string, PropertyValue][],
     ),
     metadata: {
       created: createInstant(),

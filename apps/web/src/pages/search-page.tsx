@@ -22,12 +22,8 @@ export const SearchPage = () => {
 
     if (node.id.toLowerCase().includes(q)) return true;
 
-    const nameProp = node.properties.get('name');
-    if (typeof nameProp === 'string' && nameProp.toLowerCase().includes(q)) {
-      return true;
-    }
-
-    return false;
+    const nameProperty = node.properties.get('name');
+    return typeof nameProperty === 'string' && nameProperty.toLowerCase().includes(q);
   });
 
   return (

@@ -71,13 +71,13 @@ const deserializeEvent = (storable: unknown): GraphEvent => {
 
 // eslint-disable-next-line max-lines-per-function
 export const createSQLiteEventLog = (persistence?: SQLitePersistence): SQLiteEventLog => {
-  let db = null as Database | null;
+  let database = null as Database | null;
 
   let SQL = null as SqlJsStatic | null;
 
   const initSchema = () => {
-    if (!db) return; // Should not happen if called from init
-    db.run(`
+    if (!database) return; // Should not happen if called from init
+    database.run(`
       CREATE TABLE IF NOT EXISTS events (
         graph_id TEXT NOT NULL,
         event_id TEXT NOT NULL,
@@ -91,16 +91,16 @@ export const createSQLiteEventLog = (persistence?: SQLitePersistence): SQLiteEve
   };
 
   const persist = async (): Promise<void> => {
-    if (!persistence || !db) {
+    if (!persistence || !database) {
       return;
     }
-    const data = db.export();
+    const data = database.export();
     await persistence.write(data);
   };
 
   return {
     init: async (): Promise<Result<void, Error>> => {
-      if (db) return ok(undefined);
+      if (database) return ok(undefined);
 
       return fromAsyncThrowable(async () => {
         SQL = await initSqlJs();
@@ -108,9 +108,9 @@ export const createSQLiteEventLog = (persistence?: SQLitePersistence): SQLiteEve
         const data = persistence ? await persistence.read() : null;
 
         if (data) {
-          db = new SQL.Database(data);
+          database = new SQL.Database(data);
         } else {
-          db = new SQL.Database();
+          database = new SQL.Database();
           initSchema();
         }
         return;
@@ -119,9 +119,9 @@ export const createSQLiteEventLog = (persistence?: SQLitePersistence): SQLiteEve
 
     close: async (): Promise<Result<void, Error>> => {
       return fromAsyncThrowable(async () => {
-        if (db) {
-          db.close();
-          db = null;
+        if (database) {
+          database.close();
+          database = null;
         }
         return;
       });
@@ -131,12 +131,12 @@ export const createSQLiteEventLog = (persistence?: SQLitePersistence): SQLiteEve
       graphId: string,
       events: readonly GraphEvent[],
     ): Promise<Result<void, Error>> => {
-      if (!db) return err(new Error('Database not initialized'));
+      if (!database) return err(new Error('Database not initialized'));
 
-      const dbInstance = db;
+      const databaseInstance = database;
       const result = await fromAsyncThrowable(async () => {
-        dbInstance.run('BEGIN TRANSACTION');
-        const stmt = dbInstance.prepare(`
+        databaseInstance.run('BEGIN TRANSACTION');
+        const statement = databaseInstance.prepare(`
           INSERT OR IGNORE INTO events (graph_id, event_id, timestamp, type, payload)
           VALUES (?, ?, ?, ?, ?)
         `);
@@ -145,17 +145,17 @@ export const createSQLiteEventLog = (persistence?: SQLitePersistence): SQLiteEve
         for (const event of events) {
           const storable = serializeEvent(event);
           const payload = JSON.stringify(storable);
-          stmt.run([graphId, event.eventId, event.timestamp, event.type, payload]);
+          statement.run([graphId, event.eventId, event.timestamp, event.type, payload]);
         }
-        stmt.free();
+        statement.free();
 
-        dbInstance.run('COMMIT');
+        databaseInstance.run('COMMIT');
         await persist();
         return;
       });
 
       if (!result.ok) {
-        dbInstance.run('ROLLBACK');
+        databaseInstance.run('ROLLBACK');
       }
       return result;
     },
@@ -164,23 +164,23 @@ export const createSQLiteEventLog = (persistence?: SQLitePersistence): SQLiteEve
       graphId: string,
       options: EventLogQueryOptions = {},
     ): Promise<Result<readonly GraphEvent[], Error>> => {
-      if (!db) return err(new Error('Database not initialized'));
-      const dbInstance = db;
+      if (!database) return err(new Error('Database not initialized'));
+      const databaseInstance = database;
 
       return fromAsyncThrowable(async () => {
         let query = 'SELECT payload FROM events WHERE graph_id = ?';
-        const params = [graphId] as (string | number | null)[];
+        const parameters = [graphId] as (string | number | null)[];
 
         if (options.after) {
           query += ' AND event_id > ?';
 
-          params.push(options.after);
+          parameters.push(options.after);
         }
 
         if (options.before) {
           query += ' AND event_id < ?';
 
-          params.push(options.before);
+          parameters.push(options.before);
         }
 
         // eslint-disable-next-line unicorn/prefer-ternary
@@ -193,22 +193,22 @@ export const createSQLiteEventLog = (persistence?: SQLitePersistence): SQLiteEve
         if (options.limit) {
           query += ' LIMIT ?';
 
-          params.push(options.limit);
+          parameters.push(options.limit);
         }
 
-        const stmt = dbInstance.prepare(query);
-        stmt.bind(params);
+        const statement = databaseInstance.prepare(query);
+        statement.bind(parameters);
 
         const events = [] as GraphEvent[];
 
         // eslint-disable-next-line functional/no-loop-statements
-        while (stmt.step()) {
-          const row = stmt.getAsObject();
+        while (statement.step()) {
+          const row = statement.getAsObject();
           const storable = JSON.parse(row.payload as string);
 
           events.push(deserializeEvent(storable));
         }
-        stmt.free();
+        statement.free();
         return events;
       });
     },

@@ -3,7 +3,7 @@ import type { GraphEvent } from './events';
 import type { GraphId, DeviceId, NodeId, EdgeId } from './identifiers';
 import type { EventLogStore } from './event-log';
 import type { Result } from './result';
-import { ok, err, unwrap } from './result';
+import { ok, err as error, unwrap } from './result';
 import { createGraph } from './create-graph';
 import { projectGraph } from './projection';
 import { mergeEvents, createMergeState, type MergeState } from './incremental-projection';
@@ -66,7 +66,7 @@ function validateCommit(graph: Graph, events: readonly GraphEvent[]): Result<voi
     const result = validateNode(dryRunGraph, node);
     if (!result.valid) {
       const detail = result.errors.map((e) => e.message).join(', ');
-      return err(new Error(`Node ${id} failed validation: ${detail}`));
+      return error(new Error(`Node ${id} failed validation: ${detail}`));
     }
   }
 
@@ -77,7 +77,7 @@ function validateCommit(graph: Graph, events: readonly GraphEvent[]): Result<voi
     const result = validateEdge(dryRunGraph, edge);
     if (!result.valid) {
       const detail = result.errors.map((e) => e.message).join(', ');
-      return err(new Error(`Edge ${id} failed validation: ${detail}`));
+      return error(new Error(`Edge ${id} failed validation: ${detail}`));
     }
   }
 

@@ -81,12 +81,12 @@ const parseJsonPropertyValue = (valueJson: string): PropertyValue => {
 
 const handleGetNodeById = async (
   context: ApiAdapterContext,
-  req: Readonly<{ id: string }>,
+  request: Readonly<{ id: string }>,
 ): Promise<ConnectNodeResponse> => {
-  const res = executeQuery.getNode(context, asNodeId(req.id));
+  const res = executeQuery.getNode(context, asNodeId(request.id));
   if (!res.ok) {
-    const err = createConnectErrorPayload(res.error);
-    return { success: false, error_code: err.errorCode, error_message: err.message };
+    const error = createConnectErrorPayload(res.error);
+    return { success: false, error_code: error.errorCode, error_message: error.message };
   }
   return {
     success: true,
@@ -100,12 +100,12 @@ const handleGetNodeById = async (
 
 const handleGetNodesByType = async (
   context: ApiAdapterContext,
-  req: Readonly<{ type_id: string }>,
+  request: Readonly<{ type_id: string }>,
 ): Promise<ConnectNodeListResponse> => {
-  const res = executeQuery.getNodes(context, { type: asTypeId(req.type_id) });
+  const res = executeQuery.getNodes(context, { type: asTypeId(request.type_id) });
   if (!res.ok) {
-    const err = createConnectErrorPayload(res.error);
-    return { success: false, nodes: [], error_code: err.errorCode, error_message: err.message };
+    const error = createConnectErrorPayload(res.error);
+    return { success: false, nodes: [], error_code: error.errorCode, error_message: error.message };
   }
   return {
     success: true,
@@ -122,17 +122,17 @@ const handleGetNodesByType = async (
 
 const handleGetNodesByProperty = async (
   context: ApiAdapterContext,
-  req: Readonly<{ key: string; value_json: string }>,
+  request: Readonly<{ key: string; value_json: string }>,
 ): Promise<ConnectNodeListResponse> => {
-  const parsedValue = parseJsonPropertyValue(req.value_json);
+  const parsedValue = parseJsonPropertyValue(request.value_json);
   const res = executeNodeQuery(
     createApiRequest('connect-get-nodes-by-property', context, {
-      filter: { property: req.key, operator: 'eq', value: parsedValue },
+      filter: { property: request.key, operator: 'eq', value: parsedValue },
     }),
   );
   if (!res.ok) {
-    const err = createConnectErrorPayload(res.error);
-    return { success: false, nodes: [], error_code: err.errorCode, error_message: err.message };
+    const error = createConnectErrorPayload(res.error);
+    return { success: false, nodes: [], error_code: error.errorCode, error_message: error.message };
   }
   return {
     success: true,
@@ -149,15 +149,15 @@ const handleGetNodesByProperty = async (
 
 const handleGetInboundEdges = async (
   context: ApiAdapterContext,
-  req: Readonly<{ target_node_id: string; predicate_type_id?: string }>,
+  request: Readonly<{ target_node_id: string; predicate_type_id?: string }>,
 ): Promise<ConnectEdgeListResponse> => {
   const res = executeQuery.getEdges(context, {
-    target: asNodeId(req.target_node_id),
-    type: req.predicate_type_id ? asTypeId(req.predicate_type_id) : undefined,
+    target: asNodeId(request.target_node_id),
+    type: request.predicate_type_id ? asTypeId(request.predicate_type_id) : undefined,
   });
   if (!res.ok) {
-    const err = createConnectErrorPayload(res.error);
-    return { success: false, edges: [], error_code: err.errorCode, error_message: err.message };
+    const error = createConnectErrorPayload(res.error);
+    return { success: false, edges: [], error_code: error.errorCode, error_message: error.message };
   }
   return {
     success: true,
@@ -174,15 +174,15 @@ const handleGetInboundEdges = async (
 
 const handleGetOutboundEdges = async (
   context: ApiAdapterContext,
-  req: Readonly<{ source_node_id: string; predicate_type_id?: string }>,
+  request: Readonly<{ source_node_id: string; predicate_type_id?: string }>,
 ): Promise<ConnectEdgeListResponse> => {
   const res = executeQuery.getEdges(context, {
-    source: asNodeId(req.source_node_id),
-    type: req.predicate_type_id ? asTypeId(req.predicate_type_id) : undefined,
+    source: asNodeId(request.source_node_id),
+    type: request.predicate_type_id ? asTypeId(request.predicate_type_id) : undefined,
   });
   if (!res.ok) {
-    const err = createConnectErrorPayload(res.error);
-    return { success: false, edges: [], error_code: err.errorCode, error_message: err.message };
+    const error = createConnectErrorPayload(res.error);
+    return { success: false, edges: [], error_code: error.errorCode, error_message: error.message };
   }
   return {
     success: true,
@@ -199,28 +199,28 @@ const handleGetOutboundEdges = async (
 
 const handleExecuteTraversalQuery = async (
   context: ApiAdapterContext,
-  req: Readonly<{
+  request: Readonly<{
     start_node_id: string;
     max_depth?: number;
     filter_predicate_type_ids?: readonly string[];
   }>,
 ): Promise<ConnectTraversalResponse> => {
   const edgeType =
-    req.filter_predicate_type_ids && req.filter_predicate_type_ids.length > 0
-      ? asTypeId(req.filter_predicate_type_ids[0] ?? '')
+    request.filter_predicate_type_ids && request.filter_predicate_type_ids.length > 0
+      ? asTypeId(request.filter_predicate_type_ids[0] ?? '')
       : undefined;
   const res = executeQuery.traverse(context, {
-    startNodeIds: [asNodeId(req.start_node_id)],
+    startNodeIds: [asNodeId(request.start_node_id)],
     edgeType,
-    maxDepth: req.max_depth,
+    maxDepth: request.max_depth,
   });
   if (!res.ok) {
-    const err = createConnectErrorPayload(res.error);
-    return { success: false, steps: [], error_code: err.errorCode, error_message: err.message };
+    const error = createConnectErrorPayload(res.error);
+    return { success: false, steps: [], error_code: error.errorCode, error_message: error.message };
   }
 
   const { nodes, edges } = res.value;
-  const startId = req.start_node_id;
+  const startId = request.start_node_id;
 
   const buildStepMaps = (
     q: readonly string[],
@@ -274,49 +274,54 @@ const handleExecuteTraversalQuery = async (
 };
 
 export const createConnectQueryHandlers = (context: ApiAdapterContext) => ({
-  getNodeById: (req: Readonly<{ id: string }>) => handleGetNodeById(context, req),
-  getNodesByType: (req: Readonly<{ type_id: string }>) => handleGetNodesByType(context, req),
-  getNodesByProperty: (req: Readonly<{ key: string; value_json: string }>) =>
-    handleGetNodesByProperty(context, req),
-  getInboundEdges: (req: Readonly<{ target_node_id: string; predicate_type_id?: string }>) =>
-    handleGetInboundEdges(context, req),
-  getOutboundEdges: (req: Readonly<{ source_node_id: string; predicate_type_id?: string }>) =>
-    handleGetOutboundEdges(context, req),
+  getNodeById: (request: Readonly<{ id: string }>) => handleGetNodeById(context, request),
+  getNodesByType: (request: Readonly<{ type_id: string }>) =>
+    handleGetNodesByType(context, request),
+  getNodesByProperty: (request: Readonly<{ key: string; value_json: string }>) =>
+    handleGetNodesByProperty(context, request),
+  getInboundEdges: (request: Readonly<{ target_node_id: string; predicate_type_id?: string }>) =>
+    handleGetInboundEdges(context, request),
+  getOutboundEdges: (request: Readonly<{ source_node_id: string; predicate_type_id?: string }>) =>
+    handleGetOutboundEdges(context, request),
   executeTraversalQuery: (
-    req: Readonly<{
+    request: Readonly<{
       start_node_id: string;
       max_depth?: number;
       filter_predicate_type_ids?: readonly string[];
     }>,
-  ) => handleExecuteTraversalQuery(context, req),
+  ) => handleExecuteTraversalQuery(context, request),
 });
 
 const handleCreateNode = async (
   context: ApiAdapterContext,
-  req: Readonly<{
+  request: Readonly<{
     type_id: string;
     properties_json?: string;
     expected_sequence?: string;
   }>,
 ): Promise<ConnectMutationResultResponse> => {
   const properties: Readonly<Record<string, PropertyValue>> = Object.freeze(
-    req.properties_json ? (JSON.parse(req.properties_json) as Record<string, PropertyValue>) : {},
+    request.properties_json
+      ? (JSON.parse(request.properties_json) as Record<string, PropertyValue>)
+      : {},
   );
-  const expectedSequence = req.expected_sequence ? Number(req.expected_sequence) : undefined;
+  const expectedSequence = request.expected_sequence
+    ? Number(request.expected_sequence)
+    : undefined;
   const sequenceOption =
     expectedSequence === undefined ? {} : { expectedSequence: expectedSequence };
 
   const res = await executeCreateNode(
     createApiRequest('connect-create-node', context, {
-      type: asTypeId(req.type_id),
+      type: asTypeId(request.type_id),
       properties,
       ...sequenceOption,
     }),
   );
 
   if (!res.ok) {
-    const err = createConnectErrorPayload(res.error);
-    return { success: false, error_code: err.errorCode, error_message: err.message };
+    const error = createConnectErrorPayload(res.error);
+    return { success: false, error_code: error.errorCode, error_message: error.message };
   }
 
   return {
@@ -329,30 +334,32 @@ const handleCreateNode = async (
 
 const handleUpdateNodeProperties = async (
   context: ApiAdapterContext,
-  req: Readonly<{
+  request: Readonly<{
     id: string;
     properties_json: string;
     expected_sequence?: string;
   }>,
 ): Promise<ConnectMutationResultResponse> => {
   const properties: Readonly<Record<string, PropertyValue>> = Object.freeze(
-    JSON.parse(req.properties_json) as Record<string, PropertyValue>,
+    JSON.parse(request.properties_json) as Record<string, PropertyValue>,
   );
-  const expectedSequence = req.expected_sequence ? Number(req.expected_sequence) : undefined;
+  const expectedSequence = request.expected_sequence
+    ? Number(request.expected_sequence)
+    : undefined;
   const sequenceOption =
     expectedSequence === undefined ? {} : { expectedSequence: expectedSequence };
 
   const res = await executeUpdateNodeProperties(
     createApiRequest('connect-update-node-props', context, {
-      id: asNodeId(req.id),
+      id: asNodeId(request.id),
       properties,
       ...sequenceOption,
     }),
   );
 
   if (!res.ok) {
-    const err = createConnectErrorPayload(res.error);
-    return { success: false, error_code: err.errorCode, error_message: err.message };
+    const error = createConnectErrorPayload(res.error);
+    return { success: false, error_code: error.errorCode, error_message: error.message };
   }
 
   return {
@@ -365,25 +372,27 @@ const handleUpdateNodeProperties = async (
 
 const handleDeleteNode = async (
   context: ApiAdapterContext,
-  req: Readonly<{
+  request: Readonly<{
     id: string;
     expected_sequence?: string;
   }>,
 ): Promise<ConnectMutationResultResponse> => {
-  const expectedSequence = req.expected_sequence ? Number(req.expected_sequence) : undefined;
+  const expectedSequence = request.expected_sequence
+    ? Number(request.expected_sequence)
+    : undefined;
   const sequenceOption =
     expectedSequence === undefined ? {} : { expectedSequence: expectedSequence };
 
   const res = await executeDeleteNode(
     createApiRequest('connect-delete-node', context, {
-      id: asNodeId(req.id),
+      id: asNodeId(request.id),
       ...sequenceOption,
     }),
   );
 
   if (!res.ok) {
-    const err = createConnectErrorPayload(res.error);
-    return { success: false, error_code: err.errorCode, error_message: err.message };
+    const error = createConnectErrorPayload(res.error);
+    return { success: false, error_code: error.errorCode, error_message: error.message };
   }
 
   return {
@@ -396,7 +405,7 @@ const handleDeleteNode = async (
 
 const handleCreateEdge = async (
   context: ApiAdapterContext,
-  req: Readonly<{
+  request: Readonly<{
     source_node_id: string;
     target_node_id: string;
     predicate_type_id: string;
@@ -405,25 +414,29 @@ const handleCreateEdge = async (
   }>,
 ): Promise<ConnectMutationResultResponse> => {
   const properties: Readonly<Record<string, PropertyValue>> = Object.freeze(
-    req.properties_json ? (JSON.parse(req.properties_json) as Record<string, PropertyValue>) : {},
+    request.properties_json
+      ? (JSON.parse(request.properties_json) as Record<string, PropertyValue>)
+      : {},
   );
-  const expectedSequence = req.expected_sequence ? Number(req.expected_sequence) : undefined;
+  const expectedSequence = request.expected_sequence
+    ? Number(request.expected_sequence)
+    : undefined;
   const sequenceOption =
     expectedSequence === undefined ? {} : { expectedSequence: expectedSequence };
 
   const res = await executeCreateEdge(
     createApiRequest('connect-create-edge', context, {
-      source: asNodeId(req.source_node_id),
-      target: asNodeId(req.target_node_id),
-      type: asTypeId(req.predicate_type_id),
+      source: asNodeId(request.source_node_id),
+      target: asNodeId(request.target_node_id),
+      type: asTypeId(request.predicate_type_id),
       properties,
       ...sequenceOption,
     }),
   );
 
   if (!res.ok) {
-    const err = createConnectErrorPayload(res.error);
-    return { success: false, error_code: err.errorCode, error_message: err.message };
+    const error = createConnectErrorPayload(res.error);
+    return { success: false, error_code: error.errorCode, error_message: error.message };
   }
 
   return {
@@ -436,25 +449,27 @@ const handleCreateEdge = async (
 
 const handleDeleteEdge = async (
   context: ApiAdapterContext,
-  req: Readonly<{
+  request: Readonly<{
     id: string;
     expected_sequence?: string;
   }>,
 ): Promise<ConnectMutationResultResponse> => {
-  const expectedSequence = req.expected_sequence ? Number(req.expected_sequence) : undefined;
+  const expectedSequence = request.expected_sequence
+    ? Number(request.expected_sequence)
+    : undefined;
   const sequenceOption =
     expectedSequence === undefined ? {} : { expectedSequence: expectedSequence };
 
   const res = await executeDeleteEdge(
     createApiRequest('connect-delete-edge', context, {
-      id: asEdgeId(req.id),
+      id: asEdgeId(request.id),
       ...sequenceOption,
     }),
   );
 
   if (!res.ok) {
-    const err = createConnectErrorPayload(res.error);
-    return { success: false, error_code: err.errorCode, error_message: err.message };
+    const error = createConnectErrorPayload(res.error);
+    return { success: false, error_code: error.errorCode, error_message: error.message };
   }
 
   return {
@@ -467,38 +482,38 @@ const handleDeleteEdge = async (
 
 export const createConnectMutationHandlers = (context: ApiAdapterContext) => ({
   createNode: (
-    req: Readonly<{
+    request: Readonly<{
       type_id: string;
       properties_json?: string;
       expected_sequence?: string;
     }>,
-  ) => handleCreateNode(context, req),
+  ) => handleCreateNode(context, request),
   updateNodeProperties: (
-    req: Readonly<{
+    request: Readonly<{
       id: string;
       properties_json: string;
       expected_sequence?: string;
     }>,
-  ) => handleUpdateNodeProperties(context, req),
+  ) => handleUpdateNodeProperties(context, request),
   deleteNode: (
-    req: Readonly<{
+    request: Readonly<{
       id: string;
       expected_sequence?: string;
     }>,
-  ) => handleDeleteNode(context, req),
+  ) => handleDeleteNode(context, request),
   createEdge: (
-    req: Readonly<{
+    request: Readonly<{
       source_node_id: string;
       target_node_id: string;
       predicate_type_id: string;
       properties_json?: string;
       expected_sequence?: string;
     }>,
-  ) => handleCreateEdge(context, req),
+  ) => handleCreateEdge(context, request),
   deleteEdge: (
-    req: Readonly<{
+    request: Readonly<{
       id: string;
       expected_sequence?: string;
     }>,
-  ) => handleDeleteEdge(context, req),
+  ) => handleDeleteEdge(context, request),
 });

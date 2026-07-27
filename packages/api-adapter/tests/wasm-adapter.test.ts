@@ -20,7 +20,7 @@ const setupTestContext = async () => {
   });
 };
 
-const executeMsgCreationPlugin = async (
+const executeMessageCreationPlugin = async (
   hostBindings: WasmHostBindings,
   inputJson: string,
 ): Promise<string> => {
@@ -49,7 +49,7 @@ describe('WASM WIT Protocol Adapter', () => {
     const pluginRes = await adapter.executeGuestPlugin(
       '*',
       JSON.stringify({ message: 'hello' }),
-      executeMsgCreationPlugin,
+      executeMessageCreationPlugin,
     );
 
     expect(pluginRes.ok).toBe(true);

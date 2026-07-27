@@ -68,7 +68,7 @@ const deserializeEvent = (storable: unknown): GraphEvent => {
 
 export const createHTTPEventLog = (baseUrl: string, options?: HTTPOptions): HTTPEventLog => {
   const cleanBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
-  const fetchFn = options?.fetch ?? fetch;
+  const fetchFunction = options?.fetch ?? fetch;
   const customHeaders = options?.headers ?? {};
 
   return {
@@ -78,7 +78,7 @@ export const createHTTPEventLog = (baseUrl: string, options?: HTTPOptions): HTTP
     ): Promise<Result<void, Error>> => {
       return fromAsyncThrowable(async () => {
         const url = `${cleanBase}/graphs/${graphId}/events`;
-        const response = await fetchFn(url, {
+        const response = await fetchFunction(url, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -105,26 +105,26 @@ export const createHTTPEventLog = (baseUrl: string, options?: HTTPOptions): HTTP
       queryOptions: EventLogQueryOptions = {},
     ): Promise<Result<readonly GraphEvent[], Error>> => {
       return fromAsyncThrowable(async () => {
-        const params = new URLSearchParams();
+        const parameters = new URLSearchParams();
         if (queryOptions.after) {
-          params.set('after', queryOptions.after);
+          parameters.set('after', queryOptions.after);
         }
         if (queryOptions.before) {
-          params.set('before', queryOptions.before);
+          parameters.set('before', queryOptions.before);
         }
         if (queryOptions.limit !== undefined) {
-          params.set('limit', String(queryOptions.limit));
+          parameters.set('limit', String(queryOptions.limit));
         }
         if (queryOptions.reverse !== undefined) {
-          params.set('reverse', String(queryOptions.reverse));
+          parameters.set('reverse', String(queryOptions.reverse));
         }
 
-        const queryString = params.toString();
+        const queryString = parameters.toString();
         const url = queryString
           ? `${cleanBase}/graphs/${graphId}/events?${queryString}`
           : `${cleanBase}/graphs/${graphId}/events`;
 
-        const response = await fetchFn(url, {
+        const response = await fetchFunction(url, {
           method: 'GET',
           headers: {
             Accept: 'application/json',

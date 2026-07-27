@@ -29,10 +29,12 @@ function createTestEventLog(): EventLogStore {
     appendEvents: (_graphId, newEvents) => {
       const seen = new Set(events.map((e) => e.eventId));
       for (const event of newEvents) {
-        if (!seen.has(event.eventId)) {
-          events.push(event);
-          seen.add(event.eventId);
+        if (seen.has(event.eventId)) {
+          continue;
         }
+
+        events.push(event);
+        seen.add(event.eventId);
       }
       events.sort((a, b) => a.eventId.localeCompare(b.eventId));
       return Promise.resolve(ok(undefined));

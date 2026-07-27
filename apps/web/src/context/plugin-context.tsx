@@ -110,15 +110,17 @@ export const PluginProvider: React.FC<{ readonly children: React.ReactNode }> = 
 
     const plugins: PluginManifest[] = [];
     for (const node of graph.nodes.values()) {
-      if (node.type === SYSTEM_IDS.TYPE_PLUGIN) {
-        const manifestStr = node.properties.get('manifest');
-        if (typeof manifestStr === 'string') {
-          try {
-            const parsed = JSON.parse(manifestStr) as PluginManifest;
-            plugins.push(parsed);
-          } catch (e) {
-            console.error('Failed to parse plugin manifest:', e);
-          }
+      if (node.type !== SYSTEM_IDS.TYPE_PLUGIN) {
+        continue;
+      }
+
+      const manifestString = node.properties.get('manifest');
+      if (typeof manifestString === 'string') {
+        try {
+          const parsed = JSON.parse(manifestString) as PluginManifest;
+          plugins.push(parsed);
+        } catch (e) {
+          console.error('Failed to parse plugin manifest:', e);
         }
       }
     }
@@ -196,13 +198,13 @@ export const PluginProvider: React.FC<{ readonly children: React.ReactNode }> = 
       // Map inputs to WIT format
       const witInputs = [...inputs.entries()].map(([fieldName, value]) => {
         let tag = 'none';
-        let val: any = value;
+        let value_: any = value;
         if (typeof value === 'string') {
           tag = 'text';
         } else if (typeof value === 'number') {
           if (Number.isInteger(value)) {
             tag = 'integer';
-            val = BigInt(value);
+            value_ = BigInt(value);
           } else {
             tag = 'decimal';
           }
@@ -213,7 +215,7 @@ export const PluginProvider: React.FC<{ readonly children: React.ReactNode }> = 
         }
         return {
           fieldName,
-          value: { tag, val },
+          value: { tag, val: value_ },
         };
       });
 
@@ -225,50 +227,50 @@ export const PluginProvider: React.FC<{ readonly children: React.ReactNode }> = 
       if (stepResult.eventsToStage && stepResult.eventsToStage.length > 0) {
         const deviceId = parentSession.graph().metadata.modifiedBy;
         const draftEvents: GraphEvent[] = stepResult.eventsToStage.map((e: any) => {
-          const timestampStr = e.val.timestamp || Temporal.Now.instant().toString();
-          const deviceIdStr = e.val.deviceId || deviceId;
-          const eventIdStr = e.val.eventId || crypto.randomUUID();
+          const timestampString = e.val.timestamp || Temporal.Now.instant().toString();
+          const deviceIdString = e.val.deviceId || deviceId;
+          const eventIdString = e.val.eventId || crypto.randomUUID();
 
           if (e.tag === 'node-created') {
             const properties = new Map<string, any>();
             if (e.val.properties) {
               for (const entry of e.val.properties) {
                 // Map properties
-                let val = entry.value.val;
+                let value = entry.value.val;
                 if (entry.value.tag === 'integer') {
-                  val = Number(val);
+                  value = Number(value);
                 }
-                properties.set(entry.name, val);
+                properties.set(entry.name, value);
               }
             }
             return {
               type: 'NodeCreated',
-              eventId: eventIdStr,
+              eventId: eventIdString,
               id: e.val.id,
               nodeType: e.val.nodeType,
               properties,
-              timestamp: timestampStr,
-              deviceId: deviceIdStr,
+              timestamp: timestampString,
+              deviceId: deviceIdString,
               batchId: e.val.batchId,
             };
           } else if (e.tag === 'node-properties-updated') {
             const changes = new Map<string, any>();
             if (e.val.changes) {
               for (const entry of e.val.changes) {
-                let val = entry.value.val;
+                let value = entry.value.val;
                 if (entry.value.tag === 'integer') {
-                  val = Number(val);
+                  value = Number(value);
                 }
-                changes.set(entry.name, val);
+                changes.set(entry.name, value);
               }
             }
             return {
               type: 'NodePropertiesUpdated',
-              eventId: eventIdStr,
+              eventId: eventIdString,
               id: e.val.id,
               changes,
-              timestamp: timestampStr,
-              deviceId: deviceIdStr,
+              timestamp: timestampString,
+              deviceId: deviceIdString,
               batchId: e.val.batchId,
             };
           }
@@ -277,8 +279,8 @@ export const PluginProvider: React.FC<{ readonly children: React.ReactNode }> = 
 
         const applyRes = activeWizard.draftSession.applyEvents(draftEvents);
         if (!applyRes.ok) {
-          setActiveWizard((prev) =>
-            prev ? { ...prev, error: `Apply error: ${applyRes.error.type}` } : null,
+          setActiveWizard((previous) =>
+            previous ? { ...previous, error: `Apply error: ${applyRes.error.type}` } : null,
           );
           return;
         }
@@ -287,10 +289,10 @@ export const PluginProvider: React.FC<{ readonly children: React.ReactNode }> = 
       // Check next step destination
       const nextStep = stepResult.nextStep;
       if (nextStep.tag === 'form') {
-        setActiveWizard((prev) =>
-          prev
+        setActiveWizard((previous) =>
+          previous
             ? {
-                ...prev,
+                ...previous,
                 stepSchema: nextStep.val,
                 error: null,
               }
@@ -300,16 +302,16 @@ export const PluginProvider: React.FC<{ readonly children: React.ReactNode }> = 
         // Commit draft session events to parent graph session
         const currentRevRes = activeWizard.draftSession.getParentRevision();
         if (!currentRevRes.ok) {
-          setActiveWizard((prev) =>
-            prev ? { ...prev, error: 'Could not resolve parent revision.' } : null,
+          setActiveWizard((previous) =>
+            previous ? { ...previous, error: 'Could not resolve parent revision.' } : null,
           );
           return;
         }
 
         const commitRes = await activeWizard.draftSession.commit(currentRevRes.value);
         if (!commitRes.ok) {
-          setActiveWizard((prev) =>
-            prev ? { ...prev, error: `Commit error: ${commitRes.error.type}` } : null,
+          setActiveWizard((previous) =>
+            previous ? { ...previous, error: `Commit error: ${commitRes.error.type}` } : null,
           );
           return;
         }
@@ -321,7 +323,9 @@ export const PluginProvider: React.FC<{ readonly children: React.ReactNode }> = 
       }
     } catch (e: any) {
       console.error('Error during step submission:', e);
-      setActiveWizard((prev) => (prev ? { ...prev, error: e.message || String(e) } : null));
+      setActiveWizard((previous) =>
+        previous ? { ...previous, error: e.message || String(e) } : null,
+      );
     }
   };
 

@@ -96,12 +96,12 @@ export const InteractiveGraphView = () => {
   };
 
   const onConnect = useCallback(
-    (params: Connection) => {
+    (parameters: Connection) => {
       const edgeType = showPrompt('Enter edge type (e.g., RelatedTo, HasAuthor):', 'RelatedTo');
-      if (!edgeType || !params.source || !params.target) return undefined;
+      if (!edgeType || !parameters.source || !parameters.target) return undefined;
 
-      const sourceId = asNodeId(params.source);
-      const targetId = asNodeId(params.target);
+      const sourceId = asNodeId(parameters.source);
+      const targetId = asNodeId(parameters.target);
 
       void withResultAlert(
         () => createEdge(edgeType, sourceId, targetId),

@@ -123,10 +123,10 @@ const GraphContext = createContext<GraphContextType>({
 // eslint-disable-next-line max-lines-per-function
 export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = ({ children }) => {
   const { eventLog, deviceId } = useStorage();
-  const sessionRef = useRef<GraphSession | null>(null);
+  const sessionReference = useRef<GraphSession | null>(null);
   const [sessionState, setSessionState] = useState<GraphSession | null>(null);
 
-  const unsubscribeRef = useRef<(() => void) | null>(null);
+  const unsubscribeReference = useRef<(() => void) | null>(null);
 
   const [graph, setGraph] = useState<Graph | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -140,9 +140,9 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
       setError(null);
 
       const result = await fromAsyncThrowable(async () => {
-        if (unsubscribeRef.current) {
-          unsubscribeRef.current();
-          unsubscribeRef.current = null;
+        if (unsubscribeReference.current) {
+          unsubscribeReference.current();
+          unsubscribeReference.current = null;
         }
 
         const session = createGraphSession(eventLog, graphId, deviceId);
@@ -150,9 +150,9 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
 
         if (!loadResult.ok) throw loadResult.error;
 
-        sessionRef.current = session;
+        sessionReference.current = session;
         setSessionState(session);
-        unsubscribeRef.current = session.subscribe((updatedGraph) => {
+        unsubscribeReference.current = session.subscribe((updatedGraph) => {
           setGraph(updatedGraph);
           return undefined;
         });
@@ -173,11 +173,11 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
   );
 
   const closeGraph = useCallback((): Result<void, Error> => {
-    if (unsubscribeRef.current) {
-      unsubscribeRef.current();
-      unsubscribeRef.current = null;
+    if (unsubscribeReference.current) {
+      unsubscribeReference.current();
+      unsubscribeReference.current = null;
     }
-    sessionRef.current = null;
+    sessionReference.current = null;
     setSessionState(null);
     setGraph(null);
     return ok(undefined);
@@ -188,18 +188,18 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
       type: string,
       properties: Record<string, unknown> = {},
     ): Promise<Result<NodeId, Error>> => {
-      const session = sessionRef.current;
+      const session = sessionReference.current;
       if (!session) return err(new Error('No graph loaded'));
 
       return fromAsyncThrowable(async () => {
         const input = CreateNodeInputSchema.parse({ type, properties });
-        const propsMap = new Map<string, PropertyValue>(
+        const propertiesMap = new Map<string, PropertyValue>(
           input.properties ? Object.entries(input.properties) : [],
         );
         const node: Node = {
           id: createNodeId(),
           type: input.type,
-          properties: propsMap,
+          properties: propertiesMap,
           metadata: { created: createInstant(), modified: createInstant(), modifiedBy: deviceId },
         };
 
@@ -224,12 +224,12 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
       target: NodeId,
       properties: Record<string, unknown> = {},
     ): Promise<Result<EdgeId, Error>> => {
-      const session = sessionRef.current;
+      const session = sessionReference.current;
       if (!session) return err(new Error('No graph loaded'));
 
       return fromAsyncThrowable(async () => {
         const input = CreateEdgeInputSchema.parse({ type, properties });
-        const propsMap = new Map<string, PropertyValue>(
+        const propertiesMap = new Map<string, PropertyValue>(
           input.properties ? Object.entries(input.properties) : [],
         );
         const edge: Edge = {
@@ -237,7 +237,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
           type: input.type,
           source,
           target,
-          properties: propsMap,
+          properties: propertiesMap,
           metadata: { created: createInstant(), modified: createInstant(), modifiedBy: deviceId },
         };
 
@@ -260,7 +260,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
       nodeId: NodeId,
       changes: ReadonlyMap<string, PropertyValue>,
     ): Promise<Result<void, Error>> => {
-      const session = sessionRef.current;
+      const session = sessionReference.current;
       if (!session) return err(new Error('No graph loaded'));
 
       const opResult = updateNode(
@@ -280,7 +280,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
 
   const deleteNode = useCallback(
     async (nodeId: NodeId): Promise<Result<void, Error>> => {
-      const session = sessionRef.current;
+      const session = sessionReference.current;
       if (!session) return err(new Error('No graph loaded'));
 
       const opResult = removeNode(session.graph(), nodeId, { deviceId });
@@ -295,7 +295,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
 
   const createNamespace = useCallback(
     (input: CreateNamespaceInput): Promise<Result<NodeId, Error>> => {
-      const session = sessionRef.current;
+      const session = sessionReference.current;
       if (!session) return Promise.resolve(err(new Error('No graph loaded')));
       return commitCreatedNode(session, createNamespaceOp(session.graph(), input, { deviceId }));
     },
@@ -304,7 +304,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
 
   const createNodeType = useCallback(
     (input: CreateNodeTypeInput): Promise<Result<NodeId, Error>> => {
-      const session = sessionRef.current;
+      const session = sessionReference.current;
       if (!session) return Promise.resolve(err(new Error('No graph loaded')));
       return commitCreatedNode(session, createNodeTypeOp(session.graph(), input, { deviceId }));
     },
@@ -313,7 +313,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
 
   const createEdgeType = useCallback(
     (input: CreateEdgeTypeInput): Promise<Result<NodeId, Error>> => {
-      const session = sessionRef.current;
+      const session = sessionReference.current;
       if (!session) return Promise.resolve(err(new Error('No graph loaded')));
       return commitCreatedNode(session, createEdgeTypeOp(session.graph(), input, { deviceId }));
     },
@@ -322,7 +322,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
 
   const createPropertyType = useCallback(
     (input: CreatePropertyTypeInput): Promise<Result<NodeId, Error>> => {
-      const session = sessionRef.current;
+      const session = sessionReference.current;
       if (!session) return Promise.resolve(err(new Error('No graph loaded')));
       return commitCreatedNode(session, createPropertyTypeOp(session.graph(), input, { deviceId }));
     },
@@ -332,8 +332,8 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (unsubscribeRef.current) {
-        unsubscribeRef.current();
+      if (unsubscribeReference.current) {
+        unsubscribeReference.current();
       }
       return undefined;
     };

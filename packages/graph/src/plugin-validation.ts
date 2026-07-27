@@ -5,7 +5,7 @@ const brotliDecompressSync = (() => {
   // eslint-disable-next-line functional/no-try-statements
   try {
     const hasImportMeta = import.meta !== undefined;
-    const req =
+    const request =
       hasImportMeta && 'require' in import.meta
         ? (import.meta as Readonly<{ require?: unknown }>).require
         : // eslint-disable-next-line unicorn/prefer-module
@@ -14,8 +14,8 @@ const brotliDecompressSync = (() => {
           : // eslint-disable-next-line unicorn/prefer-module
             require;
 
-    if (typeof req === 'function') {
-      const zlib = req('node:zlib') as Readonly<{ brotliDecompressSync?: unknown }> | undefined;
+    if (typeof request === 'function') {
+      const zlib = request('node:zlib') as Readonly<{ brotliDecompressSync?: unknown }> | undefined;
       if (zlib && typeof zlib.brotliDecompressSync === 'function') {
         return zlib.brotliDecompressSync as (buffer: Uint8Array) => Uint8Array;
       }
@@ -30,19 +30,18 @@ function decodeBase64(base64: string): Uint8Array {
   // eslint-disable-next-line functional/no-try-statements
   try {
     if (typeof Buffer !== 'undefined') {
-      // eslint-disable-next-line unicorn/prefer-uint8array-base64 -- compatibility fallback for Node environment
       return Buffer.from(base64, 'base64');
     }
   } catch {
     // ignore and fall back to browser atob
   }
-  // eslint-disable-next-line unicorn/prefer-uint8array-base64 -- compatibility fallback for browser environment
+
   const binaryString = atob(base64);
   const bytes = new Uint8Array(binaryString.length);
   // eslint-disable-next-line functional/no-loop-statements -- standard loop to populate typed array
-  for (let i = 0; i < binaryString.length; i++) {
+  for (let index = 0; index < binaryString.length; index++) {
     // eslint-disable-next-line functional/immutable-data -- standard code point assignment
-    bytes[i] = binaryString.codePointAt(i) || 0;
+    bytes[index] = binaryString.codePointAt(index) || 0;
   }
   return bytes;
 }
@@ -77,7 +76,6 @@ export function validateWasmBinaryProperty(
 
   // eslint-disable-next-line functional/no-try-statements
   try {
-    // eslint-disable-next-line unicorn/prefer-uint8array-base64 -- atob is standard and widely compatible in this runtime environment
     const raw = atob(cleaned.slice(0, 32));
     const isWasmMagic =
       raw.codePointAt(0) === 0x00 &&
@@ -155,7 +153,7 @@ export function validatePluginManifestProperty(
 
     const manifest = parsed as Record<string, unknown>;
 
-    const nameErr =
+    const nameError =
       typeof manifest.name !== 'string' || manifest.name.trim() === ''
         ? [
             {
@@ -167,7 +165,7 @@ export function validatePluginManifestProperty(
           ]
         : [];
 
-    const versionErr =
+    const versionError =
       typeof manifest.version !== 'string' || manifest.version.trim() === ''
         ? [
             {
@@ -180,20 +178,20 @@ export function validatePluginManifestProperty(
           ]
         : [];
 
-    const capabilitiesErr = Array.isArray(manifest.capabilities)
+    const capabilitiesError = Array.isArray(manifest.capabilities)
       ? manifest.capabilities
-          .map((cap: unknown, idx): ValidationError | null => {
+          .map((cap: unknown, index): ValidationError | null => {
             if (typeof cap !== 'string' || cap.trim() === '') {
               return {
-                path: [propertyName, 'capabilities', String(idx)],
-                message: `Manifest property 'capabilities' element at index ${idx} must be a non-empty string`,
+                path: [propertyName, 'capabilities', String(index)],
+                message: `Manifest property 'capabilities' element at index ${index} must be a non-empty string`,
                 expected: 'non-empty string',
                 actual: typeof cap === 'string' ? cap : typeof cap,
               };
             }
             return null;
           })
-          .filter((err): err is ValidationError => err !== null)
+          .filter((error): error is ValidationError => error !== null)
       : [
           {
             path: [propertyName, 'capabilities'],
@@ -203,56 +201,56 @@ export function validatePluginManifestProperty(
           },
         ];
 
-    const menuItemsErr =
+    const menuItemsError =
       manifest.menuItems === undefined
         ? []
         : Array.isArray(manifest.menuItems)
-          ? manifest.menuItems.flatMap((item: unknown, idx): readonly ValidationError[] => {
+          ? manifest.menuItems.flatMap((item: unknown, index): readonly ValidationError[] => {
               if (typeof item !== 'object' || item === null || Array.isArray(item)) {
                 return [
                   {
-                    path: [propertyName, 'menuItems', String(idx)],
-                    message: `Manifest property 'menuItems' element at index ${idx} must be an object`,
+                    path: [propertyName, 'menuItems', String(index)],
+                    message: `Manifest property 'menuItems' element at index ${index} must be an object`,
                     expected: 'object',
                     actual: typeof item,
                   },
                 ];
               }
               const itemRec = item as Record<string, unknown>;
-              const itemLabelErr =
+              const itemLabelError =
                 typeof itemRec.label !== 'string' || itemRec.label.trim() === ''
                   ? [
                       {
-                        path: [propertyName, 'menuItems', String(idx), 'label'],
+                        path: [propertyName, 'menuItems', String(index), 'label'],
                         message: "Menu item 'label' must be a non-empty string",
                         expected: 'non-empty string',
                         actual: typeof itemRec.label,
                       },
                     ]
                   : [];
-              const itemCommandErr =
+              const itemCommandError =
                 typeof itemRec.command !== 'string' || itemRec.command.trim() === ''
                   ? [
                       {
-                        path: [propertyName, 'menuItems', String(idx), 'command'],
+                        path: [propertyName, 'menuItems', String(index), 'command'],
                         message: "Menu item 'command' must be a non-empty string",
                         expected: 'non-empty string',
                         actual: typeof itemRec.command,
                       },
                     ]
                   : [];
-              const itemShortcutErr =
+              const itemShortcutError =
                 itemRec.shortcut !== undefined && typeof itemRec.shortcut !== 'string'
                   ? [
                       {
-                        path: [propertyName, 'menuItems', String(idx), 'shortcut'],
+                        path: [propertyName, 'menuItems', String(index), 'shortcut'],
                         message: "Menu item 'shortcut' must be a string if defined",
                         expected: 'string',
                         actual: typeof itemRec.shortcut,
                       },
                     ]
                   : [];
-              return [...itemLabelErr, ...itemCommandErr, ...itemShortcutErr];
+              return [...itemLabelError, ...itemCommandError, ...itemShortcutError];
             })
           : [
               {
@@ -263,56 +261,56 @@ export function validatePluginManifestProperty(
               },
             ];
 
-    const commandsErr =
+    const commandsError =
       manifest.commands === undefined
         ? []
         : Array.isArray(manifest.commands)
-          ? manifest.commands.flatMap((cmd: unknown, idx): readonly ValidationError[] => {
-              if (typeof cmd !== 'object' || cmd === null || Array.isArray(cmd)) {
+          ? manifest.commands.flatMap((command: unknown, index): readonly ValidationError[] => {
+              if (typeof command !== 'object' || command === null || Array.isArray(command)) {
                 return [
                   {
-                    path: [propertyName, 'commands', String(idx)],
-                    message: `Manifest property 'commands' element at index ${idx} must be an object`,
+                    path: [propertyName, 'commands', String(index)],
+                    message: `Manifest property 'commands' element at index ${index} must be an object`,
                     expected: 'object',
-                    actual: typeof cmd,
+                    actual: typeof command,
                   },
                 ];
               }
-              const cmdRec = cmd as Record<string, unknown>;
-              const cmdIdErr =
-                typeof cmdRec.id !== 'string' || cmdRec.id.trim() === ''
+              const commandRec = command as Record<string, unknown>;
+              const commandIdError =
+                typeof commandRec.id !== 'string' || commandRec.id.trim() === ''
                   ? [
                       {
-                        path: [propertyName, 'commands', String(idx), 'id'],
+                        path: [propertyName, 'commands', String(index), 'id'],
                         message: "Command 'id' must be a non-empty string",
                         expected: 'non-empty string',
-                        actual: typeof cmdRec.id,
+                        actual: typeof commandRec.id,
                       },
                     ]
                   : [];
-              const cmdTitleErr =
-                typeof cmdRec.title !== 'string' || cmdRec.title.trim() === ''
+              const commandTitleError =
+                typeof commandRec.title !== 'string' || commandRec.title.trim() === ''
                   ? [
                       {
-                        path: [propertyName, 'commands', String(idx), 'title'],
+                        path: [propertyName, 'commands', String(index), 'title'],
                         message: "Command 'title' must be a non-empty string",
                         expected: 'non-empty string',
-                        actual: typeof cmdRec.title,
+                        actual: typeof commandRec.title,
                       },
                     ]
                   : [];
-              const cmdCategoryErr =
-                cmdRec.category !== undefined && typeof cmdRec.category !== 'string'
+              const commandCategoryError =
+                commandRec.category !== undefined && typeof commandRec.category !== 'string'
                   ? [
                       {
-                        path: [propertyName, 'commands', String(idx), 'category'],
+                        path: [propertyName, 'commands', String(index), 'category'],
                         message: "Command 'category' must be a string if defined",
                         expected: 'string',
-                        actual: typeof cmdRec.category,
+                        actual: typeof commandRec.category,
                       },
                     ]
                   : [];
-              return [...cmdIdErr, ...cmdTitleErr, ...cmdCategoryErr];
+              return [...commandIdError, ...commandTitleError, ...commandCategoryError];
             })
           : [
               {
@@ -323,7 +321,13 @@ export function validatePluginManifestProperty(
               },
             ];
 
-    return [...nameErr, ...versionErr, ...capabilitiesErr, ...menuItemsErr, ...commandsErr];
+    return [
+      ...nameError,
+      ...versionError,
+      ...capabilitiesError,
+      ...menuItemsError,
+      ...commandsError,
+    ];
   } catch {
     return [
       {

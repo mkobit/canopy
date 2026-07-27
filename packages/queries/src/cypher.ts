@@ -11,7 +11,7 @@ export interface QueryEngine {
   readonly execute: (
     graph: Graph,
     query: string | QueryNode,
-    params?: Record<string, unknown>,
+    parameters?: Record<string, unknown>,
   ) => Result<QueryResult, Error>;
   readonly validate: (query: string | QueryNode) => ValidationResult;
 }
@@ -28,7 +28,7 @@ export class CypherQueryEngine implements QueryEngine {
   execute(
     graph: Graph,
     query: string | QueryNode,
-    _params: Record<string, unknown> = {},
+    _parameters: Record<string, unknown> = {},
   ): Result<QueryResult, Error> {
     const queryString = typeof query === 'string' ? query : this.extractQueryString(query);
 

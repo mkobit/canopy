@@ -31,12 +31,12 @@ describe('Connect gRPC event log streaming and replay handlers', () => {
     const iterator = handlers.subscribeEventStream({});
     const nextPromise = iterator.next();
 
-    const req = createApiRequest('req-live-1', context, {
+    const request = createApiRequest('req-live-1', context, {
       id: asNodeId('n-live-1'),
       type: asTypeId('doc'),
       properties: { title: 'Live Streaming Test' },
     });
-    const res = await executeCreateNode(req);
+    const res = await executeCreateNode(request);
     expect(res.ok).toBe(true);
 
     const nextResult = await nextPromise;
@@ -60,13 +60,13 @@ describe('Connect gRPC event log streaming and replay handlers', () => {
     const { context, eventLogStore } = await setupSessionContext();
     const handlers = createConnectEventStreamHandlers(context);
 
-    for (let i = 1; i <= 3; i++) {
-      const req = createApiRequest(`req-replay-${i}`, context, {
-        id: asNodeId(`n-replay-${i}`),
+    for (let index = 1; index <= 3; index++) {
+      const request = createApiRequest(`req-replay-${index}`, context, {
+        id: asNodeId(`n-replay-${index}`),
         type: asTypeId('doc'),
-        properties: { count: i },
+        properties: { count: index },
       });
-      const res = await executeCreateNode(req);
+      const res = await executeCreateNode(request);
       expect(res.ok).toBe(true);
     }
 
@@ -79,10 +79,7 @@ describe('Connect gRPC event log streaming and replay handlers', () => {
       last_seen_event_id: firstEventId,
     });
 
-    const items = [];
-    for await (const item of replayIterator) {
-      items.push(item);
-    }
+    const items = await Array.fromAsync(replayIterator);
 
     expect(items).toHaveLength(2);
     expect(items[0]?.event_type).toBe('NodeCreated');
@@ -95,13 +92,13 @@ describe('Connect gRPC event log streaming and replay handlers', () => {
     const { context } = await setupSessionContext();
     const handlers = createConnectEventStreamHandlers(context);
 
-    for (let i = 1; i <= 6; i++) {
-      const req = createApiRequest(`req-overflow-${i}`, context, {
-        id: asNodeId(`n-overflow-${i}`),
+    for (let index = 1; index <= 6; index++) {
+      const request = createApiRequest(`req-overflow-${index}`, context, {
+        id: asNodeId(`n-overflow-${index}`),
         type: asTypeId('doc'),
-        properties: { count: i },
+        properties: { count: index },
       });
-      await executeCreateNode(req);
+      await executeCreateNode(request);
     }
 
     const replayIterator = handlers.replayEventStream({
@@ -109,10 +106,7 @@ describe('Connect gRPC event log streaming and replay handlers', () => {
       max_replay_count: 3,
     });
 
-    const items = [];
-    for await (const item of replayIterator) {
-      items.push(item);
-    }
+    const items = await Array.fromAsync(replayIterator);
 
     expect(items).toHaveLength(1);
     expect(items[0]?.event_type).toBe('GAP_NOTIFIED');

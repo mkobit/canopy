@@ -146,7 +146,7 @@ export const createIpcServer = (options: IpcServerOptions): IpcServer => {
           // Process message asynchronously
           void handleIpcRequestLine(line, context).then((res) => {
             if (!res.ok) {
-              const errResp = {
+              const errorResp = {
                 jsonrpc: '2.0',
                 error: {
                   code: res.error.code,
@@ -154,7 +154,7 @@ export const createIpcServer = (options: IpcServerOptions): IpcServer => {
                 },
                 id: null,
               };
-              sendToSocket(socket, JSON.stringify(errResp));
+              sendToSocket(socket, JSON.stringify(errorResp));
               return undefined;
             }
 
@@ -175,9 +175,9 @@ export const createIpcServer = (options: IpcServerOptions): IpcServer => {
             if (unsubscribeId) {
               const subsMap = activeSubscriptions.get(socket);
               if (subsMap) {
-                const closeFn = subsMap.get(unsubscribeId);
-                if (closeFn) {
-                  closeFn();
+                const closeFunction = subsMap.get(unsubscribeId);
+                if (closeFunction) {
+                  closeFunction();
                   // eslint-disable-next-line functional/immutable-data
                   subsMap.delete(unsubscribeId);
                 }

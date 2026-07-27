@@ -14,11 +14,11 @@ export interface PropertyListEditorProps {
 }
 
 function updateAt<T>(list: readonly T[], index: number, next: T): readonly T[] {
-  return list.map((item, i) => (i === index ? next : item));
+  return list.map((item, index_) => (index_ === index ? next : item));
 }
 
 function removeAt<T>(list: readonly T[], index: number): readonly T[] {
-  return list.filter((_, i) => i !== index);
+  return list.filter((_, index_) => index_ !== index);
 }
 
 const InlinePropertyRow: React.FC<

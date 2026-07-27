@@ -16,13 +16,15 @@ export const NodePage = () => {
   const navigate = useNavigate();
   const [currentNode, setCurrentNode] = useState<Node | undefined>();
   const [isEditing, setIsEditing] = useState(false);
-  const [editedProps, setEditedProps] = useState<ReadonlyMap<string, PropertyValue>>(new Map());
+  const [editedProperties, setEditedProperties] = useState<ReadonlyMap<string, PropertyValue>>(
+    new Map(),
+  );
 
   const content = currentNode?.properties.get('content');
 
   const propertiesToEdit = useMemo(() => {
-    return new Map([...editedProps.entries()].filter(([key]) => key !== 'content'));
-  }, [editedProps]);
+    return new Map([...editedProperties.entries()].filter(([key]) => key !== 'content'));
+  }, [editedProperties]);
 
   // Subscribe/Fetch node from graph
   useEffect(() => {
@@ -31,7 +33,7 @@ export const NodePage = () => {
         const node = graph.nodes.get(asNodeId(nodeId));
         setCurrentNode(node);
         if (node) {
-          setEditedProps(new Map(node.properties));
+          setEditedProperties(new Map(node.properties));
         }
         return undefined;
       });
@@ -69,8 +71,8 @@ export const NodePage = () => {
   };
 
   const handlePropertyChange = (key: string, value: PropertyValue) => {
-    setEditedProps((prev) => {
-      const next = new Map(prev);
+    setEditedProperties((previous) => {
+      const next = new Map(previous);
       // eslint-disable-next-line functional/immutable-data
       next.set(key, value);
       return next;
@@ -183,13 +185,13 @@ export const NodePage = () => {
 
             <div className="space-y-4">
               <h3 className="font-semibold text-gray-900">Properties</h3>
-              {map([...propertiesToEdit], ([key, val]: readonly [string, PropertyValue]) => (
+              {map([...propertiesToEdit], ([key, value]: readonly [string, PropertyValue]) => (
                 <div key={key} className="space-y-1">
                   <label className="text-sm text-gray-600">{key}</label>
                   <PropertyInput
-                    value={val}
-                    onChange={(newVal) => {
-                      handlePropertyChange(key, newVal);
+                    value={value}
+                    onChange={(newValue) => {
+                      handlePropertyChange(key, newValue);
                       return undefined;
                     }}
                   />
@@ -241,8 +243,8 @@ export const NodePage = () => {
                             <span className="text-sm text-gray-500">{edge.type}</span>
                             <span className="font-medium">
                               {(() => {
-                                const nameProp = otherNode?.properties.get('name');
-                                return typeof nameProp === 'string' ? nameProp : otherId;
+                                const nameProperty = otherNode?.properties.get('name');
+                                return typeof nameProperty === 'string' ? nameProperty : otherId;
                               })()}
                             </span>
                           </div>

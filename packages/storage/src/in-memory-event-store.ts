@@ -18,11 +18,13 @@ export const createInMemoryEventStore = (): EventLogStore => {
 
       // eslint-disable-next-line functional/no-loop-statements
       for (const event of events) {
-        if (!existingIds.has(event.eventId)) {
-          newEvents.push(event);
-
-          existingIds.add(event.eventId);
+        if (existingIds.has(event.eventId)) {
+          continue;
         }
+
+        newEvents.push(event);
+
+        existingIds.add(event.eventId);
       }
 
       // Sort the events by eventId ascending

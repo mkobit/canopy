@@ -247,8 +247,8 @@ export const createWasmHostBindings = (
   },
   events: {
     subscribeEvents: (token, payloadJson) =>
-      invokeHostBinding(context, token, payloadJson, 'read:events', options, (req) => {
-        const subscriber = createEventStreamSubscriber(req.context);
+      invokeHostBinding(context, token, payloadJson, 'read:events', options, (request) => {
+        const subscriber = createEventStreamSubscriber(request.context);
         return ok({ subscribed: !subscriber.isClosed() });
       }),
     replayEvents: (token, payloadJson) =>
@@ -258,8 +258,8 @@ export const createWasmHostBindings = (
         payloadJson,
         'read:events',
         options,
-        (req: ApiRequest<ReplayRequestPayload>) =>
-          executeReplayEventStream(req.context, req.payload),
+        (request: ApiRequest<ReplayRequestPayload>) =>
+          executeReplayEventStream(request.context, request.payload),
       ),
   },
 });

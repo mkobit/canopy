@@ -7,14 +7,14 @@ import { Temporal } from 'temporal-polyfill';
 
 const mockGraphId = 'test-graph-id';
 
-const createEvent = (i: number): NodeCreated => ({
+const createEvent = (index: number): NodeCreated => ({
   type: 'NodeCreated',
-  eventId: asEventId(`018d9${i.toString().padStart(3, '0')}-0000-7000-8000-000000000000`),
-  id: asNodeId(`node-${i}`),
+  eventId: asEventId(`018d9${index.toString().padStart(3, '0')}-0000-7000-8000-000000000000`),
+  id: asNodeId(`node-${index}`),
   nodeType: asTypeId('test-type'),
-  properties: new Map([['name', `Node ${i}`]]),
+  properties: new Map([['name', `Node ${index}`]]),
   timestamp: asInstant(
-    Temporal.Instant.from(`2024-01-01T10:${String(i).padStart(2, '0')}:00.000Z`).toString(),
+    Temporal.Instant.from(`2024-01-01T10:${String(index).padStart(2, '0')}:00.000Z`).toString(),
   ),
   deviceId: asDeviceId('00000000-0000-0000-0000-000000000000'),
 });
@@ -26,7 +26,7 @@ interface SerializedEvent {
 }
 
 describe('HTTPEventLog', () => {
-  let mockDb: Map<string, readonly SerializedEvent[]>;
+  let mockDatabase: Map<string, readonly SerializedEvent[]>;
   let adapter: HTTPEventLog;
 
   const mockFetch = async (url: string, init?: RequestInit): Promise<Response> => {
@@ -46,21 +46,21 @@ describe('HTTPEventLog', () => {
         return new Response('Bad Request', { status: 400 });
       }
 
-      const current = mockDb.get(graphId) ?? [];
+      const current = mockDatabase.get(graphId) ?? [];
       const existingIds = new Set(current.map((e) => e.eventId));
       const newEvents = events.filter((e) => !existingIds.has(e.eventId));
-      mockDb.set(graphId, [...current, ...newEvents]);
+      mockDatabase.set(graphId, [...current, ...newEvents]);
 
       return Response.json({ ok: true });
     }
 
     if (init?.method === 'GET') {
-      let events = mockDb.get(graphId) ?? [];
+      let events = mockDatabase.get(graphId) ?? [];
 
       const after = parsedUrl.searchParams.get('after');
       const before = parsedUrl.searchParams.get('before');
-      const limitStr = parsedUrl.searchParams.get('limit');
-      const reverseStr = parsedUrl.searchParams.get('reverse');
+      const limitString = parsedUrl.searchParams.get('limit');
+      const reverseString = parsedUrl.searchParams.get('reverse');
 
       if (after) {
         events = events.filter((e) => e.eventId > after);
@@ -68,11 +68,11 @@ describe('HTTPEventLog', () => {
       if (before) {
         events = events.filter((e) => e.eventId < before);
       }
-      if (reverseStr === 'true') {
+      if (reverseString === 'true') {
         events = events.toReversed();
       }
-      if (limitStr) {
-        events = events.slice(0, Number(limitStr));
+      if (limitString) {
+        events = events.slice(0, Number(limitString));
       }
 
       return Response.json({ events });
@@ -82,7 +82,7 @@ describe('HTTPEventLog', () => {
   };
 
   beforeEach(() => {
-    mockDb = new Map();
+    mockDatabase = new Map();
     adapter = createHTTPEventLog('http://localhost:3000', {
       fetch: mockFetch as unknown as typeof fetch,
     });
@@ -98,14 +98,14 @@ describe('HTTPEventLog', () => {
     if (res1?.type !== 'NodeCreated' || res2?.type !== 'NodeCreated') {
       throw new Error('Expected NodeCreated events');
     }
-    const [evt1, evt2] = events;
-    if (evt1 === undefined || evt2 === undefined) {
+    const [event1, event2] = events;
+    if (event1 === undefined || event2 === undefined) {
       throw new Error('Expected events to be defined');
     }
-    expect(res1.eventId).toEqual(evt1.eventId);
+    expect(res1.eventId).toEqual(event1.eventId);
     expect(res1.properties).toBeInstanceOf(Map);
     expect(res1.properties.get('name')).toEqual('Node 1');
-    expect(res2.eventId).toEqual(evt2.eventId);
+    expect(res2.eventId).toEqual(event2.eventId);
     expect(res2.properties.get('name')).toEqual('Node 2');
   });
 
@@ -118,12 +118,12 @@ describe('HTTPEventLog', () => {
     const result = unwrap(await adapter.getEvents(mockGraphId, { after: firstEvent.eventId }));
     expect(result).toHaveLength(2);
     const [res1, res2] = result;
-    const [, evt2, evt3] = events;
-    if (evt2 === undefined || evt3 === undefined) {
+    const [, event2, event3] = events;
+    if (event2 === undefined || event3 === undefined) {
       throw new Error('Expected events to be defined');
     }
-    expect(res1?.eventId).toEqual(evt2.eventId);
-    expect(res2?.eventId).toEqual(evt3.eventId);
+    expect(res1?.eventId).toEqual(event2.eventId);
+    expect(res2?.eventId).toEqual(event3.eventId);
   });
 
   it('should filter by before', async () => {
@@ -135,12 +135,12 @@ describe('HTTPEventLog', () => {
     const result = unwrap(await adapter.getEvents(mockGraphId, { before: thirdEvent.eventId }));
     expect(result).toHaveLength(2);
     const [res1, res2] = result;
-    const [evt1, evt2] = events;
-    if (evt1 === undefined || evt2 === undefined) {
+    const [event1, event2] = events;
+    if (event1 === undefined || event2 === undefined) {
       throw new Error('Expected events to be defined');
     }
-    expect(res1?.eventId).toEqual(evt1.eventId);
-    expect(res2?.eventId).toEqual(evt2.eventId);
+    expect(res1?.eventId).toEqual(event1.eventId);
+    expect(res2?.eventId).toEqual(event2.eventId);
   });
 
   it('should respect limit', async () => {
@@ -150,12 +150,12 @@ describe('HTTPEventLog', () => {
     const result = unwrap(await adapter.getEvents(mockGraphId, { limit: 2 }));
     expect(result).toHaveLength(2);
     const [res1, res2] = result;
-    const [evt1, evt2] = events;
-    if (evt1 === undefined || evt2 === undefined) {
+    const [event1, event2] = events;
+    if (event1 === undefined || event2 === undefined) {
       throw new Error('Expected events to be defined');
     }
-    expect(res1?.eventId).toEqual(evt1.eventId);
-    expect(res2?.eventId).toEqual(evt2.eventId);
+    expect(res1?.eventId).toEqual(event1.eventId);
+    expect(res2?.eventId).toEqual(event2.eventId);
   });
 
   it('should sort reverse', async () => {
@@ -165,13 +165,13 @@ describe('HTTPEventLog', () => {
     const result = unwrap(await adapter.getEvents(mockGraphId, { reverse: true }));
     expect(result).toHaveLength(3);
     const [res1, res2, res3] = result;
-    const [evt1, evt2, evt3] = events;
-    if (!evt1 || !evt2 || !evt3) {
+    const [event1, event2, event3] = events;
+    if (!event1 || !event2 || !event3) {
       throw new Error('Expected events to be defined');
     }
-    expect(res1?.eventId).toEqual(evt3.eventId);
-    expect(res2?.eventId).toEqual(evt2.eventId);
-    expect(res3?.eventId).toEqual(evt1.eventId);
+    expect(res1?.eventId).toEqual(event3.eventId);
+    expect(res2?.eventId).toEqual(event2.eventId);
+    expect(res3?.eventId).toEqual(event1.eventId);
   });
 
   it('should ignore duplicate events', async () => {

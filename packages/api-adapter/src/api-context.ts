@@ -30,7 +30,7 @@ export type ApiAdapterContext = Readonly<{
 }>;
 
 export const createApiAdapterContext = (
-  params: Readonly<{
+  parameters: Readonly<{
     graph: Graph;
     session?: GraphSession;
     eventLogStore?: EventLogStore;
@@ -38,9 +38,9 @@ export const createApiAdapterContext = (
     limits?: ApiLimits;
   }>,
 ): ApiAdapterContext => ({
-  graph: params.graph,
-  limits: params.limits ?? defaultApiLimits,
-  ...(params.session && { session: params.session }),
-  ...(params.eventLogStore && { eventLogStore: params.eventLogStore }),
-  ...(params.authContext && { authContext: params.authContext }),
+  graph: parameters.graph,
+  limits: parameters.limits ?? defaultApiLimits,
+  ...(parameters.session && { session: parameters.session }),
+  ...(parameters.eventLogStore && { eventLogStore: parameters.eventLogStore }),
+  ...(parameters.authContext && { authContext: parameters.authContext }),
 });

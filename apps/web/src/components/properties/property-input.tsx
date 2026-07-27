@@ -14,7 +14,7 @@ interface PropertyInputEvents {
   readonly onChange: (value: PropertyValue) => unknown;
 }
 
-type PropertyInputProps = PropertyInputData & PropertyInputEvents;
+type PropertyInputProperties = PropertyInputData & PropertyInputEvents;
 
 const getDefaultItem = (kind?: PropertyValueKind): ScalarValue => {
   switch (kind) {
@@ -55,7 +55,7 @@ function isScalar(v: PropertyValue): v is ScalarValue {
   return !Array.isArray(v);
 }
 
-export const PropertyInput: React.FC<PropertyInputProps> = ({
+export const PropertyInput: React.FC<PropertyInputProperties> = ({
   value,
   onChange,
   className,
@@ -90,7 +90,7 @@ export const PropertyInput: React.FC<PropertyInputProps> = ({
           <button
             type="button"
             onClick={() => {
-              const newItems = value.filter((_, i) => i !== index);
+              const newItems = value.filter((_, index_) => index_ !== index);
               onChange(newItems);
               return undefined;
             }}
@@ -125,7 +125,7 @@ export const PropertyInput: React.FC<PropertyInputProps> = ({
 const ScalarInput: React.FC<
   Readonly<{
     value: ScalarValue;
-    onChange: (val: ScalarValue) => unknown;
+    onChange: (value: ScalarValue) => unknown;
     className?: string | undefined;
     kind?: PropertyValueKind;
   }>
@@ -218,7 +218,7 @@ const ScalarInput: React.FC<
       );
     }
     case 'external-reference': {
-      const extVal =
+      const extensionValue =
         typeof value === 'object' && value !== null && 'graph' in value
           ? value
           : { graph: asGraphId(''), target: asNodeId('') };
@@ -226,9 +226,9 @@ const ScalarInput: React.FC<
         <div className={cn('space-y-1', className)}>
           <input
             type="text"
-            value={extVal.graph}
+            value={extensionValue.graph}
             onChange={(e) => {
-              onChange({ ...extVal, graph: asGraphId(e.target.value) });
+              onChange({ ...extensionValue, graph: asGraphId(e.target.value) });
               return undefined;
             }}
             className={baseInputClass}
@@ -236,9 +236,9 @@ const ScalarInput: React.FC<
           />
           <input
             type="text"
-            value={extVal.target}
+            value={extensionValue.target}
             onChange={(e) => {
-              onChange({ ...extVal, target: asNodeId(e.target.value) });
+              onChange({ ...extensionValue, target: asNodeId(e.target.value) });
               return undefined;
             }}
             className={baseInputClass}

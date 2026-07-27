@@ -39,19 +39,19 @@ export function incrementEventId(eventId: EventId): EventId {
   const hexChars = eventId.toLowerCase().split('');
 
   // eslint-disable-next-line functional/no-loop-statements
-  for (let i = hexChars.length - 1; i >= 0; i--) {
-    const char = hexChars[i];
+  for (let index = hexChars.length - 1; index >= 0; index--) {
+    const char = hexChars[index];
     if (!char || char === '-') continue;
 
     // eslint-disable-next-line unicorn/prefer-number-properties
-    const val = parseInt(char, 16);
-    if (val < 15) {
+    const value = parseInt(char, 16);
+    if (value < 15) {
       // eslint-disable-next-line functional/immutable-data
-      hexChars[i] = (val + 1).toString(16);
+      hexChars[index] = (value + 1).toString(16);
       return hexChars.join('') as EventId;
     }
     // eslint-disable-next-line functional/immutable-data
-    hexChars[i] = '0';
+    hexChars[index] = '0';
   }
 
   // Overflow (should not happen for valid UUIDs in our lifetime)

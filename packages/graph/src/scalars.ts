@@ -6,14 +6,7 @@ import type { Instant, PlainDate } from './temporal';
  * These are the atomic value types that can be stored.
  */
 export type ScalarValue =
-  | string
-  | number
-  | boolean
-  | Instant
-  | PlainDate
-  | NodeId
-  | ExternalReferenceValue
-  | null;
+  string | number | boolean | Instant | PlainDate | NodeId | ExternalReferenceValue | null;
 
 /**
  * Reference to a node in a different graph.

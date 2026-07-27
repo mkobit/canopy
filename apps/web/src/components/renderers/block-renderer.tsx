@@ -14,8 +14,8 @@ export interface BlockRendererProps {
   readonly visited?: ReadonlySet<NodeId>;
 }
 
-function isSystemRendererEntryPoint(val: string): val is SystemRendererEntryPoint {
-  return (['system:text', 'system:code', 'system:markdown'] as readonly string[]).includes(val);
+function isSystemRendererEntryPoint(value: string): value is SystemRendererEntryPoint {
+  return (['system:text', 'system:code', 'system:markdown'] as readonly string[]).includes(value);
 }
 
 function resolveDynamicContent(node: Node, graph: Graph): React.ReactNode | null {

@@ -1,13 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { usePlugin, type FieldDefinition } from '../../context/plugin-context';
 
-interface DialogHeaderProps {
+interface DialogHeaderProperties {
   readonly title: string;
   readonly description?: string | undefined;
   readonly onCancel: () => void;
 }
 
-const DialogHeader: React.FC<DialogHeaderProps> = ({ title, description, onCancel }) => (
+const DialogHeader: React.FC<DialogHeaderProperties> = ({ title, description, onCancel }) => (
   <div className="px-6 py-4 bg-[#121a25]/80 border-b border-[#2a3c54]/30 flex items-center justify-between">
     <div>
       <h2 className="text-base font-bold tracking-wide text-[#a2c9ff] uppercase font-display">
@@ -27,13 +27,13 @@ const DialogHeader: React.FC<DialogHeaderProps> = ({ title, description, onCance
   </div>
 );
 
-interface DialogFooterProps {
+interface DialogFooterProperties {
   readonly submitLabel: string;
   readonly onCancel: () => void;
   readonly isInvalid: boolean;
 }
 
-const DialogFooter: React.FC<DialogFooterProps> = ({ submitLabel, onCancel, isInvalid }) => (
+const DialogFooter: React.FC<DialogFooterProperties> = ({ submitLabel, onCancel, isInvalid }) => (
   <div className="px-6 py-4 bg-[#121a25]/50 border-t border-[#2a3c54]/30 flex justify-end gap-3">
     <button
       type="button"
@@ -53,13 +53,13 @@ const DialogFooter: React.FC<DialogFooterProps> = ({ submitLabel, onCancel, isIn
   </div>
 );
 
-interface FormFieldInputProps {
+interface FormFieldInputProperties {
   readonly field: FieldDefinition;
   readonly value: unknown;
-  readonly onChange: (val: unknown) => void;
+  readonly onChange: (value: unknown) => void;
 }
 
-const FormFieldInput: React.FC<FormFieldInputProps> = ({ field, value, onChange }) => {
+const FormFieldInput: React.FC<FormFieldInputProperties> = ({ field, value, onChange }) => {
   if (field.kind === 'boolean') {
     return (
       <label className="flex items-center gap-3 py-2 px-3 rounded-lg bg-[#121a25]/30 border border-[#2a3c54]/10 cursor-pointer hover:bg-[#121a25]/50 transition-colors">
@@ -107,39 +107,41 @@ const FormFieldInput: React.FC<FormFieldInputProps> = ({ field, value, onChange 
 
 const getInitialValues = (fields: readonly FieldDefinition[]): Record<string, unknown> => {
   const entries = fields.map((field) => {
-    const defaultVal = field.defaultValue === undefined ? '' : field.defaultValue;
-    const val = field.kind === 'boolean' && field.defaultValue === undefined ? false : defaultVal;
-    return [field.name, val] as const;
+    const defaultValue = field.defaultValue === undefined ? '' : field.defaultValue;
+    const value =
+      field.kind === 'boolean' && field.defaultValue === undefined ? false : defaultValue;
+    return [field.name, value] as const;
   });
   return Object.fromEntries(entries);
 };
 
 const updateDefaultValues = (
   fields: readonly FieldDefinition[],
-  prev: Record<string, unknown>,
+  previous: Record<string, unknown>,
 ): Record<string, unknown> => {
   const entries = fields.map((field) => {
-    const prevVal = prev[field.name];
-    const defaultVal = field.defaultValue === undefined ? '' : field.defaultValue;
-    const val = field.kind === 'boolean' && field.defaultValue === undefined ? false : defaultVal;
-    const finalVal = prevVal === undefined ? val : prevVal;
-    return [field.name, finalVal] as const;
+    const previousValue = previous[field.name];
+    const defaultValue = field.defaultValue === undefined ? '' : field.defaultValue;
+    const value =
+      field.kind === 'boolean' && field.defaultValue === undefined ? false : defaultValue;
+    const finalValue = previousValue === undefined ? value : previousValue;
+    return [field.name, finalValue] as const;
   });
-  return { ...prev, ...Object.fromEntries(entries) };
+  return { ...previous, ...Object.fromEntries(entries) };
 };
 
 export const WizardDialog: React.FC = () => {
   const { activeWizard, submitWizardStep, cancelWizard } = usePlugin();
-  const dialogRef = useRef<HTMLDialogElement>(null);
+  const dialogReference = useRef<HTMLDialogElement>(null);
   const [formValues, setFormValues] = useState<Record<string, unknown>>({});
 
   useEffect(() => {
-    const dialog = dialogRef.current;
+    const dialog = dialogReference.current;
     if (!dialog) return;
 
     if (activeWizard) {
       if (dialog.open) {
-        setFormValues((prev) => updateDefaultValues(activeWizard.stepSchema.fields, prev));
+        setFormValues((previous) => updateDefaultValues(activeWizard.stepSchema.fields, previous));
       } else {
         setFormValues(getInitialValues(activeWizard.stepSchema.fields));
         dialog.showModal();
@@ -158,9 +160,9 @@ export const WizardDialog: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const entries = stepSchema.fields.map((field) => {
-      const val = formValues[field.name];
-      const parsedVal = field.kind === 'number' ? Number(val) : val;
-      return [field.name, parsedVal] as const;
+      const value = formValues[field.name];
+      const parsedValue = field.kind === 'number' ? Number(value) : value;
+      return [field.name, parsedValue] as const;
     });
     void submitWizardStep(new Map<string, unknown>(entries));
   };
@@ -168,16 +170,16 @@ export const WizardDialog: React.FC = () => {
   const isFormInvalid = () =>
     stepSchema.fields.some((field) => {
       if (!field.required) return false;
-      const val = formValues[field.name];
+      const value = formValues[field.name];
       if (field.kind === 'boolean') return false;
-      if (val === undefined || val === null) return true;
-      if (typeof val === 'string' && val.trim() === '') return true;
-      return field.kind === 'number' && Number.isNaN(Number(val));
+      if (value === undefined || value === null) return true;
+      if (typeof value === 'string' && value.trim() === '') return true;
+      return field.kind === 'number' && Number.isNaN(Number(value));
     });
 
   return (
     <dialog
-      ref={dialogRef}
+      ref={dialogReference}
       onClose={cancelWizard}
       onCancel={cancelWizard}
       className="dark bg-[#0e141b] text-on-surface rounded-xl p-0 backdrop:bg-black/70 border border-[#2a3c54]/30 w-[min(36rem,90vw)] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
@@ -208,8 +210,8 @@ export const WizardDialog: React.FC = () => {
                 <FormFieldInput
                   field={field}
                   value={formValues[field.name]}
-                  onChange={(val) => {
-                    setFormValues((prev) => ({ ...prev, [field.name]: val }));
+                  onChange={(value) => {
+                    setFormValues((previous) => ({ ...previous, [field.name]: value }));
                   }}
                 />
               </div>

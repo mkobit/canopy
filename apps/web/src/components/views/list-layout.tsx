@@ -18,16 +18,16 @@ function groupNodes(nodes: readonly Node[], groupBy: string): readonly [string, 
     groupBy === 'type'
       ? node.type
       : (() => {
-          const val = node.properties.get(groupBy);
-          return typeof val === 'string' ? val : 'Ungrouped';
+          const value = node.properties.get(groupBy);
+          return typeof value === 'string' ? value : 'Ungrouped';
         })();
 
   const groups = reduce(
     nodes,
-    (acc: ReadonlyMap<string, readonly Node[]>, node) => {
+    (accumulator: ReadonlyMap<string, readonly Node[]>, node) => {
       const key = getKey(node);
-      const existing = acc.get(key) ?? [];
-      return new Map([...acc, [key, [...existing, node]]]);
+      const existing = accumulator.get(key) ?? [];
+      return new Map([...accumulator, [key, [...existing, node]]]);
     },
     new Map(),
   );

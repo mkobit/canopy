@@ -529,7 +529,7 @@ describe('validatePropertyByType', () => {
     let g = unwrap(createGraph(createGraphId(), 'Test Graph'));
 
     // Add a PropertyType node
-    const propType = createNode({
+    const propertyType = createNode({
       id: asNodeId('prop-age'),
       type: asTypeId('system:nodetype:property-type'),
       properties: {
@@ -539,9 +539,9 @@ describe('validatePropertyByType', () => {
       },
     });
 
-    g = unwrap(addNode(g, propType, { deviceId: DEVICE })).graph;
+    g = unwrap(addNode(g, propertyType, { deviceId: DEVICE })).graph;
 
-    return { graph: g, propTypeId: propType.id };
+    return { graph: g, propTypeId: propertyType.id };
   }
 
   it('returns valid: true when value matches property type kind', () => {
@@ -576,7 +576,7 @@ describe('validatePropertyByType', () => {
   it('returns error when PropertyType node is missing valueKind', () => {
     let g = unwrap(createGraph(createGraphId(), 'Test Graph'));
 
-    const invalidPropType = createNode({
+    const invalidPropertyType = createNode({
       id: asNodeId('prop-invalid'),
       type: asTypeId('system:nodetype:property-type'),
       properties: {
@@ -584,9 +584,9 @@ describe('validatePropertyByType', () => {
         namespace: 'user',
       },
     });
-    g = unwrap(addNode(g, invalidPropType, { deviceId: DEVICE })).graph;
+    g = unwrap(addNode(g, invalidPropertyType, { deviceId: DEVICE })).graph;
 
-    const result = validatePropertyByType(g, invalidPropType.id, 'some string');
+    const result = validatePropertyByType(g, invalidPropertyType.id, 'some string');
 
     expect(result.valid).toBe(false);
     expect(result.errors[0]?.message).toContain(`missing 'valueKind' property`);
@@ -594,15 +594,15 @@ describe('validatePropertyByType', () => {
 
   it('handles array values correctly', () => {
     let g = unwrap(createGraph(createGraphId(), 'Test Graph'));
-    const listPropType = createNode({
+    const listPropertyType = createNode({
       id: asNodeId('prop-list'),
       type: asTypeId('system:nodetype:property-type'),
       properties: { name: 'items', valueKind: 'list' },
     });
-    g = unwrap(addNode(g, listPropType, { deviceId: DEVICE })).graph;
+    g = unwrap(addNode(g, listPropertyType, { deviceId: DEVICE })).graph;
 
-    expect(validatePropertyByType(g, listPropType.id, ['a', 'b']).valid).toBe(true);
-    expect(validatePropertyByType(g, listPropType.id, 'not-a-list').valid).toBe(false);
+    expect(validatePropertyByType(g, listPropertyType.id, ['a', 'b']).valid).toBe(true);
+    expect(validatePropertyByType(g, listPropertyType.id, 'not-a-list').valid).toBe(false);
   });
 });
 

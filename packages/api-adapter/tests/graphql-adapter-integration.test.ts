@@ -17,8 +17,8 @@ const setupTestContext = async () => {
 
 describe('GraphQL adapter end-to-end integration', () => {
   it('executes GraphQL query and mutation operations end-to-end', async () => {
-    const ctx = await setupTestContext();
-    const adapter = createGraphQLAdapter(ctx);
+    const context = await setupTestContext();
+    const adapter = createGraphQLAdapter(context);
 
     const mutationRes = await adapter.execute({
       source: `
@@ -63,8 +63,8 @@ describe('GraphQL adapter end-to-end integration', () => {
   });
 
   it('subscribes to GraphQL event stream operations end-to-end', async () => {
-    const ctx = await setupTestContext();
-    const adapter = createGraphQLAdapter(ctx);
+    const context = await setupTestContext();
+    const adapter = createGraphQLAdapter(context);
 
     const subResult = await adapter.subscribe({
       source: `
@@ -103,6 +103,6 @@ describe('GraphQL adapter end-to-end integration', () => {
   });
 });
 
-function isAsyncIterable<T>(obj: unknown): obj is AsyncIterable<T> {
-  return obj != null && typeof (obj as AsyncIterable<T>)[Symbol.asyncIterator] === 'function';
+function isAsyncIterable<T>(object: unknown): object is AsyncIterable<T> {
+  return object != null && typeof (object as AsyncIterable<T>)[Symbol.asyncIterator] === 'function';
 }

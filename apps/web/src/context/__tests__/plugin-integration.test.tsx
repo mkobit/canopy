@@ -10,12 +10,12 @@ import type { ReactNode } from 'react';
 
 function useTestContext() {
   const { eventLog, isLoading: isStorageLoading } = useStorage();
-  const graphCtx = useGraph();
-  const pluginCtx = usePlugin();
+  const graphContext = useGraph();
+  const pluginContext = usePlugin();
   return {
     storageReady: !isStorageLoading && eventLog !== null,
-    graphCtx,
-    pluginCtx,
+    graphCtx: graphContext,
+    pluginCtx: pluginContext,
   };
 }
 

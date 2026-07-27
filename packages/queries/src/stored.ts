@@ -22,7 +22,7 @@ import type { Query } from './model';
 import { executeQuery } from './engine';
 import { mapValues, isPlainObject, isString } from 'remeda';
 
-const scalar: (val: string | number | boolean) => Result<ScalarValue, Error> = ok;
+const scalar: (value: string | number | boolean) => Result<ScalarValue, Error> = ok;
 
 // Helper to create a list property
 function list(items: readonly string[]): PropertyValue {
@@ -44,39 +44,39 @@ export function saveQueryDefinition(
 ): Result<{ graph: Graph; nodeId: NodeId }, Error> {
   const nodeId = createNodeId();
 
-  const nameVal = scalar(name);
-  if (!nameVal.ok) return err(nameVal.error);
+  const nameValue = scalar(name);
+  if (!nameValue.ok) return err(nameValue.error);
 
   const defVal = scalar(JSON.stringify(query));
   if (!defVal.ok) return err(defVal.error);
 
   const baseProperties: readonly (readonly [string, PropertyValue])[] = [
-    ['name', nameVal.value],
+    ['name', nameValue.value],
     ['definition', defVal.value],
   ];
 
-  const descVal = options.description ? scalar(options.description) : undefined;
-  if (descVal && !descVal.ok) return err(descVal.error);
+  const descValue = options.description ? scalar(options.description) : undefined;
+  if (descValue && !descValue.ok) return err(descValue.error);
 
-  const descriptionProp: readonly (readonly [string, PropertyValue])[] = descVal
-    ? [['description', descVal.value]]
+  const descriptionProperty: readonly (readonly [string, PropertyValue])[] = descValue
+    ? [['description', descValue.value]]
     : [];
 
-  const nodeTypesProp: readonly (readonly [string, PropertyValue])[] =
+  const nodeTypesProperty: readonly (readonly [string, PropertyValue])[] =
     options.nodeTypes && options.nodeTypes.length > 0
       ? [['nodeTypes', list(options.nodeTypes)]]
       : [];
 
-  const parametersProp: readonly (readonly [string, PropertyValue])[] =
+  const parametersProperty: readonly (readonly [string, PropertyValue])[] =
     options.parameters && options.parameters.length > 0
       ? [['parameters', list(options.parameters)]]
       : [];
 
   const properties = new Map([
     ...baseProperties,
-    ...descriptionProp,
-    ...nodeTypesProp,
-    ...parametersProp,
+    ...descriptionProperty,
+    ...nodeTypesProperty,
+    ...parametersProperty,
   ]);
 
   const node: Node = {
@@ -108,14 +108,14 @@ export function getQueryDefinition(graph: Graph, nodeId: NodeId): Result<Query, 
     return err(new Error(`Node ${nodeId} is not a Query Definition`));
   }
 
-  const definitionProp = node.properties.get('definition');
-  if (typeof definitionProp !== 'string') {
+  const definitionProperty = node.properties.get('definition');
+  if (typeof definitionProperty !== 'string') {
     return err(new Error(`Query definition node ${nodeId} has invalid definition property`));
   }
 
   return fromThrowable(
     () => {
-      return JSON.parse(definitionProp) as Query;
+      return JSON.parse(definitionProperty) as Query;
     },
     (e) => new Error(`Failed to parse query definition for node ${nodeId}: ${e}`),
   );
@@ -127,34 +127,34 @@ export function listQueryDefinitions(graph: Graph): readonly Node[] {
 
 // Helper to substitute parameters in the query structure
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function substituteParams(obj: any, params: Record<string, unknown>): any {
-  if (Array.isArray(obj)) {
+function substituteParameters(object: any, parameters: Record<string, unknown>): any {
+  if (Array.isArray(object)) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return obj.map((item: any) => substituteParams(item, params));
+    return object.map((item: any) => substituteParameters(item, parameters));
   }
-  if (isPlainObject(obj)) {
-    return mapValues(obj, (value) => {
+  if (isPlainObject(object)) {
+    return mapValues(object, (value) => {
       if (isString(value) && value.startsWith('$')) {
-        const paramName = value.slice(1);
-        if (Object.hasOwn(params, paramName)) {
-          return params[paramName];
+        const parameterName = value.slice(1);
+        if (Object.hasOwn(parameters, parameterName)) {
+          return parameters[parameterName];
         }
       }
-      return substituteParams(value, params);
+      return substituteParameters(value, parameters);
     });
   }
-  return obj;
+  return object;
 }
 
 export function executeStoredQuery(
   graph: Graph,
   queryNodeId: NodeId,
-  params: Record<string, unknown> = {},
+  parameters: Record<string, unknown> = {},
 ): Result<QueryResult, Error> {
   const queryResult = getQueryDefinition(graph, queryNodeId);
   if (!queryResult.ok) return err(queryResult.error);
 
   const query = queryResult.value;
-  const substitutedQuery = substituteParams(query, params) as Query;
+  const substitutedQuery = substituteParameters(query, parameters) as Query;
   return executeQuery(graph, substitutedQuery);
 }

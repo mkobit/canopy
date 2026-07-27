@@ -111,8 +111,8 @@ describe('listPropertyTypesIn / listAllPropertyTypes', () => {
       ),
     );
 
-    const userProps = listPropertyTypesIn(result.graph, 'user');
-    expect(userProps.map((p) => p.name)).toContain('priority');
+    const userProperties = listPropertyTypesIn(result.graph, 'user');
+    expect(userProperties.map((p) => p.name)).toContain('priority');
     expect(listPropertyTypesIn(result.graph, 'system').map((p) => p.name)).not.toContain(
       'priority',
     );

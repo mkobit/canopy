@@ -5,7 +5,7 @@ import type { Edge } from './edge';
 import type { Result } from './result';
 import type { Instant } from './temporal';
 import type { DeviceId } from './identifiers';
-import { ok, err, fromThrowable, unwrap } from './result';
+import { ok, err as error, fromThrowable, unwrap } from './result';
 import { incrementalUpdateIndexes } from './indexes';
 
 /**
@@ -38,7 +38,7 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
         switch (event.type) {
           case 'NodeCreated': {
             if (graph.nodes.has(event.id)) {
-              return err(new Error(`Node with ID ${event.id} already exists`));
+              return error(new Error(`Node with ID ${event.id} already exists`));
             }
 
             const node: Node = {
@@ -76,7 +76,7 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
           case 'NodePropertiesUpdated': {
             const node = graph.nodes.get(event.id);
             if (!node) {
-              return err(new Error(`Node with ID ${event.id} not found`));
+              return error(new Error(`Node with ID ${event.id} not found`));
             }
 
             const isEventWins = lwwWins(
@@ -162,13 +162,13 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
 
           case 'EdgeCreated': {
             if (graph.edges.has(event.id)) {
-              return err(new Error(`Edge with ID ${event.id} already exists`));
+              return error(new Error(`Edge with ID ${event.id} already exists`));
             }
             if (!graph.nodes.has(event.source)) {
-              return err(new Error(`Source node ${event.source} not found`));
+              return error(new Error(`Source node ${event.source} not found`));
             }
             if (!graph.nodes.has(event.target)) {
-              return err(new Error(`Target node ${event.target} not found`));
+              return error(new Error(`Target node ${event.target} not found`));
             }
 
             const edge: Edge = {
@@ -208,7 +208,7 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
           case 'EdgePropertiesUpdated': {
             const edge = graph.edges.get(event.id);
             if (!edge) {
-              return err(new Error(`Edge with ID ${event.id} not found`));
+              return error(new Error(`Edge with ID ${event.id} not found`));
             }
 
             const isEventWins = lwwWins(
@@ -291,7 +291,7 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
           }
           default: {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            return err(new Error(`Unknown event type: ${(event as any).type}`));
+            return error(new Error(`Unknown event type: ${(event as any).type}`));
           }
         }
       },

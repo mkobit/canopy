@@ -12,8 +12,8 @@ import { listNamespaces } from '../../utils/schema';
 
 function useTestContext() {
   const { eventLog, isLoading: isStorageLoading } = useStorage();
-  const graphCtx = useGraph();
-  return { storageReady: !isStorageLoading && eventLog !== null, ...graphCtx };
+  const graphContext = useGraph();
+  return { storageReady: !isStorageLoading && eventLog !== null, ...graphContext };
 }
 
 const wrapper = ({ children }: { children: ReactNode }): React.JSX.Element => (

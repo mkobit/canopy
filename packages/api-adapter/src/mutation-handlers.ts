@@ -18,8 +18,8 @@ import type { ApiAdapterContext } from './api-context';
 
 // Converts a properties record to a ReadonlyMap for domain events.
 const convertPropertiesToMap = (
-  props: Readonly<Record<string, PropertyValue>>,
-): ReadonlyMap<string, PropertyValue> => new Map(Object.entries(props));
+  properties: Readonly<Record<string, PropertyValue>>,
+): ReadonlyMap<string, PropertyValue> => new Map(Object.entries(properties));
 
 // Creates a new graph node within a session context.
 export const executeCreateNode = async (

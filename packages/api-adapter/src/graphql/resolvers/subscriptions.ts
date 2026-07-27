@@ -15,25 +15,24 @@ export type EventStreamSubscriptionValue = Readonly<{
 
 export const createSubscriptionResolvers = (context: ApiAdapterContext, _eventBus?: EventBus) => ({
   eventStream: {
-    subscribe: (_parent: unknown, args: EventStreamSubscriptionArgs) => {
+    subscribe: (_parent: unknown, arguments_: EventStreamSubscriptionArgs) => {
       const subscriber = createEventStreamSubscriber(context, {
-        bufferCapacity: args.bufferCapacity ?? context.limits?.maxStreamBuffer ?? 100,
+        bufferCapacity: arguments_.bufferCapacity ?? context.limits?.maxStreamBuffer ?? 100,
       });
 
       // eslint-disable-next-line functional/no-let -- async iterator queue
       let messageQueue: readonly EventStreamMessage[] = [];
       // eslint-disable-next-line functional/no-let -- async iterator resolver callback
       let pendingResolve:
-        | ((res: Readonly<IteratorResult<EventStreamSubscriptionValue>>) => void)
-        | null = null;
+        ((res: Readonly<IteratorResult<EventStreamSubscriptionValue>>) => void) | null = null;
       // eslint-disable-next-line functional/no-let -- async iterator termination flag
       let isDone = false;
 
-      const unsubscribe = subscriber.subscribe((msg: EventStreamMessage) => {
+      const unsubscribe = subscriber.subscribe((message: EventStreamMessage) => {
         if (isDone) return;
 
         const result: Readonly<IteratorResult<EventStreamSubscriptionValue>> = {
-          value: { eventStream: msg },
+          value: { eventStream: message },
           done: false,
         };
 
@@ -42,7 +41,7 @@ export const createSubscriptionResolvers = (context: ApiAdapterContext, _eventBu
           pendingResolve = null;
           resolve(result);
         } else {
-          messageQueue = [...messageQueue, msg];
+          messageQueue = [...messageQueue, message];
         }
       });
 

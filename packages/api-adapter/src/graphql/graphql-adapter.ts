@@ -5,7 +5,7 @@ import { createMutationResolvers } from './resolvers/mutations';
 import { createQueryResolvers } from './resolvers/queries';
 import {
   createSubscriptionResolvers,
-  type EventStreamSubscriptionArgs,
+  type EventStreamSubscriptionArgs as EventStreamSubscriptionArguments,
 } from './resolvers/subscriptions';
 import { buildGraphQLSchema } from './schema';
 
@@ -42,16 +42,20 @@ export const createGraphQLAdapter = (
   const subscriptionResolvers = createSubscriptionResolvers(context, options?.eventBus);
 
   const adaptedOperations = Object.fromEntries(
-    Object.entries({ ...queryResolvers, ...mutationResolvers }).map(([key, fn]) => [
+    Object.entries({ ...queryResolvers, ...mutationResolvers }).map(([key, function_]) => [
       key,
-      (args: unknown) => (fn as (parent: unknown, args: unknown) => unknown)(null, args),
+      (arguments_: unknown) =>
+        (function_ as (parent: unknown, arguments_: unknown) => unknown)(null, arguments_),
     ]),
   );
 
   const rootValue = {
     ...adaptedOperations,
-    eventStream: (args: unknown) =>
-      subscriptionResolvers.eventStream.subscribe(null, args as EventStreamSubscriptionArgs),
+    eventStream: (arguments_: unknown) =>
+      subscriptionResolvers.eventStream.subscribe(
+        null,
+        arguments_ as EventStreamSubscriptionArguments,
+      ),
   };
 
   return {

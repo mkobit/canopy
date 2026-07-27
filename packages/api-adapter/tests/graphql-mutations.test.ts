@@ -21,9 +21,9 @@ const setupTestContext = async () => {
 describe('GraphQL mutation resolvers & actor delegation', () => {
   describe('validateActorDelegation', () => {
     it('returns DIRECT_USER when actor input is omitted or USER', async () => {
-      const ctx = await setupTestContext();
+      const context = await setupTestContext();
 
-      const defaultActor = validateActorDelegation(ctx, undefined);
+      const defaultActor = validateActorDelegation(context, undefined);
       expect(defaultActor).toEqual({
         principalId: 'user:default',
         actingId: 'user:default',
@@ -31,14 +31,14 @@ describe('GraphQL mutation resolvers & actor delegation', () => {
         approvalState: 'DIRECT_USER',
       });
 
-      const userActor = validateActorDelegation(ctx, { actorType: 'USER' });
+      const userActor = validateActorDelegation(context, { actorType: 'USER' });
       expect(userActor.approvalState).toBe('DIRECT_USER');
     });
 
     it('returns APPROVED when AGENT or PLUGIN provides valid delegation token', async () => {
-      const ctx = await setupTestContext();
+      const context = await setupTestContext();
 
-      const agentActor = validateActorDelegation(ctx, {
+      const agentActor = validateActorDelegation(context, {
         actorType: 'AGENT',
         actingId: 'agent:123',
         delegationToken: 'valid-token',
@@ -52,7 +52,7 @@ describe('GraphQL mutation resolvers & actor delegation', () => {
         approvalState: 'APPROVED',
       });
 
-      const pluginActor = validateActorDelegation(ctx, {
+      const pluginActor = validateActorDelegation(context, {
         actorType: 'PLUGIN',
         delegationToken: 'token-456',
       });
@@ -62,21 +62,21 @@ describe('GraphQL mutation resolvers & actor delegation', () => {
     });
 
     it('throws AGENT_APPROVAL_REQUIRED when delegation token is missing or invalid', async () => {
-      const ctx = await setupTestContext();
+      const context = await setupTestContext();
 
       expect(() => {
-        validateActorDelegation(ctx, { actorType: 'AGENT' });
+        validateActorDelegation(context, { actorType: 'AGENT' });
       }).toThrow('Agent execution requires a valid delegation token');
 
       expect(() => {
-        validateActorDelegation(ctx, { actorType: 'PLUGIN', delegationToken: 'invalid' });
+        validateActorDelegation(context, { actorType: 'PLUGIN', delegationToken: 'invalid' });
       }).toThrow('Agent execution requires a valid delegation token');
     });
 
     it('returns SYSTEM_PERMITTED for SYSTEM or WORKFLOW actor types', async () => {
-      const ctx = await setupTestContext();
+      const context = await setupTestContext();
 
-      const systemActor = validateActorDelegation(ctx, { actorType: 'SYSTEM' });
+      const systemActor = validateActorDelegation(context, { actorType: 'SYSTEM' });
       expect(systemActor).toEqual({
         principalId: 'user:default',
         actingId: 'system:kernel',
@@ -88,8 +88,8 @@ describe('GraphQL mutation resolvers & actor delegation', () => {
 
   describe('createMutationResolvers', () => {
     it('executes createNode mutation successfully', async () => {
-      const ctx = await setupTestContext();
-      const resolvers = createMutationResolvers(ctx);
+      const context = await setupTestContext();
+      const resolvers = createMutationResolvers(context);
 
       const result = await resolvers.createNode(null, {
         input: {
@@ -106,8 +106,8 @@ describe('GraphQL mutation resolvers & actor delegation', () => {
     });
 
     it('executes updateNodeProperties mutation successfully', async () => {
-      const ctx = await setupTestContext();
-      const resolvers = createMutationResolvers(ctx);
+      const context = await setupTestContext();
+      const resolvers = createMutationResolvers(context);
 
       await resolvers.createNode(null, {
         input: { id: 'node-1', type: 'doc', properties: { title: 'Initial' } },
@@ -122,8 +122,8 @@ describe('GraphQL mutation resolvers & actor delegation', () => {
     });
 
     it('executes createEdge and deleteEdge mutations successfully', async () => {
-      const ctx = await setupTestContext();
-      const resolvers = createMutationResolvers(ctx);
+      const context = await setupTestContext();
+      const resolvers = createMutationResolvers(context);
 
       await resolvers.createNode(null, { input: { id: 'n1', type: 'doc', properties: {} } });
       await resolvers.createNode(null, { input: { id: 'n2', type: 'doc', properties: {} } });
@@ -142,8 +142,8 @@ describe('GraphQL mutation resolvers & actor delegation', () => {
     });
 
     it('executes deleteNode mutation successfully', async () => {
-      const ctx = await setupTestContext();
-      const resolvers = createMutationResolvers(ctx);
+      const context = await setupTestContext();
+      const resolvers = createMutationResolvers(context);
 
       await resolvers.createNode(null, { input: { id: 'n1', type: 'doc', properties: {} } });
 
@@ -155,8 +155,8 @@ describe('GraphQL mutation resolvers & actor delegation', () => {
     });
 
     it('throws GraphQLError when mutation fails', async () => {
-      const ctx = await setupTestContext();
-      const resolvers = createMutationResolvers(ctx);
+      const context = await setupTestContext();
+      const resolvers = createMutationResolvers(context);
 
       await expect(
         resolvers.updateNodeProperties(null, {

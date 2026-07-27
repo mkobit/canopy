@@ -4,7 +4,7 @@ import type { GraphEvent } from './events';
 import type { NodeId } from './identifiers';
 import type { Node } from './node';
 import type { Result } from './result';
-import { ok, err } from './result';
+import { ok, err as error } from './result';
 import { projectDraftOverlay, applyDraftEvents } from './incremental-projection';
 
 export type DraftError =
@@ -57,7 +57,7 @@ export function createDraftSession(parentSession: GraphSession): DraftSession {
     const parentGraph = parentSession.graph();
     const result = applyDraftEvents(parentGraph, stagedEvents, events);
     if (!result.ok) {
-      return err({ type: 'validation-failure', message: result.error.message });
+      return error({ type: 'validation-failure', message: result.error.message });
     }
     stagedEvents = result.value;
     return ok(undefined);
@@ -67,12 +67,12 @@ export function createDraftSession(parentSession: GraphSession): DraftSession {
     const parentGraph = parentSession.graph();
     const currentRevision = parentGraph.metadata.modified;
     if (currentRevision !== expectedParentRevision) {
-      return err({ type: 'concurrent-modification' });
+      return error({ type: 'concurrent-modification' });
     }
 
     const commitResult = await parentSession.commit(stagedEvents);
     if (!commitResult.ok) {
-      return err({ type: 'storage-error', message: commitResult.error.message });
+      return error({ type: 'storage-error', message: commitResult.error.message });
     }
 
     stagedEvents = [];
@@ -93,7 +93,7 @@ export function createDraftSession(parentSession: GraphSession): DraftSession {
     const currentGraph = graph();
     const node = currentGraph.nodes.get(id);
     if (!node) {
-      return err({ type: 'node-not-found' });
+      return error({ type: 'node-not-found' });
     }
     return ok(node);
   };

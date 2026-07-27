@@ -4,7 +4,7 @@ import { cn } from '../../utils/cn';
 import { Temporal } from 'temporal-polyfill';
 import { fromThrowable } from '@canopy/graph';
 
-interface PropertyDisplayProps {
+interface PropertyDisplayProperties {
   readonly value: PropertyValue;
   readonly className?: string;
   readonly kind?: PropertyValueKind; // Optional override or context
@@ -14,7 +14,11 @@ function isScalar(v: PropertyValue): v is ScalarValue {
   return !Array.isArray(v);
 }
 
-export const PropertyDisplay: React.FC<PropertyDisplayProps> = ({ value, className, kind }) => {
+export const PropertyDisplay: React.FC<PropertyDisplayProperties> = ({
+  value,
+  className,
+  kind,
+}) => {
   if (!isScalar(value)) {
     return (
       <ul className={cn('list-disc pl-4', className)}>
@@ -109,7 +113,7 @@ function inferKind(value: ScalarValue): PropertyValueKind {
   return 'text';
 }
 
-function tryFormatInstant(val: string): string {
-  const result = fromThrowable(() => Temporal.Instant.from(val).toLocaleString());
-  return result.ok ? result.value : val;
+function tryFormatInstant(value: string): string {
+  const result = fromThrowable(() => Temporal.Instant.from(value).toLocaleString());
+  return result.ok ? result.value : value;
 }

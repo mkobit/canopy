@@ -101,13 +101,13 @@ describe('IpcServer integration and socket lifecycle', () => {
     await new Promise((resolve) => client.on('connect', resolve));
 
     // 1. Handshake
-    const handshakeReq = JSON.stringify({
+    const handshakeRequest = JSON.stringify({
       jsonrpc: '2.0',
       method: IPC_METHODS.HANDSHAKE,
       params: { clientVersion: '0.1.0' },
       id: 1,
     });
-    client.write(`${handshakeReq}\n`);
+    client.write(`${handshakeRequest}\n`);
 
     const response1 = await new Promise<string>((resolve) => {
       client.once('data', (chunk) => resolve(chunk.toString('utf8').trim()));
@@ -118,7 +118,7 @@ describe('IpcServer integration and socket lifecycle', () => {
     expect(parsed1.result.capabilities).toContain('queries');
 
     // 2. Mutation: createNode
-    const createNodeReq = JSON.stringify({
+    const createNodeRequest = JSON.stringify({
       jsonrpc: '2.0',
       method: IPC_METHODS.MUTATION_CREATE_NODE,
       params: {
@@ -128,7 +128,7 @@ describe('IpcServer integration and socket lifecycle', () => {
       },
       id: 2,
     });
-    client.write(`${createNodeReq}\n`);
+    client.write(`${createNodeRequest}\n`);
 
     const response2 = await new Promise<string>((resolve) => {
       client.once('data', (chunk) => resolve(chunk.toString('utf8').trim()));
@@ -138,13 +138,13 @@ describe('IpcServer integration and socket lifecycle', () => {
     expect(parsed2.result.id).toBe('node_test_1');
 
     // 3. Query: getNode
-    const getNodeReq = JSON.stringify({
+    const getNodeRequest = JSON.stringify({
       jsonrpc: '2.0',
       method: IPC_METHODS.QUERY_GET_NODE,
       params: { id: 'node_test_1' },
       id: 3,
     });
-    client.write(`${getNodeReq}\n`);
+    client.write(`${getNodeRequest}\n`);
 
     const response3 = await new Promise<string>((resolve) => {
       client.once('data', (chunk) => resolve(chunk.toString('utf8').trim()));
@@ -169,13 +169,13 @@ describe('IpcServer integration and socket lifecycle', () => {
     const client = net.connect(socketPath);
     await new Promise((resolve) => client.on('connect', resolve));
 
-    const subReq = JSON.stringify({
+    const subRequest = JSON.stringify({
       jsonrpc: '2.0',
       method: IPC_METHODS.EVENT_STREAM_SUBSCRIBE,
       params: {},
       id: 10,
     });
-    client.write(`${subReq}\n`);
+    client.write(`${subRequest}\n`);
 
     const subResp = await new Promise<string>((resolve) => {
       client.once('data', (chunk) => resolve(chunk.toString('utf8').trim()));
@@ -196,14 +196,14 @@ describe('IpcServer integration and socket lifecycle', () => {
     const client = net.connect(socketPath);
     await new Promise((resolve) => client.on('connect', resolve));
 
-    const additiveReq = JSON.stringify({
+    const additiveRequest = JSON.stringify({
       jsonrpc: '2.0',
       method: IPC_METHODS.HANDSHAKE,
       params: { clientVersion: '0.1.0', futureOption: 'additive' },
       id: 99,
       clientTraceId: 'trace-12345',
     });
-    client.write(`${additiveReq}\n`);
+    client.write(`${additiveRequest}\n`);
 
     const resp = await new Promise<string>((resolve) => {
       client.once('data', (chunk) => resolve(chunk.toString('utf8').trim()));

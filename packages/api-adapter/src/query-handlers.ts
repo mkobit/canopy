@@ -183,8 +183,8 @@ export const executePropertyLookup = (
   }
 
   if (propertyKey !== undefined) {
-    const propValue = entity.properties.get(propertyKey);
-    if (propValue === undefined) {
+    const propertyValue = entity.properties.get(propertyKey);
+    if (propertyValue === undefined) {
       return err(
         createApiAdapterError(
           'NOT_FOUND',
@@ -194,14 +194,14 @@ export const executePropertyLookup = (
     }
     return ok({
       entityId,
-      properties: { [propertyKey]: propValue },
+      properties: { [propertyKey]: propertyValue },
     });
   }
 
-  const allProps = Object.fromEntries(entity.properties);
+  const allProperties = Object.fromEntries(entity.properties);
   return ok({
     entityId,
-    properties: allProps,
+    properties: allProperties,
   });
 };
 

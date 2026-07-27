@@ -5,7 +5,7 @@ import type { Graph } from './graph';
 import type { PropertyValue } from './properties';
 import type { Result } from './result';
 import { asTypeId, createInstant, createEdgeId } from './factories';
-import { fromThrowable, err } from './result';
+import { fromThrowable, err as error } from './result';
 import { addEdge } from './ops/edge';
 import { updateNode } from './ops/node';
 
@@ -14,7 +14,7 @@ export class WorkflowEngine {
   public executeAction(
     graph: Graph,
     action: string,
-    params: Readonly<{
+    parameters: Readonly<{
       type?: TypeId;
       source?: NodeId;
       target?: NodeId;
@@ -25,16 +25,16 @@ export class WorkflowEngine {
     }>,
   ): Result<GraphResult<Graph>, Error> {
     if (action === 'create-edge') {
-      if (!params.type || !params.source || !params.target) {
-        return err(new Error("Missing required parameters for 'create-edge' action"));
+      if (!parameters.type || !parameters.source || !parameters.target) {
+        return error(new Error("Missing required parameters for 'create-edge' action"));
       }
 
       const edge = {
         id: createEdgeId(),
-        type: params.type,
-        source: params.source,
-        target: params.target,
-        properties: new Map(params.properties),
+        type: parameters.type,
+        source: parameters.source,
+        target: parameters.target,
+        properties: new Map(parameters.properties),
         metadata: {
           created: createInstant(),
           modified: createInstant(),
@@ -48,16 +48,16 @@ export class WorkflowEngine {
     }
 
     if (action === 'set-property') {
-      if (!params.nodeId || !params.key || params.value === undefined) {
-        return err(new Error("Missing required parameters for 'set-property' action"));
+      if (!parameters.nodeId || !parameters.key || parameters.value === undefined) {
+        return error(new Error("Missing required parameters for 'set-property' action"));
       }
 
       return updateNode(
         graph,
-        params.nodeId,
+        parameters.nodeId,
         (node) => {
           const properties = new Map(node.properties);
-          properties.set(params.key as string, params.value as PropertyValue);
+          properties.set(parameters.key as string, parameters.value as PropertyValue);
           return {
             ...node,
             properties,
@@ -67,7 +67,7 @@ export class WorkflowEngine {
       );
     }
 
-    return err(new Error(`Unknown action: ${action}`));
+    return error(new Error(`Unknown action: ${action}`));
   }
 }
 
@@ -77,12 +77,12 @@ export class WorkflowTriggerRegistry {
 
   // eslint-disable-next-line functional/no-return-void
   public addTrigger(node: Node): void {
-    const conditionStr = node.properties.get('condition');
-    if (typeof conditionStr !== 'string') {
+    const conditionString = node.properties.get('condition');
+    if (typeof conditionString !== 'string') {
       return;
     }
 
-    const parsedResult = fromThrowable(() => JSON.parse(conditionStr));
+    const parsedResult = fromThrowable(() => JSON.parse(conditionString));
     if (!parsedResult.ok) {
       return;
     }

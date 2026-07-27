@@ -7,7 +7,7 @@ import type { Instant } from './temporal';
 import { Temporal } from 'temporal-polyfill';
 import { lwwWins, projectGraph } from './projection';
 import type { Result } from './result';
-import { ok, err } from './result';
+import { ok, err as error } from './result';
 import { validateNode, validateEdge } from './validation';
 import { incrementalUpdateIndexes } from './indexes';
 
@@ -455,18 +455,20 @@ function dependenciesSatisfied(
   for (const event of events) {
     // eslint-disable-next-line functional/no-loop-statements
     for (const key of dependencyKeysFor(event)) {
-      if (!createdInGroup.has(key)) {
-        const separatorIndex = key.indexOf(':');
-        const kind = key.slice(0, separatorIndex);
-        const id = key.slice(separatorIndex + 1);
-        const isSatisfied =
-          kind === 'node'
-            ? (nodeMeta.get(id as NodeId)?.exists ?? graph.nodes.has(id as NodeId))
-            : (edgeMeta.get(id as EdgeId)?.exists ?? graph.edges.has(id as EdgeId));
-        if (!isSatisfied) {
-          // eslint-disable-next-line functional/immutable-data
-          unmet.add(key);
-        }
+      if (createdInGroup.has(key)) {
+        continue;
+      }
+
+      const separatorIndex = key.indexOf(':');
+      const kind = key.slice(0, separatorIndex);
+      const id = key.slice(separatorIndex + 1);
+      const isSatisfied =
+        kind === 'node'
+          ? (nodeMeta.get(id as NodeId)?.exists ?? graph.nodes.has(id as NodeId))
+          : (edgeMeta.get(id as EdgeId)?.exists ?? graph.edges.has(id as EdgeId));
+      if (!isSatisfied) {
+        // eslint-disable-next-line functional/immutable-data
+        unmet.add(key);
       }
     }
   }
@@ -765,7 +767,7 @@ function validateDraftEvents(graph: Graph, events: readonly GraphEvent[]): Resul
     const result = validateNode(dryRunGraph, node);
     if (!result.valid) {
       const detail = result.errors.map((e) => e.message).join(', ');
-      return err(new Error(`Node ${id} failed validation: ${detail}`));
+      return error(new Error(`Node ${id} failed validation: ${detail}`));
     }
   }
 
@@ -776,7 +778,7 @@ function validateDraftEvents(graph: Graph, events: readonly GraphEvent[]): Resul
     const result = validateEdge(dryRunGraph, edge);
     if (!result.valid) {
       const detail = result.errors.map((e) => e.message).join(', ');
-      return err(new Error(`Edge ${id} failed validation: ${detail}`));
+      return error(new Error(`Edge ${id} failed validation: ${detail}`));
     }
   }
 

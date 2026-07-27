@@ -2,23 +2,23 @@ import type { Result } from '@canopy/graph';
 import { showAlert } from './dialogs';
 
 export const toHandler = <A extends unknown[]>(
-  fn: (...args: A) => unknown,
-): ((...args: A) => undefined) => {
+  function_: (...arguments_: A) => unknown,
+): ((...arguments_: A) => undefined) => {
   // eslint-disable-next-line functional/functional-parameters
-  return (...args: A) => {
-    fn(...args);
+  return (...arguments_: A) => {
+    function_(...arguments_);
     return;
   };
 };
 
 export const withResultAlert = <A extends unknown[], T, E extends Error>(
-  fn: (...args: A) => Promise<Result<T, E>> | Result<T, E>,
+  function_: (...arguments_: A) => Promise<Result<T, E>> | Result<T, E>,
   errorMessage: string,
-  onSuccess?: (val: T) => unknown,
-): ((...args: A) => Promise<undefined>) => {
+  onSuccess?: (value: T) => unknown,
+): ((...arguments_: A) => Promise<undefined>) => {
   // eslint-disable-next-line functional/functional-parameters
-  return async (...args: A) => {
-    const result = await fn(...args);
+  return async (...arguments_: A) => {
+    const result = await function_(...arguments_);
     if (!result.ok) {
       console.error(errorMessage, result.error);
       showAlert(errorMessage + (result.error.message ? ': ' + result.error.message : ''));

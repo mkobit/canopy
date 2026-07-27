@@ -29,17 +29,17 @@ export interface GraphRegistry {
   readonly delete: (id: string) => Promise<Result<void, Error>>;
 }
 
-export const createGraphRegistry = (dbName = 'canopy-registry'): GraphRegistry => {
-  let db = null as IDBPDatabase<GraphRegistryDB> | null;
+export const createGraphRegistry = (databaseName = 'canopy-registry'): GraphRegistry => {
+  let database = null as IDBPDatabase<GraphRegistryDB> | null;
 
   return {
     init: async (): Promise<Result<void, Error>> => {
-      if (db) return ok(undefined);
+      if (database) return ok(undefined);
       return fromAsyncThrowable(async () => {
-        db = await openDB<GraphRegistryDB>(dbName, 1, {
-          upgrade(dbToUpgrade) {
-            if (!dbToUpgrade.objectStoreNames.contains('graphs')) {
-              dbToUpgrade.createObjectStore('graphs', { keyPath: 'id' });
+        database = await openDB<GraphRegistryDB>(databaseName, 1, {
+          upgrade(databaseToUpgrade) {
+            if (!databaseToUpgrade.objectStoreNames.contains('graphs')) {
+              databaseToUpgrade.createObjectStore('graphs', { keyPath: 'id' });
             }
             return;
           },
@@ -50,34 +50,34 @@ export const createGraphRegistry = (dbName = 'canopy-registry'): GraphRegistry =
 
     close: async (): Promise<Result<void, Error>> => {
       return fromAsyncThrowable(async () => {
-        if (db) {
-          db.close();
-          db = null;
+        if (database) {
+          database.close();
+          database = null;
         }
         return;
       });
     },
 
     list: async (): Promise<Result<readonly GraphRegistryEntry[], Error>> => {
-      if (!db) return err(new Error('Database not initialized'));
-      const dbInstance = db;
-      return fromAsyncThrowable(async () => dbInstance.getAll('graphs'));
+      if (!database) return err(new Error('Database not initialized'));
+      const databaseInstance = database;
+      return fromAsyncThrowable(async () => databaseInstance.getAll('graphs'));
     },
 
     upsert: async (entry: GraphRegistryEntry): Promise<Result<void, Error>> => {
-      if (!db) return err(new Error('Database not initialized'));
-      const dbInstance = db;
+      if (!database) return err(new Error('Database not initialized'));
+      const databaseInstance = database;
       return fromAsyncThrowable(async () => {
-        await dbInstance.put('graphs', entry);
+        await databaseInstance.put('graphs', entry);
         return;
       });
     },
 
     delete: async (id: string): Promise<Result<void, Error>> => {
-      if (!db) return err(new Error('Database not initialized'));
-      const dbInstance = db;
+      if (!database) return err(new Error('Database not initialized'));
+      const databaseInstance = database;
       return fromAsyncThrowable(async () => {
-        await dbInstance.delete('graphs', id);
+        await databaseInstance.delete('graphs', id);
         return;
       });
     },

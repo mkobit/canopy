@@ -80,8 +80,8 @@ export function generateKeyBetween(a: string | null, b: string | null): string {
     const charA = a[index]; // undefined if exhausted
     const charB = b[index]; // undefined if exhausted
 
-    const valA = charA ? getIndex(charA) : -1; // -1 represents empty (conceptually min)
-    const valB = charB ? getIndex(charB) : -1;
+    const valueA = charA ? getIndex(charA) : -1; // -1 represents empty (conceptually min)
+    const valueB = charB ? getIndex(charB) : -1;
 
     // If charA is undefined, a ended. a is prefix of b.
     // valA = -1. valB >= 0.
@@ -91,15 +91,15 @@ export function generateKeyBetween(a: string | null, b: string | null): string {
 
     // Normal case: chars exist
     if (charA !== undefined && charB !== undefined) {
-      if (valA === valB) {
+      if (valueA === valueB) {
         index++;
         continue;
       }
 
-      const diff = valB - valA;
+      const diff = valueB - valueA;
       if (diff > 1) {
         // We can fit a char in between
-        const mid = Math.round((valA + valB) / 2);
+        const mid = Math.round((valueA + valueB) / 2);
         return a.slice(0, index) + DIGITS[mid];
       }
       // diff is 1. "a", "b".
@@ -191,9 +191,9 @@ export function generateKeyBetween(a: string | null, b: string | null): string {
 
       const zeros = b.slice(a.length, index); // "00"
       const charAt = b[index];
-      const valAt = getIndex(charAt);
-      const midVal = Math.floor(valAt / 2);
-      const midChar = DIGITS[midVal];
+      const valueAt = getIndex(charAt);
+      const midValue = Math.floor(valueAt / 2);
+      const midChar = DIGITS[midValue];
       if (!midChar) {
         return a + zeros + DIGITS.at(0);
       }

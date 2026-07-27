@@ -5,14 +5,14 @@ import { useGraph } from '../../context/graph-context';
 import { executeStoredQuery } from '@canopy/queries';
 import { SYSTEM_IDS, type Node, type Graph } from '@canopy/graph';
 
-interface CommandItemProps {
+interface CommandItemProperties {
   readonly command: Readonly<{ id: string; title: string; category?: string }>;
   readonly isSelected: boolean;
   readonly onSelect: (id: string) => void;
   readonly onMouseEnter: () => void;
 }
 
-const CommandItem: React.FC<CommandItemProps> = ({
+const CommandItem: React.FC<CommandItemProperties> = ({
   command,
   isSelected,
   onSelect,
@@ -45,16 +45,16 @@ const CommandItem: React.FC<CommandItemProps> = ({
   </button>
 );
 
-interface NodeItemProps {
+interface NodeItemProperties {
   readonly node: Node;
   readonly isSelected: boolean;
   readonly onSelect: (id: string) => void;
   readonly onMouseEnter: () => void;
 }
 
-const NodeItem: React.FC<NodeItemProps> = ({ node, isSelected, onSelect, onMouseEnter }) => {
+const NodeItem: React.FC<NodeItemProperties> = ({ node, isSelected, onSelect, onMouseEnter }) => {
   const name = node.properties.get('name');
-  const nameStr = typeof name === 'string' ? name : 'Untitled Node';
+  const nameString = typeof name === 'string' ? name : 'Untitled Node';
   return (
     <button
       onClick={() => onSelect(node.id)}
@@ -67,7 +67,7 @@ const NodeItem: React.FC<NodeItemProps> = ({ node, isSelected, onSelect, onMouse
     >
       <div className="flex items-center gap-2.5 font-body">
         <span className="material-symbols-outlined text-[16px]">description</span>
-        <span>{nameStr}</span>
+        <span>{nameString}</span>
         <span className="text-[10px] text-on-surface-variant/40 font-mono">({node.id})</span>
       </div>
       <span
@@ -89,7 +89,7 @@ const getNodeQuery = (q: string): string => q.trim();
 
 const useClickOutside = (
   isOpen: boolean,
-  containerRef: React.RefObject<HTMLDivElement | null>,
+  containerReference: React.RefObject<HTMLDivElement | null>,
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>,
 ) => {
   useEffect(() => {
@@ -98,15 +98,15 @@ const useClickOutside = (
       const target = e.target;
       if (
         target instanceof Node &&
-        containerRef.current &&
-        !containerRef.current.contains(target)
+        containerReference.current &&
+        !containerReference.current.contains(target)
       ) {
         setIsOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isOpen, containerRef, setIsOpen]);
+  }, [isOpen, containerReference, setIsOpen]);
 };
 
 const useShortcutToggle = (
@@ -117,14 +117,14 @@ const useShortcutToggle = (
   useEffect(() => {
     const handleKeyDown = (e: Readonly<KeyboardEvent>) => {
       const isP = e.key === 'p' || e.key === 'P';
-      const isCtrlCmd = e.ctrlKey || e.metaKey;
-      if (!isCtrlCmd || !isP) return;
+      const isCtrlCommand = e.ctrlKey || e.metaKey;
+      if (!isCtrlCommand || !isP) return;
 
       e.preventDefault();
       const isShift = e.shiftKey;
 
-      setIsOpen((prev) => {
-        if (prev) {
+      setIsOpen((previous) => {
+        if (previous) {
           return false;
         }
         setQuery(isShift ? '>' : '');
@@ -144,9 +144,9 @@ const useFilteredItems = (
 ) => {
   const inCommandMode = isCommandMode(query);
 
-  const filteredCommands = commands.filter((cmd) => {
+  const filteredCommands = commands.filter((command) => {
     const searchQ = getCommandQuery(query).toLowerCase();
-    const text = `${cmd.title} ${cmd.category ?? ''}`.toLowerCase();
+    const text = `${command.title} ${command.category ?? ''}`.toLowerCase();
     return text.includes(searchQ);
   });
 
@@ -183,13 +183,13 @@ const useKeyboardNav = (
       }
       case 'ArrowDown': {
         e.preventDefault();
-        setSelectedIndex((prev) => (filteredCount > 0 ? (prev + 1) % filteredCount : 0));
+        setSelectedIndex((previous) => (filteredCount > 0 ? (previous + 1) % filteredCount : 0));
         break;
       }
       case 'ArrowUp': {
         e.preventDefault();
-        setSelectedIndex((prev) =>
-          filteredCount > 0 ? (prev - 1 + filteredCount) % filteredCount : 0,
+        setSelectedIndex((previous) =>
+          filteredCount > 0 ? (previous - 1 + filteredCount) % filteredCount : 0,
         );
         break;
       }
@@ -260,7 +260,7 @@ const useConfirmationHandler = (options: ConfirmationOptions) => {
   };
 };
 
-interface PaletteListProps {
+interface PaletteListProperties {
   readonly inCommandMode: boolean;
   readonly filteredCommands: readonly Readonly<{ id: string; title: string; category?: string }>[];
   readonly filteredNodes: readonly Node[];
@@ -271,7 +271,7 @@ interface PaletteListProps {
   readonly setSelectedIndex: React.Dispatch<React.SetStateAction<number>>;
 }
 
-const PaletteList: React.FC<PaletteListProps> = ({
+const PaletteList: React.FC<PaletteListProperties> = ({
   inCommandMode,
   filteredCommands,
   filteredNodes,
@@ -291,13 +291,13 @@ const PaletteList: React.FC<PaletteListProps> = ({
     }
     return (
       <>
-        {filteredCommands.map((cmd, idx) => (
+        {filteredCommands.map((command, index) => (
           <CommandItem
-            key={cmd.id}
-            command={cmd}
-            isSelected={idx === selectedIndex}
+            key={command.id}
+            command={command}
+            isSelected={index === selectedIndex}
             onSelect={handleTriggerCommand}
-            onMouseEnter={() => setSelectedIndex(idx)}
+            onMouseEnter={() => setSelectedIndex(index)}
           />
         ))}
       </>
@@ -322,13 +322,13 @@ const PaletteList: React.FC<PaletteListProps> = ({
 
   return (
     <>
-      {filteredNodes.map((node, idx) => (
+      {filteredNodes.map((node, index) => (
         <NodeItem
           key={node.id}
           node={node}
-          isSelected={idx === selectedIndex}
+          isSelected={index === selectedIndex}
           onSelect={handleSelectNode}
-          onMouseEnter={() => setSelectedIndex(idx)}
+          onMouseEnter={() => setSelectedIndex(index)}
         />
       ))}
     </>
@@ -345,9 +345,9 @@ export const CommandPalette: React.FC = () => {
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
 
-  const containerRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const listRef = useRef<HTMLDivElement>(null);
+  const containerReference = useRef<HTMLDivElement>(null);
+  const inputReference = useRef<HTMLInputElement>(null);
+  const listReference = useRef<HTMLDivElement>(null);
 
   const activeGraphId = graphId ?? graph?.id;
 
@@ -358,19 +358,19 @@ export const CommandPalette: React.FC = () => {
   );
 
   useShortcutToggle(setIsOpen, setQuery, setSelectedIndex);
-  useClickOutside(isOpen, containerRef, setIsOpen);
+  useClickOutside(isOpen, containerReference, setIsOpen);
 
   useEffect(() => {
     if (!isOpen) return undefined;
-    const timer = setTimeout(() => inputRef.current?.focus(), 50);
+    const timer = setTimeout(() => inputReference.current?.focus(), 50);
     return () => clearTimeout(timer);
   }, [isOpen]);
 
   useEffect(() => {
-    if (!isOpen || !listRef.current) return;
-    const activeEl = listRef.current.children[selectedIndex];
-    if (activeEl instanceof HTMLElement) {
-      activeEl.scrollIntoView({ block: 'nearest' });
+    if (!isOpen || !listReference.current) return;
+    const activeElement = listReference.current.children[selectedIndex];
+    if (activeElement instanceof HTMLElement) {
+      activeElement.scrollIntoView({ block: 'nearest' });
     }
   }, [selectedIndex, isOpen]);
 
@@ -392,7 +392,7 @@ export const CommandPalette: React.FC = () => {
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh] px-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
       <div
-        ref={containerRef}
+        ref={containerReference}
         className="w-full max-w-lg bg-[#0e141b] rounded-xl border border-[#2a3c54]/30 shadow-2xl overflow-hidden flex flex-col max-h-[300px] animate-in slide-in-from-top-4 duration-200"
       >
         <div className="flex items-center gap-3 px-4 py-3 border-b border-[#2a3c54]/30 bg-[#121a25]/50">
@@ -400,7 +400,7 @@ export const CommandPalette: React.FC = () => {
             {inCommandMode ? 'terminal' : 'search'}
           </span>
           <input
-            ref={inputRef}
+            ref={inputReference}
             type="text"
             value={query}
             onChange={(e) => {
@@ -416,7 +416,7 @@ export const CommandPalette: React.FC = () => {
           </kbd>
         </div>
 
-        <div ref={listRef} className="flex-1 overflow-y-auto py-2">
+        <div ref={listReference} className="flex-1 overflow-y-auto py-2">
           <PaletteList
             inCommandMode={inCommandMode}
             filteredCommands={filteredCommands}

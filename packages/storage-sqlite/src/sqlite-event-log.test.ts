@@ -8,14 +8,14 @@ import { Temporal } from 'temporal-polyfill';
 const mockGraphId = 'test-graph-id';
 
 // Helper to create events
-const createEvent = (i: number): NodeCreated => ({
+const createEvent = (index: number): NodeCreated => ({
   type: 'NodeCreated',
-  eventId: asEventId(`018d9${i.toString().padStart(3, '0')}-0000-7000-8000-000000000000`), // Dummy UUIDv7-ish
-  id: asNodeId(`node-${i}`),
+  eventId: asEventId(`018d9${index.toString().padStart(3, '0')}-0000-7000-8000-000000000000`), // Dummy UUIDv7-ish
+  id: asNodeId(`node-${index}`),
   nodeType: asTypeId('test-type'),
   properties: new Map(),
   timestamp: asInstant(
-    Temporal.Instant.from(`2024-01-01T10:${String(i).padStart(2, '0')}:00.000Z`).toString(),
+    Temporal.Instant.from(`2024-01-01T10:${String(index).padStart(2, '0')}:00.000Z`).toString(),
   ),
   deviceId: asDeviceId('00000000-0000-0000-0000-000000000000'),
 });

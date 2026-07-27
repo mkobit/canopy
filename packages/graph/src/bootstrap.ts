@@ -51,8 +51,8 @@ function addEdgeGraph(
 }
 
 // Helper to create a property map
-function createProperties(props: Record<string, PropertyValue>): PropertyMap {
-  return new Map(Object.entries(props));
+function createProperties(properties: Record<string, PropertyValue>): PropertyMap {
+  return new Map(Object.entries(properties));
 }
 
 // Helper to create a text value
@@ -70,7 +70,7 @@ function createBootstrapNode(
   type: TypeId,
   name: string,
   description: string,
-  extraProps: Record<string, PropertyValue> = {},
+  extraProperties: Record<string, PropertyValue> = {},
 ): Node {
   return {
     id,
@@ -78,7 +78,7 @@ function createBootstrapNode(
     properties: createProperties({
       name: text(name),
       description: text(description),
-      ...extraProps,
+      ...extraProperties,
     }),
     metadata: {
       created: createInstant(),
@@ -223,7 +223,7 @@ const propertyTypeProperties: readonly PropertyDefinition[] = [
 // Helper to reduce results safely using recursion to avoid loops
 function reduceResult<T, R>(
   items: readonly T[],
-  fn: (acc: R, item: T) => Result<R, Error>,
+  function_: (accumulator: R, item: T) => Result<R, Error>,
   initial: R,
 ): Result<R, Error> {
   if (items.length === 0) {
@@ -235,11 +235,11 @@ function reduceResult<T, R>(
     return ok(initial);
   }
   const tail = items.slice(1);
-  const res = fn(initial, head);
+  const res = function_(initial, head);
   if (!res.ok) {
     return res;
   }
-  return reduceResult(tail, fn, res.value);
+  return reduceResult(tail, function_, res.value);
 }
 
 /**
@@ -975,11 +975,11 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
           if (cg.nodes.has(def.id)) {
             return ok(cg);
           }
-          const props = 'properties' in def ? def.properties : undefined;
-          const extraProps: Record<string, PropertyValue> = props
+          const properties = 'properties' in def ? def.properties : undefined;
+          const extraProperties: Record<string, PropertyValue> = properties
             ? {
                 namespace: text('system'),
-                properties: text(JSON.stringify(props)),
+                properties: text(JSON.stringify(properties)),
               }
             : {
                 namespace: text('system'),
@@ -991,7 +991,7 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
               SYSTEM_IDS.EDGE_TYPE,
               def.name,
               def.description,
-              extraProps,
+              extraProperties,
             ),
           );
         },
@@ -1020,7 +1020,7 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
         systemViews,
         (cg, def) => {
           if (!cg.nodes.has(def.id)) {
-            const extraProps = {
+            const extraProperties = {
               layout: text(def.layout),
               queryRef: reference(def.queryRef),
               ...(def.groupBy && { groupBy: text(def.groupBy) }),
@@ -1032,7 +1032,7 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
                 SYSTEM_IDS.VIEW_DEFINITION,
                 def.name,
                 def.description,
-                extraProps,
+                extraProperties,
               ),
             );
           }

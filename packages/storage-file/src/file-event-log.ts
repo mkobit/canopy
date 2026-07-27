@@ -117,9 +117,9 @@ const applyQueryOptions = (
 };
 
 const writeAtomically = async (filePath: string, content: string): Promise<void> => {
-  const tmpPath = `${filePath}.tmp`;
-  await fs.writeFile(tmpPath, content, 'utf8');
-  await fs.rename(tmpPath, filePath);
+  const temporaryPath = `${filePath}.tmp`;
+  await fs.writeFile(temporaryPath, content, 'utf8');
+  await fs.rename(temporaryPath, filePath);
 };
 
 interface AppendWritesResult {
@@ -195,10 +195,10 @@ const buildAppendWrites = (
 
     const fullJsonl =
       currentActiveEvents.map((e) => JSON.stringify(serializeEvent(e))).join('\n') + '\n';
-    const curN = currentActiveEvents.length;
-    const curS = fullJsonl.length;
+    const currentN = currentActiveEvents.length;
+    const currentS = fullJsonl.length;
 
-    if (curN >= maxEventsPerSegment || curS >= maxBytesPerSegment) {
+    if (currentN >= maxEventsPerSegment || currentS >= maxBytesPerSegment) {
       currentManifest = {
         ...currentManifest,
         sealed: [...currentManifest.sealed, currentActiveSegment],

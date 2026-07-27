@@ -17,10 +17,10 @@ describe('fractional-index', () => {
 
   it('generates a key before start', () => {
     const start = 'a0';
-    const prev = generateKeyBetween(null, start);
-    expect(prev < start).toBe(true);
+    const previous = generateKeyBetween(null, start);
+    expect(previous < start).toBe(true);
     // 'a' index 36. Mid 18 -> 'I'.
-    expect(prev).toBe('I');
+    expect(previous).toBe('I');
   });
 
   it('generates a key between two keys with gap', () => {

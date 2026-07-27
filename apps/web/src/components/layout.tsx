@@ -37,9 +37,9 @@ export const Layout = () => {
     return withResultAlert(
       () => createNode(type, properties),
       'Failed to create node',
-      (val) => {
+      (value) => {
         setIsNewNodeOpen(false);
-        navigate(`/graph/${graph.id}/node/${val}`);
+        navigate(`/graph/${graph.id}/node/${value}`);
       },
     )();
   };

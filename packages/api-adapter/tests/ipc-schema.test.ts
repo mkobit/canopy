@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'bun:test';
 import {
-  CreateNodeParamsSchema,
-  EventNotificationParamsSchema,
-  GetNodeParamsSchema,
-  HandshakeParamsSchema,
+  CreateNodeParamsSchema as CreateNodeParametersSchema,
+  EventNotificationParamsSchema as EventNotificationParametersSchema,
+  GetNodeParamsSchema as GetNodeParametersSchema,
+  HandshakeParamsSchema as HandshakeParametersSchema,
   IPC_METHODS,
   JSON_RPC_ERROR_CODES,
   JsonRpcRequestSchema,
   JsonRpcResponseSchema,
-  SubscribeParamsSchema,
+  SubscribeParamsSchema as SubscribeParametersSchema,
   createIpcProtocolError,
   createIpcSocketInUseError,
 } from '../src/ipc/ipc-schema';
@@ -24,18 +24,18 @@ describe('IPC schema and protocol definitions', () => {
   });
 
   it('creates domain errors with tagged union types', () => {
-    const socketErr = createIpcSocketInUseError('/tmp/canopy.sock');
-    expect(socketErr._tag).toBe('IpcSocketInUseError');
-    expect(socketErr.socketPath).toBe('/tmp/canopy.sock');
+    const socketError = createIpcSocketInUseError('/tmp/canopy.sock');
+    expect(socketError._tag).toBe('IpcSocketInUseError');
+    expect(socketError.socketPath).toBe('/tmp/canopy.sock');
 
-    const protoErr = createIpcProtocolError(
+    const prototypeError = createIpcProtocolError(
       JSON_RPC_ERROR_CODES.INVALID_PARAMS,
       'Invalid params provided',
       { field: 'id' },
     );
-    expect(protoErr._tag).toBe('IpcProtocolError');
-    expect(protoErr.code).toBe(-32_602);
-    expect(protoErr.details).toEqual({ field: 'id' });
+    expect(prototypeError._tag).toBe('IpcProtocolError');
+    expect(prototypeError.code).toBe(-32_602);
+    expect(prototypeError.details).toEqual({ field: 'id' });
   });
 
   it('validates JSON-RPC requests and allows unknown properties (passthrough)', () => {
@@ -75,7 +75,7 @@ describe('IPC schema and protocol definitions', () => {
   });
 
   it('validates handshake parameters with defaults', () => {
-    const parsed = HandshakeParamsSchema.safeParse({ clientVersion: '1.0.0' });
+    const parsed = HandshakeParametersSchema.safeParse({ clientVersion: '1.0.0' });
     expect(parsed.success).toBe(true);
     if (parsed.success) {
       expect(parsed.data.supportedCapabilities).toEqual([]);
@@ -83,20 +83,20 @@ describe('IPC schema and protocol definitions', () => {
   });
 
   it('validates query and mutation method parameters', () => {
-    const nodeParams = GetNodeParamsSchema.safeParse({ id: 'node_123' });
-    expect(nodeParams.success).toBe(true);
+    const nodeParameters = GetNodeParametersSchema.safeParse({ id: 'node_123' });
+    expect(nodeParameters.success).toBe(true);
 
-    const createParams = CreateNodeParamsSchema.safeParse({
+    const createParameters = CreateNodeParametersSchema.safeParse({
       type: 'concept',
       properties: { title: 'Test Node' },
       unknownAdditiveProperty: 'allowed',
     });
-    expect(createParams.success).toBe(true);
+    expect(createParameters.success).toBe(true);
 
-    const subParams = SubscribeParamsSchema.safeParse({ fromSequence: 0 });
-    expect(subParams.success).toBe(true);
+    const subParameters = SubscribeParametersSchema.safeParse({ fromSequence: 0 });
+    expect(subParameters.success).toBe(true);
 
-    const notification = EventNotificationParamsSchema.safeParse({
+    const notification = EventNotificationParametersSchema.safeParse({
       subscriptionId: 'sub_1',
       event: { id: 'evt_1', type: 'NodeCreated' },
     });

@@ -111,7 +111,7 @@ const PropertyField: React.FC<
 );
 
 function useNewNodeDialogState(open: boolean, nodeTypes: readonly NodeTypeOption[]) {
-  const dialogRef = useRef<HTMLDialogElement>(null);
+  const dialogReference = useRef<HTMLDialogElement>(null);
   const [selectedTypeId, setSelectedTypeId] = useState<TypeId | null>(null);
   const [values, setValues] = useState<Record<string, PropertyValue>>({});
 
@@ -121,7 +121,7 @@ function useNewNodeDialogState(open: boolean, nodeTypes: readonly NodeTypeOption
   );
 
   useEffect(() => {
-    const dialog = dialogRef.current;
+    const dialog = dialogReference.current;
     if (!dialog) return;
     if (open && !dialog.open) {
       const firstType = nodeTypes[0];
@@ -133,7 +133,14 @@ function useNewNodeDialogState(open: boolean, nodeTypes: readonly NodeTypeOption
     }
   }, [open, nodeTypes]);
 
-  return { dialogRef, selectedTypeId, setSelectedTypeId, values, setValues, selectedType };
+  return {
+    dialogRef: dialogReference,
+    selectedTypeId,
+    setSelectedTypeId,
+    values,
+    setValues,
+    selectedType,
+  };
 }
 
 function hasRequiredMissing(
@@ -200,7 +207,7 @@ export const NewNodeDialog: React.FC<NewNodeDialogProps> = ({
                   definition={def}
                   value={values[def.name] ?? getInitialValue(def.valueKind)}
                   onChange={(v) => {
-                    setValues((prev) => ({ ...prev, [def.name]: v }));
+                    setValues((previous) => ({ ...previous, [def.name]: v }));
                     return undefined;
                   }}
                 />
