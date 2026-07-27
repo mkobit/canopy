@@ -61,6 +61,11 @@ jobs:
       - name: Lint
         if: "!cancelled() && steps.install.outcome == 'success'"
         run: bun run lint
+        env:
+          # typescript-eslint's projectService type-aware parsing across the
+          # whole monorepo exceeds V8's default old-space size on GitHub's
+          # macos-14 runners, aborting eslint with an OOM.
+          NODE_OPTIONS: '--max-old-space-size=6144'
 
       - name: Typecheck
         if: "!cancelled() && steps.install.outcome == 'success'"
