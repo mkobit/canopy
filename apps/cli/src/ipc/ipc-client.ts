@@ -1,4 +1,4 @@
-/* eslint-disable functional/no-return-void, functional/prefer-tacit, max-lines-per-function, functional/prefer-immutable-types */
+/* eslint-disable functional/no-return-void, functional/prefer-tacit, max-lines-per-function */
 import * as net from 'node:net';
 import type {
   ApiEdgePayload,

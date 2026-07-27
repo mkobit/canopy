@@ -10,11 +10,7 @@ import type { IpcClient } from '../src/ipc/ipc-client';
 import { makeIpcClient } from '../src/ipc/ipc-client';
 
 const getSocketPath = (): string =>
-  path.join(
-    process.cwd(),
-    'tmp',
-    `test-cli-client-${Math.random().toString(36).slice(2, 9)}.sock`,
-  );
+  path.join(process.cwd(), 'tmp', `test-cli-client-${Math.random().toString(36).slice(2, 9)}.sock`);
 
 describe('IpcClient integration with IpcServer', () => {
   let server: IpcServer | undefined;
