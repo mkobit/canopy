@@ -7,6 +7,11 @@ Each entry states the decision, why, and where the full reasoning lives.
 Full design proposals still live in `design/` (dated, one file per proposal).
 This log complements those files — it's where decisions made _during_ implementation of an approved design get recorded, so they don't only live in a PR description or an agent's private memory.
 
+## 2026-07-26 — Established recurring audit process and automated release checks for AI developer tools
+
+We created an automated release audit script (`tools/audit-ai-tool-releases.ts` accessible via `bun run audit:ai-tools`) to query upstream releases for `@fission-ai/openspec` and `gastownhall/beads`.
+The recurring audit workflow and upgrade procedures are documented in `docs/architecture/ai-tooling-audit-process.md`.
+
 ## 2026-07-21 — Mandated TypeScript for all developer scripts and Git hooks
 
 To maintain consistency with project tooling (Vite, Bun, Vitest, ESLint), we will only author developer scripts and Git hooks in TypeScript.

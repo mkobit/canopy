@@ -235,6 +235,9 @@ export default tseslint.config(
             '^Page$', // Playwright Page fixture (e2e helper function params)
             '^Locator$', // Playwright Locator (e2e helper function params)
             '^GraphQLSchema$', // GraphQL schema instance (graphql-js class)
+            '^Effect', // Effect.Effect, Effect.Layer, etc. (Effect TS framework types)
+            '^Layer', // Layer.Layer (Effect TS framework types)
+            '^Context', // Context.Tag (Effect TS framework types)
           ],
         },
       ],
