@@ -11,7 +11,6 @@ console.log('Verifying version consistency...');
 
 type PackageJson = Readonly<{
   engines?: Readonly<{ bun?: string }>;
-  devDependencies?: Readonly<Record<string, string>>;
 }>;
 
 // Read package.json
@@ -44,30 +43,6 @@ if (cleanVersion(packageBunVersion) !== cleanVersion(miseBunVersion)) {
   process.exit(1);
 }
 
-// Verify OpenSpec
-const packageOpenSpecVersion = packageJson.devDependencies?.['@fission-ai/openspec'];
-const miseOpenSpecMatch = miseToml.match(
-  /["']?(?:npm:)?@fission-ai\/openspec["']?\s*=\s*["']?([^"'\n]+)["']?/,
-);
-
-if (!packageOpenSpecVersion) {
-  console.error('Error: "@fission-ai/openspec" not found in package.json devDependencies');
-  process.exit(1);
-}
-
-if (!miseOpenSpecMatch) {
-  console.error('Error: "@fission-ai/openspec" version not found in mise.toml');
-  process.exit(1);
-}
-
-const miseOpenSpecVersion = miseOpenSpecMatch[1];
-if (cleanVersion(packageOpenSpecVersion) !== cleanVersion(miseOpenSpecVersion)) {
-  console.error('Version Mismatch for OpenSpec!');
-  console.error(`package.json devDependencies.@fission-ai/openspec: ${packageOpenSpecVersion}`);
-  console.error(`mise.toml tools.@fission-ai/openspec:              ${miseOpenSpecVersion}`);
-  process.exit(1);
-}
-
 // Verify Beads
 const miseBeadsMatch = miseToml.match(
   /["']?(?:github:gastownhall\/)?beads["']?\s*=\s*["']?([^"'\n]+)["']?/,
@@ -81,6 +56,4 @@ if (!miseBeadsMatch) {
 const miseBeadsVersion = miseBeadsMatch[1];
 
 // eslint-disable-next-line no-console
-console.log(
-  `✅ Versions match: Bun ${packageBunVersion}, OpenSpec ${cleanVersion(packageOpenSpecVersion)}, Beads ${miseBeadsVersion}`,
-);
+console.log(`✅ Versions match: Bun ${packageBunVersion}, Beads ${miseBeadsVersion}`);
