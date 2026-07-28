@@ -95,7 +95,10 @@ export const checkGql = (liveSchema: string, baselineSchema?: string): readonly 
   return [...violations1, ...violations2, ...violations3];
 };
 
-export const checkProto = (liveSchema: string, baselineSchema?: string): readonly Violation[] => {
+export const checkPrototype = (
+  liveSchema: string,
+  baselineSchema?: string,
+): readonly Violation[] => {
   if (!baselineSchema) return [];
 
   const violations1: readonly Violation[] =
@@ -182,17 +185,19 @@ export const checkApiCompatibility = (options?: CheckOptions): CompatibilityResu
   };
 
   const gqlLive = options?.overrideGql ?? GRAPHQL_SDL_SCHEMA;
-  const protoLive = options?.overrideProto ?? PROTO_SERVICES_SDL;
+  const prototypeLive = options?.overrideProto ?? PROTO_SERVICES_SDL;
   const witLive = options?.overrideWit ?? CANOPY_WIT_SPECIFICATION;
 
   const gqlBaseline = readBaseline('graphql.graphql');
-  const protoBaseline = readBaseline('connect.proto');
+  const prototypeBaseline = readBaseline('connect.proto');
   const witBaseline = readBaseline('plugin.wit');
 
   const violations1 =
     target === 'all' || target === 'graphql' ? checkGql(gqlLive, gqlBaseline) : [];
   const violations2 =
-    target === 'all' || target === 'connect' ? checkProto(protoLive, protoBaseline) : [];
+    target === 'all' || target === 'connect'
+      ? checkPrototype(prototypeLive, prototypeBaseline)
+      : [];
   const violations3 = target === 'all' || target === 'wit' ? checkWit(witLive, witBaseline) : [];
   const violations = [...violations1, ...violations2, ...violations3];
 
@@ -239,7 +244,7 @@ export const checkApiCompatibility = (options?: CheckOptions): CompatibilityResu
   // Format 3-part diagnostic output
   const formattedDiagnostic = success
     ? 'All compatibility checks passed.'
-    : `API Compatibility Checks Failed\n\n${unhandledViolations.map((v, i) => `--- Violation ${i + 1} ---\nProtocol: ${v.protocol.toUpperCase()}\nType: ${v.changeType}\nSymbol: ${v.path}\nDescription: ${v.description}\n${v.snippet ? `\nDiff:\n${v.snippet}\n` : ''}\n`).join('')}--- Remediation ---\nTo approve these changes, add waivers:\n${unhandledViolations.map((v) => `bun tools/check-api-compatibility.ts --add-waiver --protocol ${v.protocol} --path ${v.path} --change-type ${v.changeType} --reason "Explain why"\n`).join('')}\nTo update the baselines (WARNING: Only do this if changes are approved or this is an initial commit):\n${[
+    : `API Compatibility Checks Failed\n\n${unhandledViolations.map((v, index) => `--- Violation ${index + 1} ---\nProtocol: ${v.protocol.toUpperCase()}\nType: ${v.changeType}\nSymbol: ${v.path}\nDescription: ${v.description}\n${v.snippet ? `\nDiff:\n${v.snippet}\n` : ''}\n`).join('')}--- Remediation ---\nTo approve these changes, add waivers:\n${unhandledViolations.map((v) => `bun tools/check-api-compatibility.ts --add-waiver --protocol ${v.protocol} --path ${v.path} --change-type ${v.changeType} --reason "Explain why"\n`).join('')}\nTo update the baselines (WARNING: Only do this if changes are approved or this is an initial commit):\n${[
         ...new Set(unhandledViolations.map((v) => v.protocol)),
       ]
         .map((p) => `bun tools/check-api-compatibility.ts --update-baselines --target ${p}\n`)

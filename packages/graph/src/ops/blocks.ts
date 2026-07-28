@@ -5,7 +5,7 @@ import type { NodeId, DeviceId } from '../identifiers';
 import type { Result } from '../result';
 import type { GraphResult } from '../events';
 import { createInstant, createEdgeId } from '../factories';
-import { ok, err } from '../result';
+import { ok, err as error } from '../result';
 import { addNode } from './node';
 import { addEdge } from './edge';
 import { SYSTEM_EDGE_TYPES } from '../system';
@@ -22,7 +22,7 @@ export function insertBlock(
   graph: Graph,
   parentId: NodeId,
   block: Node,
-  prevBlockId: NodeId | undefined,
+  previousBlockId: NodeId | undefined,
   options: InsertBlockOptions,
 ): Result<GraphResult<Graph>, Error> {
   // 1. Add the block node
@@ -40,7 +40,7 @@ export function insertBlock(
   // 2. Find siblings to determine position
   // Filter edges: target == parentId AND type == CHILD_OF
   const siblings = [...graphWithNode.edges.values()]
-    .filter((e) => e.target === parentId && e.type === SYSTEM_EDGE_TYPES.CHILD_OF)
+    .filter((edge) => edge.target === parentId && edge.type === SYSTEM_EDGE_TYPES.CHILD_OF)
     .toSorted((a, b) => {
       const posA = (a.properties.get('position') as string) || '';
       const posB = (b.properties.get('position') as string) || '';
@@ -50,28 +50,28 @@ export function insertBlock(
     });
 
   // Validate prevBlockId if provided
-  if (prevBlockId) {
-    const prevEdgeIndex = siblings.findIndex((e) => e.source === prevBlockId);
-    if (prevEdgeIndex === -1) {
-      return err(new Error(`prevBlockId ${prevBlockId} is not a child of ${parentId}`));
+  if (previousBlockId) {
+    const previousEdgeIndex = siblings.findIndex((edge) => edge.source === previousBlockId);
+    if (previousEdgeIndex === -1) {
+      return error(new Error(`prevBlockId ${previousBlockId} is not a child of ${parentId}`));
     }
-    const prevEdge = siblings[prevEdgeIndex];
-    if (!prevEdge) {
-      return err(new Error(`prevEdge not found at index ${prevEdgeIndex}`));
+    const previousEdge = siblings[previousEdgeIndex];
+    if (!previousEdge) {
+      return error(new Error(`prevEdge not found at index ${previousEdgeIndex}`));
     }
   }
 
   // Calculate position
-  const { prevPos, nextPos } = prevBlockId
+  const { prevPos, nextPos } = previousBlockId
     ? (() => {
-        const prevEdgeIndex = siblings.findIndex((e) => e.source === prevBlockId);
-        const prevEdge = siblings[prevEdgeIndex];
-        if (!prevEdge) {
+        const previousEdgeIndex = siblings.findIndex((edge) => edge.source === previousBlockId);
+        const previousEdge = siblings[previousEdgeIndex];
+        if (!previousEdge) {
           return { prevPos: null, nextPos: null };
         }
-        const nextEdge = siblings[prevEdgeIndex + 1];
+        const nextEdge = siblings[previousEdgeIndex + 1];
         return {
-          prevPos: (prevEdge.properties.get('position') as string) || null,
+          prevPos: (previousEdge.properties.get('position') as string) || null,
           nextPos: nextEdge ? (nextEdge.properties.get('position') as string) || null : null,
         };
       })()

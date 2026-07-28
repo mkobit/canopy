@@ -95,32 +95,32 @@ const invokeHostBinding = async <TInput, TOutput>(
   const fuelPerCall = options.defaultFuelPerImport ?? 100n;
 
   if (options.reentrancyGuard) {
-    const guardRes = options.reentrancyGuard.enter();
-    if (!guardRes.ok) {
-      return err(toWitError(guardRes.error));
+    const guardResult = options.reentrancyGuard.enter();
+    if (!guardResult.ok) {
+      return err(toWitError(guardResult.error));
     }
   }
 
   // eslint-disable-next-line functional/no-try-statements -- defensive exception boundary for WASM host import execution
   try {
     if (options.fuelMeter) {
-      const fuelRes = options.fuelMeter.consume(fuelPerCall);
-      if (!fuelRes.ok) {
-        return err(toWitError(fuelRes.error));
+      const fuelResult = options.fuelMeter.consume(fuelPerCall);
+      if (!fuelResult.ok) {
+        return err(toWitError(fuelResult.error));
       }
     }
 
     if (options.memoryChecker) {
       const inputBytes = Buffer.byteLength(payloadJson, 'utf8');
-      const memRes = options.memoryChecker.checkBytes(inputBytes);
-      if (!memRes.ok) {
-        return err(toWitError(memRes.error));
+      const memResult = options.memoryChecker.checkBytes(inputBytes);
+      if (!memResult.ok) {
+        return err(toWitError(memResult.error));
       }
     }
 
-    const capRes = verifyCapability(token, requiredCapability, options.validateCapability);
-    if (!capRes.ok) {
-      return err(toWitError(capRes.error));
+    const capResult = verifyCapability(token, requiredCapability, options.validateCapability);
+    if (!capResult.ok) {
+      return err(toWitError(capResult.error));
     }
 
     // eslint-disable-next-line functional/no-let -- parse input payload
@@ -146,9 +146,9 @@ const invokeHostBinding = async <TInput, TOutput>(
 
     if (options.memoryChecker) {
       const outputBytes = Buffer.byteLength(outputJson, 'utf8');
-      const memRes = options.memoryChecker.checkBytes(outputBytes);
-      if (!memRes.ok) {
-        return err(toWitError(memRes.error));
+      const memResult = options.memoryChecker.checkBytes(outputBytes);
+      if (!memResult.ok) {
+        return err(toWitError(memResult.error));
       }
     }
 
@@ -247,8 +247,8 @@ export const createWasmHostBindings = (
   },
   events: {
     subscribeEvents: (token, payloadJson) =>
-      invokeHostBinding(context, token, payloadJson, 'read:events', options, (req) => {
-        const subscriber = createEventStreamSubscriber(req.context);
+      invokeHostBinding(context, token, payloadJson, 'read:events', options, (request) => {
+        const subscriber = createEventStreamSubscriber(request.context);
         return ok({ subscribed: !subscriber.isClosed() });
       }),
     replayEvents: (token, payloadJson) =>
@@ -258,8 +258,8 @@ export const createWasmHostBindings = (
         payloadJson,
         'read:events',
         options,
-        (req: ApiRequest<ReplayRequestPayload>) =>
-          executeReplayEventStream(req.context, req.payload),
+        (request: ApiRequest<ReplayRequestPayload>) =>
+          executeReplayEventStream(request.context, request.payload),
       ),
   },
 });

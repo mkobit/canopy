@@ -11,23 +11,23 @@ export interface ListLayoutEvents {
   readonly onNodeClick: (node: Node) => unknown;
 }
 
-export type ListLayoutProps = ListLayoutData & ListLayoutEvents;
+export type ListLayoutProperties = ListLayoutData & ListLayoutEvents;
 
 function groupNodes(nodes: readonly Node[], groupBy: string): readonly [string, readonly Node[]][] {
   const getKey = (node: Node): string =>
     groupBy === 'type'
       ? node.type
       : (() => {
-          const val = node.properties.get(groupBy);
-          return typeof val === 'string' ? val : 'Ungrouped';
+          const value = node.properties.get(groupBy);
+          return typeof value === 'string' ? value : 'Ungrouped';
         })();
 
   const groups = reduce(
     nodes,
-    (acc: ReadonlyMap<string, readonly Node[]>, node) => {
+    (accumulator: ReadonlyMap<string, readonly Node[]>, node) => {
       const key = getKey(node);
-      const existing = acc.get(key) ?? [];
-      return new Map([...acc, [key, [...existing, node]]]);
+      const existing = accumulator.get(key) ?? [];
+      return new Map([...accumulator, [key, [...existing, node]]]);
     },
     new Map(),
   );
@@ -63,7 +63,7 @@ const NodeListItem = ({
   );
 };
 
-export const ListLayout: React.FC<ListLayoutProps> = ({ nodes, groupBy, onNodeClick }) => {
+export const ListLayout: React.FC<ListLayoutProperties> = ({ nodes, groupBy, onNodeClick }) => {
   if (nodes.length === 0) {
     return <div className="p-8 text-center text-gray-500">No nodes found.</div>;
   }

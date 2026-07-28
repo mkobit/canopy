@@ -55,7 +55,7 @@ export const validateActorDelegation = (
 
 const resolveCreateNode = async (
   context: ApiAdapterContext,
-  args: Readonly<{
+  arguments_: Readonly<{
     input: Readonly<{
       id?: string | undefined;
       type: string;
@@ -65,17 +65,17 @@ const resolveCreateNode = async (
     actor?: ActorContextInput | undefined;
   }>,
 ) => {
-  const actorContext = validateActorDelegation(context, args.actor);
+  const actorContext = validateActorDelegation(context, arguments_.actor);
   const result = await executeMutation.createNode(context, {
-    ...(typeof args.input.id === 'string' ? { id: asNodeId(args.input.id) } : undefined),
-    type: asTypeId(args.input.type),
-    properties: args.input.properties,
-    ...(typeof args.input.expectedSequence === 'number'
-      ? { expectedSequence: args.input.expectedSequence }
-      : undefined),
+    ...(typeof arguments_.input.id === 'string' && { id: asNodeId(arguments_.input.id) }),
+    type: asTypeId(arguments_.input.type),
+    properties: arguments_.input.properties,
+    ...(typeof arguments_.input.expectedSequence === 'number' && {
+      expectedSequence: arguments_.input.expectedSequence,
+    }),
   });
 
-  if (result.ok === false) {
+  if (!result.ok) {
     throw new GraphQLError(result.error.message, {
       extensions: { code: result.error.code, details: result.error.details },
     });
@@ -91,7 +91,7 @@ const resolveCreateNode = async (
 
 const resolveUpdateNodeProperties = async (
   context: ApiAdapterContext,
-  args: Readonly<{
+  arguments_: Readonly<{
     input: Readonly<{
       id: string;
       properties: Readonly<Record<string, PropertyValue>>;
@@ -100,16 +100,16 @@ const resolveUpdateNodeProperties = async (
     actor?: ActorContextInput | undefined;
   }>,
 ) => {
-  const actorContext = validateActorDelegation(context, args.actor);
+  const actorContext = validateActorDelegation(context, arguments_.actor);
   const result = await executeMutation.updateNodeProperties(context, {
-    id: asNodeId(args.input.id),
-    properties: args.input.properties,
-    ...(typeof args.input.expectedSequence === 'number'
-      ? { expectedSequence: args.input.expectedSequence }
-      : undefined),
+    id: asNodeId(arguments_.input.id),
+    properties: arguments_.input.properties,
+    ...(typeof arguments_.input.expectedSequence === 'number' && {
+      expectedSequence: arguments_.input.expectedSequence,
+    }),
   });
 
-  if (result.ok === false) {
+  if (!result.ok) {
     throw new GraphQLError(result.error.message, {
       extensions: { code: result.error.code, details: result.error.details },
     });
@@ -125,7 +125,7 @@ const resolveUpdateNodeProperties = async (
 
 const resolveDeleteNode = async (
   context: ApiAdapterContext,
-  args: Readonly<{
+  arguments_: Readonly<{
     input: Readonly<{
       id: string;
       expectedSequence?: number | undefined;
@@ -133,15 +133,15 @@ const resolveDeleteNode = async (
     actor?: ActorContextInput | undefined;
   }>,
 ) => {
-  const actorContext = validateActorDelegation(context, args.actor);
+  const actorContext = validateActorDelegation(context, arguments_.actor);
   const result = await executeMutation.deleteNode(context, {
-    id: asNodeId(args.input.id),
-    ...(typeof args.input.expectedSequence === 'number'
-      ? { expectedSequence: args.input.expectedSequence }
-      : undefined),
+    id: asNodeId(arguments_.input.id),
+    ...(typeof arguments_.input.expectedSequence === 'number' && {
+      expectedSequence: arguments_.input.expectedSequence,
+    }),
   });
 
-  if (result.ok === false) {
+  if (!result.ok) {
     throw new GraphQLError(result.error.message, {
       extensions: { code: result.error.code, details: result.error.details },
     });
@@ -157,7 +157,7 @@ const resolveDeleteNode = async (
 
 const resolveCreateEdge = async (
   context: ApiAdapterContext,
-  args: Readonly<{
+  arguments_: Readonly<{
     input: Readonly<{
       id?: string | undefined;
       type: string;
@@ -169,19 +169,19 @@ const resolveCreateEdge = async (
     actor?: ActorContextInput | undefined;
   }>,
 ) => {
-  const actorContext = validateActorDelegation(context, args.actor);
+  const actorContext = validateActorDelegation(context, arguments_.actor);
   const result = await executeMutation.createEdge(context, {
-    ...(typeof args.input.id === 'string' ? { id: asEdgeId(args.input.id) } : undefined),
-    type: asTypeId(args.input.type),
-    source: asNodeId(args.input.source),
-    target: asNodeId(args.input.target),
-    ...(args.input.properties ? { properties: args.input.properties } : undefined),
-    ...(typeof args.input.expectedSequence === 'number'
-      ? { expectedSequence: args.input.expectedSequence }
-      : undefined),
+    ...(typeof arguments_.input.id === 'string' && { id: asEdgeId(arguments_.input.id) }),
+    type: asTypeId(arguments_.input.type),
+    source: asNodeId(arguments_.input.source),
+    target: asNodeId(arguments_.input.target),
+    ...(arguments_.input.properties && { properties: arguments_.input.properties }),
+    ...(typeof arguments_.input.expectedSequence === 'number' && {
+      expectedSequence: arguments_.input.expectedSequence,
+    }),
   });
 
-  if (result.ok === false) {
+  if (!result.ok) {
     throw new GraphQLError(result.error.message, {
       extensions: { code: result.error.code, details: result.error.details },
     });
@@ -197,7 +197,7 @@ const resolveCreateEdge = async (
 
 const resolveDeleteEdge = async (
   context: ApiAdapterContext,
-  args: Readonly<{
+  arguments_: Readonly<{
     input: Readonly<{
       id: string;
       expectedSequence?: number | undefined;
@@ -205,15 +205,15 @@ const resolveDeleteEdge = async (
     actor?: ActorContextInput | undefined;
   }>,
 ) => {
-  const actorContext = validateActorDelegation(context, args.actor);
+  const actorContext = validateActorDelegation(context, arguments_.actor);
   const result = await executeMutation.deleteEdge(context, {
-    id: asEdgeId(args.input.id),
-    ...(typeof args.input.expectedSequence === 'number'
-      ? { expectedSequence: args.input.expectedSequence }
-      : undefined),
+    id: asEdgeId(arguments_.input.id),
+    ...(typeof arguments_.input.expectedSequence === 'number' && {
+      expectedSequence: arguments_.input.expectedSequence,
+    }),
   });
 
-  if (result.ok === false) {
+  if (!result.ok) {
     throw new GraphQLError(result.error.message, {
       extensions: { code: result.error.code, details: result.error.details },
     });
@@ -228,16 +228,16 @@ const resolveDeleteEdge = async (
 };
 
 export const createMutationResolvers = (context: ApiAdapterContext) => ({
-  createNode: (_parent: unknown, args: Parameters<typeof resolveCreateNode>[1]) =>
-    resolveCreateNode(context, args),
+  createNode: (_parent: unknown, arguments_: Parameters<typeof resolveCreateNode>[1]) =>
+    resolveCreateNode(context, arguments_),
   updateNodeProperties: (
     _parent: unknown,
-    args: Parameters<typeof resolveUpdateNodeProperties>[1],
-  ) => resolveUpdateNodeProperties(context, args),
-  deleteNode: (_parent: unknown, args: Parameters<typeof resolveDeleteNode>[1]) =>
-    resolveDeleteNode(context, args),
-  createEdge: (_parent: unknown, args: Parameters<typeof resolveCreateEdge>[1]) =>
-    resolveCreateEdge(context, args),
-  deleteEdge: (_parent: unknown, args: Parameters<typeof resolveDeleteEdge>[1]) =>
-    resolveDeleteEdge(context, args),
+    arguments_: Parameters<typeof resolveUpdateNodeProperties>[1],
+  ) => resolveUpdateNodeProperties(context, arguments_),
+  deleteNode: (_parent: unknown, arguments_: Parameters<typeof resolveDeleteNode>[1]) =>
+    resolveDeleteNode(context, arguments_),
+  createEdge: (_parent: unknown, arguments_: Parameters<typeof resolveCreateEdge>[1]) =>
+    resolveCreateEdge(context, arguments_),
+  deleteEdge: (_parent: unknown, arguments_: Parameters<typeof resolveDeleteEdge>[1]) =>
+    resolveDeleteEdge(context, arguments_),
 });

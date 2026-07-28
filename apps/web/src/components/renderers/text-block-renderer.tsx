@@ -1,12 +1,12 @@
 import React from 'react';
 import type { Node } from '@canopy/graph';
 
-export interface TextBlockRendererProps {
+export interface TextBlockRendererProperties {
   node: Node;
   className?: string;
 }
 
-export const TextBlockRenderer: React.FC<TextBlockRendererProps> = ({ node, className }) => {
+export const TextBlockRenderer: React.FC<TextBlockRendererProperties> = ({ node, className }) => {
   const content = node.properties.get('content');
 
   if (!content) {

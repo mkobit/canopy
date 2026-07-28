@@ -13,16 +13,18 @@ export const createInMemoryEventStore = (): EventLogStore => {
       events: readonly GraphEvent[],
     ): Promise<Result<void, Error>> => {
       const existingEvents = graphs.get(graphId) ?? [];
-      const existingIds = new Set(existingEvents.map((e) => e.eventId));
+      const existingIds = new Set(existingEvents.map((event_) => event_.eventId));
       const newEvents = [...existingEvents];
 
       // eslint-disable-next-line functional/no-loop-statements
       for (const event of events) {
-        if (!existingIds.has(event.eventId)) {
-          newEvents.push(event);
-
-          existingIds.add(event.eventId);
+        if (existingIds.has(event.eventId)) {
+          continue;
         }
+
+        newEvents.push(event);
+
+        existingIds.add(event.eventId);
       }
 
       // Sort the events by eventId ascending
@@ -44,11 +46,11 @@ export const createInMemoryEventStore = (): EventLogStore => {
       if (options) {
         const { after, before } = options;
         if (after) {
-          filteredEvents = filteredEvents.filter((e) => e.eventId > after);
+          filteredEvents = filteredEvents.filter((event_) => event_.eventId > after);
         }
 
         if (before) {
-          filteredEvents = filteredEvents.filter((e) => e.eventId < before);
+          filteredEvents = filteredEvents.filter((event_) => event_.eventId < before);
         }
 
         if (options.reverse) {

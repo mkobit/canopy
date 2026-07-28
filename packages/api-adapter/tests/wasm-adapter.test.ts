@@ -20,7 +20,7 @@ const setupTestContext = async () => {
   });
 };
 
-const executeMsgCreationPlugin = async (
+const executeMessageCreationPlugin = async (
   hostBindings: WasmHostBindings,
   inputJson: string,
 ): Promise<string> => {
@@ -46,21 +46,21 @@ describe('WASM WIT Protocol Adapter', () => {
     expect(adapter.hostBindings.mutations.createNode).toBeDefined();
     expect(adapter.hostBindings.events.subscribeEvents).toBeDefined();
 
-    const pluginRes = await adapter.executeGuestPlugin(
+    const pluginResult = await adapter.executeGuestPlugin(
       '*',
       JSON.stringify({ message: 'hello' }),
-      executeMsgCreationPlugin,
+      executeMessageCreationPlugin,
     );
 
-    expect(pluginRes.ok).toBe(true);
+    expect(pluginResult.ok).toBe(true);
 
-    const queryRes = await adapter.hostBindings.queries.queryNodes(
+    const queryResult = await adapter.hostBindings.queries.queryNodes(
       'read:nodes',
       JSON.stringify({ id: 'adapter-node-1' }),
     );
-    expect(queryRes.ok).toBe(true);
-    if (queryRes.ok) {
-      const nodes = JSON.parse(queryRes.value) as readonly { properties: { text: string } }[];
+    expect(queryResult.ok).toBe(true);
+    if (queryResult.ok) {
+      const nodes = JSON.parse(queryResult.value) as readonly { properties: { text: string } }[];
       expect(nodes[0]?.properties.text).toBe('hello');
     }
   });

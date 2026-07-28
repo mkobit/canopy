@@ -39,13 +39,13 @@ describe('GraphQL subscription resolvers', () => {
     const sub = resolvers.eventStream.subscribe(null, { bufferCapacity: 10 });
     const iterator = sub[Symbol.asyncIterator]();
 
-    const req = createApiRequest('req-1', context, {
+    const request = createApiRequest('req-1', context, {
       id: asNodeId('n-sub-1'),
       type: asTypeId('doc'),
       properties: { title: 'Subscribed Node' },
     });
 
-    const createPromise = executeCreateNode(req);
+    const createPromise = executeCreateNode(request);
     const nextPromise = iterator.next();
 
     await createPromise;

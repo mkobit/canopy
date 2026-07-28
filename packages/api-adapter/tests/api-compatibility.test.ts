@@ -57,14 +57,14 @@ describe('API Compatibility Checker Engine', () => {
   });
 
   test('detects Protobuf field removal', () => {
-    const modifiedProto = `
+    const modifiedPrototype = `
       message NodeResponse {
         bool success = 1;
         string id = 2;
       }
     `;
     const result = checkApiCompatibility({
-      overrideProto: modifiedProto,
+      overrideProto: modifiedPrototype,
     });
     expect(result.success).toBe(false);
     expect(
@@ -73,14 +73,14 @@ describe('API Compatibility Checker Engine', () => {
   });
 
   test('detects Protobuf tag shift', () => {
-    const modifiedProto = `
+    const modifiedPrototype = `
       message NodeResponse {
         bool success = 2;
         string id = 1;
       }
     `;
     const result = checkApiCompatibility({
-      overrideProto: modifiedProto,
+      overrideProto: modifiedPrototype,
     });
     expect(result.success).toBe(false);
     expect(

@@ -73,9 +73,9 @@ describe('listEdgeTypesIn', () => {
     const nodeTypeResult = unwrap(
       createNodeType(graph, { name: 'task', namespace: 'user', properties: [] }, OPTIONS),
     );
-    const taskTypeId = [...nodeTypeResult.graph.nodes.values()].find(
-      (n) => n.properties.get('name') === 'task',
-    )?.id;
+    const taskTypeId = nodeTypeResult.graph.nodes
+      .values()
+      .find((n) => n.properties.get('name') === 'task')?.id;
     expect(taskTypeId).toBeDefined();
     if (!taskTypeId) return;
 
@@ -111,8 +111,8 @@ describe('listPropertyTypesIn / listAllPropertyTypes', () => {
       ),
     );
 
-    const userProps = listPropertyTypesIn(result.graph, 'user');
-    expect(userProps.map((p) => p.name)).toContain('priority');
+    const userProperties = listPropertyTypesIn(result.graph, 'user');
+    expect(userProperties.map((p) => p.name)).toContain('priority');
     expect(listPropertyTypesIn(result.graph, 'system').map((p) => p.name)).not.toContain(
       'priority',
     );

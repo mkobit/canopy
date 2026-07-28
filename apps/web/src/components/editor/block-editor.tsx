@@ -2,7 +2,7 @@ import React from 'react';
 import { cn } from '../../utils/cn';
 import { showPrompt } from '../../utils/dialogs';
 
-export interface BlockEditorProps {
+export interface BlockEditorProperties {
   readonly value: string;
   readonly onCommit: (value: string) => void;
   readonly className?: string;
@@ -52,41 +52,41 @@ const EditorToolbar: React.FC<Readonly<{ onExec: (command: string, value?: strin
  * contentEditable undo, and the losing side of a concurrent whole-property LWW write
  * stays recoverable in the event log (see openspec block-editing spec).
  */
-export const BlockEditor: React.FC<BlockEditorProps> = ({
+export const BlockEditor: React.FC<BlockEditorProperties> = ({
   value,
   onCommit,
   className,
   idleMs = DEFAULT_IDLE_MS,
 }) => {
-  const editorRef = React.useRef<HTMLDivElement>(null);
+  const editorReference = React.useRef<HTMLDivElement>(null);
   // Latest known content, tracked independent of the DOM ref so a flush on unmount
   // (which can run after React has already detached the ref) still sees it.
-  const contentRef = React.useRef(value);
-  const lastCommittedRef = React.useRef(value);
-  const timerRef = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const onCommitRef = React.useRef(onCommit);
+  const contentReference = React.useRef(value);
+  const lastCommittedReference = React.useRef(value);
+  const timerReference = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const onCommitReference = React.useRef(onCommit);
 
   React.useEffect(() => {
-    onCommitRef.current = onCommit;
+    onCommitReference.current = onCommit;
   });
 
   const flush = React.useCallback(() => {
-    if (timerRef.current !== undefined) {
-      clearTimeout(timerRef.current);
-      timerRef.current = undefined;
+    if (timerReference.current !== undefined) {
+      clearTimeout(timerReference.current);
+      timerReference.current = undefined;
     }
-    if (contentRef.current !== lastCommittedRef.current) {
-      lastCommittedRef.current = contentRef.current;
-      onCommitRef.current(contentRef.current);
+    if (contentReference.current !== lastCommittedReference.current) {
+      lastCommittedReference.current = contentReference.current;
+      onCommitReference.current(contentReference.current);
     }
   }, []);
 
   React.useEffect(() => {
-    if (editorRef.current) {
-      editorRef.current.innerHTML = value;
+    if (editorReference.current) {
+      editorReference.current.innerHTML = value;
     }
-    contentRef.current = value;
-    lastCommittedRef.current = value;
+    contentReference.current = value;
+    lastCommittedReference.current = value;
     // Seeds initial content on mount only -- this editor owns local state thereafter.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -96,14 +96,14 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({
   }, [flush]);
 
   const handleInput = () => {
-    contentRef.current = editorRef.current?.innerHTML ?? contentRef.current;
-    if (timerRef.current !== undefined) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(flush, idleMs);
+    contentReference.current = editorReference.current?.innerHTML ?? contentReference.current;
+    if (timerReference.current !== undefined) clearTimeout(timerReference.current);
+    timerReference.current = setTimeout(flush, idleMs);
   };
 
   const exec = (command: string, execValue?: string) => {
     document.execCommand(command, false, execValue);
-    editorRef.current?.focus();
+    editorReference.current?.focus();
     handleInput();
   };
 
@@ -111,7 +111,7 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({
     <div className={cn('border rounded bg-white text-black', className)}>
       <EditorToolbar onExec={exec} />
       <div
-        ref={editorRef}
+        ref={editorReference}
         contentEditable
         className="p-3 min-h-[100px] outline-none"
         onInput={handleInput}

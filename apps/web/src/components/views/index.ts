@@ -1,18 +1,18 @@
 export {
   TableLayout,
-  type TableLayoutProps,
+  type TableLayoutProperties,
   type TableLayoutData,
   type TableLayoutEvents,
 } from './table-layout';
 export {
   ListLayout,
-  type ListLayoutProps,
+  type ListLayoutProperties,
   type ListLayoutData,
   type ListLayoutEvents,
 } from './list-layout';
 export {
   CardsLayout,
-  type CardsLayoutProps,
+  type CardsLayoutProperties,
   type CardsLayoutData,
   type CardsLayoutEvents,
 } from './cards-layout';

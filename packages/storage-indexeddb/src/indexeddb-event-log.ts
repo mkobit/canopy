@@ -50,17 +50,17 @@ const applyQueryOptions = (
   return filtered;
 };
 
-export const createIndexedDBEventLog = (dbName = 'canopy-events'): IndexedDBEventLog => {
-  let db = null as IDBPDatabase<EventLogDB> | null;
+export const createIndexedDBEventLog = (databaseName = 'canopy-events'): IndexedDBEventLog => {
+  let database = null as IDBPDatabase<EventLogDB> | null;
 
   return {
     init: async (): Promise<Result<void, Error>> => {
-      if (db) return ok(undefined);
+      if (database) return ok(undefined);
       return fromAsyncThrowable(async () => {
-        db = await openDB<EventLogDB>(dbName, 1, {
-          upgrade(dbToUpgrade) {
-            if (!dbToUpgrade.objectStoreNames.contains('events')) {
-              dbToUpgrade.createObjectStore('events', { keyPath: ['graphId', 'eventId'] });
+        database = await openDB<EventLogDB>(databaseName, 1, {
+          upgrade(databaseToUpgrade) {
+            if (!databaseToUpgrade.objectStoreNames.contains('events')) {
+              databaseToUpgrade.createObjectStore('events', { keyPath: ['graphId', 'eventId'] });
             }
             return;
           },
@@ -71,9 +71,9 @@ export const createIndexedDBEventLog = (dbName = 'canopy-events'): IndexedDBEven
 
     close: async (): Promise<Result<void, Error>> => {
       return fromAsyncThrowable(async () => {
-        if (db) {
-          db.close();
-          db = null;
+        if (database) {
+          database.close();
+          database = null;
         }
         return;
       });
@@ -83,11 +83,11 @@ export const createIndexedDBEventLog = (dbName = 'canopy-events'): IndexedDBEven
       graphId: string,
       events: readonly GraphEvent[],
     ): Promise<Result<void, Error>> => {
-      if (!db) return err(new Error('Database not initialized'));
-      const dbInstance = db;
+      if (!database) return err(new Error('Database not initialized'));
+      const databaseInstance = database;
 
       return fromAsyncThrowable(async () => {
-        const tx = dbInstance.transaction('events', 'readwrite');
+        const tx = databaseInstance.transaction('events', 'readwrite');
         await Promise.all([
           ...events.map((event) => tx.store.put({ graphId, eventId: event.eventId, event })),
           tx.done,
@@ -100,12 +100,12 @@ export const createIndexedDBEventLog = (dbName = 'canopy-events'): IndexedDBEven
       graphId: string,
       options: EventLogQueryOptions = {},
     ): Promise<Result<readonly GraphEvent[], Error>> => {
-      if (!db) return err(new Error('Database not initialized'));
-      const dbInstance = db;
+      if (!database) return err(new Error('Database not initialized'));
+      const databaseInstance = database;
 
       return fromAsyncThrowable(async () => {
         const range = IDBKeyRange.bound([graphId, ''], [graphId, MAX_EVENT_ID]);
-        const records = await dbInstance.getAll('events', range);
+        const records = await databaseInstance.getAll('events', range);
         const events = records.map((record) => record.event);
 
         return applyQueryOptions(events, options);

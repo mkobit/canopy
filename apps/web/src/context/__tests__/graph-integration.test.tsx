@@ -12,8 +12,8 @@ import { listNamespaces } from '../../utils/schema';
 
 function useTestContext() {
   const { eventLog, isLoading: isStorageLoading } = useStorage();
-  const graphCtx = useGraph();
-  return { storageReady: !isStorageLoading && eventLog !== null, ...graphCtx };
+  const graphContext = useGraph();
+  return { storageReady: !isStorageLoading && eventLog !== null, ...graphContext };
 }
 
 const wrapper = ({ children }: { children: ReactNode }): React.JSX.Element => (
@@ -30,8 +30,8 @@ async function loadFreshGraph(id: GraphId) {
   });
 
   await act(async () => {
-    const res = await result.current.loadGraph(id);
-    expect(res.ok).toBe(true);
+    const result_ = await result.current.loadGraph(id);
+    expect(result_.ok).toBe(true);
   });
 
   return result;
@@ -50,8 +50,8 @@ describe('graph round-trip', () => {
 
     // Load an empty graph
     await act(async () => {
-      const res = await result.current.loadGraph(testGraphId);
-      expect(res.ok).toBe(true);
+      const result_ = await result.current.loadGraph(testGraphId);
+      expect(result_.ok).toBe(true);
     });
 
     expect(result.current.graph).not.toBeNull();
@@ -59,10 +59,10 @@ describe('graph round-trip', () => {
     // Create a node — createNode commits through the graph session immediately.
     let nodeId: NodeId | undefined;
     await act(async () => {
-      const res = await result.current.createNode(SYSTEM_IDS.TYPE_MARKDOWN, {
+      const result_ = await result.current.createNode(SYSTEM_IDS.TYPE_MARKDOWN, {
         content: 'hello',
       });
-      if (res.ok) nodeId = res.value;
+      if (result_.ok) nodeId = result_.value;
     });
 
     expect(nodeId).toBeDefined();
@@ -80,8 +80,8 @@ describe('graph round-trip', () => {
     });
 
     await act(async () => {
-      const res = await result2.current.loadGraph(testGraphId);
-      expect(res.ok).toBe(true);
+      const result_ = await result2.current.loadGraph(testGraphId);
+      expect(result_.ok).toBe(true);
     });
 
     expect(result2.current.graph?.nodes.has(nodeId)).toBe(true);
@@ -97,18 +97,18 @@ describe('graph round-trip', () => {
     });
 
     await act(async () => {
-      const res = await result.current.loadGraph(testGraphId);
-      expect(res.ok).toBe(true);
+      const result_ = await result.current.loadGraph(testGraphId);
+      expect(result_.ok).toBe(true);
     });
 
     expect(result.current.graph).not.toBeNull();
 
     let nodeId: NodeId | undefined;
     await act(async () => {
-      const res = await result.current.createNode(SYSTEM_IDS.TYPE_TEXT_BLOCK, {
+      const result_ = await result.current.createNode(SYSTEM_IDS.TYPE_TEXT_BLOCK, {
         content: ['block-1', 'block-2'],
       });
-      if (res.ok) nodeId = res.value;
+      if (result_.ok) nodeId = result_.value;
     });
 
     expect(nodeId).toBeDefined();
@@ -129,8 +129,8 @@ describe('graph round-trip', () => {
     });
 
     await act(async () => {
-      const res = await result2.current.loadGraph(testGraphId);
-      expect(res.ok).toBe(true);
+      const result_ = await result2.current.loadGraph(testGraphId);
+      expect(result_.ok).toBe(true);
     });
 
     expect(result2.current.graph?.nodes.has(nodeId)).toBe(true);
@@ -146,21 +146,21 @@ describe('graph round-trip', () => {
 
     let nodeId: NodeId | undefined;
     await act(async () => {
-      const res = await result.current.createNode(SYSTEM_IDS.TYPE_MARKDOWN, {
+      const result_ = await result.current.createNode(SYSTEM_IDS.TYPE_MARKDOWN, {
         content: 'original',
       });
-      if (res.ok) nodeId = res.value;
+      if (result_.ok) nodeId = result_.value;
     });
     expect(nodeId).toBeDefined();
     if (nodeId === undefined) return;
     const createdNodeId = nodeId;
 
     await act(async () => {
-      const res = await result.current.updateNodeProperties(
+      const result_ = await result.current.updateNodeProperties(
         createdNodeId,
         new Map([['content', 'updated']]),
       );
-      expect(res.ok).toBe(true);
+      expect(result_.ok).toBe(true);
     });
 
     expect(result.current.graph?.nodes.get(createdNodeId)?.properties.get('content')).toBe(
@@ -174,16 +174,16 @@ describe('graph round-trip', () => {
 
     let nodeId: NodeId | undefined;
     await act(async () => {
-      const res = await result.current.createNode(SYSTEM_IDS.TYPE_MARKDOWN, { content: 'a' });
-      if (res.ok) nodeId = res.value;
+      const result_ = await result.current.createNode(SYSTEM_IDS.TYPE_MARKDOWN, { content: 'a' });
+      if (result_.ok) nodeId = result_.value;
     });
     expect(nodeId).toBeDefined();
     if (nodeId === undefined) return;
     const createdNodeId = nodeId;
 
     await act(async () => {
-      const res = await result.current.deleteNode(createdNodeId);
-      expect(res.ok).toBe(true);
+      const result_ = await result.current.deleteNode(createdNodeId);
+      expect(result_.ok).toBe(true);
     });
 
     expect(result.current.graph?.nodes.has(createdNodeId)).toBe(false);
@@ -209,8 +209,10 @@ describe('bootstrap bridge — context integration', () => {
 
     let nodeId: NodeId | undefined;
     await act(async () => {
-      const res = await result.current.createNode(SYSTEM_IDS.TYPE_MARKDOWN, { content: 'test' });
-      if (res.ok) nodeId = res.value;
+      const result_ = await result.current.createNode(SYSTEM_IDS.TYPE_MARKDOWN, {
+        content: 'test',
+      });
+      if (result_.ok) nodeId = result_.value;
     });
 
     expect(nodeId).toBeDefined();
@@ -233,8 +235,10 @@ describe('bootstrap bridge — context integration', () => {
 
     let nodeId: NodeId | undefined;
     await act(async () => {
-      const res = await result.current.createNode(SYSTEM_IDS.TYPE_MARKDOWN, { content: 'hello' });
-      if (res.ok) nodeId = res.value;
+      const result_ = await result.current.createNode(SYSTEM_IDS.TYPE_MARKDOWN, {
+        content: 'hello',
+      });
+      if (result_.ok) nodeId = result_.value;
     });
 
     const graph = result.current.graph;
@@ -277,9 +281,9 @@ describe('type-authoring bridge — context integration', () => {
 
     let namespaceId: NodeId | undefined;
     await act(async () => {
-      const res = await result.current.createNamespace({ name: 'my-namespace', kind: 'user' });
-      expect(res.ok).toBe(true);
-      if (res.ok) namespaceId = res.value;
+      const result_ = await result.current.createNamespace({ name: 'my-namespace', kind: 'user' });
+      expect(result_.ok).toBe(true);
+      if (result_.ok) namespaceId = result_.value;
     });
 
     expect(namespaceId).toBeDefined();
@@ -296,8 +300,8 @@ describe('type-authoring bridge — context integration', () => {
     const beforeCount = result.current.graph?.nodes.size;
 
     await act(async () => {
-      const res = await result.current.createNamespace({ name: 'sneaky', kind: 'system' });
-      expect(res.ok).toBe(false);
+      const result_ = await result.current.createNamespace({ name: 'sneaky', kind: 'system' });
+      expect(result_.ok).toBe(false);
     });
 
     expect(result.current.graph?.nodes.size).toBe(beforeCount);
@@ -308,12 +312,12 @@ describe('type-authoring bridge — context integration', () => {
     const result = await loadFreshGraph(id);
 
     await act(async () => {
-      const res = await result.current.createNodeType({
+      const result_ = await result.current.createNodeType({
         name: 'sneaky-type',
         namespace: 'system',
         properties: [],
       });
-      expect(res.ok).toBe(false);
+      expect(result_.ok).toBe(false);
     });
   });
 
@@ -323,13 +327,13 @@ describe('type-authoring bridge — context integration', () => {
 
     let propertyTypeId: NodeId | undefined;
     await act(async () => {
-      const res = await result.current.createPropertyType({
+      const result_ = await result.current.createPropertyType({
         name: 'priority',
         namespace: 'user',
         valueKind: 'number',
       });
-      expect(res.ok).toBe(true);
-      if (res.ok) propertyTypeId = res.value;
+      expect(result_.ok).toBe(true);
+      if (result_.ok) propertyTypeId = result_.value;
     });
 
     expect(propertyTypeId).toBeDefined();
@@ -338,15 +342,15 @@ describe('type-authoring bridge — context integration', () => {
 
     let nodeTypeId: NodeId | undefined;
     await act(async () => {
-      const res = await result.current.createNodeType({
+      const result_ = await result.current.createNodeType({
         name: 'task',
         namespace: 'user',
         properties: [
           { kind: 'reference', propertyTypeId: referencedPropertyTypeId, required: true },
         ],
       });
-      expect(res.ok).toBe(true);
-      if (res.ok) nodeTypeId = res.value;
+      expect(result_.ok).toBe(true);
+      if (result_.ok) nodeTypeId = result_.value;
     });
 
     expect(nodeTypeId).toBeDefined();
@@ -364,12 +368,12 @@ describe('type-authoring bridge — context integration', () => {
     const result = await loadFreshGraph(id);
 
     await act(async () => {
-      const res = await result.current.createNodeType({
+      const result_ = await result.current.createNodeType({
         name: 'task',
         namespace: 'user',
         properties: [],
       });
-      expect(res.ok).toBe(true);
+      expect(result_.ok).toBe(true);
     });
 
     const taskType = [...(result.current.graph?.nodes.values() ?? [])].find(
@@ -379,14 +383,14 @@ describe('type-authoring bridge — context integration', () => {
     if (!taskType) return;
 
     await act(async () => {
-      const res = await result.current.createEdgeType({
+      const result_ = await result.current.createEdgeType({
         name: 'blocks',
         namespace: 'user',
         properties: [],
         sourceTypes: [taskType.id],
         targetTypes: [taskType.id],
       });
-      expect(res.ok).toBe(true);
+      expect(result_.ok).toBe(true);
     });
 
     const edgeType = [...(result.current.graph?.nodes.values() ?? [])].find(

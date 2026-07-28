@@ -7,7 +7,7 @@ import type { ValidationError } from '../validation-types';
 import type { PropertyDefinition, PropertyValue } from '../properties';
 import type { NodeOperationOptions } from './node';
 import { createNodeId, createInstant } from '../factories';
-import { ok, err } from '../result';
+import { ok, err as error } from '../result';
 import { addNode } from './node';
 import { SYSTEM_IDS } from '../system';
 import { RESTRICTED_NAMESPACE_KINDS } from '../namespace';
@@ -29,11 +29,11 @@ function findNamespaceNode(graph: Graph, name: string): Node | undefined {
 function checkNamespaceWritable(graph: Graph, name: string): Result<undefined, ValidationError> {
   const node = findNamespaceNode(graph, name);
   if (!node) {
-    return err({ path: ['namespace'], message: `Namespace '${name}' does not exist` });
+    return error({ path: ['namespace'], message: `Namespace '${name}' does not exist` });
   }
   const kind = node.properties.get('kind');
   if (typeof kind === 'string' && RESTRICTED_NAMESPACE_KINDS.has(kind)) {
-    return err({
+    return error({
       path: ['namespace'],
       message: `Namespace '${name}' is restricted (kind '${kind}') and cannot be written into`,
     });
@@ -47,7 +47,7 @@ function fromAddNodeResult(
   if (result.ok) {
     return result;
   }
-  return err({ path: [], message: result.error.message });
+  return error({ path: [], message: result.error.message });
 }
 
 export type CreateNamespaceInput = Readonly<{
@@ -67,21 +67,21 @@ export function createNamespace(
 ): Result<GraphResult<Graph>, ValidationError> {
   const formatResult = NamespaceSchema.safeParse(input.name);
   if (!formatResult.success) {
-    return err({
+    return error({
       path: ['name'],
       message: formatResult.error.issues[0]?.message ?? `Invalid namespace name '${input.name}'`,
     });
   }
 
   if (RESTRICTED_NAMESPACE_KINDS.has(input.kind)) {
-    return err({
+    return error({
       path: ['kind'],
       message: `Namespace kind '${input.kind}' is restricted and cannot be created via this op`,
     });
   }
 
   if (findNamespaceNode(graph, input.name)) {
-    return err({ path: ['name'], message: `Namespace '${input.name}' already exists` });
+    return error({ path: ['name'], message: `Namespace '${input.name}' already exists` });
   }
 
   const properties: Record<string, PropertyValue> = {
@@ -131,7 +131,7 @@ function resolvePropertyInput(
   if (input.kind === 'inline') {
     const valueKindResult = PropertyValueKindSchema.safeParse(input.valueKind);
     if (!valueKindResult.success) {
-      return err({
+      return error({
         path: ['properties', String(index), 'valueKind'],
         message: `'${input.valueKind}' is not a valid PropertyValueKind`,
       });
@@ -144,24 +144,26 @@ function resolvePropertyInput(
     });
   }
 
-  const refNode = graph.nodes.get(input.propertyTypeId);
-  if (!refNode || refNode.type !== SYSTEM_IDS.PROPERTY_TYPE) {
-    return err({
+  const referenceNode = graph.nodes.get(input.propertyTypeId);
+  if (!referenceNode || referenceNode.type !== SYSTEM_IDS.PROPERTY_TYPE) {
+    return error({
       path: ['properties', String(index), 'propertyTypeId'],
       message: `PropertyType '${input.propertyTypeId}' does not exist`,
     });
   }
 
-  const name = refNode.properties.get('name');
-  const valueKindResult = PropertyValueKindSchema.safeParse(refNode.properties.get('valueKind'));
+  const name = referenceNode.properties.get('name');
+  const valueKindResult = PropertyValueKindSchema.safeParse(
+    referenceNode.properties.get('valueKind'),
+  );
   if (typeof name !== 'string' || !valueKindResult.success) {
-    return err({
+    return error({
       path: ['properties', String(index), 'propertyTypeId'],
       message: `PropertyType '${input.propertyTypeId}' is malformed`,
     });
   }
 
-  const description = refNode.properties.get('description');
+  const description = referenceNode.properties.get('description');
   return ok({
     name,
     valueKind: valueKindResult.data,
@@ -209,7 +211,7 @@ export function createNodeType(
   }
 
   if (getNodeType(graph, input.name)) {
-    return err({ path: ['name'], message: `NodeType '${input.name}' already exists` });
+    return error({ path: ['name'], message: `NodeType '${input.name}' already exists` });
   }
 
   const propertiesResult = resolveProperties(graph, input.properties);
@@ -263,7 +265,7 @@ export function createEdgeType(
   }
 
   if (getEdgeType(graph, input.name)) {
-    return err({ path: ['name'], message: `EdgeType '${input.name}' already exists` });
+    return error({ path: ['name'], message: `EdgeType '${input.name}' already exists` });
   }
 
   const propertiesResult = resolveProperties(graph, input.properties);
@@ -318,7 +320,7 @@ export function createPropertyType(
 
   const valueKindResult = PropertyValueKindSchema.safeParse(input.valueKind);
   if (!valueKindResult.success) {
-    return err({
+    return error({
       path: ['valueKind'],
       message: `'${input.valueKind}' is not a valid PropertyValueKind`,
     });
@@ -328,7 +330,7 @@ export function createPropertyType(
     (node) => node.properties.get('name') === input.name,
   );
   if (hasDuplicate) {
-    return err({ path: ['name'], message: `PropertyType '${input.name}' already exists` });
+    return error({ path: ['name'], message: `PropertyType '${input.name}' already exists` });
   }
 
   const properties: Record<string, PropertyValue> = {

@@ -86,16 +86,16 @@ export const toApiAdapterError = (
     'message' in error &&
     typeof (error as Record<string, unknown>).message === 'string'
   ) {
-    const adapterErr = error as ApiAdapterError;
+    const adapterError = error as ApiAdapterError;
     if (categoryOverride !== undefined) {
-      return createApiAdapterError(categoryOverride, adapterErr.message, adapterErr.details);
+      return createApiAdapterError(categoryOverride, adapterError.message, adapterError.details);
     }
-    return adapterErr;
+    return adapterError;
   }
 
-  const errInstance = error instanceof Error ? error : new Error(String(error));
-  const category = categoryOverride ?? inferCategoryFromError(errInstance);
-  return createApiAdapterError(category, errInstance.message);
+  const errorInstance = error instanceof Error ? error : new Error(String(error));
+  const category = categoryOverride ?? inferCategoryFromError(errorInstance);
+  return createApiAdapterError(category, errorInstance.message);
 };
 
 export const mapKernelResultToApiResult = <T>(

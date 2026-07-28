@@ -55,8 +55,8 @@ export const HomePage = () => {
     return undefined;
   };
 
-  const handleDeleteGraph = async (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleDeleteGraph = async (id: string, event_: React.MouseEvent) => {
+    event_.stopPropagation();
     if (!registry) return undefined;
     if (!showConfirm('Are you sure you want to delete this graph?')) return undefined;
 
@@ -113,7 +113,7 @@ export const HomePage = () => {
                   </div>
                 </div>
                 <button
-                  onClick={(e) => handleDeleteGraph(g.id, e)}
+                  onClick={(event_) => handleDeleteGraph(g.id, event_)}
                   className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full opacity-0 group-hover:opacity-100 transition-all"
                 >
                   <Trash2 size={18} />

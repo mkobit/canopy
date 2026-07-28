@@ -114,7 +114,6 @@ if (result.success) {
     '✅ All API compatibility checks passed across GraphQL, Connect Protobuf, and WASM WIT.',
   );
   process.exit(0);
-} else {
-  console.error(result.formattedDiagnostic);
-  process.exit(1);
 }
+console.error(result.formattedDiagnostic);
+process.exit(1);

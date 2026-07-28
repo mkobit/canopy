@@ -14,7 +14,7 @@ import { Temporal } from 'temporal-polyfill';
 import { PropertyInput } from '../properties/property-input';
 import type { NodeTypeOption } from '../../utils/node-types';
 
-export interface NewNodeDialogProps {
+export interface NewNodeDialogProperties {
   readonly open: boolean;
   readonly nodeTypes: readonly NodeTypeOption[];
   readonly onSubmit: (type: TypeId, properties: Record<string, PropertyValue>) => unknown;
@@ -53,7 +53,9 @@ function getInitialValue(kind: PropertyValueKind): PropertyValue {
 function initialValuesFor(
   definitions: readonly PropertyDefinition[],
 ): Record<string, PropertyValue> {
-  return Object.fromEntries(definitions.map((def) => [def.name, getInitialValue(def.valueKind)]));
+  return Object.fromEntries(
+    definitions.map((definition) => [definition.name, getInitialValue(definition.valueKind)]),
+  );
 }
 
 function isEmpty(value: PropertyValue, kind: PropertyValueKind): boolean {
@@ -75,8 +77,8 @@ const TypeSelect: React.FC<
     <span className="text-xs uppercase tracking-wider text-on-surface-variant">Type</span>
     <select
       value={selectedTypeId ?? ''}
-      onChange={(e) => {
-        const next = nodeTypes.find((t) => t.id === e.target.value);
+      onChange={(event_) => {
+        const next = nodeTypes.find((t) => t.id === event_.target.value);
         if (next) onChange(next);
         return undefined;
       }}
@@ -111,7 +113,7 @@ const PropertyField: React.FC<
 );
 
 function useNewNodeDialogState(open: boolean, nodeTypes: readonly NodeTypeOption[]) {
-  const dialogRef = useRef<HTMLDialogElement>(null);
+  const dialogReference = useRef<HTMLDialogElement>(null);
   const [selectedTypeId, setSelectedTypeId] = useState<TypeId | null>(null);
   const [values, setValues] = useState<Record<string, PropertyValue>>({});
 
@@ -121,7 +123,7 @@ function useNewNodeDialogState(open: boolean, nodeTypes: readonly NodeTypeOption
   );
 
   useEffect(() => {
-    const dialog = dialogRef.current;
+    const dialog = dialogReference.current;
     if (!dialog) return;
     if (open && !dialog.open) {
       const firstType = nodeTypes[0];
@@ -133,7 +135,14 @@ function useNewNodeDialogState(open: boolean, nodeTypes: readonly NodeTypeOption
     }
   }, [open, nodeTypes]);
 
-  return { dialogRef, selectedTypeId, setSelectedTypeId, values, setValues, selectedType };
+  return {
+    dialogRef: dialogReference,
+    selectedTypeId,
+    setSelectedTypeId,
+    values,
+    setValues,
+    selectedType,
+  };
 }
 
 function hasRequiredMissing(
@@ -142,12 +151,16 @@ function hasRequiredMissing(
 ): boolean {
   if (!selected) return true;
   return selected.properties.some(
-    (def) =>
-      def.required && isEmpty(values[def.name] ?? getInitialValue(def.valueKind), def.valueKind),
+    (definition) =>
+      definition.required &&
+      isEmpty(
+        values[definition.name] ?? getInitialValue(definition.valueKind),
+        definition.valueKind,
+      ),
   );
 }
 
-export const NewNodeDialog: React.FC<NewNodeDialogProps> = ({
+export const NewNodeDialog: React.FC<NewNodeDialogProperties> = ({
   open,
   nodeTypes,
   onSubmit,
@@ -162,8 +175,8 @@ export const NewNodeDialog: React.FC<NewNodeDialogProps> = ({
     return undefined;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (event_: React.FormEvent) => {
+    event_.preventDefault();
     if (!selectedType) return undefined;
     onSubmit(selectedType.id, values);
     return undefined;
@@ -194,13 +207,13 @@ export const NewNodeDialog: React.FC<NewNodeDialogProps> = ({
               <p className="text-xs text-on-surface-variant">{selectedType.description}</p>
             )}
             <div className="space-y-3">
-              {selectedType?.properties.map((def) => (
+              {selectedType?.properties.map((definition) => (
                 <PropertyField
-                  key={def.name}
-                  definition={def}
-                  value={values[def.name] ?? getInitialValue(def.valueKind)}
+                  key={definition.name}
+                  definition={definition}
+                  value={values[definition.name] ?? getInitialValue(definition.valueKind)}
                   onChange={(v) => {
-                    setValues((prev) => ({ ...prev, [def.name]: v }));
+                    setValues((previous) => ({ ...previous, [definition.name]: v }));
                     return undefined;
                   }}
                 />

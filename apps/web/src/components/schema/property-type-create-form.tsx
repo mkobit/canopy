@@ -8,12 +8,12 @@ import {
   type Result,
 } from '@canopy/graph';
 
-export interface PropertyTypeCreateFormProps {
+export interface PropertyTypeCreateFormProperties {
   readonly namespace: string;
   readonly onSubmit: (input: CreatePropertyTypeInput) => Promise<Result<NodeId, Error>>;
 }
 
-export const PropertyTypeCreateForm: React.FC<PropertyTypeCreateFormProps> = ({
+export const PropertyTypeCreateForm: React.FC<PropertyTypeCreateFormProperties> = ({
   namespace,
   onSubmit,
 }) => {
@@ -23,8 +23,8 @@ export const PropertyTypeCreateForm: React.FC<PropertyTypeCreateFormProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setSubmitting] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event_: React.FormEvent) => {
+    event_.preventDefault();
     setError(null);
     setSubmitting(true);
 
@@ -48,8 +48,8 @@ export const PropertyTypeCreateForm: React.FC<PropertyTypeCreateFormProps> = ({
 
   return (
     <form
-      onSubmit={(e) => {
-        handleSubmit(e).catch(console.error);
+      onSubmit={(event_) => {
+        handleSubmit(event_).catch(console.error);
       }}
       className="space-y-3 p-4 border rounded-lg bg-white"
     >
@@ -59,7 +59,7 @@ export const PropertyTypeCreateForm: React.FC<PropertyTypeCreateFormProps> = ({
         <input
           required
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={(event_) => setName(event_.target.value)}
           className="w-full border rounded px-2 py-1 text-sm"
         />
       </label>
@@ -67,8 +67,8 @@ export const PropertyTypeCreateForm: React.FC<PropertyTypeCreateFormProps> = ({
         <span className="text-xs uppercase tracking-wider text-gray-500">Value kind</span>
         <select
           value={valueKind}
-          onChange={(e) => {
-            const parsed = PropertyValueKindSchema.safeParse(e.target.value);
+          onChange={(event_) => {
+            const parsed = PropertyValueKindSchema.safeParse(event_.target.value);
             if (parsed.success) setValueKind(parsed.data);
             return undefined;
           }}
@@ -87,7 +87,7 @@ export const PropertyTypeCreateForm: React.FC<PropertyTypeCreateFormProps> = ({
         </span>
         <input
           value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          onChange={(event_) => setDescription(event_.target.value)}
           className="w-full border rounded px-2 py-1 text-sm"
         />
       </label>

@@ -1,15 +1,15 @@
 import { GraphQLScalarType, Kind, type ValueNode } from 'graphql';
 
-const deepFreeze = <T>(obj: T): T => {
-  if (obj === null || typeof obj !== 'object') {
-    return obj;
+const deepFreeze = <T>(object: T): T => {
+  if (object === null || typeof object !== 'object') {
+    return object;
   }
-  Object.freeze(obj);
+  Object.freeze(object);
   // eslint-disable-next-line unicorn/no-array-reduce -- reduce is required to recursively freeze properties without mutation or loops
-  return Object.values(obj as Record<string, unknown>).reduce<T>((acc, prop) => {
-    deepFreeze(prop);
-    return acc;
-  }, obj);
+  return Object.values(object as Record<string, unknown>).reduce<T>((accumulator, property) => {
+    deepFreeze(property);
+    return accumulator;
+  }, object);
 };
 
 const parseAstValue = (ast: ValueNode): unknown => {

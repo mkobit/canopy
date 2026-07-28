@@ -45,8 +45,8 @@ export interface ResolvedView {
 }
 
 // Helper to return a scalar value directly
-function scalar(val: string | number | boolean): ScalarValue {
-  return val;
+function scalar(value: string | number | boolean): ScalarValue {
+  return value;
 }
 
 // Helper to create a reference value
@@ -66,24 +66,25 @@ export function saveViewDefinition(
 ): Result<{ graph: Graph; nodeId: NodeId }, Error> {
   const nodeId = createNodeId();
 
-  const nameVal = scalar(view.name);
-  const layoutVal = scalar(view.layout);
-  const descriptionVal = view.description ? scalar(view.description) : undefined;
-  const sortVal = view.sort && view.sort.length > 0 ? scalar(JSON.stringify(view.sort)) : undefined;
-  const groupByVal = view.groupBy ? scalar(view.groupBy) : undefined;
-  const pageSizeVal = view.pageSize ? scalar(view.pageSize) : undefined;
+  const nameValue = scalar(view.name);
+  const layoutValue = scalar(view.layout);
+  const descriptionValue = view.description ? scalar(view.description) : undefined;
+  const sortValue =
+    view.sort && view.sort.length > 0 ? scalar(JSON.stringify(view.sort)) : undefined;
+  const groupByValue = view.groupBy ? scalar(view.groupBy) : undefined;
+  const pageSizeValue = view.pageSize ? scalar(view.pageSize) : undefined;
 
   const properties = new Map<string, PropertyValue>([
-    ['name', nameVal],
-    ['layout', layoutVal],
+    ['name', nameValue],
+    ['layout', layoutValue],
     ...(view.queryRef ? [['queryRef', reference(view.queryRef)] as const] : []),
-    ...(descriptionVal === undefined ? [] : [['description', descriptionVal] as const]),
-    ...(sortVal === undefined ? [] : [['sort', sortVal] as const]),
-    ...(groupByVal === undefined ? [] : [['groupBy', groupByVal] as const]),
+    ...(descriptionValue === undefined ? [] : [['description', descriptionValue] as const]),
+    ...(sortValue === undefined ? [] : [['sort', sortValue] as const]),
+    ...(groupByValue === undefined ? [] : [['groupBy', groupByValue] as const]),
     ...(view.displayProperties && view.displayProperties.length > 0
       ? [['displayProperties', list(view.displayProperties)] as const]
       : []),
-    ...(pageSizeVal === undefined ? [] : [['pageSize', pageSizeVal] as const]),
+    ...(pageSizeValue === undefined ? [] : [['pageSize', pageSizeValue] as const]),
   ]);
 
   const node: Node = {
@@ -117,26 +118,26 @@ export function getViewDefinition(graph: Graph, nodeId: NodeId): Result<ViewDefi
     return err(new Error(`Node ${nodeId} is not a View Definition`));
   }
 
-  const nameProp = node.properties.get('name');
-  if (typeof nameProp !== 'string') return err(new Error('Invalid view name'));
+  const nameProperty = node.properties.get('name');
+  if (typeof nameProperty !== 'string') return err(new Error('Invalid view name'));
 
-  const queryRefProp = node.properties.get('queryRef');
-  if (queryRefProp !== undefined && typeof queryRefProp !== 'string') {
+  const queryReferenceProperty = node.properties.get('queryRef');
+  if (queryReferenceProperty !== undefined && typeof queryReferenceProperty !== 'string') {
     return err(new Error('Invalid view queryRef'));
   }
 
-  const layoutProp = node.properties.get('layout');
-  if (typeof layoutProp !== 'string') return err(new Error('Invalid view layout'));
+  const layoutProperty = node.properties.get('layout');
+  if (typeof layoutProperty !== 'string') return err(new Error('Invalid view layout'));
 
   const description = node.properties.get('description');
-  const sortProp = node.properties.get('sort');
+  const sortProperty = node.properties.get('sort');
   const groupBy = node.properties.get('groupBy');
   const displayProperties = node.properties.get('displayProperties');
   const pageSize = node.properties.get('pageSize');
 
   const sort: readonly Sort[] | undefined = (() => {
-    if (typeof sortProp === 'string') {
-      const parsed = fromThrowable(() => JSON.parse(sortProp) as readonly Sort[]);
+    if (typeof sortProperty === 'string') {
+      const parsed = fromThrowable(() => JSON.parse(sortProperty) as readonly Sort[]);
       if (parsed.ok) return parsed.value;
     }
     return;
@@ -144,15 +145,15 @@ export function getViewDefinition(graph: Graph, nodeId: NodeId): Result<ViewDefi
 
   const displayPropertiesList = Array.isArray(displayProperties)
     ? displayProperties
-        .filter((i) => typeof i === 'string')
-        .map((i) => i as string)
+        .filter((index) => typeof index === 'string')
+        .map((index) => index as string)
         .filter((s) => s !== '')
     : undefined;
 
   return ok({
-    name: nameProp,
-    layout: layoutProp,
-    ...(queryRefProp !== undefined && { queryRef: asNodeId(queryRefProp) }),
+    name: nameProperty,
+    layout: layoutProperty,
+    ...(queryReferenceProperty !== undefined && { queryRef: asNodeId(queryReferenceProperty) }),
     ...(typeof description === 'string' && { description: description }),
     ...(sort && { sort }),
     ...(typeof groupBy === 'string' && { groupBy: groupBy }),
@@ -194,18 +195,18 @@ export function executeView(
 }
 
 export function resolveView(graph: Graph, viewNodeId: NodeId): Result<ResolvedView, Error> {
-  const viewDef = getViewDefinition(graph, viewNodeId);
-  if (!viewDef.ok) return err(viewDef.error);
+  const viewDefinition = getViewDefinition(graph, viewNodeId);
+  if (!viewDefinition.ok) return err(viewDefinition.error);
 
-  if (!viewDef.value.queryRef) {
+  if (!viewDefinition.value.queryRef) {
     return err(new Error(`View definition ${viewNodeId} does not have a queryRef`));
   }
 
-  const queryDef = getQueryDefinition(graph, viewDef.value.queryRef);
-  if (!queryDef.ok) return err(queryDef.error);
+  const queryDefinition = getQueryDefinition(graph, viewDefinition.value.queryRef);
+  if (!queryDefinition.ok) return err(queryDefinition.error);
 
   return ok({
-    definition: viewDef.value,
-    query: queryDef.value,
+    definition: viewDefinition.value,
+    query: queryDefinition.value,
   });
 }

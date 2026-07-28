@@ -86,18 +86,18 @@ describe('GraphIndexes', () => {
     const indexes = buildGraphIndexes(graph);
     // Compound key: schemaId\0scopeType\0scopeTarget
     const key = `custom-schema\0node\0target-node-1`;
-    const val = indexes.userSettings.get(key) as unknown as {
+    const value = indexes.userSettings.get(key) as unknown as {
       readonly nested: string;
       readonly arr: readonly number[];
     };
 
-    expect(val).toBeDefined();
-    expect(val.nested).toBe('value');
-    expect(val.arr).toEqual([1, 2, 3]);
+    expect(value).toBeDefined();
+    expect(value.nested).toBe('value');
+    expect(value.arr).toEqual([1, 2, 3]);
 
     // Verify deep freezing
-    expect(Object.isFrozen(val)).toBe(true);
-    expect(Object.isFrozen(val.arr)).toBe(true);
+    expect(Object.isFrozen(value)).toBe(true);
+    expect(Object.isFrozen(value.arr)).toBe(true);
   });
 
   it('prevents key collisions with null-byte compound keys', () => {
@@ -133,24 +133,24 @@ describe('GraphIndexes', () => {
     };
 
     const indexes = buildGraphIndexes(graph);
-    const valA = indexes.userSettings.get('A:B\0C\0');
-    const valB = indexes.userSettings.get('A\0B:C\0');
+    const valueA = indexes.userSettings.get('A:B\0C\0');
+    const valueB = indexes.userSettings.get('A\0B:C\0');
 
-    expect(valA).toBe('valA');
-    expect(valB).toBe('valB');
+    expect(valueA).toBe('valA');
+    expect(valueB).toBe('valB');
   });
 
   it('resolves multiple view override edges deterministically using newest timestamp and lexicographical ID', () => {
     let graph = unwrap(createGraph(graphId, 'Test'));
 
     const sourceNodeId = asNodeId('my-content-node');
-    const viewDef1: Node = {
+    const viewDefinition1: Node = {
       id: asNodeId('view-def-1'),
       type: SYSTEM_IDS.VIEW_DEFINITION,
       properties: new Map(),
       metadata: { created: createInstant(), modified: createInstant(), modifiedBy: deviceId },
     };
-    const viewDef2: Node = {
+    const viewDefinition2: Node = {
       id: asNodeId('view-def-2'),
       type: SYSTEM_IDS.VIEW_DEFINITION,
       properties: new Map(),
@@ -159,7 +159,11 @@ describe('GraphIndexes', () => {
 
     graph = {
       ...graph,
-      nodes: new Map([...graph.nodes, [viewDef1.id, viewDef1], [viewDef2.id, viewDef2]]),
+      nodes: new Map([
+        ...graph.nodes,
+        [viewDefinition1.id, viewDefinition1],
+        [viewDefinition2.id, viewDefinition2],
+      ]),
     };
 
     // Edge 1: older
@@ -167,7 +171,7 @@ describe('GraphIndexes', () => {
       id: asEdgeId('edge-1'),
       type: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
       source: sourceNodeId,
-      target: viewDef1.id,
+      target: viewDefinition1.id,
       properties: new Map(),
       metadata: {
         created: asInstant('2026-07-21T10:00:00Z'),
@@ -181,7 +185,7 @@ describe('GraphIndexes', () => {
       id: asEdgeId('edge-2'),
       type: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
       source: sourceNodeId,
-      target: viewDef2.id,
+      target: viewDefinition2.id,
       properties: new Map(),
       metadata: {
         created: asInstant('2026-07-21T11:00:00Z'),
@@ -198,7 +202,7 @@ describe('GraphIndexes', () => {
     const indexes = buildGraphIndexes(graph);
     const resolved = indexes.viewOverrides.get(sourceNodeId);
     expect(resolved).toBeDefined();
-    expect(resolved?.id).toBe(viewDef2.id); // Newer wins
+    expect(resolved?.id).toBe(viewDefinition2.id); // Newer wins
   });
 
   it('getGraphIndexes caches index reference on the graph object', () => {

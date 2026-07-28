@@ -42,15 +42,15 @@ describe('IpcClient integration with IpcServer', () => {
     const context = { graph: session.graph(), session, eventLogStore };
 
     server = createIpcServer({ socketPath, context });
-    const listenRes = await server.listen();
-    expect(listenRes.ok).toBe(true);
+    const listenResponse = await server.listen();
+    expect(listenResponse.ok).toBe(true);
 
     const program = Effect.gen(function* () {
       const client: IpcClient = yield* makeIpcClient(socketPath);
 
-      const handshakeRes = yield* client.handshake('0.1.0');
-      expect(handshakeRes.apiVersion).toBe('v1');
-      expect(handshakeRes.capabilities).toContain('queries');
+      const handshakeResponse = yield* client.handshake('0.1.0');
+      expect(handshakeResponse.apiVersion).toBe('v1');
+      expect(handshakeResponse.capabilities).toContain('queries');
 
       const createdNode = yield* client.createNode({
         id: 'node_cli_1',

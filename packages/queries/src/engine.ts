@@ -28,8 +28,8 @@ export function executeQuery(graph: Graph, query: Query): Result<QueryResult, Er
 
   const result = reduce(
     query.steps,
-    (acc, step: QueryStep): Accumulator => {
-      if (acc.error) return acc; // Propagate error
+    (accumulator, step: QueryStep): Accumulator => {
+      if (accumulator.error) return accumulator; // Propagate error
 
       switch (step.kind) {
         case 'node-scan': {
@@ -46,48 +46,56 @@ export function executeQuery(graph: Graph, query: Query): Result<QueryResult, Er
         }
         case 'filter': {
           return {
-            ...acc,
-            items: applyFilter(acc.items, step.predicate),
+            ...accumulator,
+            items: applyFilter(accumulator.items, step.predicate),
           };
         }
         case 'traversal': {
-          if (!acc.isNodeContext) {
-            return { ...acc, error: new Error('Traversal can only be performed on nodes.') };
+          if (!accumulator.isNodeContext) {
+            return {
+              ...accumulator,
+              error: new Error('Traversal can only be performed on nodes.'),
+            };
           }
           return {
-            items: traverse(graph, acc.items as readonly Node[], step.edgeType, step.direction),
+            items: traverse(
+              graph,
+              accumulator.items as readonly Node[],
+              step.edgeType,
+              step.direction,
+            ),
             isNodeContext: true, // Traversal returns nodes
           };
         }
         case 'sort': {
           return {
-            ...acc,
-            items: applySort(acc.items, step.sort),
+            ...accumulator,
+            items: applySort(accumulator.items, step.sort),
           };
         }
         case 'limit': {
           return {
-            ...acc,
-            items: acc.items.slice(0, step.limit),
+            ...accumulator,
+            items: accumulator.items.slice(0, step.limit),
           };
         }
         case 'project': {
-          const rows = map(acc.items, (item) => {
+          const rows = map(accumulator.items, (item) => {
             return reduce(
               step.properties,
-              (row, prop) => {
-                return { ...row, [prop]: getItemFieldValue(item, prop) };
+              (row, property) => {
+                return { ...row, [property]: getItemFieldValue(item, property) };
               },
               {} as Readonly<Record<string, unknown>>,
             );
           });
           return {
-            ...acc,
+            ...accumulator,
             rows,
           };
         }
         default: {
-          return acc;
+          return accumulator;
         }
       }
     },
@@ -121,17 +129,17 @@ function applyFilter(items: readonly GraphItem[], predicate: Filter): readonly G
   return filter(items, (item) => {
     // Let's try a different approach to avoid `let`.
     // We can use a helper function to extract value.
-    const getPropValue = (): unknown => {
+    const getPropertyValue = (): unknown => {
       if ('source' in item && predicate.property === 'source') return item.source;
       if ('target' in item && predicate.property === 'target') return item.target;
 
-      const prop = item.properties.get(predicate.property);
-      if (prop !== undefined) return unwrapValue(prop);
+      const property = item.properties.get(predicate.property);
+      if (property !== undefined) return unwrapValue(property);
       return undefined;
     };
 
-    const pVal = getPropValue();
-    if (pVal === undefined) {
+    const pValue = getPropertyValue();
+    if (pValue === undefined) {
       if (predicate.operator === 'exists') return false;
       return false;
     }
@@ -140,46 +148,46 @@ function applyFilter(items: readonly GraphItem[], predicate: Filter): readonly G
 
     switch (predicate.operator) {
       case 'eq': {
-        return pVal === value;
+        return pValue === value;
       }
       case 'neq': {
-        return pVal !== value;
+        return pValue !== value;
       }
       case 'gt': {
-        return compare(pVal, value) > 0;
+        return compare(pValue, value) > 0;
       }
       case 'gte': {
-        return compare(pVal, value) >= 0;
+        return compare(pValue, value) >= 0;
       }
       case 'lt': {
-        return compare(pVal, value) < 0;
+        return compare(pValue, value) < 0;
       }
       case 'lte': {
-        return compare(pVal, value) <= 0;
+        return compare(pValue, value) <= 0;
       }
       case 'contains': {
-        if (Array.isArray(pVal)) {
-          return pVal.includes(value);
+        if (Array.isArray(pValue)) {
+          return pValue.includes(value);
         }
-        if (typeof pVal === 'string') {
-          return pVal.includes(value as string);
+        if (typeof pValue === 'string') {
+          return pValue.includes(value as string);
         }
         return false;
       }
       case 'starts-with': {
-        if (typeof pVal === 'string' && typeof value === 'string') {
-          return pVal.startsWith(value);
+        if (typeof pValue === 'string' && typeof value === 'string') {
+          return pValue.startsWith(value);
         }
         return false;
       }
       case 'ends-with': {
-        if (typeof pVal === 'string' && typeof value === 'string') {
-          return pVal.endsWith(value);
+        if (typeof pValue === 'string' && typeof value === 'string') {
+          return pValue.endsWith(value);
         }
         return false;
       }
       case 'exists': {
-        return pVal !== undefined && pVal !== null;
+        return pValue !== undefined && pValue !== null;
       }
       default: {
         return false;
@@ -240,14 +248,14 @@ function getItemFieldValue(item: GraphItem, property: string): unknown {
 
 function applySort(items: readonly GraphItem[], sort: Sort): readonly GraphItem[] {
   return items.toSorted((a, b) => {
-    const valA = getItemFieldValue(a, sort.property);
-    const valB = getItemFieldValue(b, sort.property);
+    const valueA = getItemFieldValue(a, sort.property);
+    const valueB = getItemFieldValue(b, sort.property);
 
-    if (valA === valB) return 0;
-    if (valA === undefined) return 1; // undefined last
-    if (valB === undefined) return -1;
+    if (valueA === valueB) return 0;
+    if (valueA === undefined) return 1; // undefined last
+    if (valueB === undefined) return -1;
 
-    const comparison = compare(valA, valB);
+    const comparison = compare(valueA, valueB);
     return sort.direction === 'asc' ? comparison : -comparison;
   });
 }
@@ -267,13 +275,13 @@ function compare(a: unknown, b: unknown): number {
   return 0;
 }
 
-function unwrapValue(prop: PropertyValue | undefined): unknown {
-  if (prop === undefined) return undefined;
-  if (Array.isArray(prop)) {
-    return prop.map(unwrapScalar);
+function unwrapValue(property: PropertyValue | undefined): unknown {
+  if (property === undefined) return undefined;
+  if (Array.isArray(property)) {
+    return property.map(unwrapScalar);
   }
   // Explicitly tell TS that prop is ScalarValue here
-  return unwrapScalar(prop as ScalarValue);
+  return unwrapScalar(property as ScalarValue);
 }
 
 function unwrapScalar(scalar: ScalarValue): unknown {

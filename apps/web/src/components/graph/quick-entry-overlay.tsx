@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 
-export interface QuickEntryOverlayProps {
+export interface QuickEntryOverlayProperties {
   readonly onSubmit?: (text: string) => unknown;
 }
 
-export const QuickEntryOverlay: React.FC<QuickEntryOverlayProps> = ({ onSubmit }) => {
+export const QuickEntryOverlay: React.FC<QuickEntryOverlayProperties> = ({ onSubmit }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [inputValue, setInputValue] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (event_: React.FormEvent) => {
+    event_.preventDefault();
     if (inputValue.trim() && onSubmit) {
       onSubmit(inputValue.trim());
       setInputValue('');
@@ -43,8 +43,8 @@ export const QuickEntryOverlay: React.FC<QuickEntryOverlayProps> = ({ onSubmit }
             type="text"
             placeholder="Capture a thought..."
             value={inputValue}
-            onChange={(e) => {
-              setInputValue(e.target.value);
+            onChange={(event_) => {
+              setInputValue(event_.target.value);
               return undefined;
             }}
             className="bg-surface-container-lowest text-on-surface border-b-2 border-primary/50 focus:border-primary outline-none px-3 py-2 text-sm font-sans w-full"

@@ -2,13 +2,13 @@ import React from 'react';
 import type { Graph, Node } from '@canopy/graph';
 import { BlockRenderer } from './block-renderer';
 
-export interface DocumentRendererProps {
+export interface DocumentRendererProperties {
   rootNode: Node;
   graph: Graph;
   className?: string;
 }
 
-export const DocumentRenderer: React.FC<DocumentRendererProps> = ({
+export const DocumentRenderer: React.FC<DocumentRendererProperties> = ({
   rootNode,
   graph,
   className,

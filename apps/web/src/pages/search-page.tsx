@@ -22,12 +22,8 @@ export const SearchPage = () => {
 
     if (node.id.toLowerCase().includes(q)) return true;
 
-    const nameProp = node.properties.get('name');
-    if (typeof nameProp === 'string' && nameProp.toLowerCase().includes(q)) {
-      return true;
-    }
-
-    return false;
+    const nameProperty = node.properties.get('name');
+    return typeof nameProperty === 'string' && nameProperty.toLowerCase().includes(q);
   });
 
   return (
@@ -39,8 +35,8 @@ export const SearchPage = () => {
           placeholder="Search nodes..."
           className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
           value={query}
-          onChange={(e) => {
-            setQuery(e.target.value);
+          onChange={(event_) => {
+            setQuery(event_.target.value);
             return undefined;
           }}
         />

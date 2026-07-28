@@ -183,6 +183,7 @@ describe('parseNamespace', () => {
     );
     expect(parseNamespace(created.graph, 'research').ok).toBe(true);
 
+    // eslint-disable-next-line unicorn/prefer-iterator-helpers -- MapIterator#find() needs a newer lib target than this project's tsconfig (ES2023)
     const namespaceNodeId = [...created.graph.nodes.values()].find(
       (node) => node.type === SYSTEM_IDS.NAMESPACE && node.properties.get('name') === 'research',
     )?.id;

@@ -13,34 +13,34 @@ describe('Meta-circular bootstrap', () => {
     const graph = unwrap(createGraph(asGraphId('test-graph'), 'Test Graph'));
 
     // Check NodeType definition
-    const nodeTypeDef = graph.nodes.get(SYSTEM_IDS.NODE_TYPE_DEF);
-    expect(nodeTypeDef).toBeDefined();
-    expect(nodeTypeDef?.type).toBe(SYSTEM_IDS.NODE_TYPE);
-    expect(nodeTypeDef?.properties.get('name')).toEqual('Node Type');
-    expect(nodeTypeDef?.properties.get('namespace')).toEqual('system');
+    const nodeTypeDefinition = graph.nodes.get(SYSTEM_IDS.NODE_TYPE_DEF);
+    expect(nodeTypeDefinition).toBeDefined();
+    expect(nodeTypeDefinition?.type).toBe(SYSTEM_IDS.NODE_TYPE);
+    expect(nodeTypeDefinition?.properties.get('name')).toEqual('Node Type');
+    expect(nodeTypeDefinition?.properties.get('namespace')).toEqual('system');
 
     // Check EdgeType definition
-    const edgeTypeDef = graph.nodes.get(SYSTEM_IDS.EDGE_TYPE_DEF);
-    expect(edgeTypeDef).toBeDefined();
-    expect(edgeTypeDef?.type).toBe(SYSTEM_IDS.NODE_TYPE); // EdgeType definition is a NodeType
-    expect(edgeTypeDef?.properties.get('name')).toEqual('Edge Type');
-    expect(edgeTypeDef?.properties.get('namespace')).toEqual('system');
+    const edgeTypeDefinition = graph.nodes.get(SYSTEM_IDS.EDGE_TYPE_DEF);
+    expect(edgeTypeDefinition).toBeDefined();
+    expect(edgeTypeDefinition?.type).toBe(SYSTEM_IDS.NODE_TYPE); // EdgeType definition is a NodeType
+    expect(edgeTypeDefinition?.properties.get('name')).toEqual('Edge Type');
+    expect(edgeTypeDefinition?.properties.get('namespace')).toEqual('system');
 
     // Check Renderer definition
-    const rendererDef = graph.nodes.get(SYSTEM_IDS.RENDERER_DEF);
-    expect(rendererDef).toBeDefined();
-    expect(rendererDef?.type).toBe(SYSTEM_IDS.NODE_TYPE);
-    expect(rendererDef?.properties.get('name')).toEqual('Renderer');
-    expect(rendererDef?.properties.get('namespace')).toEqual('system');
+    const rendererDefinition = graph.nodes.get(SYSTEM_IDS.RENDERER_DEF);
+    expect(rendererDefinition).toBeDefined();
+    expect(rendererDefinition?.type).toBe(SYSTEM_IDS.NODE_TYPE);
+    expect(rendererDefinition?.properties.get('name')).toEqual('Renderer');
+    expect(rendererDefinition?.properties.get('namespace')).toEqual('system');
 
     // Check Namespace definition (self-describing metatype for the Namespace node shape)
-    const namespaceDef = graph.nodes.get(SYSTEM_IDS.NAMESPACE_DEF);
-    expect(namespaceDef).toBeDefined();
-    expect(namespaceDef?.type).toBe(SYSTEM_IDS.NODE_TYPE);
-    expect(namespaceDef?.properties.get('name')).toEqual('Namespace');
-    expect(namespaceDef?.properties.get('namespace')).toEqual('system');
+    const namespaceDefinition = graph.nodes.get(SYSTEM_IDS.NAMESPACE_DEF);
+    expect(namespaceDefinition).toBeDefined();
+    expect(namespaceDefinition?.type).toBe(SYSTEM_IDS.NODE_TYPE);
+    expect(namespaceDefinition?.properties.get('name')).toEqual('Namespace');
+    expect(namespaceDefinition?.properties.get('namespace')).toEqual('system');
     expect(
-      JSON.parse(namespaceDef?.properties.get('properties') as string).map(
+      JSON.parse(namespaceDefinition?.properties.get('properties') as string).map(
         (p: { name: string }) => p.name,
       ),
     ).toEqual(['name', 'description', 'kind']);
@@ -68,13 +68,13 @@ describe('Meta-circular bootstrap', () => {
     expect(userSettingsNs?.properties.get('name')).toEqual('user-settings');
 
     // Check PropertyType definition
-    const propertyTypeDef = graph.nodes.get(SYSTEM_IDS.PROPERTY_TYPE_DEF);
-    expect(propertyTypeDef).toBeDefined();
-    expect(propertyTypeDef?.type).toBe(SYSTEM_IDS.NODE_TYPE);
-    expect(propertyTypeDef?.properties.get('name')).toEqual('Property Type');
-    expect(propertyTypeDef?.properties.get('namespace')).toEqual('system');
+    const propertyTypeDefinition = graph.nodes.get(SYSTEM_IDS.PROPERTY_TYPE_DEF);
+    expect(propertyTypeDefinition).toBeDefined();
+    expect(propertyTypeDefinition?.type).toBe(SYSTEM_IDS.NODE_TYPE);
+    expect(propertyTypeDefinition?.properties.get('name')).toEqual('Property Type');
+    expect(propertyTypeDefinition?.properties.get('namespace')).toEqual('system');
     expect(
-      JSON.parse(propertyTypeDef?.properties.get('properties') as string).map(
+      JSON.parse(propertyTypeDefinition?.properties.get('properties') as string).map(
         (p: { name: string }) => p.name,
       ),
     ).toEqual(['name', 'valueKind', 'description']);
@@ -87,13 +87,13 @@ describe('Meta-circular bootstrap', () => {
     expect(childOf?.properties.get('namespace')).toEqual('system');
 
     // Check Settings schemas
-    const settingsSchemaDef = graph.nodes.get(SYSTEM_IDS.SETTINGS_SCHEMA_DEF);
-    expect(settingsSchemaDef).toBeDefined();
-    expect(settingsSchemaDef?.type).toBe(SYSTEM_IDS.NODE_TYPE);
+    const settingsSchemaDefinition = graph.nodes.get(SYSTEM_IDS.SETTINGS_SCHEMA_DEF);
+    expect(settingsSchemaDefinition).toBeDefined();
+    expect(settingsSchemaDefinition?.type).toBe(SYSTEM_IDS.NODE_TYPE);
 
-    const userSettingDef = graph.nodes.get(SYSTEM_IDS.USER_SETTING_DEF);
-    expect(userSettingDef).toBeDefined();
-    expect(userSettingDef?.type).toBe(SYSTEM_IDS.NODE_TYPE);
+    const userSettingDefinition = graph.nodes.get(SYSTEM_IDS.USER_SETTING_DEF);
+    expect(userSettingDefinition).toBeDefined();
+    expect(userSettingDefinition?.type).toBe(SYSTEM_IDS.NODE_TYPE);
 
     const defaultView = graph.nodes.get(SYSTEM_IDS.SETTING_DEFAULT_VIEW);
     expect(defaultView).toBeDefined();
@@ -109,20 +109,20 @@ describe('Meta-circular bootstrap', () => {
     const graph = unwrap(createGraph(asGraphId('test-graph'), 'Test Graph'));
 
     // Check system edge types definitions
-    const usesRendererDef = graph.nodes.get(SYSTEM_IDS.EDGE_USES_RENDERER);
-    expect(usesRendererDef).toBeDefined();
-    expect(usesRendererDef?.type).toBe(SYSTEM_IDS.EDGE_TYPE);
-    expect(usesRendererDef?.properties.get('name')).toBe('uses_renderer');
+    const usesRendererDefinition = graph.nodes.get(SYSTEM_IDS.EDGE_USES_RENDERER);
+    expect(usesRendererDefinition).toBeDefined();
+    expect(usesRendererDefinition?.type).toBe(SYSTEM_IDS.EDGE_TYPE);
+    expect(usesRendererDefinition?.properties.get('name')).toBe('uses_renderer');
 
-    const viewOverrideDef = graph.nodes.get(SYSTEM_IDS.EDGE_VIEW_OVERRIDE);
-    expect(viewOverrideDef).toBeDefined();
-    expect(viewOverrideDef?.type).toBe(SYSTEM_IDS.EDGE_TYPE);
-    expect(viewOverrideDef?.properties.get('name')).toBe('view_override');
+    const viewOverrideDefinition = graph.nodes.get(SYSTEM_IDS.EDGE_VIEW_OVERRIDE);
+    expect(viewOverrideDefinition).toBeDefined();
+    expect(viewOverrideDefinition?.type).toBe(SYSTEM_IDS.EDGE_TYPE);
+    expect(viewOverrideDefinition?.properties.get('name')).toBe('view_override');
 
-    const defaultViewEdgeDef = graph.nodes.get(SYSTEM_IDS.EDGE_DEFAULT_VIEW);
-    expect(defaultViewEdgeDef).toBeDefined();
-    expect(defaultViewEdgeDef?.type).toBe(SYSTEM_IDS.EDGE_TYPE);
-    expect(defaultViewEdgeDef?.properties.get('name')).toBe('default_view');
+    const defaultViewEdgeDefinition = graph.nodes.get(SYSTEM_IDS.EDGE_DEFAULT_VIEW);
+    expect(defaultViewEdgeDefinition).toBeDefined();
+    expect(defaultViewEdgeDefinition?.type).toBe(SYSTEM_IDS.EDGE_TYPE);
+    expect(defaultViewEdgeDefinition?.properties.get('name')).toBe('default_view');
 
     // Check system Renderers
     const textRenderer = graph.nodes.get(asNodeId('system:renderer:text'));
@@ -170,8 +170,9 @@ describe('Meta-circular bootstrap', () => {
 
     // Helper to find edge by type, source, target
     const findEdge = (type: string, source: string, target: string) => {
+      // eslint-disable-next-line unicorn/prefer-iterator-helpers -- MapIterator#find() needs a newer lib target than this project's tsconfig (ES2023)
       return [...graph.edges.values()].find(
-        (e) => e.type === type && e.source === source && e.target === target,
+        (edge) => edge.type === type && edge.source === source && edge.target === target,
       );
     };
 

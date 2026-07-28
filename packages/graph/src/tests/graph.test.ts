@@ -268,8 +268,8 @@ describe('Core Graph Engine', () => {
       updateEdge(
         g,
         edgeId,
-        (e) => ({
-          ...e,
+        (updatedEdge) => ({
+          ...updatedEdge,
           properties: new Map([['since', 2023]]),
         }),
         { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') },

@@ -27,12 +27,14 @@ function createTestEventLog(): EventLogStore {
   const events: GraphEvent[] = [];
   return {
     appendEvents: (_graphId, newEvents) => {
-      const seen = new Set(events.map((e) => e.eventId));
+      const seen = new Set(events.map((event) => event.eventId));
       for (const event of newEvents) {
-        if (!seen.has(event.eventId)) {
-          events.push(event);
-          seen.add(event.eventId);
+        if (seen.has(event.eventId)) {
+          continue;
         }
+
+        events.push(event);
+        seen.add(event.eventId);
       }
       events.sort((a, b) => a.eventId.localeCompare(b.eventId));
       return Promise.resolve(ok(undefined));
@@ -41,11 +43,11 @@ function createTestEventLog(): EventLogStore {
       let result = [...events];
       const after = options?.after;
       if (after !== undefined) {
-        result = result.filter((e) => e.eventId > after);
+        result = result.filter((event) => event.eventId > after);
       }
       const before = options?.before;
       if (before !== undefined) {
-        result = result.filter((e) => e.eventId < before);
+        result = result.filter((event) => event.eventId < before);
       }
       if (options?.reverse) {
         result.reverse();
@@ -99,7 +101,9 @@ describe('GraphSession', () => {
     expect(result.value.nodes.has(event.id)).toBe(true);
 
     expect(notifications.length).toBe(1);
-    expect(notifications[0]?.delta.applied.map((e) => e.eventId)).toEqual([event.eventId]);
+    expect(notifications[0]?.delta.applied.map((event_) => event_.eventId)).toEqual([
+      event.eventId,
+    ]);
     expect(notifications[0]?.graph.nodes.has(event.id)).toBe(true);
 
     unsubscribe();
@@ -117,7 +121,7 @@ describe('GraphSession', () => {
     const storedResult = await eventLog.getEvents(graphId);
     expect(storedResult.ok).toBe(true);
     if (!storedResult.ok) return;
-    const stored = storedResult.value.find((e) => e.eventId === event.eventId);
+    const stored = storedResult.value.find((event_) => event_.eventId === event.eventId);
     expect(stored?.deviceId).toBe(sessionDeviceId);
   });
 

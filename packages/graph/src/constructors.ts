@@ -12,7 +12,7 @@ import {
   createEdgeId as generateEdgeId,
   createGraphId as generateGraphId,
 } from './factories';
-import { ok, err, fromThrowable } from './result';
+import { ok, err as error, fromThrowable } from './result';
 import { Temporal } from 'temporal-polyfill';
 
 // UUID regex (generic)
@@ -20,7 +20,7 @@ const UUID_REGEX = /^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i;
 
 function validateUuid(id: string, label: string): Result<void, Error> {
   if (!UUID_REGEX.test(id)) {
-    return err(new Error(`Invalid ${label}: '${id}' is not a valid UUID.`));
+    return error(new Error(`Invalid ${label}: '${id}' is not a valid UUID.`));
   }
   return ok(undefined);
 }
@@ -34,7 +34,7 @@ export function createNodeId(id?: string): Result<NodeId, Error> {
     return ok(generateNodeId());
   }
   const validation = validateUuid(id, 'NodeId');
-  if (!validation.ok) return err(validation.error);
+  if (!validation.ok) return error(validation.error);
   return ok(asNodeId(id));
 }
 
@@ -47,7 +47,7 @@ export function createEdgeId(id?: string): Result<EdgeId, Error> {
     return ok(generateEdgeId());
   }
   const validation = validateUuid(id, 'EdgeId');
-  if (!validation.ok) return err(validation.error);
+  if (!validation.ok) return error(validation.error);
   return ok(asEdgeId(id));
 }
 
@@ -60,7 +60,7 @@ export function createGraphId(id?: string): Result<GraphId, Error> {
     return ok(generateGraphId());
   }
   const validation = validateUuid(id, 'GraphId');
-  if (!validation.ok) return err(validation.error);
+  if (!validation.ok) return error(validation.error);
   return ok(asGraphId(id));
 }
 
@@ -70,11 +70,11 @@ export function createGraphId(id?: string): Result<GraphId, Error> {
  */
 export function createTypeId(id: string): Result<TypeId, Error> {
   if (!id || typeof id !== 'string') {
-    return err(new Error(`Invalid TypeId: must be a non-empty string.`));
+    return error(new Error(`Invalid TypeId: must be a non-empty string.`));
   }
   // Allow alphanumeric, dashes, underscores, dots, colons.
   if (!/^[\w.:-]+$/.test(id)) {
-    return err(new Error(`Invalid TypeId: '${id}' contains invalid characters.`));
+    return error(new Error(`Invalid TypeId: '${id}' contains invalid characters.`));
   }
   return ok(asTypeId(id));
 }

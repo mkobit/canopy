@@ -23,7 +23,7 @@ export const CustomEdge = ({
     targetPosition,
   });
 
-  const edgeProps = {
+  const edgeProperties = {
     path: edgePath,
     style: {
       ...style,
@@ -36,7 +36,7 @@ export const CustomEdge = ({
 
   return (
     <>
-      <BaseEdge {...edgeProps} />
+      <BaseEdge {...edgeProperties} />
       {label && (
         <EdgeLabelRenderer>
           <div

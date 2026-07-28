@@ -4,7 +4,7 @@ import { SYSTEM_IDS } from '@canopy/graph';
 import type { GraphId } from '@canopy/graph';
 import { usePlugin } from '../../context/plugin-context';
 
-export interface SideNavBarProps {
+export interface SideNavBarProperties {
   readonly onNewNode?: () => unknown;
   readonly onLogout?: () => unknown;
   readonly graphId?: GraphId;
@@ -18,7 +18,7 @@ const navLinkClass = ({ isActive }: Readonly<{ isActive: boolean }>) =>
   }`;
 
 // eslint-disable-next-line max-lines-per-function
-export const SideNavBar: React.FC<SideNavBarProps> = ({ onNewNode, onLogout, graphId }) => {
+export const SideNavBar: React.FC<SideNavBarProperties> = ({ onNewNode, onLogout, graphId }) => {
   const { menuItems, startWizard } = usePlugin();
 
   return (

@@ -1,14 +1,5 @@
 export type Operator =
-  | 'eq'
-  | 'neq'
-  | 'gt'
-  | 'gte'
-  | 'lt'
-  | 'lte'
-  | 'contains'
-  | 'exists'
-  | 'starts-with'
-  | 'ends-with';
+  'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte' | 'contains' | 'exists' | 'starts-with' | 'ends-with';
 
 export interface Filter {
   readonly property: string;

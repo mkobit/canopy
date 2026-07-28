@@ -102,9 +102,11 @@ describe('ops/blocks', () => {
     if (!result.ok) throw new Error('Failed to insert block2');
     const newGraph = result.value.value;
 
-    const edges = [...newGraph.edges.values()].filter((e) => e.type === SYSTEM_EDGE_TYPES.CHILD_OF);
-    const edge1 = edges.find((e) => e.source === block1.id);
-    const edge2 = edges.find((e) => e.source === block2.id);
+    const edges = [...newGraph.edges.values()].filter(
+      (edge) => edge.type === SYSTEM_EDGE_TYPES.CHILD_OF,
+    );
+    const edge1 = edges.find((edge) => edge.source === block1.id);
+    const edge2 = edges.find((edge) => edge.source === block2.id);
 
     expect(edge1?.properties.get('position')).toBe('a0');
     const pos2 = edge2?.properties.get('position') as string;
@@ -140,24 +142,32 @@ describe('ops/blocks', () => {
     if (!insert1Result.ok) throw new Error('Failed to insert block1');
     graph = insert1Result.value.value;
 
-    const res3 = insertBlock(graph, parentId, block3, block1.id, {
+    const result3 = insertBlock(graph, parentId, block3, block1.id, {
       deviceId: asDeviceId('00000000-0000-0000-0000-000000000000'),
     });
-    if (!res3.ok) throw new Error('Failed to insert block3');
-    graph = res3.value.value;
+    if (!result3.ok) throw new Error('Failed to insert block3');
+    graph = result3.value.value;
 
     const block2 = createBlockNode();
-    const res2 = insertBlock(graph, parentId, block2, block1.id, {
+    const result2 = insertBlock(graph, parentId, block2, block1.id, {
       deviceId: asDeviceId('00000000-0000-0000-0000-000000000000'),
     });
-    expect(res2.ok).toBe(true);
-    if (!res2.ok) throw new Error('Failed to insert block2');
-    const newGraph = res2.value.value;
+    expect(result2.ok).toBe(true);
+    if (!result2.ok) throw new Error('Failed to insert block2');
+    const newGraph = result2.value.value;
 
-    const edges = [...newGraph.edges.values()].filter((e) => e.type === SYSTEM_EDGE_TYPES.CHILD_OF);
-    const pos1 = edges.find((e) => e.source === block1.id)?.properties.get('position') as string;
-    const pos2 = edges.find((e) => e.source === block2.id)?.properties.get('position') as string;
-    const pos3 = edges.find((e) => e.source === block3.id)?.properties.get('position') as string;
+    const edges = [...newGraph.edges.values()].filter(
+      (edge) => edge.type === SYSTEM_EDGE_TYPES.CHILD_OF,
+    );
+    const pos1 = edges
+      .find((edge) => edge.source === block1.id)
+      ?.properties.get('position') as string;
+    const pos2 = edges
+      .find((edge) => edge.source === block2.id)
+      ?.properties.get('position') as string;
+    const pos3 = edges
+      .find((edge) => edge.source === block3.id)
+      ?.properties.get('position') as string;
 
     expect(pos1 < pos2).toBe(true);
     expect(pos2 < pos3).toBe(true);
@@ -198,9 +208,15 @@ describe('ops/blocks', () => {
     if (!result.ok) throw new Error('Failed to insert block0');
     const newGraph = result.value.value;
 
-    const edges = [...newGraph.edges.values()].filter((e) => e.type === SYSTEM_EDGE_TYPES.CHILD_OF);
-    const pos0 = edges.find((e) => e.source === block0.id)?.properties.get('position') as string;
-    const pos1 = edges.find((e) => e.source === block1.id)?.properties.get('position') as string;
+    const edges = [...newGraph.edges.values()].filter(
+      (edge) => edge.type === SYSTEM_EDGE_TYPES.CHILD_OF,
+    );
+    const pos0 = edges
+      .find((edge) => edge.source === block0.id)
+      ?.properties.get('position') as string;
+    const pos1 = edges
+      .find((edge) => edge.source === block1.id)
+      ?.properties.get('position') as string;
 
     expect(pos0 < pos1).toBe(true);
   });

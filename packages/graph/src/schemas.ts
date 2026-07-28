@@ -90,14 +90,14 @@ export const PropertyDefinitionSchema: z.ZodType<PropertyDefinition, unknown> = 
     choices: z.array(z.string()).optional(),
     nullable: z.boolean().nullish(),
   })
-  .transform((val) => ({
-    ...val,
-    description: val.description ?? undefined,
-    regex: val.regex ?? undefined,
-    min: val.min ?? undefined,
-    max: val.max ?? undefined,
-    choices: val.choices ?? undefined,
-    nullable: val.nullable ?? undefined,
+  .transform((value) => ({
+    ...value,
+    description: value.description ?? undefined,
+    regex: value.regex ?? undefined,
+    min: value.min ?? undefined,
+    max: value.max ?? undefined,
+    choices: value.choices ?? undefined,
+    nullable: value.nullable ?? undefined,
   }));
 
 export const TemporalMetadataSchema: z.ZodType<TemporalMetadata, unknown> = z.object({
@@ -161,9 +161,9 @@ export const NodeTypeDefinitionSchema: z.ZodType<NodeTypeDefinition, unknown> = 
     validOutgoingEdges: z.array(TypeIdSchema),
     validIncomingEdges: z.array(TypeIdSchema),
   })
-  .transform((val) => ({
-    ...val,
-    description: val.description ?? undefined,
+  .transform((value) => ({
+    ...value,
+    description: value.description ?? undefined,
   }));
 
 export const EdgeTypeDefinitionSchema: z.ZodType<EdgeTypeDefinition, unknown> = z
@@ -178,10 +178,10 @@ export const EdgeTypeDefinitionSchema: z.ZodType<EdgeTypeDefinition, unknown> = 
     transitive: z.boolean(),
     inverse: TypeIdSchema.optional(),
   })
-  .transform((val) => ({
-    ...val,
-    description: val.description ?? undefined,
-    inverse: val.inverse ?? undefined,
+  .transform((value) => ({
+    ...value,
+    description: value.description ?? undefined,
+    inverse: value.inverse ?? undefined,
   }));
 
 export const EventIdSchema = z.string().uuid().transform(asEventId);

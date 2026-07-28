@@ -25,8 +25,8 @@ describe('time-travel', () => {
     });
 
     it('returns a value lexicographically greater than a real event at the same timestamp', () => {
-      const timestampStr = '2024-01-01T10:00:00.000Z';
-      const timestamp = unwrap(parseInstant(timestampStr));
+      const timestampString = '2024-01-01T10:00:00.000Z';
+      const timestamp = unwrap(parseInstant(timestampString));
       const maxId = maxEventIdForTimestamp(timestamp);
 
       // UUIDv7 starts with the 48-bit timestamp. A real event will have random bits following.
@@ -84,8 +84,10 @@ describe('time-travel', () => {
     const graphId = asGraphId('test-graph-id');
     const deviceId = asDeviceId('00000000-0000-0000-0000-000000000000');
 
-    const createEvent = (i: number): NodeCreated => {
-      const timestamp = unwrap(parseInstant(`2024-01-01T10:${String(i).padStart(2, '0')}:00.000Z`));
+    const createEvent = (index: number): NodeCreated => {
+      const timestamp = unwrap(
+        parseInstant(`2024-01-01T10:${String(index).padStart(2, '0')}:00.000Z`),
+      );
       const epochMs = Temporal.Instant.from(timestamp).epochMilliseconds;
       const hex = epochMs.toString(16).padStart(12, '0');
       const part1 = hex.slice(0, 8);
@@ -94,7 +96,7 @@ describe('time-travel', () => {
       return {
         type: 'NodeCreated',
         eventId: asEventId(`${part1}-${part2}-7000-8000-000000000000`),
-        id: asNodeId(`node-${i}`),
+        id: asNodeId(`node-${index}`),
         nodeType: asTypeId('test-type'),
         properties: new Map(),
         timestamp,

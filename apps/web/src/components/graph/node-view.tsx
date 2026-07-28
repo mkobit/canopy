@@ -14,9 +14,9 @@ export interface NodeViewEvents {
   readonly onClick?: (node: Node) => unknown;
 }
 
-export type NodeViewProps = NodeViewData & NodeViewEvents;
+export type NodeViewProperties = NodeViewData & NodeViewEvents;
 
-export const NodeView: React.FC<NodeViewProps> = ({
+export const NodeView: React.FC<NodeViewProperties> = ({
   node,
   className,
   selected,

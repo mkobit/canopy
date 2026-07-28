@@ -34,33 +34,33 @@ describe('Mutation execution handlers', () => {
   test('fails if session is missing in ApiAdapterContext', async () => {
     const graph = unwrap(createGraph(graphId, 'test'));
     const context = createApiAdapterContext({ graph });
-    const req = createApiRequest('req-1', context, {
+    const request = createApiRequest('req-1', context, {
       type: asTypeId('doc'),
       properties: { title: 'Test' },
     });
 
-    const res = await executeCreateNode(req);
-    expect(res.ok).toBe(false);
-    if (!res.ok) {
-      expect(res.error.category).toBe('VALIDATION_ERROR');
-      expect(res.error.message).toContain('GraphSession is required');
+    const result = await executeCreateNode(request);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.category).toBe('VALIDATION_ERROR');
+      expect(result.error.message).toContain('GraphSession is required');
     }
   });
 
   test('executeCreateNode successfully creates a node', async () => {
     const { session } = await setupSessionContext();
     const context = createApiAdapterContext({ graph: session.graph(), session });
-    const req = createApiRequest('req-2', context, {
+    const request = createApiRequest('req-2', context, {
       id: asNodeId('n1'),
       type: asTypeId('doc'),
       properties: { title: 'My Document', tenantId: 't1' },
     });
 
-    const res = await executeCreateNode(req);
-    expect(res.ok).toBe(true);
-    if (res.ok) {
-      expect(res.value.id).toBe(asNodeId('n1'));
-      expect(res.value.properties.title).toBe('My Document');
+    const result = await executeCreateNode(request);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.id).toBe(asNodeId('n1'));
+      expect(result.value.properties.title).toBe('My Document');
     }
     expect(session.graph().nodes.has(asNodeId('n1'))).toBe(true);
   });
@@ -72,16 +72,16 @@ describe('Mutation execution handlers', () => {
       session,
       authContext: { tenantId: 't1' },
     });
-    const req = createApiRequest('req-3', context, {
+    const request = createApiRequest('req-3', context, {
       id: asNodeId('n2'),
       type: asTypeId('doc'),
       properties: { title: 'Doc', tenantId: 't2' },
     });
 
-    const res = await executeCreateNode(req);
-    expect(res.ok).toBe(false);
-    if (!res.ok) {
-      expect(res.error.category).toBe('FORBIDDEN');
+    const result = await executeCreateNode(request);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.category).toBe('FORBIDDEN');
     }
   });
 
@@ -92,16 +92,16 @@ describe('Mutation execution handlers', () => {
       session,
       authContext: { tenantId: 't1' },
     });
-    const req = createApiRequest('req-3b', context, {
+    const request = createApiRequest('req-3b', context, {
       id: asNodeId('n2b'),
       type: asTypeId('doc'),
       properties: { title: 'Doc' },
     });
 
-    const res = await executeCreateNode(req);
-    expect(res.ok).toBe(true);
-    if (res.ok) {
-      expect(res.value.properties.tenantId).toBe('t1');
+    const result = await executeCreateNode(request);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.properties.tenantId).toBe('t1');
     }
   });
 
@@ -117,7 +117,7 @@ describe('Mutation execution handlers', () => {
       }),
     );
 
-    const dupRes = await executeCreateNode(
+    const dupResult = await executeCreateNode(
       createApiRequest('req-dup-2', context, {
         id: asNodeId('dup1'),
         type: asTypeId('doc'),
@@ -125,9 +125,9 @@ describe('Mutation execution handlers', () => {
       }),
     );
 
-    expect(dupRes.ok).toBe(false);
-    if (!dupRes.ok) {
-      expect(dupRes.error.category).toBe('CONCURRENCY_CONFLICT');
+    expect(dupResult.ok).toBe(false);
+    if (!dupResult.ok) {
+      expect(dupResult.error.category).toBe('CONCURRENCY_CONFLICT');
     }
   });
 
@@ -143,30 +143,30 @@ describe('Mutation execution handlers', () => {
       }),
     );
 
-    const reqUpdate = createApiRequest('req-5', context, {
+    const requestUpdate = createApiRequest('req-5', context, {
       id: asNodeId('n3'),
       properties: { title: 'Updated Title' },
     });
 
-    const resUpdate = await executeUpdateNodeProperties(reqUpdate);
-    expect(resUpdate.ok).toBe(true);
-    if (resUpdate.ok) {
-      expect(resUpdate.value.properties.title).toBe('Updated Title');
+    const resultUpdate = await executeUpdateNodeProperties(requestUpdate);
+    expect(resultUpdate.ok).toBe(true);
+    if (resultUpdate.ok) {
+      expect(resultUpdate.value.properties.title).toBe('Updated Title');
     }
   });
 
   test('executeUpdateNodeProperties fails with NOT_FOUND for non-existent node', async () => {
     const { session } = await setupSessionContext();
     const context = createApiAdapterContext({ graph: session.graph(), session });
-    const req = createApiRequest('req-6', context, {
+    const request = createApiRequest('req-6', context, {
       id: asNodeId('missing'),
       properties: { title: 'Title' },
     });
 
-    const res = await executeUpdateNodeProperties(req);
-    expect(res.ok).toBe(false);
-    if (!res.ok) {
-      expect(res.error.category).toBe('NOT_FOUND');
+    const result = await executeUpdateNodeProperties(request);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.category).toBe('NOT_FOUND');
     }
   });
 
@@ -192,16 +192,16 @@ describe('Mutation execution handlers', () => {
       authContext: { tenantId: 't2' },
     });
 
-    const res = await executeUpdateNodeProperties(
+    const result = await executeUpdateNodeProperties(
       createApiRequest('req-tenant-update', context2, {
         id: asNodeId('tenant-node'),
         properties: { title: 'Hacked Title' },
       }),
     );
 
-    expect(res.ok).toBe(false);
-    if (!res.ok) {
-      expect(res.error.category).toBe('NOT_FOUND');
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.category).toBe('NOT_FOUND');
     }
   });
 
@@ -224,7 +224,7 @@ describe('Mutation execution handlers', () => {
       }),
     );
 
-    const reqEdge = createApiRequest('req-9', context, {
+    const requestEdge = createApiRequest('req-9', context, {
       id: asEdgeId('e1'),
       type: asTypeId('links'),
       source: asNodeId('src'),
@@ -232,12 +232,12 @@ describe('Mutation execution handlers', () => {
       properties: { weight: 10 },
     });
 
-    const resEdge = await executeCreateEdge(reqEdge);
-    expect(resEdge.ok).toBe(true);
-    if (resEdge.ok) {
-      expect(resEdge.value.id).toBe(asEdgeId('e1'));
-      expect(resEdge.value.source).toBe(asNodeId('src'));
-      expect(resEdge.value.target).toBe(asNodeId('tgt'));
+    const resultEdge = await executeCreateEdge(requestEdge);
+    expect(resultEdge.ok).toBe(true);
+    if (resultEdge.ok) {
+      expect(resultEdge.value.id).toBe(asEdgeId('e1'));
+      expect(resultEdge.value.source).toBe(asNodeId('src'));
+      expect(resultEdge.value.target).toBe(asNodeId('tgt'));
     }
   });
 
@@ -245,16 +245,16 @@ describe('Mutation execution handlers', () => {
     const { session } = await setupSessionContext();
     const context = createApiAdapterContext({ graph: session.graph(), session });
 
-    const reqEdge = createApiRequest('req-10', context, {
+    const requestEdge = createApiRequest('req-10', context, {
       type: asTypeId('links'),
       source: asNodeId('missing-src'),
       target: asNodeId('tgt'),
     });
 
-    const resEdge = await executeCreateEdge(reqEdge);
-    expect(resEdge.ok).toBe(false);
-    if (!resEdge.ok) {
-      expect(resEdge.error.category).toBe('NOT_FOUND');
+    const resultEdge = await executeCreateEdge(requestEdge);
+    expect(resultEdge.ok).toBe(false);
+    if (!resultEdge.ok) {
+      expect(resultEdge.error.category).toBe('NOT_FOUND');
     }
   });
 
@@ -288,7 +288,7 @@ describe('Mutation execution handlers', () => {
       }),
     );
 
-    const resCross = await executeCreateEdge(
+    const resultCross = await executeCreateEdge(
       createApiRequest('req-edge-cross', contextT1, {
         type: asTypeId('links'),
         source: asNodeId('src-t1'),
@@ -296,9 +296,9 @@ describe('Mutation execution handlers', () => {
       }),
     );
 
-    expect(resCross.ok).toBe(false);
-    if (!resCross.ok) {
-      expect(resCross.error.category).toBe('NOT_FOUND');
+    expect(resultCross.ok).toBe(false);
+    if (!resultCross.ok) {
+      expect(resultCross.error.category).toBe('NOT_FOUND');
     }
   });
 
@@ -329,12 +329,12 @@ describe('Mutation execution handlers', () => {
       }),
     );
 
-    const reqDel = createApiRequest('req-14', context, { id: asEdgeId('e13') });
-    const resDel = await executeDeleteEdge(reqDel);
+    const requestDel = createApiRequest('req-14', context, { id: asEdgeId('e13') });
+    const resultDel = await executeDeleteEdge(requestDel);
 
-    expect(resDel.ok).toBe(true);
-    if (resDel.ok) {
-      expect(resDel.value.success).toBe(true);
+    expect(resultDel.ok).toBe(true);
+    if (resultDel.ok) {
+      expect(resultDel.value.success).toBe(true);
     }
     expect(session.graph().edges.has(asEdgeId('e13'))).toBe(false);
   });
@@ -342,12 +342,14 @@ describe('Mutation execution handlers', () => {
   test('executeDeleteEdge fails with NOT_FOUND for non-existent edge', async () => {
     const { session } = await setupSessionContext();
     const context = createApiAdapterContext({ graph: session.graph(), session });
-    const reqDel = createApiRequest('req-del-missing', context, { id: asEdgeId('missing-edge') });
-    const resDel = await executeDeleteEdge(reqDel);
+    const requestDel = createApiRequest('req-del-missing', context, {
+      id: asEdgeId('missing-edge'),
+    });
+    const resultDel = await executeDeleteEdge(requestDel);
 
-    expect(resDel.ok).toBe(false);
-    if (!resDel.ok) {
-      expect(resDel.error.category).toBe('NOT_FOUND');
+    expect(resultDel.ok).toBe(false);
+    if (!resultDel.ok) {
+      expect(resultDel.error.category).toBe('NOT_FOUND');
     }
   });
 
@@ -378,13 +380,13 @@ describe('Mutation execution handlers', () => {
       }),
     );
 
-    const reqDelNode = createApiRequest('req-18', context, { id: asNodeId('n15') });
-    const resDelNode = await executeDeleteNode(reqDelNode);
+    const requestDelNode = createApiRequest('req-18', context, { id: asNodeId('n15') });
+    const resultDelNode = await executeDeleteNode(requestDelNode);
 
-    expect(resDelNode.ok).toBe(true);
-    if (resDelNode.ok) {
-      expect(resDelNode.value.success).toBe(true);
-      expect(resDelNode.value.affectedEventsCount).toBe(2);
+    expect(resultDelNode.ok).toBe(true);
+    if (resultDelNode.ok) {
+      expect(resultDelNode.value.success).toBe(true);
+      expect(resultDelNode.value.affectedEventsCount).toBe(2);
     }
     expect(session.graph().nodes.has(asNodeId('n15'))).toBe(false);
     expect(session.graph().edges.has(asEdgeId('e17'))).toBe(false);
@@ -394,14 +396,14 @@ describe('Mutation execution handlers', () => {
     const { session } = await setupSessionContext();
     const context = createApiAdapterContext({ graph: session.graph(), session });
 
-    const reqDelNode = createApiRequest('req-del-node-missing', context, {
+    const requestDelNode = createApiRequest('req-del-node-missing', context, {
       id: asNodeId('missing-node'),
     });
-    const resDelNode = await executeDeleteNode(reqDelNode);
+    const resultDelNode = await executeDeleteNode(requestDelNode);
 
-    expect(resDelNode.ok).toBe(false);
-    if (!resDelNode.ok) {
-      expect(resDelNode.error.category).toBe('NOT_FOUND');
+    expect(resultDelNode.ok).toBe(false);
+    if (!resultDelNode.ok) {
+      expect(resultDelNode.error.category).toBe('NOT_FOUND');
     }
   });
 });

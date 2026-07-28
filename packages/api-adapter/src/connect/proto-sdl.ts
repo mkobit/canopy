@@ -1,3 +1,4 @@
+// eslint-disable-next-line unicorn/name-replacements -- "proto" here means Protocol Buffers, not JS prototype; renaming would also require updating imports in files outside this batch
 export const PROTO_SERVICES_SDL = `
 syntax = "proto3";
 

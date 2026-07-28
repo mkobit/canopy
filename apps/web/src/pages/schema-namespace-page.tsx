@@ -12,11 +12,13 @@ import {
   listPropertyTypesIn,
   type EdgeTypeOption,
   type PropertyTypeOption,
-  type TypeDefOption,
+  type TypeDefinitionOption,
 } from '../utils/schema';
 import { NodeTypeCreateForm, EdgeTypeCreateForm, PropertyTypeCreateForm } from '../components';
 
-const TypeDefList: React.FC<Readonly<{ items: readonly TypeDefOption[] }>> = ({ items }) => {
+const TypeDefinitionList: React.FC<Readonly<{ items: readonly TypeDefinitionOption[] }>> = ({
+  items,
+}) => {
   if (items.length === 0) return <p className="text-sm text-gray-400">None yet.</p>;
   return (
     <ul className="space-y-2">
@@ -137,7 +139,7 @@ export const SchemaNamespacePage = () => {
 
       <section className="space-y-4">
         <h2 className="text-lg font-semibold text-gray-900">Node types</h2>
-        <TypeDefList items={nodeTypes} />
+        <TypeDefinitionList items={nodeTypes} />
         <NodeTypeCreateForm
           namespace={namespace}
           propertyTypeOptions={allPropertyTypes}

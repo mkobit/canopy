@@ -159,7 +159,7 @@ describe('View resolution engine', () => {
     graph = unwrap(addNode(graph, viewNode, { deviceId: SYSTEM_DEVICE_ID })).graph;
 
     // 2. Create the Node Type definition node (using typeId as the ID)
-    const typeDefNode: Node = {
+    const typeDefinitionNode: Node = {
       id: asNodeId(typeId),
       type: SYSTEM_IDS.NODE_TYPE,
       properties: new Map([['name', 'Custom Type Definition']]),
@@ -169,7 +169,7 @@ describe('View resolution engine', () => {
         modifiedBy: SYSTEM_DEVICE_ID,
       },
     };
-    graph = unwrap(addNode(graph, typeDefNode, { deviceId: SYSTEM_DEVICE_ID })).graph;
+    graph = unwrap(addNode(graph, typeDefinitionNode, { deviceId: SYSTEM_DEVICE_ID })).graph;
 
     // 3. Create the target node
     const targetNode: Node = {
@@ -184,11 +184,11 @@ describe('View resolution engine', () => {
     };
     graph = unwrap(addNode(graph, targetNode, { deviceId: SYSTEM_DEVICE_ID })).graph;
 
-    // 4. Create the DEFAULT_VIEW edge from typeDefNode to viewNode
+    // 4. Create the DEFAULT_VIEW edge from typeDefinitionNode to viewNode
     const defaultViewEdge: Edge = {
       id: asEdgeId('user:edge:default-view'),
       type: SYSTEM_EDGE_TYPES.DEFAULT_VIEW,
-      source: typeDefNode.id,
+      source: typeDefinitionNode.id,
       target: viewNode.id,
       properties: new Map(),
       metadata: {

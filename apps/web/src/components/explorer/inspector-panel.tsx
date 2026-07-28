@@ -8,7 +8,7 @@ export interface InspectorNodeData {
   readonly properties?: Readonly<Record<string, unknown>>;
 }
 
-export interface InspectorPanelProps {
+export interface InspectorPanelProperties {
   readonly selectedNode?: InspectorNodeData;
   readonly onClose?: () => unknown;
 }
@@ -16,7 +16,7 @@ export interface InspectorPanelProps {
 export const InspectorPanel = ({
   selectedNode,
   onClose,
-}: Readonly<InspectorPanelProps>): React.ReactElement => {
+}: Readonly<InspectorPanelProperties>): React.ReactElement => {
   const { graph } = useGraph();
   return (
     <div className="absolute right-6 top-24 bottom-6 w-80 bg-surface-container-highest/80 backdrop-blur-xl border border-outline-variant/20 rounded-lg shadow-[0_20px_40px_rgba(0,0,0,0.6)] flex flex-col z-20">

@@ -43,42 +43,42 @@ const serializeEventPayload = (event: Readonly<Record<string, unknown>>): string
   });
 };
 
-const formatMessageToConnectItem = (msg: EventStreamMessage): ConnectEventStreamItem => {
-  if (msg.kind === 'event' && msg.event) {
+const formatMessageToConnectItem = (message: EventStreamMessage): ConnectEventStreamItem => {
+  if (message.kind === 'event' && message.event) {
     const sequenceNumber =
-      'sequenceNumber' in msg.event && typeof msg.event.sequenceNumber === 'number'
-        ? msg.event.sequenceNumber
+      'sequenceNumber' in message.event && typeof message.event.sequenceNumber === 'number'
+        ? message.event.sequenceNumber
         : 0;
 
     return {
-      event_id: msg.event.eventId,
-      event_type: msg.event.type,
-      payload_json: serializeEventPayload(msg.event as unknown as Record<string, unknown>),
+      event_id: message.event.eventId,
+      event_type: message.event.type,
+      payload_json: serializeEventPayload(message.event as unknown as Record<string, unknown>),
       sequence_number: sequenceNumber,
-      timestamp: msg.event.timestamp,
+      timestamp: message.event.timestamp,
     };
   }
 
-  if (msg.kind === 'gap') {
+  if (message.kind === 'gap') {
     return {
-      event_id: typeof msg.lastSeenEventId === 'string' ? msg.lastSeenEventId : 'gap',
+      event_id: typeof message.lastSeenEventId === 'string' ? message.lastSeenEventId : 'gap',
       event_type: 'GAP_NOTIFIED',
       payload_json: JSON.stringify({
-        gapCount: msg.gapCount ?? 0,
-        reason: msg.reason ?? '',
+        gapCount: message.gapCount ?? 0,
+        reason: message.reason ?? '',
       }),
       sequence_number: 0,
       timestamp: createInstant(),
     };
   }
 
-  if (msg.kind === 'overflow_disconnect') {
+  if (message.kind === 'overflow_disconnect') {
     return {
       event_id: 'overflow',
       event_type: 'OVERFLOW_DISCONNECT',
       payload_json: JSON.stringify({
-        gapCount: msg.gapCount ?? 0,
-        reason: msg.reason ?? '',
+        gapCount: message.gapCount ?? 0,
+        reason: message.reason ?? '',
       }),
       sequence_number: 0,
       timestamp: createInstant(),
@@ -109,10 +109,10 @@ const createSubscribeGenerator = async function* (
   // eslint-disable-next-line functional/no-let -- stream closed state
   let closed = false;
 
-  const unsubscribe = subscriber.subscribe((msg: EventStreamMessage) => {
+  const unsubscribe = subscriber.subscribe((message: EventStreamMessage) => {
     if (closed) return;
 
-    if (msg.kind === 'end') {
+    if (message.kind === 'end') {
       closed = true;
       if (resolveNext) {
         const resolve = resolveNext;
@@ -122,7 +122,7 @@ const createSubscribeGenerator = async function* (
       return;
     }
 
-    const item = formatMessageToConnectItem(msg);
+    const item = formatMessageToConnectItem(message);
 
     if (resolveNext) {
       const resolve = resolveNext;
@@ -132,7 +132,7 @@ const createSubscribeGenerator = async function* (
       queue = [...queue, item];
     }
 
-    if (msg.kind === 'overflow_disconnect') {
+    if (message.kind === 'overflow_disconnect') {
       closed = true;
     }
   });
@@ -148,6 +148,7 @@ const createSubscribeGenerator = async function* (
           yield head;
         }
       } else {
+        // eslint-disable-next-line unicorn/prefer-promise-with-resolvers -- Promise.withResolvers needs lib ES2024, project targets ES2023
         const nextItem = await new Promise<ConnectEventStreamItem | null>((resolve) => {
           resolveNext = resolve;
         });
@@ -166,28 +167,28 @@ const createSubscribeGenerator = async function* (
 
 const createReplayGenerator = async function* (
   context: ApiAdapterContext,
-  req: EventStreamRequestPayload,
+  request: EventStreamRequestPayload,
   options?: ConnectEventStreamOptions,
 ): AsyncGenerator<ConnectEventStreamItem, void, unknown> {
-  const graphId = req.graph_id ?? context.graph.id;
-  const tenantId = req.tenant_id ?? context.authContext?.tenantId ?? '';
-  const lastSeenEventId = req.last_seen_event_id ?? '';
-  const maxReplayCount = req.max_replay_count ?? options?.maxReplayCount;
+  const graphId = request.graph_id ?? context.graph.id;
+  const tenantId = request.tenant_id ?? context.authContext?.tenantId ?? '';
+  const lastSeenEventId = request.last_seen_event_id ?? '';
+  const maxReplayCount = request.max_replay_count ?? options?.maxReplayCount;
 
-  const replayRes = await executeReplayEventStream(context, {
+  const replayResult = await executeReplayEventStream(context, {
     tenantId,
     graphId,
     lastSeenEventId,
     ...(maxReplayCount !== undefined && { maxReplayCount }),
   });
 
-  if (!replayRes.ok) {
+  if (!replayResult.ok) {
     const errorItem: ConnectEventStreamItem = {
       event_id: 'error',
       event_type: 'REPLAY_ERROR',
       payload_json: JSON.stringify({
-        code: replayRes.error.code,
-        message: replayRes.error.message,
+        code: replayResult.error.code,
+        message: replayResult.error.message,
       }),
       sequence_number: 0,
       timestamp: createInstant(),
@@ -197,7 +198,7 @@ const createReplayGenerator = async function* (
   }
 
   // eslint-disable-next-line functional/no-loop-statements -- yield replayed items
-  for (const message of replayRes.value) {
+  for (const message of replayResult.value) {
     yield formatMessageToConnectItem(message);
   }
 };
@@ -206,8 +207,8 @@ export const createConnectEventStreamHandlers = (
   context: ApiAdapterContext,
   options?: ConnectEventStreamOptions,
 ) => ({
-  subscribeEventStream: (_req: EventStreamRequestPayload) =>
+  subscribeEventStream: (_request: EventStreamRequestPayload) =>
     createSubscribeGenerator(context, options),
-  replayEventStream: (req: EventStreamRequestPayload) =>
-    createReplayGenerator(context, req, options),
+  replayEventStream: (request: EventStreamRequestPayload) =>
+    createReplayGenerator(context, request, options),
 });

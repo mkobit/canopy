@@ -8,7 +8,7 @@ export type GraphNode = Readonly<
   }
 >;
 
-export interface EdgeViewProps {
+export interface EdgeViewProperties {
   readonly edge: Edge;
   readonly source: GraphNode;
   readonly target: GraphNode;
@@ -16,7 +16,13 @@ export interface EdgeViewProps {
   readonly onClick?: ((edge: Edge) => unknown) | undefined;
 }
 
-export const EdgeView: React.FC<EdgeViewProps> = ({ edge, source, target, selected, onClick }) => {
+export const EdgeView: React.FC<EdgeViewProperties> = ({
+  edge,
+  source,
+  target,
+  selected,
+  onClick,
+}) => {
   // Let's assume the node is roughly centered at its position or top-left.
   // Usually layouts give top-left.
   // Let's assume top-left and width/height is roughly known or fixed.
@@ -39,8 +45,8 @@ export const EdgeView: React.FC<EdgeViewProps> = ({ edge, source, target, select
 
   return (
     <g
-      onClick={(e) => {
-        e.stopPropagation();
+      onClick={(event_) => {
+        event_.stopPropagation();
         onClick?.(edge);
         return undefined;
       }}

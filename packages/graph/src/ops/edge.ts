@@ -5,7 +5,7 @@ import type { Result } from '../result';
 import type { GraphEvent, GraphResult, EdgeCreated } from '../events';
 import type { PropertyValue } from '../properties';
 import { createInstant, createEventId, createEdgeId } from '../factories';
-import { ok, err } from '../result';
+import { ok, err as error } from '../result';
 import { validateEdge } from '../validation';
 
 export type EdgeOperationOptions = Readonly<{
@@ -21,13 +21,13 @@ export type EdgeOperationOptions = Readonly<{
  */
 export function createEdgeAction(
   graph: Graph,
-  params: Readonly<{ source: NodeId; target: NodeId; type: TypeId }>,
+  parameters: Readonly<{ source: NodeId; target: NodeId; type: TypeId }>,
 ): Result<Readonly<{ graph: Graph; event: EdgeCreated }>, Error> {
   const edge: Edge = {
     id: createEdgeId(),
-    type: params.type,
-    source: params.source,
-    target: params.target,
+    type: parameters.type,
+    source: parameters.source,
+    target: parameters.target,
     properties: new Map(),
     metadata: {
       created: createInstant(),
@@ -64,20 +64,22 @@ export function addEdge(
   options: EdgeOperationOptions,
 ): Result<GraphResult<Graph>, Error> {
   if (graph.edges.has(edge.id)) {
-    return err(new Error(`Edge with ID ${edge.id} already exists`));
+    return error(new Error(`Edge with ID ${edge.id} already exists`));
   }
   if (!graph.nodes.has(edge.source)) {
-    return err(new Error(`Source node ${edge.source} not found`));
+    return error(new Error(`Source node ${edge.source} not found`));
   }
   if (!graph.nodes.has(edge.target)) {
-    return err(new Error(`Target node ${edge.target} not found`));
+    return error(new Error(`Target node ${edge.target} not found`));
   }
 
   if (options.validate) {
     const result = validateEdge(graph, edge);
     if (!result.valid) {
-      const msgs = result.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join(', ');
-      return err(new Error(`Edge validation failed: ${msgs}`));
+      const msgs = result.errors
+        .map((error_) => `${error_.path.join('.')}: ${error_.message}`)
+        .join(', ');
+      return error(new Error(`Edge validation failed: ${msgs}`));
     }
   }
 
@@ -173,29 +175,31 @@ export function updateEdge(
 ): Result<GraphResult<Graph>, Error> {
   const existingEdge = graph.edges.get(edgeId);
   if (!existingEdge) {
-    return err(new Error(`Edge with ID ${edgeId} not found`));
+    return error(new Error(`Edge with ID ${edgeId} not found`));
   }
 
   const updatedEdge = updater(existingEdge);
 
   // Ensure ID hasn't changed
   if (updatedEdge.id !== edgeId) {
-    return err(new Error(`Cannot change edge ID during update`));
+    return error(new Error(`Cannot change edge ID during update`));
   }
 
   // Verify source/target still exist (in case they were changed, though usually they shouldn't be)
   if (!graph.nodes.has(updatedEdge.source)) {
-    return err(new Error(`Source node ${updatedEdge.source} not found`));
+    return error(new Error(`Source node ${updatedEdge.source} not found`));
   }
   if (!graph.nodes.has(updatedEdge.target)) {
-    return err(new Error(`Target node ${updatedEdge.target} not found`));
+    return error(new Error(`Target node ${updatedEdge.target} not found`));
   }
 
   if (options.validate) {
     const result = validateEdge(graph, updatedEdge);
     if (!result.valid) {
-      const msgs = result.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join(', ');
-      return err(new Error(`Edge validation failed: ${msgs}`));
+      const msgs = result.errors
+        .map((error_) => `${error_.path.join('.')}: ${error_.message}`)
+        .join(', ');
+      return error(new Error(`Edge validation failed: ${msgs}`));
     }
   }
 

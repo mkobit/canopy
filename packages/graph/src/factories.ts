@@ -3,7 +3,7 @@ import { Temporal } from 'temporal-polyfill';
 import type { NodeId, EdgeId, TypeId, GraphId, EventId, DeviceId, Namespace } from './identifiers';
 import type { Instant, PlainDate } from './temporal';
 import type { Result } from './result';
-import { err, fromThrowable } from './result';
+import { err as error, fromThrowable } from './result';
 
 // Safe Generators for Branded Types
 
@@ -78,7 +78,7 @@ export function asInstant(isoString: string): Instant {
 
 export function parsePlainDate(dateString: string): Result<PlainDate, Error> {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
-    return err(new Error(`Invalid PlainDate string: ${dateString}`));
+    return error(new Error(`Invalid PlainDate string: ${dateString}`));
   }
   // Validate with Temporal
   return fromThrowable(() => {

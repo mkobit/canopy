@@ -33,19 +33,22 @@ describe('WASM WIT Host Import Bindings', () => {
       properties: { title: 'WIT Document' },
     });
 
-    const createRes = await hostBindings.mutations.createNode('write:create-node', createPayload);
-    expect(createRes.ok).toBe(true);
-    if (createRes.ok) {
-      const node = JSON.parse(createRes.value) as { id: string; type: string };
+    const createResult = await hostBindings.mutations.createNode(
+      'write:create-node',
+      createPayload,
+    );
+    expect(createResult.ok).toBe(true);
+    if (createResult.ok) {
+      const node = JSON.parse(createResult.value) as { id: string; type: string };
       expect(node.id).toBe('node-wit-1');
       expect(node.type).toBe('document');
     }
 
     const queryPayload = JSON.stringify({ id: 'node-wit-1' });
-    const queryRes = await hostBindings.queries.queryNodes('read:nodes', queryPayload);
-    expect(queryRes.ok).toBe(true);
-    if (queryRes.ok) {
-      const nodes = JSON.parse(queryRes.value) as readonly {
+    const queryResult = await hostBindings.queries.queryNodes('read:nodes', queryPayload);
+    expect(queryResult.ok).toBe(true);
+    if (queryResult.ok) {
+      const nodes = JSON.parse(queryResult.value) as readonly {
         id: string;
         properties: { title: string };
       }[];
@@ -75,25 +78,28 @@ describe('WASM WIT Host Import Bindings', () => {
       properties: {},
     });
 
-    const createEdgeRes = await hostBindings.mutations.createEdge('write:create-edge', edgePayload);
-    expect(createEdgeRes.ok).toBe(true);
+    const createEdgeResult = await hostBindings.mutations.createEdge(
+      'write:create-edge',
+      edgePayload,
+    );
+    expect(createEdgeResult.ok).toBe(true);
 
-    const deleteEdgeRes = await hostBindings.mutations.deleteEdge(
+    const deleteEdgeResult = await hostBindings.mutations.deleteEdge(
       'write:delete-edge',
       JSON.stringify({ id: 'e1' }),
     );
-    expect(deleteEdgeRes.ok).toBe(true);
+    expect(deleteEdgeResult.ok).toBe(true);
   });
 
   it('rejects calls when capability token does not grant required scope', async () => {
     const { context } = await setupTestContext();
     const hostBindings = createWasmHostBindings(context);
 
-    const res = await hostBindings.queries.queryNodes('read:edges', JSON.stringify({}));
-    expect(res.ok).toBe(false);
-    if (!res.ok) {
-      expect(res.error.code).toBe('PermissionDenied');
-      expect(res.error.message).toContain('read:nodes');
+    const result = await hostBindings.queries.queryNodes('read:edges', JSON.stringify({}));
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.code).toBe('PermissionDenied');
+      expect(result.error.message).toContain('read:nodes');
     }
   });
 
@@ -101,11 +107,11 @@ describe('WASM WIT Host Import Bindings', () => {
     const { context } = await setupTestContext();
     const hostBindings = createWasmHostBindings(context);
 
-    const res = await hostBindings.queries.queryNodes('read:nodes', '{ bad json }');
-    expect(res.ok).toBe(false);
-    if (!res.ok) {
-      expect(res.error.code).toBe('ValidationError');
-      expect(res.error.message).toContain('Invalid JSON');
+    const result = await hostBindings.queries.queryNodes('read:nodes', '{ bad json }');
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.code).toBe('ValidationError');
+      expect(result.error.message).toContain('Invalid JSON');
     }
   });
 
@@ -117,15 +123,15 @@ describe('WASM WIT Host Import Bindings', () => {
       defaultFuelPerImport: 100n,
     });
 
-    const firstRes = await hostBindings.queries.queryNodes('read:nodes', JSON.stringify({}));
-    expect(firstRes.ok).toBe(true);
+    const firstResult = await hostBindings.queries.queryNodes('read:nodes', JSON.stringify({}));
+    expect(firstResult.ok).toBe(true);
     expect(fuelMeter.remaining()).toBe(50n);
 
-    const secondRes = await hostBindings.queries.queryNodes('read:nodes', JSON.stringify({}));
-    expect(secondRes.ok).toBe(false);
-    if (!secondRes.ok) {
-      expect(secondRes.error.code).toBe('ResourceExhausted');
-      expect(secondRes.error.message).toContain('fuel');
+    const secondResult = await hostBindings.queries.queryNodes('read:nodes', JSON.stringify({}));
+    expect(secondResult.ok).toBe(false);
+    if (!secondResult.ok) {
+      expect(secondResult.error.code).toBe('ResourceExhausted');
+      expect(secondResult.error.message).toContain('fuel');
     }
   });
 
@@ -137,11 +143,11 @@ describe('WASM WIT Host Import Bindings', () => {
 
     reentrancyGuard.enter();
 
-    const res = await hostBindings.queries.queryNodes('read:nodes', JSON.stringify({}));
-    expect(res.ok).toBe(false);
-    if (!res.ok) {
-      expect(res.error.code).toBe('PermissionDenied');
-      expect(res.error.message).toContain('Reentrant');
+    const result = await hostBindings.queries.queryNodes('read:nodes', JSON.stringify({}));
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.code).toBe('PermissionDenied');
+      expect(result.error.message).toContain('Reentrant');
     }
 
     reentrancyGuard.exit();

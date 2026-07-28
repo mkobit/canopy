@@ -186,7 +186,7 @@ describe('Mutation payload types', () => {
 
 describe('Event Streaming Payload Definitions', () => {
   it('instantiates valid EventStreamMessage structures', () => {
-    const msg: EventStreamMessage = {
+    const message: EventStreamMessage = {
       kind: 'event',
       event: {
         type: 'NodeCreated',
@@ -198,29 +198,29 @@ describe('Event Streaming Payload Definitions', () => {
         deviceId: asDeviceId('dev-1'),
       },
     };
-    expect(msg.kind).toBe('event');
-    expect(msg.event?.eventId).toBe(asEventId('evt-1'));
+    expect(message.kind).toBe('event');
+    expect(message.event?.eventId).toBe(asEventId('evt-1'));
   });
 
   it('instantiates valid gap and disconnect message structures', () => {
-    const gapMsg: EventStreamMessage = {
+    const gapMessage: EventStreamMessage = {
       kind: 'gap',
       gapCount: 15,
       lastSeenEventId: 'evt-50',
       reason: 'Replay window exceeded max limit',
     };
-    const overflowMsg: EventStreamMessage = {
+    const overflowMessage: EventStreamMessage = {
       kind: 'overflow_disconnect',
       gapCount: 100,
       reason: 'Subscriber buffer overflowed',
     };
-    expect(gapMsg.kind).toBe('gap');
-    expect(gapMsg.gapCount).toBe(15);
-    expect(overflowMsg.kind).toBe('overflow_disconnect');
+    expect(gapMessage.kind).toBe('gap');
+    expect(gapMessage.gapCount).toBe(15);
+    expect(overflowMessage.kind).toBe('overflow_disconnect');
   });
 
   it('instantiates valid EventStreamOptions and ReplayRequestPayload structures', () => {
-    const opts: EventStreamOptions = {
+    const options: EventStreamOptions = {
       bufferCapacity: 100,
       maxReplayCount: 50,
     };
@@ -230,7 +230,7 @@ describe('Event Streaming Payload Definitions', () => {
       lastSeenEventId: 'evt-10',
       maxReplayCount: 20,
     };
-    expect(opts.bufferCapacity).toBe(100);
+    expect(options.bufferCapacity).toBe(100);
     expect(replayPayload.tenantId).toBe('tenant-1');
   });
 });

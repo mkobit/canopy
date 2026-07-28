@@ -129,9 +129,9 @@ describe('GraphQL Query Resolvers', () => {
     const context = createApiAdapterContext({ graph });
     const resolvers = createQueryResolvers(context);
 
-    const docNodes = resolvers.nodes(null, { type: 'doc' });
-    expect(docNodes.totalCount).toBe(2);
-    expect(docNodes.edges.length).toBe(2);
+    const documentNodes = resolvers.nodes(null, { type: 'doc' });
+    expect(documentNodes.totalCount).toBe(2);
+    expect(documentNodes.edges.length).toBe(2);
 
     const paginated = resolvers.nodes(null, { type: 'doc', first: 1 });
     expect(paginated.edges.length).toBe(1);
@@ -188,9 +188,9 @@ describe('GraphQL Query Resolvers', () => {
     const context = createApiAdapterContext({ graph });
     const resolvers = createQueryResolvers(context);
 
-    const res = resolvers.gqlQuery(null, { query: 'MATCH (n) RETURN n' });
-    expect(res.totalCount).toBeGreaterThanOrEqual(3);
-    expect(res.edges.length).toBeGreaterThanOrEqual(3);
+    const result = resolvers.gqlQuery(null, { query: 'MATCH (n) RETURN n' });
+    expect(result.totalCount).toBeGreaterThanOrEqual(3);
+    expect(result.edges.length).toBeGreaterThanOrEqual(3);
   });
 
   it('resolves nodeTypes and nodeType metadata', () => {

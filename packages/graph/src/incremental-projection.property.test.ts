@@ -20,8 +20,8 @@ import {
 } from '@canopy/graph';
 
 const DEVICE_COUNT = 3;
-const devices: readonly DeviceId[] = Array.from({ length: DEVICE_COUNT }, (_, i) =>
-  asDeviceId(`00000000-0000-0000-0000-${String(i).padStart(12, '0')}`),
+const devices: readonly DeviceId[] = Array.from({ length: DEVICE_COUNT }, (_, index) =>
+  asDeviceId(`00000000-0000-0000-0000-${String(index).padStart(12, '0')}`),
 );
 
 const BASE_EPOCH_MS = Temporal.Instant.from('2024-01-01T00:00:00Z').epochMilliseconds;
@@ -99,7 +99,10 @@ function resolveSteps(steps: readonly Step[]): readonly GraphEvent[] {
     if (step.kind === 'createNode') {
       const id = createNodeId();
       const properties = new Map(
-        Array.from({ length: step.propCount }, (_, i) => [`prop${i}`, `v${counter}`] as const),
+        Array.from(
+          { length: step.propCount },
+          (_, index) => [`prop${index}`, `v${counter}`] as const,
+        ),
       );
       events.push({
         type: 'NodeCreated',
@@ -141,12 +144,12 @@ function resolveSteps(steps: readonly Step[]): readonly GraphEvent[] {
       // Cascade: canonical projection removes any edge touching a deleted
       // node, so those edge ids must stop being valid update/delete targets
       // too (referencing them would make canonical projectGraph error).
-      for (let i = liveEdges.length - 1; i >= 0; i -= 1) {
-        const edgeId = liveEdges[i];
+      for (let index_ = liveEdges.length - 1; index_ >= 0; index_ -= 1) {
+        const edgeId = liveEdges[index_];
         if (edgeId !== undefined) {
           const endpoints = edgeEndpoints.get(edgeId);
           if (endpoints && (endpoints.source === id || endpoints.target === id)) {
-            liveEdges.splice(i, 1);
+            liveEdges.splice(index_, 1);
           }
         }
       }
@@ -221,13 +224,13 @@ function seededShuffle<T>(items: readonly T[], seed: number): readonly T[] {
   };
 
   const result = [...items];
-  for (let i = result.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(next() * (i + 1));
-    const a = result[i];
-    const b = result[j];
+  for (let index = result.length - 1; index > 0; index -= 1) {
+    const index_ = Math.floor(next() * (index + 1));
+    const a = result[index];
+    const b = result[index_];
     if (a === undefined || b === undefined) continue;
-    result[i] = b;
-    result[j] = a;
+    result[index] = b;
+    result[index_] = a;
   }
   return result;
 }
@@ -236,8 +239,8 @@ function partitionInto<T>(items: readonly T[], chunkCount: number): readonly (re
   if (items.length === 0) return [];
   const size = Math.max(1, Math.ceil(items.length / chunkCount));
   const chunks: (readonly T[])[] = [];
-  for (let i = 0; i < items.length; i += size) {
-    chunks.push(items.slice(i, i + size));
+  for (let index = 0; index < items.length; index += size) {
+    chunks.push(items.slice(index, index + size));
   }
   return chunks;
 }

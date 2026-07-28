@@ -32,7 +32,7 @@ function createNode(properties: Record<string, unknown>): Node {
   } as unknown as Node;
 }
 
-function createGraphWithCustomType(propDef: PropertyDefinition) {
+function createGraphWithCustomType(propertyDefinition: PropertyDefinition) {
   let g = unwrap(createGraph(createGraphId(), 'Test Graph'));
 
   const typeNode = createNode({
@@ -40,7 +40,7 @@ function createGraphWithCustomType(propDef: PropertyDefinition) {
     type: SYSTEM_IDS.NODE_TYPE,
     properties: {
       name: 'TestType',
-      properties: JSON.stringify([propDef]),
+      properties: JSON.stringify([propertyDefinition]),
     },
   });
 

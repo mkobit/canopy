@@ -14,7 +14,7 @@ interface PropertyInputEvents {
   readonly onChange: (value: PropertyValue) => unknown;
 }
 
-type PropertyInputProps = PropertyInputData & PropertyInputEvents;
+type PropertyInputProperties = PropertyInputData & PropertyInputEvents;
 
 const getDefaultItem = (kind?: PropertyValueKind): ScalarValue => {
   switch (kind) {
@@ -55,7 +55,7 @@ function isScalar(v: PropertyValue): v is ScalarValue {
   return !Array.isArray(v);
 }
 
-export const PropertyInput: React.FC<PropertyInputProps> = ({
+export const PropertyInput: React.FC<PropertyInputProperties> = ({
   value,
   onChange,
   className,
@@ -90,7 +90,7 @@ export const PropertyInput: React.FC<PropertyInputProps> = ({
           <button
             type="button"
             onClick={() => {
-              const newItems = value.filter((_, i) => i !== index);
+              const newItems = value.filter((_, index_) => index_ !== index);
               onChange(newItems);
               return undefined;
             }}
@@ -125,7 +125,7 @@ export const PropertyInput: React.FC<PropertyInputProps> = ({
 const ScalarInput: React.FC<
   Readonly<{
     value: ScalarValue;
-    onChange: (val: ScalarValue) => unknown;
+    onChange: (value: ScalarValue) => unknown;
     className?: string | undefined;
     kind?: PropertyValueKind;
   }>
@@ -142,8 +142,8 @@ const ScalarInput: React.FC<
         <input
           type="text"
           value={String(value ?? '')}
-          onChange={(e) => {
-            onChange(e.target.value);
+          onChange={(event_) => {
+            onChange(event_.target.value);
             return undefined;
           }}
           className={baseInputClass}
@@ -155,8 +155,8 @@ const ScalarInput: React.FC<
         <input
           type="number"
           value={Number(value ?? 0)}
-          onChange={(e) => {
-            onChange(Number(e.target.value));
+          onChange={(event_) => {
+            onChange(Number(event_.target.value));
             return undefined;
           }}
           className={baseInputClass}
@@ -168,8 +168,8 @@ const ScalarInput: React.FC<
         <input
           type="checkbox"
           checked={Boolean(value)}
-          onChange={(e) => {
-            onChange(e.target.checked);
+          onChange={(event_) => {
+            onChange(event_.target.checked);
             return undefined;
           }}
           className={cn('h-4 w-4', className)}
@@ -181,8 +181,8 @@ const ScalarInput: React.FC<
         <input
           type="text"
           value={String(value ?? '')}
-          onChange={(e) => {
-            onChange(asInstant(e.target.value));
+          onChange={(event_) => {
+            onChange(asInstant(event_.target.value));
             return undefined;
           }}
           className={baseInputClass}
@@ -195,8 +195,8 @@ const ScalarInput: React.FC<
         <input
           type="date"
           value={String(value ?? '')}
-          onChange={(e) => {
-            onChange(asPlainDate(e.target.value));
+          onChange={(event_) => {
+            onChange(asPlainDate(event_.target.value));
             return undefined;
           }}
           className={baseInputClass}
@@ -208,8 +208,8 @@ const ScalarInput: React.FC<
         <input
           type="text"
           value={String(value ?? '')}
-          onChange={(e) => {
-            onChange(asNodeId(e.target.value));
+          onChange={(event_) => {
+            onChange(asNodeId(event_.target.value));
             return undefined;
           }}
           className={baseInputClass}
@@ -218,7 +218,7 @@ const ScalarInput: React.FC<
       );
     }
     case 'external-reference': {
-      const extVal =
+      const extensionValue =
         typeof value === 'object' && value !== null && 'graph' in value
           ? value
           : { graph: asGraphId(''), target: asNodeId('') };
@@ -226,9 +226,9 @@ const ScalarInput: React.FC<
         <div className={cn('space-y-1', className)}>
           <input
             type="text"
-            value={extVal.graph}
-            onChange={(e) => {
-              onChange({ ...extVal, graph: asGraphId(e.target.value) });
+            value={extensionValue.graph}
+            onChange={(event_) => {
+              onChange({ ...extensionValue, graph: asGraphId(event_.target.value) });
               return undefined;
             }}
             className={baseInputClass}
@@ -236,9 +236,9 @@ const ScalarInput: React.FC<
           />
           <input
             type="text"
-            value={extVal.target}
-            onChange={(e) => {
-              onChange({ ...extVal, target: asNodeId(e.target.value) });
+            value={extensionValue.target}
+            onChange={(event_) => {
+              onChange({ ...extensionValue, target: asNodeId(event_.target.value) });
               return undefined;
             }}
             className={baseInputClass}
@@ -255,8 +255,8 @@ const ScalarInput: React.FC<
         <input
           type="text"
           value={String(value ?? '')}
-          onChange={(e) => {
-            onChange(e.target.value);
+          onChange={(event_) => {
+            onChange(event_.target.value);
             return undefined;
           }}
           className={baseInputClass}

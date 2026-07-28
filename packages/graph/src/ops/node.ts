@@ -5,7 +5,7 @@ import type { Result } from '../result';
 import type { GraphEvent, GraphResult } from '../events';
 import type { PropertyValue } from '../properties';
 import { createInstant, createEventId } from '../factories';
-import { ok, err } from '../result';
+import { ok, err as error } from '../result';
 import { validateNode } from '../validation';
 
 export type NodeOperationOptions = Readonly<{
@@ -26,14 +26,16 @@ export function addNode(
   options: NodeOperationOptions,
 ): Result<GraphResult<Graph>, Error> {
   if (graph.nodes.has(node.id)) {
-    return err(new Error(`Node with ID ${node.id} already exists`));
+    return error(new Error(`Node with ID ${node.id} already exists`));
   }
 
   if (options.validate) {
     const result = validateNode(graph, node);
     if (!result.valid) {
-      const msgs = result.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join(', ');
-      return err(new Error(`Node validation failed: ${msgs}`));
+      const msgs = result.errors
+        .map((error_) => `${error_.path.join('.')}: ${error_.message}`)
+        .join(', ');
+      return error(new Error(`Node validation failed: ${msgs}`));
     }
   }
 
@@ -148,21 +150,23 @@ export function updateNode(
 ): Result<GraphResult<Graph>, Error> {
   const existingNode = graph.nodes.get(nodeId);
   if (!existingNode) {
-    return err(new Error(`Node with ID ${nodeId} not found`));
+    return error(new Error(`Node with ID ${nodeId} not found`));
   }
 
   const updatedNode = updater(existingNode);
 
   // Ensure ID hasn't changed
   if (updatedNode.id !== nodeId) {
-    return err(new Error(`Cannot change node ID during update`));
+    return error(new Error(`Cannot change node ID during update`));
   }
 
   if (options.validate) {
     const result = validateNode(graph, updatedNode);
     if (!result.valid) {
-      const msgs = result.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join(', ');
-      return err(new Error(`Node validation failed: ${msgs}`));
+      const msgs = result.errors
+        .map((error_) => `${error_.path.join('.')}: ${error_.message}`)
+        .join(', ');
+      return error(new Error(`Node validation failed: ${msgs}`));
     }
   }
 

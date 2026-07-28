@@ -21,15 +21,15 @@ export interface GraphIndexes {
 /**
  * Recursively freezes an object to ensure absolute immutability of cached values.
  */
-function deepFreeze<T>(obj: T): T {
-  if (obj === null || typeof obj !== 'object') {
-    return obj;
+function deepFreeze<T>(object: T): T {
+  if (object === null || typeof object !== 'object') {
+    return object;
   }
   // eslint-disable-next-line functional/no-loop-statements
-  for (const val of Object.values(obj)) {
-    deepFreeze(val);
+  for (const value of Object.values(object)) {
+    deepFreeze(value);
   }
-  return Object.freeze(obj);
+  return Object.freeze(object);
 }
 
 /**
@@ -182,7 +182,7 @@ export function getGraphIndexes(graph: Graph): GraphIndexes {
 /**
  * Checks if an event modifies settings schema, user settings, or view overrides.
  */
-function isConfigurationEvent(event: GraphEvent, graph: Graph): boolean {
+function isConfigEvent(event: GraphEvent, graph: Graph): boolean {
   if (
     event.type === 'EdgeCreated' &&
     (event.edgeType === SYSTEM_EDGE_TYPES.VIEW_OVERRIDE ||
@@ -223,12 +223,12 @@ function isConfigurationEvent(event: GraphEvent, graph: Graph): boolean {
  * otherwise returns the previous index directly in O(1) time.
  */
 export function incrementalUpdateIndexes(
-  prevIndexes: GraphIndexes,
+  previousIndexes: GraphIndexes,
   event: GraphEvent,
   graph: Graph,
 ): GraphIndexes {
-  if (isConfigurationEvent(event, graph)) {
+  if (isConfigEvent(event, graph)) {
     return buildGraphIndexes(graph);
   }
-  return prevIndexes;
+  return previousIndexes;
 }

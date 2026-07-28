@@ -2,7 +2,7 @@ import type { Graph, Node, NodeId, Result, GraphResult, NodeOperationOptions } f
 import { createNodeId, createInstant, SYSTEM_IDS, addNode } from '@canopy/graph';
 import type { ScopeType } from './cascade';
 
-export type AddUserSettingParams = Readonly<{
+export type AddUserSettingParameters = Readonly<{
   schemaId: NodeId;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   value: any;
@@ -15,18 +15,18 @@ export type AddUserSettingParams = Readonly<{
  */
 export function addUserSetting(
   graph: Graph,
-  params: AddUserSettingParams,
+  parameters: AddUserSettingParameters,
   options: NodeOperationOptions,
 ): Result<GraphResult<Graph>, Error> {
   const properties = new Map<string, string>([
-    ['schemaId', params.schemaId],
-    ['value', JSON.stringify(params.value)],
-    ['scopeType', params.scopeType],
+    ['schemaId', parameters.schemaId],
+    ['value', JSON.stringify(parameters.value)],
+    ['scopeType', parameters.scopeType],
   ]);
 
-  if (params.scopeTarget !== undefined) {
+  if (parameters.scopeTarget !== undefined) {
     // eslint-disable-next-line functional/immutable-data
-    properties.set('scopeTarget', params.scopeTarget);
+    properties.set('scopeTarget', parameters.scopeTarget);
   }
 
   const node: Node = {
