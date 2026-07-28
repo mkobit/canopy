@@ -11,7 +11,6 @@
 /* eslint-disable @typescript-eslint/no-empty-function -- Context defaults are intentionally empty */
 /* eslint-disable functional/prefer-immutable-types -- Web framework variables have mutable structures */
 /* eslint-disable @typescript-eslint/no-unsafe-type-assertion -- Casting dynamic WASM structures requires assertions */
-/* eslint-disable unicorn/catch-error-name -- Standard local names preferred in wizard boundaries */
 /* eslint-disable unicorn/no-negated-condition -- Clean conditionals matching specs preferred */
 /* eslint-disable unicorn/prefer-number-is-safe-integer -- Compatibility with integer validation */
 /* eslint-disable unicorn/no-useless-else -- Clear flow control */
@@ -119,8 +118,8 @@ export const PluginProvider: React.FC<{ readonly children: React.ReactNode }> = 
         try {
           const parsed = JSON.parse(manifestString) as PluginManifest;
           plugins.push(parsed);
-        } catch (e) {
-          console.error('Failed to parse plugin manifest:', e);
+        } catch (error) {
+          console.error('Failed to parse plugin manifest:', error);
         }
       }
     }
@@ -186,8 +185,8 @@ export const PluginProvider: React.FC<{ readonly children: React.ReactNode }> = 
         wizardSessionInstance: wizardInstance,
         error: null,
       });
-    } catch (e: any) {
-      console.error('Failed to start wizard session:', e);
+    } catch (error: any) {
+      console.error('Failed to start wizard session:', error);
     }
   };
 
@@ -226,15 +225,15 @@ export const PluginProvider: React.FC<{ readonly children: React.ReactNode }> = 
       // Apply staged events to the draft session
       if (stepResult.eventsToStage && stepResult.eventsToStage.length > 0) {
         const deviceId = parentSession.graph().metadata.modifiedBy;
-        const draftEvents: GraphEvent[] = stepResult.eventsToStage.map((e: any) => {
-          const timestampString = e.val.timestamp || Temporal.Now.instant().toString();
-          const deviceIdString = e.val.deviceId || deviceId;
-          const eventIdString = e.val.eventId || crypto.randomUUID();
+        const draftEvents: GraphEvent[] = stepResult.eventsToStage.map((event_: any) => {
+          const timestampString = event_.val.timestamp || Temporal.Now.instant().toString();
+          const deviceIdString = event_.val.deviceId || deviceId;
+          const eventIdString = event_.val.eventId || crypto.randomUUID();
 
-          if (e.tag === 'node-created') {
+          if (event_.tag === 'node-created') {
             const properties = new Map<string, any>();
-            if (e.val.properties) {
-              for (const entry of e.val.properties) {
+            if (event_.val.properties) {
+              for (const entry of event_.val.properties) {
                 // Map properties
                 let value = entry.value.val;
                 if (entry.value.tag === 'integer') {
@@ -246,17 +245,17 @@ export const PluginProvider: React.FC<{ readonly children: React.ReactNode }> = 
             return {
               type: 'NodeCreated',
               eventId: eventIdString,
-              id: e.val.id,
-              nodeType: e.val.nodeType,
+              id: event_.val.id,
+              nodeType: event_.val.nodeType,
               properties,
               timestamp: timestampString,
               deviceId: deviceIdString,
-              batchId: e.val.batchId,
+              batchId: event_.val.batchId,
             };
-          } else if (e.tag === 'node-properties-updated') {
+          } else if (event_.tag === 'node-properties-updated') {
             const changes = new Map<string, any>();
-            if (e.val.changes) {
-              for (const entry of e.val.changes) {
+            if (event_.val.changes) {
+              for (const entry of event_.val.changes) {
                 let value = entry.value.val;
                 if (entry.value.tag === 'integer') {
                   value = Number(value);
@@ -267,20 +266,20 @@ export const PluginProvider: React.FC<{ readonly children: React.ReactNode }> = 
             return {
               type: 'NodePropertiesUpdated',
               eventId: eventIdString,
-              id: e.val.id,
+              id: event_.val.id,
               changes,
               timestamp: timestampString,
               deviceId: deviceIdString,
-              batchId: e.val.batchId,
+              batchId: event_.val.batchId,
             };
           }
-          throw new Error(`Unsupported event tag: ${e.tag}`);
+          throw new Error(`Unsupported event tag: ${event_.tag}`);
         });
 
-        const applyRes = activeWizard.draftSession.applyEvents(draftEvents);
-        if (!applyRes.ok) {
+        const applyResult = activeWizard.draftSession.applyEvents(draftEvents);
+        if (!applyResult.ok) {
           setActiveWizard((previous) =>
-            previous ? { ...previous, error: `Apply error: ${applyRes.error.type}` } : null,
+            previous ? { ...previous, error: `Apply error: ${applyResult.error.type}` } : null,
           );
           return;
         }
@@ -300,18 +299,18 @@ export const PluginProvider: React.FC<{ readonly children: React.ReactNode }> = 
         );
       } else if (nextStep.tag === 'complete') {
         // Commit draft session events to parent graph session
-        const currentRevRes = activeWizard.draftSession.getParentRevision();
-        if (!currentRevRes.ok) {
+        const currentRevResult = activeWizard.draftSession.getParentRevision();
+        if (!currentRevResult.ok) {
           setActiveWizard((previous) =>
             previous ? { ...previous, error: 'Could not resolve parent revision.' } : null,
           );
           return;
         }
 
-        const commitRes = await activeWizard.draftSession.commit(currentRevRes.value);
-        if (!commitRes.ok) {
+        const commitResult = await activeWizard.draftSession.commit(currentRevResult.value);
+        if (!commitResult.ok) {
           setActiveWizard((previous) =>
-            previous ? { ...previous, error: `Commit error: ${commitRes.error.type}` } : null,
+            previous ? { ...previous, error: `Commit error: ${commitResult.error.type}` } : null,
           );
           return;
         }
@@ -321,10 +320,10 @@ export const PluginProvider: React.FC<{ readonly children: React.ReactNode }> = 
         activeWizard.draftSession.discard();
         setActiveWizard(null);
       }
-    } catch (e: any) {
-      console.error('Error during step submission:', e);
+    } catch (error: any) {
+      console.error('Error during step submission:', error);
       setActiveWizard((previous) =>
-        previous ? { ...previous, error: e.message || String(e) } : null,
+        previous ? { ...previous, error: error.message || String(error) } : null,
       );
     }
   };

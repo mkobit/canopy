@@ -10,9 +10,9 @@ export interface CardsLayoutEvents {
   readonly onNodeClick: (node: Node) => unknown;
 }
 
-export type CardsLayoutProps = CardsLayoutData & CardsLayoutEvents;
+export type CardsLayoutProperties = CardsLayoutData & CardsLayoutEvents;
 
-export const CardsLayout: React.FC<CardsLayoutProps> = ({ nodes, onNodeClick }) => {
+export const CardsLayout: React.FC<CardsLayoutProperties> = ({ nodes, onNodeClick }) => {
   if (nodes.length === 0) {
     return <div className="p-8 text-center text-gray-500">No nodes found.</div>;
   }

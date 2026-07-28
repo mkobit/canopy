@@ -7,7 +7,7 @@ import { TextBlockRenderer } from './text-block-renderer';
 import { CodeBlockRenderer } from './code-block-renderer';
 import { RENDERER_REGISTRY } from './registry';
 
-export interface BlockRendererProps {
+export interface BlockRendererProperties {
   readonly node: Node;
   readonly graph: Graph;
   readonly depth?: number;
@@ -24,8 +24,12 @@ function resolveDynamicContent(node: Node, graph: Graph): React.ReactNode | null
   if (!viewResult.ok) {
     return null;
   }
-  const viewDefNode = viewResult.value;
-  const usesRendererEdges = getEdgesFrom(graph, viewDefNode.id, SYSTEM_EDGE_TYPES.USES_RENDERER);
+  const viewDefinitionNode = viewResult.value;
+  const usesRendererEdges = getEdgesFrom(
+    graph,
+    viewDefinitionNode.id,
+    SYSTEM_EDGE_TYPES.USES_RENDERER,
+  );
   const usesEdge = usesRendererEdges[0];
   if (!usesEdge) {
     return null;
@@ -47,11 +51,11 @@ function resolveDynamicContent(node: Node, graph: Graph): React.ReactNode | null
   return React.createElement(rendererComponent, {
     node,
     graph,
-    config: viewDefNode.properties,
+    config: viewDefinitionNode.properties,
   });
 }
 
-export const BlockRenderer: React.FC<BlockRendererProps> = ({
+export const BlockRenderer: React.FC<BlockRendererProperties> = ({
   node,
   graph,
   depth = 0,
@@ -65,7 +69,7 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({
   // Find and sort children (unconditional)
   const children = useMemo(() => {
     const childEdges = [...graph.edges.values()].filter(
-      (e) => e.target === node.id && e.type === SYSTEM_EDGE_TYPES.CHILD_OF,
+      (edge) => edge.target === node.id && edge.type === SYSTEM_EDGE_TYPES.CHILD_OF,
     );
 
     // Sort by fractional index position
@@ -76,7 +80,7 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({
     });
 
     return sortedEdges
-      .map((e) => graph.nodes.get(e.source))
+      .map((edge) => graph.nodes.get(edge.source))
       .filter((n): n is Node => n !== undefined);
   }, [graph, node.id]);
 

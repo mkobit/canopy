@@ -3,13 +3,13 @@ import type { CreateNodeTypeInput, NodeId, Result, TypePropertyInput } from '@ca
 import { PropertyListEditor } from './property-list-editor';
 import type { PropertyTypeOption } from '../../utils/schema';
 
-export interface NodeTypeCreateFormProps {
+export interface NodeTypeCreateFormProperties {
   readonly namespace: string;
   readonly propertyTypeOptions: readonly PropertyTypeOption[];
   readonly onSubmit: (input: CreateNodeTypeInput) => Promise<Result<NodeId, Error>>;
 }
 
-export const NodeTypeCreateForm: React.FC<NodeTypeCreateFormProps> = ({
+export const NodeTypeCreateForm: React.FC<NodeTypeCreateFormProperties> = ({
   namespace,
   propertyTypeOptions,
   onSubmit,
@@ -20,8 +20,8 @@ export const NodeTypeCreateForm: React.FC<NodeTypeCreateFormProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setSubmitting] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event_: React.FormEvent) => {
+    event_.preventDefault();
     setError(null);
     setSubmitting(true);
 
@@ -46,8 +46,8 @@ export const NodeTypeCreateForm: React.FC<NodeTypeCreateFormProps> = ({
 
   return (
     <form
-      onSubmit={(e) => {
-        handleSubmit(e).catch(console.error);
+      onSubmit={(event_) => {
+        handleSubmit(event_).catch(console.error);
       }}
       className="space-y-3 p-4 border rounded-lg bg-white"
     >
@@ -57,7 +57,7 @@ export const NodeTypeCreateForm: React.FC<NodeTypeCreateFormProps> = ({
         <input
           required
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={(event_) => setName(event_.target.value)}
           className="w-full border rounded px-2 py-1 text-sm"
         />
       </label>
@@ -67,7 +67,7 @@ export const NodeTypeCreateForm: React.FC<NodeTypeCreateFormProps> = ({
         </span>
         <input
           value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          onChange={(event_) => setDescription(event_.target.value)}
           className="w-full border rounded px-2 py-1 text-sm"
         />
       </label>

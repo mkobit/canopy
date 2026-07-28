@@ -65,7 +65,7 @@ function validateCommit(graph: Graph, events: readonly GraphEvent[]): Result<voi
     if (!node) continue; // deleted later within the same commit
     const result = validateNode(dryRunGraph, node);
     if (!result.valid) {
-      const detail = result.errors.map((e) => e.message).join(', ');
+      const detail = result.errors.map((error_) => error_.message).join(', ');
       return error(new Error(`Node ${id} failed validation: ${detail}`));
     }
   }
@@ -76,7 +76,7 @@ function validateCommit(graph: Graph, events: readonly GraphEvent[]): Result<voi
     if (!edge) continue;
     const result = validateEdge(dryRunGraph, edge);
     if (!result.valid) {
-      const detail = result.errors.map((e) => e.message).join(', ');
+      const detail = result.errors.map((error_) => error_.message).join(', ');
       return error(new Error(`Edge ${id} failed validation: ${detail}`));
     }
   }

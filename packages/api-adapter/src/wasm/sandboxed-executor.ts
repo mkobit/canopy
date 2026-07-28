@@ -96,9 +96,9 @@ export const executeSandboxedGuestPlugin = async (
 
   const memoryChecker = createMemoryChecker(maxMemoryBytes);
   const inputBytes = Buffer.byteLength(inputJson, 'utf8');
-  const inputMemoryRes = memoryChecker.checkBytes(inputBytes);
-  if (!inputMemoryRes.ok) {
-    return err(inputMemoryRes.error);
+  const inputMemoryResult = memoryChecker.checkBytes(inputBytes);
+  if (!inputMemoryResult.ok) {
+    return err(inputMemoryResult.error);
   }
 
   const fuelMeter = createFuelMeter(fuelLimit);
@@ -135,9 +135,9 @@ export const executeSandboxedGuestPlugin = async (
     try {
       const outputJson = await plugin(hostBindings, inputJson);
       const outputBytes = Buffer.byteLength(outputJson, 'utf8');
-      const outputMemoryRes = memoryChecker.checkBytes(outputBytes);
-      if (!outputMemoryRes.ok) {
-        return err(outputMemoryRes.error);
+      const outputMemoryResult = memoryChecker.checkBytes(outputBytes);
+      if (!outputMemoryResult.ok) {
+        return err(outputMemoryResult.error);
       }
       return ok(outputJson);
     } catch (error) {

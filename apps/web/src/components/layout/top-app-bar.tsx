@@ -1,10 +1,10 @@
 import React from 'react';
 
-export interface TopAppBarProps {
+export interface TopAppBarProperties {
   readonly onRunQuery?: (query: string) => unknown;
 }
 
-export const TopAppBar: React.FC<TopAppBarProps> = ({ onRunQuery }) => {
+export const TopAppBar: React.FC<TopAppBarProperties> = ({ onRunQuery }) => {
   const [query, setQuery] = React.useState('');
 
   const handleRun = () => {
@@ -31,8 +31,8 @@ export const TopAppBar: React.FC<TopAppBarProps> = ({ onRunQuery }) => {
         <input
           type="text"
           value={query}
-          onChange={(e) => {
-            setQuery(e.target.value);
+          onChange={(event_) => {
+            setQuery(event_.target.value);
             return undefined;
           }}
           className="w-full bg-surface-container-high border-b-2 border-transparent focus:border-primary focus:bg-surface-container-highest transition-all duration-300 py-2 pl-10 pr-32 text-sm font-mono text-on-surface focus:outline-none placeholder-on-surface-variant/50"

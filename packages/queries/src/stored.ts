@@ -47,12 +47,12 @@ export function saveQueryDefinition(
   const nameValue = scalar(name);
   if (!nameValue.ok) return err(nameValue.error);
 
-  const defVal = scalar(JSON.stringify(query));
-  if (!defVal.ok) return err(defVal.error);
+  const definitionValue = scalar(JSON.stringify(query));
+  if (!definitionValue.ok) return err(definitionValue.error);
 
   const baseProperties: readonly (readonly [string, PropertyValue])[] = [
     ['name', nameValue.value],
-    ['definition', defVal.value],
+    ['definition', definitionValue.value],
   ];
 
   const descValue = options.description ? scalar(options.description) : undefined;
@@ -117,7 +117,7 @@ export function getQueryDefinition(graph: Graph, nodeId: NodeId): Result<Query, 
     () => {
       return JSON.parse(definitionProperty) as Query;
     },
-    (e) => new Error(`Failed to parse query definition for node ${nodeId}: ${e}`),
+    (error) => new Error(`Failed to parse query definition for node ${nodeId}: ${error}`),
   );
 }
 

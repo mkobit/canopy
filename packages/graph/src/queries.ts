@@ -7,7 +7,7 @@ import { SYSTEM_IDS } from './system';
 import { asNodeId } from './factories';
 import { ok, err as error } from './result';
 import { filter } from 'remeda';
-import { findNode } from './utils';
+import { findNode } from './utilities';
 
 /**
  * Returns all nodes that define node types.

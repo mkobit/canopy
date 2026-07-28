@@ -344,20 +344,20 @@ export const executeMutation = {
     context: ApiAdapterContext,
     payload: NodeCreatePayload,
   ): Promise<ApiResponse<MutationResultPayload>> => {
-    const res = await executeCreateNode(createApiRequest('gql-create-node', context, payload));
-    if (!res.ok) return res;
-    return ok({ id: res.value.id, success: true, affectedEventsCount: 1 });
+    const result = await executeCreateNode(createApiRequest('gql-create-node', context, payload));
+    if (!result.ok) return result;
+    return ok({ id: result.value.id, success: true, affectedEventsCount: 1 });
   },
 
   updateNodeProperties: async (
     context: ApiAdapterContext,
     payload: NodeUpdatePropertiesPayload,
   ): Promise<ApiResponse<MutationResultPayload>> => {
-    const res = await executeUpdateNodeProperties(
+    const result = await executeUpdateNodeProperties(
       createApiRequest('gql-update-node-props', context, payload),
     );
-    if (!res.ok) return res;
-    return ok({ id: res.value.id, success: true, affectedEventsCount: 1 });
+    if (!result.ok) return result;
+    return ok({ id: result.value.id, success: true, affectedEventsCount: 1 });
   },
 
   deleteNode: async (
@@ -371,9 +371,9 @@ export const executeMutation = {
     context: ApiAdapterContext,
     payload: EdgeCreatePayload,
   ): Promise<ApiResponse<MutationResultPayload>> => {
-    const res = await executeCreateEdge(createApiRequest('gql-create-edge', context, payload));
-    if (!res.ok) return res;
-    return ok({ id: res.value.id, success: true, affectedEventsCount: 1 });
+    const result = await executeCreateEdge(createApiRequest('gql-create-edge', context, payload));
+    if (!result.ok) return result;
+    return ok({ id: result.value.id, success: true, affectedEventsCount: 1 });
   },
 
   deleteEdge: async (

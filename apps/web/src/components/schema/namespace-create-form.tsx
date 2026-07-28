@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import type { CreateNamespaceInput, NodeId, Result } from '@canopy/graph';
 
-export interface NamespaceCreateFormProps {
+export interface NamespaceCreateFormProperties {
   readonly existingKinds: readonly string[];
   readonly onSubmit: (input: CreateNamespaceInput) => Promise<Result<NodeId, Error>>;
 }
 
 const CUSTOM_KIND = '__custom__';
 
-export const NamespaceCreateForm: React.FC<NamespaceCreateFormProps> = ({
+export const NamespaceCreateForm: React.FC<NamespaceCreateFormProperties> = ({
   existingKinds,
   onSubmit,
 }) => {
@@ -21,8 +21,8 @@ export const NamespaceCreateForm: React.FC<NamespaceCreateFormProps> = ({
 
   const resolvedKind = kind === CUSTOM_KIND ? customKind : kind;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event_: React.FormEvent) => {
+    event_.preventDefault();
     setError(null);
     setSubmitting(true);
 
@@ -46,8 +46,8 @@ export const NamespaceCreateForm: React.FC<NamespaceCreateFormProps> = ({
 
   return (
     <form
-      onSubmit={(e) => {
-        handleSubmit(e).catch(console.error);
+      onSubmit={(event_) => {
+        handleSubmit(event_).catch(console.error);
       }}
       className="space-y-3 p-4 border rounded-lg bg-white"
     >
@@ -57,7 +57,7 @@ export const NamespaceCreateForm: React.FC<NamespaceCreateFormProps> = ({
         <input
           required
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={(event_) => setName(event_.target.value)}
           placeholder="my-namespace"
           className="w-full border rounded px-2 py-1 text-sm"
         />
@@ -66,7 +66,7 @@ export const NamespaceCreateForm: React.FC<NamespaceCreateFormProps> = ({
         <span className="text-xs uppercase tracking-wider text-gray-500">Kind</span>
         <select
           value={kind}
-          onChange={(e) => setKind(e.target.value)}
+          onChange={(event_) => setKind(event_.target.value)}
           className="w-full border rounded px-2 py-1 text-sm"
         >
           {existingKinds.map((k) => (
@@ -81,7 +81,7 @@ export const NamespaceCreateForm: React.FC<NamespaceCreateFormProps> = ({
         <input
           required
           value={customKind}
-          onChange={(e) => setCustomKind(e.target.value)}
+          onChange={(event_) => setCustomKind(event_.target.value)}
           placeholder="kind value"
           className="w-full border rounded px-2 py-1 text-sm"
         />
@@ -92,7 +92,7 @@ export const NamespaceCreateForm: React.FC<NamespaceCreateFormProps> = ({
         </span>
         <input
           value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          onChange={(event_) => setDescription(event_.target.value)}
           className="w-full border rounded px-2 py-1 text-sm"
         />
       </label>

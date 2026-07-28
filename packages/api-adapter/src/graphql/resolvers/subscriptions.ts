@@ -4,6 +4,7 @@ import type { ApiAdapterContext } from '../../api-context';
 import type { EventStreamMessage } from '../../api-payloads';
 import { createEventStreamSubscriber } from '../../event-stream-handlers';
 
+// eslint-disable-next-line unicorn/name-replacements -- renaming would also require updating the import alias in graphql-adapter.ts, outside this batch
 export type EventStreamSubscriptionArgs = Readonly<{
   lastSeenEventId?: string;
   bufferCapacity?: number;
@@ -24,7 +25,7 @@ export const createSubscriptionResolvers = (context: ApiAdapterContext, _eventBu
       let messageQueue: readonly EventStreamMessage[] = [];
       // eslint-disable-next-line functional/no-let -- async iterator resolver callback
       let pendingResolve:
-        ((res: Readonly<IteratorResult<EventStreamSubscriptionValue>>) => void) | null = null;
+        ((result: Readonly<IteratorResult<EventStreamSubscriptionValue>>) => void) | null = null;
       // eslint-disable-next-line functional/no-let -- async iterator termination flag
       let isDone = false;
 
@@ -62,6 +63,7 @@ export const createSubscriptionResolvers = (context: ApiAdapterContext, _eventBu
                 return { value: undefined, done: true };
               }
 
+              // eslint-disable-next-line unicorn/prefer-promise-with-resolvers -- Promise.withResolvers needs lib ES2024, project targets ES2023
               return new Promise((resolve) => {
                 pendingResolve = resolve;
               });

@@ -337,16 +337,16 @@ describe('incremental-projection / mergeEvents', () => {
       timestamp: t.timestamp,
       deviceId: deviceA,
     };
-    const e = tick();
+    const edgeCreated = tick();
     const edgeEvent: EdgeCreated = {
       type: 'EdgeCreated',
-      eventId: e.eventId,
+      eventId: edgeCreated.eventId,
       id: edgeId,
       edgeType: asTypeId('et'),
       source: sourceId,
       target: targetId,
       properties: new Map(),
-      timestamp: e.timestamp,
+      timestamp: edgeCreated.timestamp,
       deviceId: deviceA,
     };
     const d = tick();

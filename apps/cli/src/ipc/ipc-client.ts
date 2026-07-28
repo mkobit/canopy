@@ -81,7 +81,7 @@ export const makeIpcClient = (socketPath: string): Effect.Effect<IpcClient, IpcC
     let requestCounter = 0;
     const pendingRequests = new Map<
       JsonRpcId,
-      { resolve: (res: JsonRpcResponse) => void; reject: (error: IpcClientError) => void }
+      { resolve: (response: JsonRpcResponse) => void; reject: (error: IpcClientError) => void }
     >();
     const subscriptionCallbacks = new Map<string, (event: unknown) => void>();
 
@@ -98,17 +98,17 @@ export const makeIpcClient = (socketPath: string): Effect.Effect<IpcClient, IpcC
 
           // eslint-disable-next-line functional/immutable-data
           pendingRequests.set(id, {
-            resolve: (res: JsonRpcResponse) => {
-              if (res.error) {
+            resolve: (response: JsonRpcResponse) => {
+              if (response.error) {
                 reject(
                   createIpcClientError({
-                    code: res.error.code,
-                    message: res.error.message,
-                    details: res.error.data,
+                    code: response.error.code,
+                    message: response.error.message,
+                    details: response.error.data,
                   }),
                 );
               } else {
-                resolve(res.result as T);
+                resolve(response.result as T);
               }
             },
             reject: (error: IpcClientError) => reject(error),
@@ -299,15 +299,15 @@ export const makeIpcClient = (socketPath: string): Effect.Effect<IpcClient, IpcC
         subscribe: (parameters, onEvent) =>
           Effect.tryPromise({
             try: async () => {
-              const res = await sendRpcRequest<SubscribeResult>(
+              const response = await sendRpcRequest<SubscribeResult>(
                 IPC_METHODS.EVENT_STREAM_SUBSCRIBE,
                 parameters ?? {},
               );
-              if (onEvent && res.subscriptionId) {
+              if (onEvent && response.subscriptionId) {
                 // eslint-disable-next-line functional/immutable-data
-                subscriptionCallbacks.set(res.subscriptionId, onEvent);
+                subscriptionCallbacks.set(response.subscriptionId, onEvent);
               }
-              return res;
+              return response;
             },
             catch: (error) =>
               typeof error === 'object' &&
@@ -324,13 +324,13 @@ export const makeIpcClient = (socketPath: string): Effect.Effect<IpcClient, IpcC
         unsubscribe: (subscriptionId) =>
           Effect.tryPromise({
             try: async () => {
-              const res = await sendRpcRequest<UnsubscribeResult>(
+              const response = await sendRpcRequest<UnsubscribeResult>(
                 IPC_METHODS.EVENT_STREAM_UNSUBSCRIBE,
                 { subscriptionId },
               );
               // eslint-disable-next-line functional/immutable-data
               subscriptionCallbacks.delete(subscriptionId);
-              return res;
+              return response;
             },
             catch: (error) =>
               typeof error === 'object' &&

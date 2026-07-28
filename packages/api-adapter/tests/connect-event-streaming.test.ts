@@ -36,8 +36,8 @@ describe('Connect gRPC event log streaming and replay handlers', () => {
       type: asTypeId('doc'),
       properties: { title: 'Live Streaming Test' },
     });
-    const res = await executeCreateNode(request);
-    expect(res.ok).toBe(true);
+    const result = await executeCreateNode(request);
+    expect(result.ok).toBe(true);
 
     const nextResult = await nextPromise;
     expect(nextResult.done).toBe(false);
@@ -66,13 +66,13 @@ describe('Connect gRPC event log streaming and replay handlers', () => {
         type: asTypeId('doc'),
         properties: { count: index },
       });
-      const res = await executeCreateNode(request);
-      expect(res.ok).toBe(true);
+      const result = await executeCreateNode(request);
+      expect(result.ok).toBe(true);
     }
 
-    const allEventsRes = await eventLogStore.getEvents(graphId);
-    expect(allEventsRes.ok).toBe(true);
-    const allEvents = allEventsRes.ok ? allEventsRes.value : [];
+    const allEventsResult = await eventLogStore.getEvents(graphId);
+    expect(allEventsResult.ok).toBe(true);
+    const allEvents = allEventsResult.ok ? allEventsResult.value : [];
     const firstEventId = allEvents[0]?.eventId ?? '';
 
     const replayIterator = handlers.replayEventStream({

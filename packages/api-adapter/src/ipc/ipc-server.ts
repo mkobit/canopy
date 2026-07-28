@@ -144,13 +144,13 @@ export const createIpcServer = (options: IpcServerOptions): IpcServer => {
 
         if (line.length > 0) {
           // Process message asynchronously
-          void handleIpcRequestLine(line, context).then((res) => {
-            if (!res.ok) {
+          void handleIpcRequestLine(line, context).then((result) => {
+            if (!result.ok) {
               const errorResp = {
                 jsonrpc: '2.0',
                 error: {
-                  code: res.error.code,
-                  message: res.error.message,
+                  code: result.error.code,
+                  message: result.error.message,
                 },
                 id: null,
               };
@@ -158,7 +158,7 @@ export const createIpcServer = (options: IpcServerOptions): IpcServer => {
               return undefined;
             }
 
-            const { response, newSubscription, unsubscribeId } = res.value;
+            const { response, newSubscription, unsubscribeId } = result.value;
 
             if (response) {
               sendToSocket(socket, JSON.stringify(response));
@@ -206,16 +206,16 @@ export const createIpcServer = (options: IpcServerOptions): IpcServer => {
       return ok(undefined);
     }
 
-    const probeRes = await probeSocketPath(socketPath);
-    if (!probeRes.ok) {
-      return err(probeRes.error);
+    const probeResult = await probeSocketPath(socketPath);
+    if (!probeResult.ok) {
+      return err(probeResult.error);
     }
 
-    const parentDir = path.dirname(socketPath);
+    const parentDirectory = path.dirname(socketPath);
     // eslint-disable-next-line functional/no-try-statements
     try {
-      if (!fs.existsSync(parentDir)) {
-        fs.mkdirSync(parentDir, { recursive: true, mode: 0o700 });
+      if (!fs.existsSync(parentDirectory)) {
+        fs.mkdirSync(parentDirectory, { recursive: true, mode: 0o700 });
       }
     } catch (error) {
       return err(

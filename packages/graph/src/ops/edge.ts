@@ -76,7 +76,9 @@ export function addEdge(
   if (options.validate) {
     const result = validateEdge(graph, edge);
     if (!result.valid) {
-      const msgs = result.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join(', ');
+      const msgs = result.errors
+        .map((error_) => `${error_.path.join('.')}: ${error_.message}`)
+        .join(', ');
       return error(new Error(`Edge validation failed: ${msgs}`));
     }
   }
@@ -194,7 +196,9 @@ export function updateEdge(
   if (options.validate) {
     const result = validateEdge(graph, updatedEdge);
     if (!result.valid) {
-      const msgs = result.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join(', ');
+      const msgs = result.errors
+        .map((error_) => `${error_.path.join('.')}: ${error_.message}`)
+        .join(', ');
       return error(new Error(`Edge validation failed: ${msgs}`));
     }
   }

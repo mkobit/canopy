@@ -34,14 +34,14 @@ describe('CAS & Concurrency Stress Verification', () => {
     const context2 = createApiAdapterContext({ graph: session2.graph(), session: session2 });
 
     // Initial node creation on session1
-    const createRes = await executeCreateNode(
+    const createResult = await executeCreateNode(
       createApiRequest('req-init', context1, {
         id: asNodeId('node-cas-1'),
         type: asTypeId('doc'),
         properties: { version: 1 },
       }),
     );
-    expect(createRes.ok).toBe(true);
+    expect(createResult.ok).toBe(true);
 
     // Sync session2 from event store
     await session2.load();
@@ -63,10 +63,10 @@ describe('CAS & Concurrency Stress Verification', () => {
       }),
     );
 
-    const [res1, res2] = await Promise.all([update1, update2]);
+    const [result1, result2] = await Promise.all([update1, update2]);
 
     // One must succeed, and state consistency is strictly maintained across sessions.
-    const successes = [res1, res2].filter((r) => r.ok);
+    const successes = [result1, result2].filter((r) => r.ok);
     expect(successes.length).toBeGreaterThanOrEqual(1);
 
     // Re-load both sessions and assert state parity
@@ -142,17 +142,17 @@ describe('CAS & Concurrency Stress Verification', () => {
     expect(session.graph().edges.has(asEdgeId('e1'))).toBe(true);
 
     // Delete node n1
-    const delRes = await executeDeleteNode(
+    const delResult = await executeDeleteNode(
       createApiRequest('req-del-n1', context, { id: asNodeId('n1') }),
     );
-    expect(delRes.ok).toBe(true);
+    expect(delResult.ok).toBe(true);
 
     // Connected edge e1 must be automatically removed from graph session state
     expect(session.graph().nodes.has(asNodeId('n1'))).toBe(false);
     expect(session.graph().edges.has(asEdgeId('e1'))).toBe(false);
 
     // Subsequent edge creation linking to deleted node must fail with NOT_FOUND
-    const failEdgeRes = await executeCreateEdge(
+    const failEdgeResult = await executeCreateEdge(
       createApiRequest('req-fail-edge', context, {
         id: asEdgeId('e2'),
         type: asTypeId('rel'),
@@ -160,9 +160,9 @@ describe('CAS & Concurrency Stress Verification', () => {
         target: asNodeId('n2'),
       }),
     );
-    expect(failEdgeRes.ok).toBe(false);
-    if (!failEdgeRes.ok) {
-      expect(failEdgeRes.error.category).toBe('NOT_FOUND');
+    expect(failEdgeResult.ok).toBe(false);
+    if (!failEdgeResult.ok) {
+      expect(failEdgeResult.error.category).toBe('NOT_FOUND');
     }
   });
 

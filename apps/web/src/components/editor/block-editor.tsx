@@ -2,7 +2,7 @@ import React from 'react';
 import { cn } from '../../utils/cn';
 import { showPrompt } from '../../utils/dialogs';
 
-export interface BlockEditorProps {
+export interface BlockEditorProperties {
   readonly value: string;
   readonly onCommit: (value: string) => void;
   readonly className?: string;
@@ -52,7 +52,7 @@ const EditorToolbar: React.FC<Readonly<{ onExec: (command: string, value?: strin
  * contentEditable undo, and the losing side of a concurrent whole-property LWW write
  * stays recoverable in the event log (see openspec block-editing spec).
  */
-export const BlockEditor: React.FC<BlockEditorProps> = ({
+export const BlockEditor: React.FC<BlockEditorProperties> = ({
   value,
   onCommit,
   className,

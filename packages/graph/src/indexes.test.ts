@@ -144,13 +144,13 @@ describe('GraphIndexes', () => {
     let graph = unwrap(createGraph(graphId, 'Test'));
 
     const sourceNodeId = asNodeId('my-content-node');
-    const viewDef1: Node = {
+    const viewDefinition1: Node = {
       id: asNodeId('view-def-1'),
       type: SYSTEM_IDS.VIEW_DEFINITION,
       properties: new Map(),
       metadata: { created: createInstant(), modified: createInstant(), modifiedBy: deviceId },
     };
-    const viewDef2: Node = {
+    const viewDefinition2: Node = {
       id: asNodeId('view-def-2'),
       type: SYSTEM_IDS.VIEW_DEFINITION,
       properties: new Map(),
@@ -159,7 +159,11 @@ describe('GraphIndexes', () => {
 
     graph = {
       ...graph,
-      nodes: new Map([...graph.nodes, [viewDef1.id, viewDef1], [viewDef2.id, viewDef2]]),
+      nodes: new Map([
+        ...graph.nodes,
+        [viewDefinition1.id, viewDefinition1],
+        [viewDefinition2.id, viewDefinition2],
+      ]),
     };
 
     // Edge 1: older
@@ -167,7 +171,7 @@ describe('GraphIndexes', () => {
       id: asEdgeId('edge-1'),
       type: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
       source: sourceNodeId,
-      target: viewDef1.id,
+      target: viewDefinition1.id,
       properties: new Map(),
       metadata: {
         created: asInstant('2026-07-21T10:00:00Z'),
@@ -181,7 +185,7 @@ describe('GraphIndexes', () => {
       id: asEdgeId('edge-2'),
       type: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
       source: sourceNodeId,
-      target: viewDef2.id,
+      target: viewDefinition2.id,
       properties: new Map(),
       metadata: {
         created: asInstant('2026-07-21T11:00:00Z'),
@@ -198,7 +202,7 @@ describe('GraphIndexes', () => {
     const indexes = buildGraphIndexes(graph);
     const resolved = indexes.viewOverrides.get(sourceNodeId);
     expect(resolved).toBeDefined();
-    expect(resolved?.id).toBe(viewDef2.id); // Newer wins
+    expect(resolved?.id).toBe(viewDefinition2.id); // Newer wins
   });
 
   it('getGraphIndexes caches index reference on the graph object', () => {

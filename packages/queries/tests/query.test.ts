@@ -174,7 +174,7 @@ describe('Query Engine', () => {
     const result = unwrap(executeQuery(graph, q));
     expect(result.edges).toHaveLength(2); // knows Bob, works_at Acme
     const types = sort(
-      map(result.edges, (e) => e.type),
+      map(result.edges, (edge) => edge.type),
       (a, b) => a.localeCompare(b),
     );
     expect(types).toEqual(['knows', 'works_at'].map(asTypeId));

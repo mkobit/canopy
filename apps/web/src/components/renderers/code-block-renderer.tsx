@@ -1,12 +1,12 @@
 import React from 'react';
 import type { Node } from '@canopy/graph';
 
-export interface CodeBlockRendererProps {
+export interface CodeBlockRendererProperties {
   node: Node;
   className?: string;
 }
 
-export const CodeBlockRenderer: React.FC<CodeBlockRendererProps> = ({ node, className }) => {
+export const CodeBlockRenderer: React.FC<CodeBlockRendererProperties> = ({ node, className }) => {
   const content = node.properties.get('content');
   if (typeof content !== 'string') {
     return <div className="text-red-500">Invalid code content</div>;

@@ -95,7 +95,10 @@ export const checkGql = (liveSchema: string, baselineSchema?: string): readonly 
   return [...violations1, ...violations2, ...violations3];
 };
 
-export const checkProto = (liveSchema: string, baselineSchema?: string): readonly Violation[] => {
+export const checkPrototype = (
+  liveSchema: string,
+  baselineSchema?: string,
+): readonly Violation[] => {
   if (!baselineSchema) return [];
 
   const violations1: readonly Violation[] =
@@ -192,7 +195,9 @@ export const checkApiCompatibility = (options?: CheckOptions): CompatibilityResu
   const violations1 =
     target === 'all' || target === 'graphql' ? checkGql(gqlLive, gqlBaseline) : [];
   const violations2 =
-    target === 'all' || target === 'connect' ? checkProto(prototypeLive, prototypeBaseline) : [];
+    target === 'all' || target === 'connect'
+      ? checkPrototype(prototypeLive, prototypeBaseline)
+      : [];
   const violations3 = target === 'all' || target === 'wit' ? checkWit(witLive, witBaseline) : [];
   const violations = [...violations1, ...violations2, ...violations3];
 

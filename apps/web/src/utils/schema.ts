@@ -20,7 +20,7 @@ export interface NamespaceOption {
   readonly description: string | undefined;
 }
 
-export interface TypeDefOption {
+export interface TypeDefinitionOption {
   readonly id: NodeId;
   readonly name: string;
   readonly namespace: string;
@@ -28,7 +28,7 @@ export interface TypeDefOption {
   readonly properties: readonly PropertyDefinition[];
 }
 
-export interface EdgeTypeOption extends TypeDefOption {
+export interface EdgeTypeOption extends TypeDefinitionOption {
   readonly sourceTypes: readonly string[];
   readonly targetTypes: readonly string[];
 }
@@ -58,7 +58,7 @@ function toNamespaceOption(node: Node): NamespaceOption | undefined {
   };
 }
 
-function toTypeDefOption(node: Node): TypeDefOption | undefined {
+function toTypeDefinitionOption(node: Node): TypeDefinitionOption | undefined {
   const name = readString(node.properties.get('name'));
   const namespace = readString(node.properties.get('namespace'));
   if (name === undefined || namespace === undefined) return undefined;
@@ -72,7 +72,7 @@ function toTypeDefOption(node: Node): TypeDefOption | undefined {
 }
 
 function toEdgeTypeOption(node: Node): EdgeTypeOption | undefined {
-  const base = toTypeDefOption(node);
+  const base = toTypeDefinitionOption(node);
   if (!base) return undefined;
   return {
     ...base,
@@ -111,13 +111,13 @@ export function listCreatableNamespaceKinds(
     .toSorted((a, b) => a.localeCompare(b));
 }
 
-export function listAllNodeTypes(graph: Graph): readonly TypeDefOption[] {
+export function listAllNodeTypes(graph: Graph): readonly TypeDefinitionOption[] {
   return getNodesOfType(graph, SYSTEM_IDS.NODE_TYPE)
-    .map(toTypeDefOption)
-    .filter((option): option is TypeDefOption => option !== undefined);
+    .map(toTypeDefinitionOption)
+    .filter((option): option is TypeDefinitionOption => option !== undefined);
 }
 
-export function listNodeTypesIn(graph: Graph, namespace: string): readonly TypeDefOption[] {
+export function listNodeTypesIn(graph: Graph, namespace: string): readonly TypeDefinitionOption[] {
   return listAllNodeTypes(graph).filter((option) => option.namespace === namespace);
 }
 

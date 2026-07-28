@@ -102,11 +102,11 @@ describe('Query execution handlers', () => {
     const context = createApiAdapterContext({ graph });
     const request = createApiRequest('req-1', context, { id: asNodeId('n1') });
 
-    const res = executeNodeQuery(request);
-    expect(res.ok).toBe(true);
-    if (res.ok) {
-      expect(res.value).toHaveLength(1);
-      expect(res.value[0]?.id).toBe(asNodeId('n1'));
+    const result = executeNodeQuery(request);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value).toHaveLength(1);
+      expect(result.value[0]?.id).toBe(asNodeId('n1'));
     }
   });
 
@@ -115,10 +115,10 @@ describe('Query execution handlers', () => {
     const context = createApiAdapterContext({ graph });
     const request = createApiRequest('req-2', context, { id: asNodeId('non-existent') });
 
-    const res = executeNodeQuery(request);
-    expect(res.ok).toBe(false);
-    if (!res.ok) {
-      expect(res.error.category).toBe('NOT_FOUND');
+    const result = executeNodeQuery(request);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.category).toBe('NOT_FOUND');
     }
   });
 
@@ -127,10 +127,10 @@ describe('Query execution handlers', () => {
     const context = createApiAdapterContext({ graph });
     const request = createApiRequest('req-3', context, { type: asTypeId('doc') });
 
-    const res = executeNodeQuery(request);
-    expect(res.ok).toBe(true);
-    if (res.ok) {
-      expect(res.value).toHaveLength(2);
+    const result = executeNodeQuery(request);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value).toHaveLength(2);
     }
   });
 
@@ -139,11 +139,11 @@ describe('Query execution handlers', () => {
     const context = createApiAdapterContext({ graph });
     const request = createApiRequest('req-4', context, { id: asEdgeId('e1') });
 
-    const res = executeEdgeQuery(request);
-    expect(res.ok).toBe(true);
-    if (res.ok) {
-      expect(res.value).toHaveLength(1);
-      expect(res.value[0]?.id).toBe(asEdgeId('e1'));
+    const result = executeEdgeQuery(request);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value).toHaveLength(1);
+      expect(result.value[0]?.id).toBe(asEdgeId('e1'));
     }
   });
 
@@ -152,10 +152,10 @@ describe('Query execution handlers', () => {
     const context = createApiAdapterContext({ graph });
     const request = createApiRequest('req-5', context, { entityId: asNodeId('n1') });
 
-    const res = executePropertyLookup(request);
-    expect(res.ok).toBe(true);
-    if (res.ok) {
-      expect(res.value.properties.title).toBe('Doc 1');
+    const result = executePropertyLookup(request);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.properties.title).toBe('Doc 1');
     }
   });
 
@@ -171,16 +171,16 @@ describe('Query execution handlers', () => {
       propertyKey: 'missing',
     });
 
-    const resFound = executePropertyLookup(requestFound);
-    expect(resFound.ok).toBe(true);
-    if (resFound.ok) {
-      expect(resFound.value.properties.title).toBe('Doc 1');
+    const resultFound = executePropertyLookup(requestFound);
+    expect(resultFound.ok).toBe(true);
+    if (resultFound.ok) {
+      expect(resultFound.value.properties.title).toBe('Doc 1');
     }
 
-    const resMissing = executePropertyLookup(requestMissing);
-    expect(resMissing.ok).toBe(false);
-    if (!resMissing.ok) {
-      expect(resMissing.error.category).toBe('NOT_FOUND');
+    const resultMissing = executePropertyLookup(requestMissing);
+    expect(resultMissing.ok).toBe(false);
+    if (!resultMissing.ok) {
+      expect(resultMissing.error.category).toBe('NOT_FOUND');
     }
   });
 
@@ -192,11 +192,11 @@ describe('Query execution handlers', () => {
       maxDepth: 5,
     });
 
-    const res = executeGraphTraversal(request);
-    expect(res.ok).toBe(true);
-    if (res.ok) {
-      expect(res.value.nodes).toHaveLength(2);
-      expect(res.value.edges).toHaveLength(2);
+    const result = executeGraphTraversal(request);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.nodes).toHaveLength(2);
+      expect(result.value.edges).toHaveLength(2);
     }
   });
 
@@ -205,10 +205,10 @@ describe('Query execution handlers', () => {
     const context = createApiAdapterContext({ graph });
     const request = createApiRequest('req-9', context, { startNodeIds: [] });
 
-    const res = executeGraphTraversal(request);
-    expect(res.ok).toBe(false);
-    if (!res.ok) {
-      expect(res.error.category).toBe('VALIDATION_ERROR');
+    const result = executeGraphTraversal(request);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.category).toBe('VALIDATION_ERROR');
     }
   });
 
@@ -223,10 +223,10 @@ describe('Query execution handlers', () => {
       maxCost: 1,
     });
 
-    const res = executeGraphTraversal(request);
-    expect(res.ok).toBe(false);
-    if (!res.ok) {
-      expect(res.error.category).toBe('RESOURCE_EXHAUSTED');
+    const result = executeGraphTraversal(request);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.category).toBe('RESOURCE_EXHAUSTED');
     }
   });
 
@@ -238,11 +238,11 @@ describe('Query execution handlers', () => {
     });
     const request = createApiRequest('req-11', context, {});
 
-    const res = executeNodeQuery(request);
-    expect(res.ok).toBe(true);
-    if (res.ok) {
-      expect(res.value).toHaveLength(2);
-      expect(res.value.every((n) => n.properties.tenantId === 't1')).toBe(true);
+    const result = executeNodeQuery(request);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value).toHaveLength(2);
+      expect(result.value.every((n) => n.properties.tenantId === 't1')).toBe(true);
     }
   });
 
@@ -260,20 +260,20 @@ describe('Query execution handlers', () => {
     const requestMatching = createApiRequest('req-edge-tenant-1', contextMatching, {
       id: asEdgeId('e1'),
     });
-    const resMatching = executeEdgeQuery(requestMatching);
-    expect(resMatching.ok).toBe(true);
-    if (resMatching.ok) {
-      expect(resMatching.value).toHaveLength(1);
-      expect(resMatching.value[0]?.id).toBe(asEdgeId('e1'));
+    const resultMatching = executeEdgeQuery(requestMatching);
+    expect(resultMatching.ok).toBe(true);
+    if (resultMatching.ok) {
+      expect(resultMatching.value).toHaveLength(1);
+      expect(resultMatching.value[0]?.id).toBe(asEdgeId('e1'));
     }
 
     const requestMismatching = createApiRequest('req-edge-tenant-2', contextMismatching, {
       id: asEdgeId('e1'),
     });
-    const resMismatching = executeEdgeQuery(requestMismatching);
-    expect(resMismatching.ok).toBe(false);
-    if (!resMismatching.ok) {
-      expect(resMismatching.error.category).toBe('NOT_FOUND');
+    const resultMismatching = executeEdgeQuery(requestMismatching);
+    expect(resultMismatching.ok).toBe(false);
+    if (!resultMismatching.ok) {
+      expect(resultMismatching.error.category).toBe('NOT_FOUND');
     }
   });
 
@@ -288,16 +288,16 @@ describe('Query execution handlers', () => {
       authContext: { tenantId: 't2' },
     });
 
-    const resT1 = executeEdgeQuery(createApiRequest('req-edge-scan-1', contextT1, {}));
-    expect(resT1.ok).toBe(true);
-    if (resT1.ok) {
-      expect(resT1.value).toHaveLength(2);
+    const resultT1 = executeEdgeQuery(createApiRequest('req-edge-scan-1', contextT1, {}));
+    expect(resultT1.ok).toBe(true);
+    if (resultT1.ok) {
+      expect(resultT1.value).toHaveLength(2);
     }
 
-    const resT2 = executeEdgeQuery(createApiRequest('req-edge-scan-2', contextT2, {}));
-    expect(resT2.ok).toBe(true);
-    if (resT2.ok) {
-      expect(resT2.value).toHaveLength(0);
+    const resultT2 = executeEdgeQuery(createApiRequest('req-edge-scan-2', contextT2, {}));
+    expect(resultT2.ok).toBe(true);
+    if (resultT2.ok) {
+      expect(resultT2.value).toHaveLength(0);
     }
   });
 
@@ -313,31 +313,31 @@ describe('Query execution handlers', () => {
     });
 
     // Node property lookup
-    const resNodeT1 = executePropertyLookup(
+    const resultNodeT1 = executePropertyLookup(
       createApiRequest('req-prop-1', contextT1, { entityId: asNodeId('n1') }),
     );
-    expect(resNodeT1.ok).toBe(true);
+    expect(resultNodeT1.ok).toBe(true);
 
-    const resNodeT2 = executePropertyLookup(
+    const resultNodeT2 = executePropertyLookup(
       createApiRequest('req-prop-2', contextT2, { entityId: asNodeId('n1') }),
     );
-    expect(resNodeT2.ok).toBe(false);
-    if (!resNodeT2.ok) {
-      expect(resNodeT2.error.category).toBe('NOT_FOUND');
+    expect(resultNodeT2.ok).toBe(false);
+    if (!resultNodeT2.ok) {
+      expect(resultNodeT2.error.category).toBe('NOT_FOUND');
     }
 
     // Edge property lookup
-    const resEdgeT1 = executePropertyLookup(
+    const resultEdgeT1 = executePropertyLookup(
       createApiRequest('req-prop-3', contextT1, { entityId: asEdgeId('e1') }),
     );
-    expect(resEdgeT1.ok).toBe(true);
+    expect(resultEdgeT1.ok).toBe(true);
 
-    const resEdgeT2 = executePropertyLookup(
+    const resultEdgeT2 = executePropertyLookup(
       createApiRequest('req-prop-4', contextT2, { entityId: asEdgeId('e1') }),
     );
-    expect(resEdgeT2.ok).toBe(false);
-    if (!resEdgeT2.ok) {
-      expect(resEdgeT2.error.category).toBe('NOT_FOUND');
+    expect(resultEdgeT2.ok).toBe(false);
+    if (!resultEdgeT2.ok) {
+      expect(resultEdgeT2.error.category).toBe('NOT_FOUND');
     }
   });
 
@@ -367,10 +367,10 @@ describe('Query execution handlers', () => {
     const requestT1 = createApiRequest('req-trav-1', contextT1, {
       startNodeIds: [asNodeId('n1')],
     });
-    const resT1 = executeGraphTraversal(requestT1);
-    expect(resT1.ok).toBe(true);
-    if (resT1.ok) {
-      const nodeIds = resT1.value.nodes.map((n) => n.id);
+    const resultT1 = executeGraphTraversal(requestT1);
+    expect(resultT1.ok).toBe(true);
+    if (resultT1.ok) {
+      const nodeIds = resultT1.value.nodes.map((n) => n.id);
       expect(nodeIds).toContain(asNodeId('n1'));
       expect(nodeIds).toContain(asNodeId('n2'));
       expect(nodeIds).not.toContain(asNodeId('n3'));
@@ -380,10 +380,10 @@ describe('Query execution handlers', () => {
     const requestStartMismatch = createApiRequest('req-trav-2', contextT1, {
       startNodeIds: [asNodeId('n3')],
     });
-    const resStartMismatch = executeGraphTraversal(requestStartMismatch);
-    expect(resStartMismatch.ok).toBe(true);
-    if (resStartMismatch.ok) {
-      expect(resStartMismatch.value.nodes).toHaveLength(0);
+    const resultStartMismatch = executeGraphTraversal(requestStartMismatch);
+    expect(resultStartMismatch.ok).toBe(true);
+    if (resultStartMismatch.ok) {
+      expect(resultStartMismatch.value.nodes).toHaveLength(0);
     }
   });
 });

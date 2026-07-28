@@ -146,11 +146,12 @@ const buildAppendWrites = (
 
   // eslint-disable-next-line functional/no-loop-statements
   for (const group of groups) {
-    const groupJsonl = group.events.map((e) => JSON.stringify(serializeEvent(e))).join('\n') + '\n';
+    const groupJsonl =
+      group.events.map((event_) => JSON.stringify(serializeEvent(event_))).join('\n') + '\n';
     const nActive = currentActiveEvents.length;
     const sActive =
-      currentActiveEvents.map((e) => JSON.stringify(serializeEvent(e))).join('\n').length +
-      (nActive > 0 ? 1 : 0);
+      currentActiveEvents.map((event_) => JSON.stringify(serializeEvent(event_))).join('\n')
+        .length + (nActive > 0 ? 1 : 0);
     const nGroup = group.events.length;
     const sGroup = groupJsonl.length;
 
@@ -164,7 +165,8 @@ const buildAppendWrites = (
           sealed: [...currentManifest.sealed, currentActiveSegment],
         };
         const sealedJsonl =
-          currentActiveEvents.map((e) => JSON.stringify(serializeEvent(e))).join('\n') + '\n';
+          currentActiveEvents.map((event_) => JSON.stringify(serializeEvent(event_))).join('\n') +
+          '\n';
         filesToWrite.set(path.join(deviceDir, currentActiveSegment), sealedJsonl);
       }
       currentActiveSegment = null;
@@ -194,7 +196,7 @@ const buildAppendWrites = (
     };
 
     const fullJsonl =
-      currentActiveEvents.map((e) => JSON.stringify(serializeEvent(e))).join('\n') + '\n';
+      currentActiveEvents.map((event_) => JSON.stringify(serializeEvent(event_))).join('\n') + '\n';
     const currentN = currentActiveEvents.length;
     const currentS = fullJsonl.length;
 
@@ -211,7 +213,7 @@ const buildAppendWrites = (
 
   if (currentActiveSegment !== null) {
     const fullJsonl =
-      currentActiveEvents.map((e) => JSON.stringify(serializeEvent(e))).join('\n') + '\n';
+      currentActiveEvents.map((event_) => JSON.stringify(serializeEvent(event_))).join('\n') + '\n';
     filesToWrite.set(path.join(deviceDir, currentActiveSegment), fullJsonl);
   }
 
@@ -230,9 +232,9 @@ export const createFileEventLog = (config: FileEventLogConfig): FileEventLog => 
     maxBytesPerSegment = 1024 * 1024,
   } = config;
 
-  const deviceDir = path.join(rootDir, 'events', deviceId);
+  const deviceDirectory = path.join(rootDir, 'events', deviceId);
   const canopyJsonPath = path.join(rootDir, 'canopy.json');
-  const manifestPath = path.join(deviceDir, 'manifest.json');
+  const manifestPath = path.join(deviceDirectory, 'manifest.json');
 
   let initializedGraphId: string | null = null;
   let isInitialized = false;
@@ -264,7 +266,7 @@ export const createFileEventLog = (config: FileEventLogConfig): FileEventLog => 
   const getActiveSegmentBasename = async (manifest: FileStoreManifest): Promise<string | null> => {
     // eslint-disable-next-line functional/no-try-statements
     try {
-      const files = await fs.readdir(deviceDir);
+      const files = await fs.readdir(deviceDirectory);
       const jsonlFiles = files.filter((f) => f.endsWith('.jsonl'));
       const activeFiles = jsonlFiles.filter((f) => !manifest.sealed.includes(f));
       if (activeFiles.length === 0) {
@@ -278,7 +280,7 @@ export const createFileEventLog = (config: FileEventLogConfig): FileEventLog => 
   };
 
   const readSegmentEvents = async (segmentFilename: string): Promise<readonly GraphEvent[]> => {
-    const filePath = path.join(deviceDir, segmentFilename);
+    const filePath = path.join(deviceDirectory, segmentFilename);
     const content = await fs.readFile(filePath, 'utf8');
     const lines = content.split('\n').filter((line) => line.trim() !== '');
     return lines.map((line) => deserializeEvent(JSON.parse(line)));
@@ -295,16 +297,16 @@ export const createFileEventLog = (config: FileEventLogConfig): FileEventLog => 
     for (const segment of manifest.sealed) {
       const segEvents = await readSegmentEvents(segment);
       // eslint-disable-next-line functional/no-loop-statements
-      for (const e of segEvents) {
-        knownEventIds.add(e.eventId);
+      for (const event_ of segEvents) {
+        knownEventIds.add(event_.eventId);
       }
     }
 
     if (activeSegment !== null) {
       const activeList = await readSegmentEvents(activeSegment);
       // eslint-disable-next-line functional/no-loop-statements
-      for (const e of activeList) {
-        knownEventIds.add(e.eventId);
+      for (const event_ of activeList) {
+        knownEventIds.add(event_.eventId);
       }
     }
 
@@ -315,7 +317,7 @@ export const createFileEventLog = (config: FileEventLogConfig): FileEventLog => 
     init: async (): Promise<Result<void, Error>> => {
       if (isInitialized) return ok(undefined);
       return fromAsyncThrowable(async () => {
-        await fs.mkdir(deviceDir, { recursive: true });
+        await fs.mkdir(deviceDirectory, { recursive: true });
         // eslint-disable-next-line functional/no-try-statements
         try {
           const content = await fs.readFile(canopyJsonPath, 'utf8');
@@ -346,7 +348,7 @@ export const createFileEventLog = (config: FileEventLogConfig): FileEventLog => 
 
       return fromAsyncThrowable(async () => {
         await ensureCacheLoaded();
-        const uniqueIncomingEvents = events.filter((e) => !knownEventIds.has(e.eventId));
+        const uniqueIncomingEvents = events.filter((event_) => !knownEventIds.has(event_.eventId));
         if (uniqueIncomingEvents.length === 0) {
           return;
         }
@@ -367,7 +369,7 @@ export const createFileEventLog = (config: FileEventLogConfig): FileEventLog => 
           manifest,
           activeSegment,
           activeEvents,
-          { maxEventsPerSegment, maxBytesPerSegment, deviceDir },
+          { maxEventsPerSegment, maxBytesPerSegment, deviceDir: deviceDirectory },
         );
 
         const allFilesToWrite = new Map(filesToWrite);
@@ -379,8 +381,8 @@ export const createFileEventLog = (config: FileEventLogConfig): FileEventLog => 
         }
 
         // eslint-disable-next-line functional/no-loop-statements
-        for (const e of uniqueIncomingEvents) {
-          knownEventIds.add(e.eventId);
+        for (const event_ of uniqueIncomingEvents) {
+          knownEventIds.add(event_.eventId);
         }
       });
     },
@@ -411,8 +413,8 @@ export const createFileEventLog = (config: FileEventLogConfig): FileEventLog => 
         );
 
         // eslint-disable-next-line functional/no-loop-statements
-        for (const e of uniqueEvents) {
-          knownEventIds.add(e.eventId);
+        for (const event_ of uniqueEvents) {
+          knownEventIds.add(event_.eventId);
         }
         cacheLoaded = true;
 
@@ -446,8 +448,8 @@ export const createFileEventLog = (config: FileEventLogConfig): FileEventLog => 
             continue;
           }
 
-          const remoteDeviceDir = path.join(rootDir, 'events', remoteDeviceId);
-          const segmentsResult = await getRemoteSegmentsInOrder(remoteDeviceDir);
+          const remoteDeviceDirectory = path.join(rootDir, 'events', remoteDeviceId);
+          const segmentsResult = await getRemoteSegmentsInOrder(remoteDeviceDirectory);
           if (!segmentsResult.ok) {
             throw segmentsResult.error;
           }
@@ -456,7 +458,7 @@ export const createFileEventLog = (config: FileEventLogConfig): FileEventLog => 
           let remoteEvents: readonly GraphEvent[] = [];
           // eslint-disable-next-line functional/no-loop-statements
           for (const segment of segments) {
-            const eventsResult = await readRemoteSegmentEvents(remoteDeviceDir, segment);
+            const eventsResult = await readRemoteSegmentEvents(remoteDeviceDirectory, segment);
             if (!eventsResult.ok) {
               throw eventsResult.error;
             }
@@ -505,20 +507,20 @@ export const createFileEventLog = (config: FileEventLogConfig): FileEventLog => 
 };
 
 export const scanRemoteManifests = async (
-  rootDir: string,
+  rootDirectory: string,
   localDeviceId: string,
 ): Promise<Result<ReadonlyMap<string, FileStoreManifest>, Error>> => {
-  const eventsDir = path.join(rootDir, 'events');
+  const eventsDirectory = path.join(rootDirectory, 'events');
   return fromAsyncThrowable(async () => {
     // eslint-disable-next-line functional/no-try-statements
     try {
-      const entries = await fs.readdir(eventsDir, { withFileTypes: true });
-      const dirNames = entries
+      const entries = await fs.readdir(eventsDirectory, { withFileTypes: true });
+      const directoryNames = entries
         .filter((entry) => entry.isDirectory() && entry.name !== localDeviceId)
         .map((entry) => entry.name);
 
-      const manifestPromises = dirNames.map(async (remoteDeviceId) => {
-        const remoteManifestPath = path.join(eventsDir, remoteDeviceId, 'manifest.json');
+      const manifestPromises = directoryNames.map(async (remoteDeviceId) => {
+        const remoteManifestPath = path.join(eventsDirectory, remoteDeviceId, 'manifest.json');
         // eslint-disable-next-line functional/no-try-statements
         try {
           const content = await fs.readFile(remoteManifestPath, 'utf8');
@@ -549,12 +551,12 @@ export const scanRemoteManifests = async (
 };
 
 export const getRemoteSegmentsInOrder = async (
-  remoteDeviceDir: string,
+  remoteDeviceDirectory: string,
 ): Promise<Result<readonly string[], Error>> => {
   return fromAsyncThrowable(async () => {
     // eslint-disable-next-line functional/no-try-statements
     try {
-      const files = await fs.readdir(remoteDeviceDir);
+      const files = await fs.readdir(remoteDeviceDirectory);
       const jsonlFiles = files.filter((f) => f.endsWith('.jsonl'));
       return jsonlFiles.toSorted((a, b) => a.localeCompare(b));
     } catch (error) {
@@ -567,11 +569,11 @@ export const getRemoteSegmentsInOrder = async (
 };
 
 export const readRemoteSegmentEvents = async (
-  remoteDeviceDir: string,
+  remoteDeviceDirectory: string,
   segmentFilename: string,
 ): Promise<Result<readonly GraphEvent[], Error>> => {
   return fromAsyncThrowable(async () => {
-    const filePath = path.join(remoteDeviceDir, segmentFilename);
+    const filePath = path.join(remoteDeviceDirectory, segmentFilename);
     const content = await fs.readFile(filePath, 'utf8');
     const lines = content.split('\n').filter((line) => line.trim() !== '');
     return lines.map((line) => deserializeEvent(JSON.parse(line)));

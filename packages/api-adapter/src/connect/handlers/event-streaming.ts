@@ -148,6 +148,7 @@ const createSubscribeGenerator = async function* (
           yield head;
         }
       } else {
+        // eslint-disable-next-line unicorn/prefer-promise-with-resolvers -- Promise.withResolvers needs lib ES2024, project targets ES2023
         const nextItem = await new Promise<ConnectEventStreamItem | null>((resolve) => {
           resolveNext = resolve;
         });
@@ -174,20 +175,20 @@ const createReplayGenerator = async function* (
   const lastSeenEventId = request.last_seen_event_id ?? '';
   const maxReplayCount = request.max_replay_count ?? options?.maxReplayCount;
 
-  const replayRes = await executeReplayEventStream(context, {
+  const replayResult = await executeReplayEventStream(context, {
     tenantId,
     graphId,
     lastSeenEventId,
     ...(maxReplayCount !== undefined && { maxReplayCount }),
   });
 
-  if (!replayRes.ok) {
+  if (!replayResult.ok) {
     const errorItem: ConnectEventStreamItem = {
       event_id: 'error',
       event_type: 'REPLAY_ERROR',
       payload_json: JSON.stringify({
-        code: replayRes.error.code,
-        message: replayRes.error.message,
+        code: replayResult.error.code,
+        message: replayResult.error.message,
       }),
       sequence_number: 0,
       timestamp: createInstant(),
@@ -197,7 +198,7 @@ const createReplayGenerator = async function* (
   }
 
   // eslint-disable-next-line functional/no-loop-statements -- yield replayed items
-  for (const message of replayRes.value) {
+  for (const message of replayResult.value) {
     yield formatMessageToConnectItem(message);
   }
 };

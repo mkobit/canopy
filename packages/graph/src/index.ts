@@ -89,7 +89,7 @@ export * from './projection';
 export * from './queries';
 export * from './query';
 export * from './resolve-namespace';
-export * from './utils';
+export * from './utilities';
 export * from './event-bus';
 export * from './workflow-engine';
 export * from './validation';

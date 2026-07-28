@@ -309,9 +309,9 @@ export const executeGraphTraversal = (
 
 export const executeQuery = {
   getNode: (context: ApiAdapterContext, id: NodeId): ApiResponse<ApiNodePayload> => {
-    const res = executeNodeQuery(createApiRequest('gql-get-node', context, { id }));
-    if (!res.ok) return res;
-    const node = res.value[0];
+    const result = executeNodeQuery(createApiRequest('gql-get-node', context, { id }));
+    if (!result.ok) return result;
+    const node = result.value[0];
     if (!node) {
       return err(createApiAdapterError('NOT_FOUND', `Node not found: ${id}`));
     }

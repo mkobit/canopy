@@ -254,16 +254,19 @@ describe('node validation integration for Plugin nodes', () => {
     const result = validateNode(g, invalidPlugin);
     expect(result.valid).toBe(false);
     expect(result.errors.length).toBeGreaterThanOrEqual(2);
-    expect(result.errors.some((e) => e.message.includes('magic binary header'))).toBe(true);
-    expect(result.errors.some((e) => e.message.includes('valid JSON string'))).toBe(true);
+    expect(result.errors.some((error) => error.message.includes('magic binary header'))).toBe(true);
+    expect(result.errors.some((error) => error.message.includes('valid JSON string'))).toBe(true);
   });
 
   it('validates the packaged plugin node JSON from package-plugin script', () => {
     const g = unwrap(createGraph(createGraphId(), 'System Graph'));
 
     try {
-      const dir = import.meta.dirname ?? __dirname;
-      const jsonPath = path.resolve(dir, '../../../apps/web/src/plugin/mock/plugin-node.json');
+      const directory = import.meta.dirname ?? __dirname;
+      const jsonPath = path.resolve(
+        directory,
+        '../../../apps/web/src/plugin/mock/plugin-node.json',
+      );
       if (fs.existsSync(jsonPath)) {
         const rawJson = fs.readFileSync(jsonPath, 'utf8');
         const nodeData = JSON.parse(rawJson) as {

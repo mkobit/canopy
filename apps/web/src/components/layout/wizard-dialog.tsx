@@ -66,7 +66,7 @@ const FormFieldInput: React.FC<FormFieldInputProperties> = ({ field, value, onCh
         <input
           type="checkbox"
           checked={value === true}
-          onChange={(e) => onChange(e.target.checked)}
+          onChange={(event_) => onChange(event_.target.checked)}
           className="w-4 h-4 rounded border-outline-variant/30 text-primary focus:ring-primary/40 bg-background"
         />
         <span className="text-sm text-on-surface">{field.label}</span>
@@ -78,7 +78,7 @@ const FormFieldInput: React.FC<FormFieldInputProperties> = ({ field, value, onCh
     return (
       <select
         value={typeof value === 'string' ? value : ''}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(event_) => onChange(event_.target.value)}
         className="w-full bg-[#121a25]/50 border border-[#2a3c54]/30 rounded-lg px-3 py-2 text-sm text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/40 transition-all"
       >
         <option value="" disabled>
@@ -97,7 +97,7 @@ const FormFieldInput: React.FC<FormFieldInputProperties> = ({ field, value, onCh
     <input
       type={field.kind === 'number' ? 'number' : field.kind === 'date' ? 'date' : 'text'}
       value={typeof value === 'string' || typeof value === 'number' ? String(value) : ''}
-      onChange={(e) => onChange(e.target.value)}
+      onChange={(event_) => onChange(event_.target.value)}
       className="w-full bg-[#121a25]/50 border border-[#2a3c54]/30 rounded-lg px-3 py-2 text-sm text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/40 transition-all font-body"
       required={field.required}
       placeholder={`Enter ${field.label.toLowerCase()}...`}
@@ -157,8 +157,8 @@ export const WizardDialog: React.FC = () => {
 
   const { stepSchema, error } = activeWizard;
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (event_: React.FormEvent) => {
+    event_.preventDefault();
     const entries = stepSchema.fields.map((field) => {
       const value = formValues[field.name];
       const parsedValue = field.kind === 'number' ? Number(value) : value;

@@ -83,18 +83,18 @@ const handleGetNodeById = async (
   context: ApiAdapterContext,
   request: Readonly<{ id: string }>,
 ): Promise<ConnectNodeResponse> => {
-  const res = executeQuery.getNode(context, asNodeId(request.id));
-  if (!res.ok) {
-    const error = createConnectErrorPayload(res.error);
+  const result = executeQuery.getNode(context, asNodeId(request.id));
+  if (!result.ok) {
+    const error = createConnectErrorPayload(result.error);
     return { success: false, error_code: error.errorCode, error_message: error.message };
   }
   return {
     success: true,
-    id: res.value.id,
-    type_id: res.value.type,
-    properties_json: JSON.stringify(res.value.properties),
-    created_at: res.value.createdAt,
-    updated_at: res.value.updatedAt,
+    id: result.value.id,
+    type_id: result.value.type,
+    properties_json: JSON.stringify(result.value.properties),
+    created_at: result.value.createdAt,
+    updated_at: result.value.updatedAt,
   };
 };
 
@@ -102,14 +102,14 @@ const handleGetNodesByType = async (
   context: ApiAdapterContext,
   request: Readonly<{ type_id: string }>,
 ): Promise<ConnectNodeListResponse> => {
-  const res = executeQuery.getNodes(context, { type: asTypeId(request.type_id) });
-  if (!res.ok) {
-    const error = createConnectErrorPayload(res.error);
+  const result = executeQuery.getNodes(context, { type: asTypeId(request.type_id) });
+  if (!result.ok) {
+    const error = createConnectErrorPayload(result.error);
     return { success: false, nodes: [], error_code: error.errorCode, error_message: error.message };
   }
   return {
     success: true,
-    nodes: res.value.map((n) => ({
+    nodes: result.value.map((n) => ({
       success: true,
       id: n.id,
       type_id: n.type,
@@ -125,18 +125,18 @@ const handleGetNodesByProperty = async (
   request: Readonly<{ key: string; value_json: string }>,
 ): Promise<ConnectNodeListResponse> => {
   const parsedValue = parseJsonPropertyValue(request.value_json);
-  const res = executeNodeQuery(
+  const result = executeNodeQuery(
     createApiRequest('connect-get-nodes-by-property', context, {
       filter: { property: request.key, operator: 'eq', value: parsedValue },
     }),
   );
-  if (!res.ok) {
-    const error = createConnectErrorPayload(res.error);
+  if (!result.ok) {
+    const error = createConnectErrorPayload(result.error);
     return { success: false, nodes: [], error_code: error.errorCode, error_message: error.message };
   }
   return {
     success: true,
-    nodes: res.value.map((n) => ({
+    nodes: result.value.map((n) => ({
       success: true,
       id: n.id,
       type_id: n.type,
@@ -151,23 +151,23 @@ const handleGetInboundEdges = async (
   context: ApiAdapterContext,
   request: Readonly<{ target_node_id: string; predicate_type_id?: string }>,
 ): Promise<ConnectEdgeListResponse> => {
-  const res = executeQuery.getEdges(context, {
+  const result = executeQuery.getEdges(context, {
     target: asNodeId(request.target_node_id),
     type: request.predicate_type_id ? asTypeId(request.predicate_type_id) : undefined,
   });
-  if (!res.ok) {
-    const error = createConnectErrorPayload(res.error);
+  if (!result.ok) {
+    const error = createConnectErrorPayload(result.error);
     return { success: false, edges: [], error_code: error.errorCode, error_message: error.message };
   }
   return {
     success: true,
-    edges: res.value.map((e) => ({
+    edges: result.value.map((edge) => ({
       success: true,
-      id: e.id,
-      source_node_id: e.source,
-      target_node_id: e.target,
-      predicate_type_id: e.type,
-      properties_json: JSON.stringify(e.properties),
+      id: edge.id,
+      source_node_id: edge.source,
+      target_node_id: edge.target,
+      predicate_type_id: edge.type,
+      properties_json: JSON.stringify(edge.properties),
     })),
   };
 };
@@ -176,23 +176,23 @@ const handleGetOutboundEdges = async (
   context: ApiAdapterContext,
   request: Readonly<{ source_node_id: string; predicate_type_id?: string }>,
 ): Promise<ConnectEdgeListResponse> => {
-  const res = executeQuery.getEdges(context, {
+  const result = executeQuery.getEdges(context, {
     source: asNodeId(request.source_node_id),
     type: request.predicate_type_id ? asTypeId(request.predicate_type_id) : undefined,
   });
-  if (!res.ok) {
-    const error = createConnectErrorPayload(res.error);
+  if (!result.ok) {
+    const error = createConnectErrorPayload(result.error);
     return { success: false, edges: [], error_code: error.errorCode, error_message: error.message };
   }
   return {
     success: true,
-    edges: res.value.map((e) => ({
+    edges: result.value.map((edge) => ({
       success: true,
-      id: e.id,
-      source_node_id: e.source,
-      target_node_id: e.target,
-      predicate_type_id: e.type,
-      properties_json: JSON.stringify(e.properties),
+      id: edge.id,
+      source_node_id: edge.source,
+      target_node_id: edge.target,
+      predicate_type_id: edge.type,
+      properties_json: JSON.stringify(edge.properties),
     })),
   };
 };
@@ -209,17 +209,17 @@ const handleExecuteTraversalQuery = async (
     request.filter_predicate_type_ids && request.filter_predicate_type_ids.length > 0
       ? asTypeId(request.filter_predicate_type_ids[0] ?? '')
       : undefined;
-  const res = executeQuery.traverse(context, {
+  const result = executeQuery.traverse(context, {
     startNodeIds: [asNodeId(request.start_node_id)],
     edgeType,
     maxDepth: request.max_depth,
   });
-  if (!res.ok) {
-    const error = createConnectErrorPayload(res.error);
+  if (!result.ok) {
+    const error = createConnectErrorPayload(result.error);
     return { success: false, steps: [], error_code: error.errorCode, error_message: error.message };
   }
 
-  const { nodes, edges } = res.value;
+  const { nodes, edges } = result.value;
   const startId = request.start_node_id;
 
   const buildStepMaps = (
@@ -311,7 +311,7 @@ const handleCreateNode = async (
   const sequenceOption =
     expectedSequence === undefined ? {} : { expectedSequence: expectedSequence };
 
-  const res = await executeCreateNode(
+  const result = await executeCreateNode(
     createApiRequest('connect-create-node', context, {
       type: asTypeId(request.type_id),
       properties,
@@ -319,16 +319,16 @@ const handleCreateNode = async (
     }),
   );
 
-  if (!res.ok) {
-    const error = createConnectErrorPayload(res.error);
+  if (!result.ok) {
+    const error = createConnectErrorPayload(result.error);
     return { success: false, error_code: error.errorCode, error_message: error.message };
   }
 
   return {
     success: true,
-    entity_id: res.value.id,
+    entity_id: result.value.id,
     sequence_number: expectedSequence ?? 1,
-    committed_at: res.value.createdAt,
+    committed_at: result.value.createdAt,
   };
 };
 
@@ -349,7 +349,7 @@ const handleUpdateNodeProperties = async (
   const sequenceOption =
     expectedSequence === undefined ? {} : { expectedSequence: expectedSequence };
 
-  const res = await executeUpdateNodeProperties(
+  const result = await executeUpdateNodeProperties(
     createApiRequest('connect-update-node-props', context, {
       id: asNodeId(request.id),
       properties,
@@ -357,16 +357,16 @@ const handleUpdateNodeProperties = async (
     }),
   );
 
-  if (!res.ok) {
-    const error = createConnectErrorPayload(res.error);
+  if (!result.ok) {
+    const error = createConnectErrorPayload(result.error);
     return { success: false, error_code: error.errorCode, error_message: error.message };
   }
 
   return {
     success: true,
-    entity_id: res.value.id,
+    entity_id: result.value.id,
     sequence_number: expectedSequence ?? 1,
-    committed_at: res.value.updatedAt,
+    committed_at: result.value.updatedAt,
   };
 };
 
@@ -383,21 +383,21 @@ const handleDeleteNode = async (
   const sequenceOption =
     expectedSequence === undefined ? {} : { expectedSequence: expectedSequence };
 
-  const res = await executeDeleteNode(
+  const result = await executeDeleteNode(
     createApiRequest('connect-delete-node', context, {
       id: asNodeId(request.id),
       ...sequenceOption,
     }),
   );
 
-  if (!res.ok) {
-    const error = createConnectErrorPayload(res.error);
+  if (!result.ok) {
+    const error = createConnectErrorPayload(result.error);
     return { success: false, error_code: error.errorCode, error_message: error.message };
   }
 
   return {
     success: true,
-    entity_id: res.value.id,
+    entity_id: result.value.id,
     sequence_number: expectedSequence ?? 1,
     committed_at: createInstant(),
   };
@@ -424,7 +424,7 @@ const handleCreateEdge = async (
   const sequenceOption =
     expectedSequence === undefined ? {} : { expectedSequence: expectedSequence };
 
-  const res = await executeCreateEdge(
+  const result = await executeCreateEdge(
     createApiRequest('connect-create-edge', context, {
       source: asNodeId(request.source_node_id),
       target: asNodeId(request.target_node_id),
@@ -434,14 +434,14 @@ const handleCreateEdge = async (
     }),
   );
 
-  if (!res.ok) {
-    const error = createConnectErrorPayload(res.error);
+  if (!result.ok) {
+    const error = createConnectErrorPayload(result.error);
     return { success: false, error_code: error.errorCode, error_message: error.message };
   }
 
   return {
     success: true,
-    entity_id: res.value.id,
+    entity_id: result.value.id,
     sequence_number: expectedSequence ?? 1,
     committed_at: createInstant(),
   };
@@ -460,21 +460,21 @@ const handleDeleteEdge = async (
   const sequenceOption =
     expectedSequence === undefined ? {} : { expectedSequence: expectedSequence };
 
-  const res = await executeDeleteEdge(
+  const result = await executeDeleteEdge(
     createApiRequest('connect-delete-edge', context, {
       id: asEdgeId(request.id),
       ...sequenceOption,
     }),
   );
 
-  if (!res.ok) {
-    const error = createConnectErrorPayload(res.error);
+  if (!result.ok) {
+    const error = createConnectErrorPayload(result.error);
     return { success: false, error_code: error.errorCode, error_message: error.message };
   }
 
   return {
     success: true,
-    entity_id: res.value.id,
+    entity_id: result.value.id,
     sequence_number: expectedSequence ?? 1,
     committed_at: createInstant(),
   };

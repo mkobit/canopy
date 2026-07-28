@@ -1,10 +1,10 @@
 import React from 'react';
 
-export interface GraphExplorerCanvasProps {
+export interface GraphExplorerCanvasProperties {
   children?: React.ReactNode;
 }
 
-export const GraphExplorerCanvas: React.FC<GraphExplorerCanvasProps> = ({ children }) => {
+export const GraphExplorerCanvas: React.FC<GraphExplorerCanvasProperties> = ({ children }) => {
   return (
     <div className="flex-1 bg-surface-dim relative overflow-hidden flex flex-col">
       {/* Sub-header Navigation */}

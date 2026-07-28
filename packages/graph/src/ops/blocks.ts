@@ -40,7 +40,7 @@ export function insertBlock(
   // 2. Find siblings to determine position
   // Filter edges: target == parentId AND type == CHILD_OF
   const siblings = [...graphWithNode.edges.values()]
-    .filter((e) => e.target === parentId && e.type === SYSTEM_EDGE_TYPES.CHILD_OF)
+    .filter((edge) => edge.target === parentId && edge.type === SYSTEM_EDGE_TYPES.CHILD_OF)
     .toSorted((a, b) => {
       const posA = (a.properties.get('position') as string) || '';
       const posB = (b.properties.get('position') as string) || '';
@@ -51,7 +51,7 @@ export function insertBlock(
 
   // Validate prevBlockId if provided
   if (previousBlockId) {
-    const previousEdgeIndex = siblings.findIndex((e) => e.source === previousBlockId);
+    const previousEdgeIndex = siblings.findIndex((edge) => edge.source === previousBlockId);
     if (previousEdgeIndex === -1) {
       return error(new Error(`prevBlockId ${previousBlockId} is not a child of ${parentId}`));
     }
@@ -64,7 +64,7 @@ export function insertBlock(
   // Calculate position
   const { prevPos, nextPos } = previousBlockId
     ? (() => {
-        const previousEdgeIndex = siblings.findIndex((e) => e.source === previousBlockId);
+        const previousEdgeIndex = siblings.findIndex((edge) => edge.source === previousBlockId);
         const previousEdge = siblings[previousEdgeIndex];
         if (!previousEdge) {
           return { prevPos: null, nextPos: null };

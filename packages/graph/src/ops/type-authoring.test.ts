@@ -32,6 +32,7 @@ describe('createNamespace', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error('expected success');
 
+    // eslint-disable-next-line unicorn/prefer-iterator-helpers -- MapIterator#find() needs a newer lib target than this project's tsconfig (ES2023)
     const created = [...result.value.value.nodes.values()].find(
       (node) => node.type === SYSTEM_IDS.NAMESPACE && node.properties.get('name') === 'research',
     );
@@ -84,6 +85,7 @@ describe('createPropertyType', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error('expected success');
 
+    // eslint-disable-next-line unicorn/prefer-iterator-helpers -- MapIterator#find() needs a newer lib target than this project's tsconfig (ES2023)
     const created = [...result.value.value.nodes.values()].find(
       (node) =>
         node.type === SYSTEM_IDS.PROPERTY_TYPE && node.properties.get('name') === 'priority',
@@ -149,6 +151,7 @@ describe('createNodeType', () => {
     if (!propertyTypeResult.ok) throw new Error('expected success');
     graph = propertyTypeResult.value.value;
 
+    // eslint-disable-next-line unicorn/prefer-iterator-helpers -- MapIterator#find() needs a newer lib target than this project's tsconfig (ES2023)
     const propertyTypeId = [...graph.nodes.values()].find(
       (node) =>
         node.type === SYSTEM_IDS.PROPERTY_TYPE && node.properties.get('name') === 'priority',
@@ -171,6 +174,7 @@ describe('createNodeType', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error('expected success');
 
+    // eslint-disable-next-line unicorn/prefer-iterator-helpers -- MapIterator#find() needs a newer lib target than this project's tsconfig (ES2023)
     const created = [...result.value.value.nodes.values()].find(
       (node) => node.type === SYSTEM_IDS.NODE_TYPE && node.properties.get('name') === 'Task',
     );
@@ -269,6 +273,7 @@ describe('createEdgeType', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error('expected success');
 
+    // eslint-disable-next-line unicorn/prefer-iterator-helpers -- MapIterator#find() needs a newer lib target than this project's tsconfig (ES2023)
     const created = [...result.value.value.nodes.values()].find(
       (node) => node.type === SYSTEM_IDS.EDGE_TYPE && node.properties.get('name') === 'RelatesTo',
     );

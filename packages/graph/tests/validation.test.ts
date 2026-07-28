@@ -270,9 +270,9 @@ describe('validation', () => {
     const result = validateNode(g, malformedNode);
     expect(result.valid).toBe(false);
     expect(result.errors.length).toBeGreaterThan(0);
-    expect(result.errors.some((e) => e.message.includes("Missing required property 'name'"))).toBe(
-      true,
-    );
+    expect(
+      result.errors.some((error) => error.message.includes("Missing required property 'name'")),
+    ).toBe(true);
   });
 
   it('validates a valid NODE_TYPE node against the system definition', () => {
@@ -305,7 +305,9 @@ describe('validation', () => {
 
     const result = validateNode(g, invalidNode);
     expect(result.valid).toBe(false);
-    expect(result.errors.some((e) => e.message.includes("expected type 'text'"))).toBe(true);
+    expect(result.errors.some((error) => error.message.includes("expected type 'text'"))).toBe(
+      true,
+    );
   });
 
   it('validates a malformed EDGE_TYPE node against the system definition', () => {
@@ -624,9 +626,9 @@ describe('transitive and inverse edge type extraction', () => {
     g = unwrap(addNode(g, transitiveEdgeType, { deviceId: DEVICE })).graph;
 
     // Verify the definition node exists and has the transitive property
-    const defNode = g.nodes.get(asNodeId('edge-descendant-of'));
-    expect(defNode).toBeDefined();
-    expect(defNode?.properties.get('transitive')).toBe(true);
+    const definitionNode = g.nodes.get(asNodeId('edge-descendant-of'));
+    expect(definitionNode).toBeDefined();
+    expect(definitionNode?.properties.get('transitive')).toBe(true);
   });
 
   it('extracts inverse reference from edge type definition', () => {
@@ -643,9 +645,9 @@ describe('transitive and inverse edge type extraction', () => {
     });
     g = unwrap(addNode(g, parentOfEdge, { deviceId: DEVICE })).graph;
 
-    const defNode = g.nodes.get(asNodeId('edge-parent-of'));
-    expect(defNode).toBeDefined();
-    expect(defNode?.properties.get('inverse')).toBe('edge-child-of');
+    const definitionNode = g.nodes.get(asNodeId('edge-parent-of'));
+    expect(definitionNode).toBeDefined();
+    expect(definitionNode?.properties.get('inverse')).toBe('edge-child-of');
   });
 
   it('validates edge type node with transitive and inverse properties', () => {
@@ -668,7 +670,7 @@ describe('transitive and inverse edge type extraction', () => {
 });
 
 describe('isEdgeCompatible', () => {
-  const mockDef = (sourceTypes: string[], targetTypes: string[]): EdgeTypeDefinition => ({
+  const mockDefinition = (sourceTypes: string[], targetTypes: string[]): EdgeTypeDefinition => ({
     id: asTypeId('test-edge-type'),
     name: 'Test Edge Type',
     namespace: asNamespace('user'),
@@ -685,41 +687,41 @@ describe('isEdgeCompatible', () => {
   const t3 = asTypeId('type-3');
 
   it('allows explicit matches for both source and target', () => {
-    const def = mockDef(['type-1', 'type-2'], ['type-3']);
-    expect(isEdgeCompatible(def, t1, t3)).toBe(true);
-    expect(isEdgeCompatible(def, t2, t3)).toBe(true);
+    const definition = mockDefinition(['type-1', 'type-2'], ['type-3']);
+    expect(isEdgeCompatible(definition, t1, t3)).toBe(true);
+    expect(isEdgeCompatible(definition, t2, t3)).toBe(true);
   });
 
   it('rejects when source does not match', () => {
-    const def = mockDef(['type-1'], ['type-3']);
-    expect(isEdgeCompatible(def, t2, t3)).toBe(false);
+    const definition = mockDefinition(['type-1'], ['type-3']);
+    expect(isEdgeCompatible(definition, t2, t3)).toBe(false);
   });
 
   it('rejects when target does not match', () => {
-    const def = mockDef(['type-1'], ['type-3']);
-    expect(isEdgeCompatible(def, t1, t2)).toBe(false);
+    const definition = mockDefinition(['type-1'], ['type-3']);
+    expect(isEdgeCompatible(definition, t1, t2)).toBe(false);
   });
 
   it('rejects when both source and target do not match', () => {
-    const def = mockDef(['type-1'], ['type-3']);
-    expect(isEdgeCompatible(def, t2, t2)).toBe(false);
+    const definition = mockDefinition(['type-1'], ['type-3']);
+    expect(isEdgeCompatible(definition, t2, t2)).toBe(false);
   });
 
   it('allows wildcard source (empty list)', () => {
-    const def = mockDef([], ['type-3']);
-    expect(isEdgeCompatible(def, t1, t3)).toBe(true);
-    expect(isEdgeCompatible(def, t2, t3)).toBe(true);
+    const definition = mockDefinition([], ['type-3']);
+    expect(isEdgeCompatible(definition, t1, t3)).toBe(true);
+    expect(isEdgeCompatible(definition, t2, t3)).toBe(true);
   });
 
   it('allows wildcard target (empty list)', () => {
-    const def = mockDef(['type-1'], []);
-    expect(isEdgeCompatible(def, t1, t2)).toBe(true);
-    expect(isEdgeCompatible(def, t1, t3)).toBe(true);
+    const definition = mockDefinition(['type-1'], []);
+    expect(isEdgeCompatible(definition, t1, t2)).toBe(true);
+    expect(isEdgeCompatible(definition, t1, t3)).toBe(true);
   });
 
   it('allows wildcard source and target (both empty lists)', () => {
-    const def = mockDef([], []);
-    expect(isEdgeCompatible(def, t1, t2)).toBe(true);
-    expect(isEdgeCompatible(def, t2, t3)).toBe(true);
+    const definition = mockDefinition([], []);
+    expect(isEdgeCompatible(definition, t1, t2)).toBe(true);
+    expect(isEdgeCompatible(definition, t2, t3)).toBe(true);
   });
 });

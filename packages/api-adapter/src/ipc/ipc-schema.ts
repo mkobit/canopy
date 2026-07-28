@@ -1,3 +1,4 @@
+/* eslint-disable unicorn/name-replacements -- Params* names are consumed by apps/cli/src/ipc/ipc-client.ts and tests/ipc-schema.test.ts, outside this batch's scope */
 import { z } from 'zod';
 import type { Result } from '@canopy/graph';
 

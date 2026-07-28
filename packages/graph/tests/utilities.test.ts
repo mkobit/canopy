@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'bun:test';
-import { findNode, generateExecutionId, createBatch, EventDeduplicator } from '../src/utils';
+import { findNode, generateExecutionId, createBatch, EventDeduplicator } from '../src/utilities';
 import {
   asNodeId,
   asTypeId,

@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { Glob } from 'bun';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const rootDir = path.resolve(__dirname, '..');
+const rootDirectory = path.resolve(__dirname, '..');
 
 // Helper to check if a command string starts with npm, npx, or node
 function checkCommandString(command: string): string | undefined {
@@ -58,8 +58,12 @@ function scanPackageJson(relativePath: string, root: string): readonly Violation
 }
 
 // Function to scan a single Husky hook
-function scanHuskyHook(fileName: string, huskyDir: string, root: string): readonly Violation[] {
-  const fullPath = path.join(huskyDir, fileName);
+function scanHuskyHook(
+  fileName: string,
+  huskyDirectory: string,
+  root: string,
+): readonly Violation[] {
+  const fullPath = path.join(huskyDirectory, fileName);
   const stat = fs.statSync(fullPath);
   if (!stat.isFile()) {
     return [];
@@ -96,7 +100,7 @@ async function main(): Promise<void> {
   // eslint-disable-next-line functional/prefer-immutable-types -- mutable array used to collect results from async generator
   const rawPaths: string[] = [];
   // eslint-disable-next-line functional/no-loop-statements -- Glob scan requires async iteration
-  for await (const relativePath of packageJsonGlob.scan(rootDir)) {
+  for await (const relativePath of packageJsonGlob.scan(rootDirectory)) {
     // eslint-disable-next-line functional/immutable-data -- collect results
     rawPaths.push(relativePath);
   }
@@ -105,13 +109,15 @@ async function main(): Promise<void> {
     (p) => !p.includes('node_modules') && !p.includes('.beads'),
   );
 
-  const packageJsonViolations = packageJsonPaths.flatMap((relPath) =>
-    scanPackageJson(relPath, rootDir),
+  const packageJsonViolations = packageJsonPaths.flatMap((relativePath) =>
+    scanPackageJson(relativePath, rootDirectory),
   );
 
-  const huskyDir = path.join(rootDir, '.husky');
-  const huskyFiles = fs.existsSync(huskyDir) ? fs.readdirSync(huskyDir) : [];
-  const huskyViolations = huskyFiles.flatMap((file) => scanHuskyHook(file, huskyDir, rootDir));
+  const huskyDirectory = path.join(rootDirectory, '.husky');
+  const huskyFiles = fs.existsSync(huskyDirectory) ? fs.readdirSync(huskyDirectory) : [];
+  const huskyViolations = huskyFiles.flatMap((file) =>
+    scanHuskyHook(file, huskyDirectory, rootDirectory),
+  );
 
   const allViolations = [...packageJsonViolations, ...huskyViolations];
 

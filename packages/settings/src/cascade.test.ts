@@ -65,8 +65,8 @@ describe('Settings Resolver', () => {
         modifiedBy: SYSTEM_DEVICE_ID,
       },
     };
-    const res = addNode(graph, settingNode, { deviceId: SYSTEM_DEVICE_ID });
-    graph = unwrap(res).graph;
+    const result = addNode(graph, settingNode, { deviceId: SYSTEM_DEVICE_ID });
+    graph = unwrap(result).graph;
 
     const nodeId = asNodeId('test:node');
     const typeId = asTypeId('test:type');

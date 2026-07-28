@@ -85,14 +85,14 @@ function auditTool(
     });
 }
 
-function formatResult(res: ToolAuditResult): string {
-  if (res.error) {
-    return `❌ ${res.name}: Error fetching latest release (${res.error})`;
+function formatResult(result: ToolAuditResult): string {
+  if (result.error) {
+    return `❌ ${result.name}: Error fetching latest release (${result.error})`;
   }
-  if (res.upToDate) {
-    return `✅ ${res.name}: Up to date (v${res.configuredVersion})`;
+  if (result.upToDate) {
+    return `✅ ${result.name}: Up to date (v${result.configuredVersion})`;
   }
-  return `⚠️ ${res.name}: Update available! (Configured: v${res.configuredVersion}, Latest: v${res.latestVersion})`;
+  return `⚠️ ${result.name}: Update available! (Configured: v${result.configuredVersion}, Latest: v${result.latestVersion})`;
 }
 
 async function main(): Promise<boolean> {
@@ -121,7 +121,7 @@ async function main(): Promise<boolean> {
     console.log(line);
   }
 
-  const hasUpdates = results.some((res) => !res.upToDate && !res.error);
+  const hasUpdates = results.some((result) => !result.upToDate && !result.error);
 
   // eslint-disable-next-line no-console
   console.log('\n--- Audit Summary ---');

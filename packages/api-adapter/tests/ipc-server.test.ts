@@ -43,8 +43,8 @@ describe('IpcServer integration and socket lifecycle', () => {
     const context = createApiAdapterContext({ graph });
     server = createIpcServer({ socketPath, context });
 
-    const res = await server.listen();
-    expect(res.ok).toBe(true);
+    const result = await server.listen();
+    expect(result.ok).toBe(true);
     expect(fs.existsSync(socketPath)).toBe(true);
 
     const stat = fs.statSync(socketPath);
@@ -58,21 +58,21 @@ describe('IpcServer integration and socket lifecycle', () => {
     const context = createApiAdapterContext({ graph });
     server = createIpcServer({ socketPath, context });
 
-    const res1 = await server.listen();
-    expect(res1.ok).toBe(true);
+    const result1 = await server.listen();
+    expect(result1.ok).toBe(true);
 
     const server2 = createIpcServer({ socketPath, context });
-    const res2 = await server2.listen();
-    expect(res2.ok).toBe(false);
-    if (!res2.ok) {
-      expect(res2.error._tag).toBe('IpcSocketInUseError');
+    const result2 = await server2.listen();
+    expect(result2.ok).toBe(false);
+    if (!result2.ok) {
+      expect(result2.error._tag).toBe('IpcSocketInUseError');
     }
   });
 
   it('probes and cleans up stale ECONNREFUSED socket file on startup', async () => {
-    const parentDir = path.dirname(socketPath);
-    if (!fs.existsSync(parentDir)) {
-      fs.mkdirSync(parentDir, { recursive: true });
+    const parentDirectory = path.dirname(socketPath);
+    if (!fs.existsSync(parentDirectory)) {
+      fs.mkdirSync(parentDirectory, { recursive: true });
     }
     // Create a dummy stale socket file that is not listening
     fs.writeFileSync(socketPath, 'stale');
@@ -81,8 +81,8 @@ describe('IpcServer integration and socket lifecycle', () => {
     const context = createApiAdapterContext({ graph });
     server = createIpcServer({ socketPath, context });
 
-    const res = await server.listen();
-    expect(res.ok).toBe(true);
+    const result = await server.listen();
+    expect(result.ok).toBe(true);
     expect(server.getActiveConnectionCount()).toBe(0);
   });
 
@@ -94,8 +94,8 @@ describe('IpcServer integration and socket lifecycle', () => {
     const context = createApiAdapterContext({ graph: session.graph(), session, eventLogStore });
 
     server = createIpcServer({ socketPath, context });
-    const listenRes = await server.listen();
-    expect(listenRes.ok).toBe(true);
+    const listenResult = await server.listen();
+    expect(listenResult.ok).toBe(true);
 
     const client = net.connect(socketPath);
     await new Promise((resolve) => client.on('connect', resolve));

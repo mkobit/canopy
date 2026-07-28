@@ -12,7 +12,7 @@ import { ViewPage } from './pages/view-page';
 import { SchemaPage } from './pages/schema-page';
 import { SchemaNamespacePage } from './pages/schema-namespace-page';
 
-const App = () => {
+export default function App() {
   return (
     <StorageProvider>
       <GraphProvider>
@@ -37,6 +37,4 @@ const App = () => {
       </GraphProvider>
     </StorageProvider>
   );
-};
-
-export default App;
+}

@@ -1,19 +1,19 @@
 import React, { useState } from 'react';
 import type { CreateEdgeTypeInput, NodeId, Result, TypePropertyInput } from '@canopy/graph';
 import { PropertyListEditor } from './property-list-editor';
-import type { PropertyTypeOption, TypeDefOption } from '../../utils/schema';
+import type { PropertyTypeOption, TypeDefinitionOption } from '../../utils/schema';
 
-export interface EdgeTypeCreateFormProps {
+export interface EdgeTypeCreateFormProperties {
   readonly namespace: string;
   readonly propertyTypeOptions: readonly PropertyTypeOption[];
-  readonly nodeTypeOptions: readonly TypeDefOption[];
+  readonly nodeTypeOptions: readonly TypeDefinitionOption[];
   readonly onSubmit: (input: CreateEdgeTypeInput) => Promise<Result<NodeId, Error>>;
 }
 
 const NodeTypeCheckboxList: React.FC<
   Readonly<{
     label: string;
-    options: readonly TypeDefOption[];
+    options: readonly TypeDefinitionOption[];
     selected: readonly NodeId[];
     onChange: (next: readonly NodeId[]) => unknown;
   }>
@@ -27,9 +27,11 @@ const NodeTypeCheckboxList: React.FC<
           <input
             type="checkbox"
             checked={selected.includes(opt.id)}
-            onChange={(e) => {
+            onChange={(event_) => {
               onChange(
-                e.target.checked ? [...selected, opt.id] : selected.filter((id) => id !== opt.id),
+                event_.target.checked
+                  ? [...selected, opt.id]
+                  : selected.filter((id) => id !== opt.id),
               );
               return undefined;
             }}
@@ -43,7 +45,7 @@ const NodeTypeCheckboxList: React.FC<
   </div>
 );
 
-export const EdgeTypeCreateForm: React.FC<EdgeTypeCreateFormProps> = ({
+export const EdgeTypeCreateForm: React.FC<EdgeTypeCreateFormProperties> = ({
   namespace,
   propertyTypeOptions,
   nodeTypeOptions,
@@ -57,8 +59,8 @@ export const EdgeTypeCreateForm: React.FC<EdgeTypeCreateFormProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setSubmitting] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event_: React.FormEvent) => {
+    event_.preventDefault();
     setError(null);
     setSubmitting(true);
 
@@ -87,8 +89,8 @@ export const EdgeTypeCreateForm: React.FC<EdgeTypeCreateFormProps> = ({
 
   return (
     <form
-      onSubmit={(e) => {
-        handleSubmit(e).catch(console.error);
+      onSubmit={(event_) => {
+        handleSubmit(event_).catch(console.error);
       }}
       className="space-y-3 p-4 border rounded-lg bg-white"
     >
@@ -98,7 +100,7 @@ export const EdgeTypeCreateForm: React.FC<EdgeTypeCreateFormProps> = ({
         <input
           required
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={(event_) => setName(event_.target.value)}
           className="w-full border rounded px-2 py-1 text-sm"
         />
       </label>
@@ -108,7 +110,7 @@ export const EdgeTypeCreateForm: React.FC<EdgeTypeCreateFormProps> = ({
         </span>
         <input
           value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          onChange={(event_) => setDescription(event_.target.value)}
           className="w-full border rounded px-2 py-1 text-sm"
         />
       </label>

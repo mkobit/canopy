@@ -47,8 +47,8 @@ describe('HTTPEventLog', () => {
       }
 
       const current = mockDatabase.get(graphId) ?? [];
-      const existingIds = new Set(current.map((e) => e.eventId));
-      const newEvents = events.filter((e) => !existingIds.has(e.eventId));
+      const existingIds = new Set(current.map((event) => event.eventId));
+      const newEvents = events.filter((event) => !existingIds.has(event.eventId));
       mockDatabase.set(graphId, [...current, ...newEvents]);
 
       return Response.json({ ok: true });
@@ -63,10 +63,10 @@ describe('HTTPEventLog', () => {
       const reverseString = parsedUrl.searchParams.get('reverse');
 
       if (after) {
-        events = events.filter((e) => e.eventId > after);
+        events = events.filter((event) => event.eventId > after);
       }
       if (before) {
-        events = events.filter((e) => e.eventId < before);
+        events = events.filter((event) => event.eventId < before);
       }
       if (reverseString === 'true') {
         events = events.toReversed();
@@ -94,19 +94,19 @@ describe('HTTPEventLog', () => {
 
     const result = unwrap(await adapter.getEvents(mockGraphId));
     expect(result).toHaveLength(2);
-    const [res1, res2] = result;
-    if (res1?.type !== 'NodeCreated' || res2?.type !== 'NodeCreated') {
+    const [result1, result2] = result;
+    if (result1?.type !== 'NodeCreated' || result2?.type !== 'NodeCreated') {
       throw new Error('Expected NodeCreated events');
     }
     const [event1, event2] = events;
     if (event1 === undefined || event2 === undefined) {
       throw new Error('Expected events to be defined');
     }
-    expect(res1.eventId).toEqual(event1.eventId);
-    expect(res1.properties).toBeInstanceOf(Map);
-    expect(res1.properties.get('name')).toEqual('Node 1');
-    expect(res2.eventId).toEqual(event2.eventId);
-    expect(res2.properties.get('name')).toEqual('Node 2');
+    expect(result1.eventId).toEqual(event1.eventId);
+    expect(result1.properties).toBeInstanceOf(Map);
+    expect(result1.properties.get('name')).toEqual('Node 1');
+    expect(result2.eventId).toEqual(event2.eventId);
+    expect(result2.properties.get('name')).toEqual('Node 2');
   });
 
   it('should filter by after (incremental sync)', async () => {
@@ -117,13 +117,13 @@ describe('HTTPEventLog', () => {
     if (firstEvent === undefined) throw new Error('Expected event');
     const result = unwrap(await adapter.getEvents(mockGraphId, { after: firstEvent.eventId }));
     expect(result).toHaveLength(2);
-    const [res1, res2] = result;
+    const [result1, result2] = result;
     const [, event2, event3] = events;
     if (event2 === undefined || event3 === undefined) {
       throw new Error('Expected events to be defined');
     }
-    expect(res1?.eventId).toEqual(event2.eventId);
-    expect(res2?.eventId).toEqual(event3.eventId);
+    expect(result1?.eventId).toEqual(event2.eventId);
+    expect(result2?.eventId).toEqual(event3.eventId);
   });
 
   it('should filter by before', async () => {
@@ -134,13 +134,13 @@ describe('HTTPEventLog', () => {
     if (thirdEvent === undefined) throw new Error('Expected event');
     const result = unwrap(await adapter.getEvents(mockGraphId, { before: thirdEvent.eventId }));
     expect(result).toHaveLength(2);
-    const [res1, res2] = result;
+    const [result1, result2] = result;
     const [event1, event2] = events;
     if (event1 === undefined || event2 === undefined) {
       throw new Error('Expected events to be defined');
     }
-    expect(res1?.eventId).toEqual(event1.eventId);
-    expect(res2?.eventId).toEqual(event2.eventId);
+    expect(result1?.eventId).toEqual(event1.eventId);
+    expect(result2?.eventId).toEqual(event2.eventId);
   });
 
   it('should respect limit', async () => {
@@ -149,13 +149,13 @@ describe('HTTPEventLog', () => {
 
     const result = unwrap(await adapter.getEvents(mockGraphId, { limit: 2 }));
     expect(result).toHaveLength(2);
-    const [res1, res2] = result;
+    const [result1, result2] = result;
     const [event1, event2] = events;
     if (event1 === undefined || event2 === undefined) {
       throw new Error('Expected events to be defined');
     }
-    expect(res1?.eventId).toEqual(event1.eventId);
-    expect(res2?.eventId).toEqual(event2.eventId);
+    expect(result1?.eventId).toEqual(event1.eventId);
+    expect(result2?.eventId).toEqual(event2.eventId);
   });
 
   it('should sort reverse', async () => {
@@ -164,14 +164,14 @@ describe('HTTPEventLog', () => {
 
     const result = unwrap(await adapter.getEvents(mockGraphId, { reverse: true }));
     expect(result).toHaveLength(3);
-    const [res1, res2, res3] = result;
+    const [result1, result2, result3] = result;
     const [event1, event2, event3] = events;
     if (!event1 || !event2 || !event3) {
       throw new Error('Expected events to be defined');
     }
-    expect(res1?.eventId).toEqual(event3.eventId);
-    expect(res2?.eventId).toEqual(event2.eventId);
-    expect(res3?.eventId).toEqual(event1.eventId);
+    expect(result1?.eventId).toEqual(event3.eventId);
+    expect(result2?.eventId).toEqual(event2.eventId);
+    expect(result3?.eventId).toEqual(event1.eventId);
   });
 
   it('should ignore duplicate events', async () => {
@@ -189,16 +189,16 @@ describe('HTTPEventLog', () => {
         new Response('Internal Server Error', { status: 500 })) as unknown as typeof fetch,
     });
 
-    const appendRes = await errorAdapter.appendEvents(mockGraphId, [createEvent(1)]);
-    expect(appendRes.ok).toBe(false);
-    if (!appendRes.ok) {
-      expect(appendRes.error.message).toContain('500');
+    const appendResult = await errorAdapter.appendEvents(mockGraphId, [createEvent(1)]);
+    expect(appendResult.ok).toBe(false);
+    if (!appendResult.ok) {
+      expect(appendResult.error.message).toContain('500');
     }
 
-    const getRes = await errorAdapter.getEvents(mockGraphId);
-    expect(getRes.ok).toBe(false);
-    if (!getRes.ok) {
-      expect(getRes.error.message).toContain('500');
+    const getResult = await errorAdapter.getEvents(mockGraphId);
+    expect(getResult.ok).toBe(false);
+    if (!getResult.ok) {
+      expect(getResult.error.message).toContain('500');
     }
   });
 });

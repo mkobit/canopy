@@ -32,7 +32,9 @@ export function addNode(
   if (options.validate) {
     const result = validateNode(graph, node);
     if (!result.valid) {
-      const msgs = result.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join(', ');
+      const msgs = result.errors
+        .map((error_) => `${error_.path.join('.')}: ${error_.message}`)
+        .join(', ');
       return error(new Error(`Node validation failed: ${msgs}`));
     }
   }
@@ -161,7 +163,9 @@ export function updateNode(
   if (options.validate) {
     const result = validateNode(graph, updatedNode);
     if (!result.valid) {
-      const msgs = result.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join(', ');
+      const msgs = result.errors
+        .map((error_) => `${error_.path.join('.')}: ${error_.message}`)
+        .join(', ');
       return error(new Error(`Node validation failed: ${msgs}`));
     }
   }

@@ -443,6 +443,36 @@ function applyOneEventInternal(
   }
 }
 
+function unmetDependencyKeysForEvent(
+  event: GraphEvent,
+  graph: Graph,
+  nodeMeta: ReadonlyMap<NodeId, EntityMergeMeta>,
+  edgeMeta: ReadonlyMap<EdgeId, EntityMergeMeta>,
+  createdInGroup: ReadonlySet<string>,
+): readonly string[] {
+  // eslint-disable-next-line functional/prefer-immutable-types
+  const unmet: string[] = [];
+  // eslint-disable-next-line functional/no-loop-statements
+  for (const key of dependencyKeysFor(event)) {
+    if (createdInGroup.has(key)) {
+      continue;
+    }
+
+    const separatorIndex = key.indexOf(':');
+    const kind = key.slice(0, separatorIndex);
+    const id = key.slice(separatorIndex + 1);
+    const isSatisfied =
+      kind === 'node'
+        ? (nodeMeta.get(id as NodeId)?.exists ?? graph.nodes.has(id as NodeId))
+        : (edgeMeta.get(id as EdgeId)?.exists ?? graph.edges.has(id as EdgeId));
+    if (!isSatisfied) {
+      // eslint-disable-next-line functional/immutable-data
+      unmet.push(key);
+    }
+  }
+  return unmet;
+}
+
 function dependenciesSatisfied(
   events: readonly GraphEvent[],
   graph: Graph,
@@ -454,22 +484,15 @@ function dependenciesSatisfied(
   // eslint-disable-next-line functional/no-loop-statements
   for (const event of events) {
     // eslint-disable-next-line functional/no-loop-statements
-    for (const key of dependencyKeysFor(event)) {
-      if (createdInGroup.has(key)) {
-        continue;
-      }
-
-      const separatorIndex = key.indexOf(':');
-      const kind = key.slice(0, separatorIndex);
-      const id = key.slice(separatorIndex + 1);
-      const isSatisfied =
-        kind === 'node'
-          ? (nodeMeta.get(id as NodeId)?.exists ?? graph.nodes.has(id as NodeId))
-          : (edgeMeta.get(id as EdgeId)?.exists ?? graph.edges.has(id as EdgeId));
-      if (!isSatisfied) {
-        // eslint-disable-next-line functional/immutable-data
-        unmet.add(key);
-      }
+    for (const key of unmetDependencyKeysForEvent(
+      event,
+      graph,
+      nodeMeta,
+      edgeMeta,
+      createdInGroup,
+    )) {
+      // eslint-disable-next-line functional/immutable-data
+      unmet.add(key);
     }
   }
   return [...unmet];
@@ -664,9 +687,9 @@ export function mergeEvents(
     // eslint-disable-next-line functional/no-let
     let firstSeenEventId = firstEvent.eventId;
     // eslint-disable-next-line functional/no-loop-statements
-    for (const e of candidateEvents) {
-      if (e.eventId < firstSeenEventId) {
-        firstSeenEventId = e.eventId;
+    for (const event_ of candidateEvents) {
+      if (event_.eventId < firstSeenEventId) {
+        firstSeenEventId = event_.eventId;
       }
     }
     const groupId = pendingGroupId ?? workingState.nextPendingId;
@@ -732,7 +755,7 @@ export function mergeEvents(
       // eslint-disable-next-line functional/immutable-data
       stale.push({
         dependencyKey: keys.join(','),
-        eventIds: group.events.map((e) => e.eventId),
+        eventIds: group.events.map((event_) => event_.eventId),
         ageMs,
       });
     }
@@ -766,7 +789,7 @@ function validateDraftEvents(graph: Graph, events: readonly GraphEvent[]): Resul
     if (!node) continue;
     const result = validateNode(dryRunGraph, node);
     if (!result.valid) {
-      const detail = result.errors.map((e) => e.message).join(', ');
+      const detail = result.errors.map((error_) => error_.message).join(', ');
       return error(new Error(`Node ${id} failed validation: ${detail}`));
     }
   }
@@ -777,7 +800,7 @@ function validateDraftEvents(graph: Graph, events: readonly GraphEvent[]): Resul
     if (!edge) continue;
     const result = validateEdge(dryRunGraph, edge);
     if (!result.valid) {
-      const detail = result.errors.map((e) => e.message).join(', ');
+      const detail = result.errors.map((error_) => error_.message).join(', ');
       return error(new Error(`Edge ${id} failed validation: ${detail}`));
     }
   }

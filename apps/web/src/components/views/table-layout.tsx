@@ -11,9 +11,9 @@ export interface TableLayoutEvents {
   readonly onNodeClick: (node: Node) => unknown;
 }
 
-export type TableLayoutProps = TableLayoutData & TableLayoutEvents;
+export type TableLayoutProperties = TableLayoutData & TableLayoutEvents;
 
-export const TableLayout: React.FC<TableLayoutProps> = ({
+export const TableLayout: React.FC<TableLayoutProperties> = ({
   nodes,
   displayProperties,
   onNodeClick,

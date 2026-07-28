@@ -94,8 +94,8 @@ const useClickOutside = (
 ) => {
   useEffect(() => {
     if (!isOpen) return undefined;
-    const handleClickOutside = (e: Readonly<MouseEvent>) => {
-      const target = e.target;
+    const handleClickOutside = (event_: Readonly<MouseEvent>) => {
+      const target = event_.target;
       if (
         target instanceof Node &&
         containerReference.current &&
@@ -115,13 +115,13 @@ const useShortcutToggle = (
   setSelectedIndex: React.Dispatch<React.SetStateAction<number>>,
 ) => {
   useEffect(() => {
-    const handleKeyDown = (e: Readonly<KeyboardEvent>) => {
-      const isP = e.key === 'p' || e.key === 'P';
-      const isCtrlCommand = e.ctrlKey || e.metaKey;
+    const handleKeyDown = (event_: Readonly<KeyboardEvent>) => {
+      const isP = event_.key === 'p' || event_.key === 'P';
+      const isCtrlCommand = event_.ctrlKey || event_.metaKey;
       if (!isCtrlCommand || !isP) return;
 
-      e.preventDefault();
-      const isShift = e.shiftKey;
+      event_.preventDefault();
+      const isShift = event_.shiftKey;
 
       setIsOpen((previous) => {
         if (previous) {
@@ -175,26 +175,26 @@ const useKeyboardNav = (
   setIsOpen: (open: boolean) => void,
   onConfirm: () => void,
 ) => {
-  return (e: Readonly<React.KeyboardEvent>) => {
-    switch (e.key) {
+  return (event_: Readonly<React.KeyboardEvent>) => {
+    switch (event_.key) {
       case 'Escape': {
         setIsOpen(false);
         break;
       }
       case 'ArrowDown': {
-        e.preventDefault();
+        event_.preventDefault();
         setSelectedIndex((previous) => (filteredCount > 0 ? (previous + 1) % filteredCount : 0));
         break;
       }
       case 'ArrowUp': {
-        e.preventDefault();
+        event_.preventDefault();
         setSelectedIndex((previous) =>
           filteredCount > 0 ? (previous - 1 + filteredCount) % filteredCount : 0,
         );
         break;
       }
       case 'Enter': {
-        e.preventDefault();
+        event_.preventDefault();
         onConfirm();
         break;
       }
@@ -403,8 +403,8 @@ export const CommandPalette: React.FC = () => {
             ref={inputReference}
             type="text"
             value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
+            onChange={(event_) => {
+              setQuery(event_.target.value);
               setSelectedIndex(0);
             }}
             onKeyDown={handleKeyDown}

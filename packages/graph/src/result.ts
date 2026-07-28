@@ -2,12 +2,14 @@ export type Result<T, E = Error> =
   Readonly<{ ok: true; value: T }> | Readonly<{ ok: false; error: E }>;
 
 export const ok = <T>(value: T): Result<T, never> => ({ ok: true, value });
+// eslint-disable-next-line unicorn/name-replacements -- exported public API used across the whole monorepo, renaming would be a breaking change
 export const err = <E>(error: E): Result<never, E> => ({ ok: false, error });
 
 export function isOk<T, E>(result: Result<T, E>): result is { ok: true; value: T } {
   return result.ok;
 }
 
+// eslint-disable-next-line unicorn/name-replacements -- exported public API used across the whole monorepo, renaming would be a breaking change
 export function isErr<T, E>(result: Result<T, E>): result is { ok: false; error: E } {
   return !result.ok;
 }
@@ -27,7 +29,7 @@ export function unwrap<T, E>(result: Result<T, E>): T {
 
 export function fromThrowable<T>(
   function_: () => T,
-  errorHandler?: (e: unknown) => Error,
+  errorHandler?: (error: unknown) => Error,
 ): Result<T, Error> {
   // eslint-disable-next-line functional/no-try-statements
   try {

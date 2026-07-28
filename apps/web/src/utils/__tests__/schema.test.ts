@@ -73,9 +73,9 @@ describe('listEdgeTypesIn', () => {
     const nodeTypeResult = unwrap(
       createNodeType(graph, { name: 'task', namespace: 'user', properties: [] }, OPTIONS),
     );
-    const taskTypeId = [...nodeTypeResult.graph.nodes.values()].find(
-      (n) => n.properties.get('name') === 'task',
-    )?.id;
+    const taskTypeId = nodeTypeResult.graph.nodes
+      .values()
+      .find((n) => n.properties.get('name') === 'task')?.id;
     expect(taskTypeId).toBeDefined();
     if (!taskTypeId) return;
 

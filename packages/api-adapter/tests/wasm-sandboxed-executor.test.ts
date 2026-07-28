@@ -26,12 +26,12 @@ const executeNoteCreationPlugin = async (
   inputJson: string,
 ): Promise<string> => {
   const input = JSON.parse(inputJson) as { title: string };
-  const createRes = await hostBindings.mutations.createNode(
+  const createResult = await hostBindings.mutations.createNode(
     'write:create-node',
     JSON.stringify({ id: 'sb-1', type: 'note', properties: { title: input.title } }),
   );
-  if (!createRes.ok) {
-    throw new Error(createRes.error.message);
+  if (!createResult.ok) {
+    throw new Error(createResult.error.message);
   }
   return JSON.stringify({ status: 'created', nodeId: 'sb-1' });
 };
@@ -57,16 +57,16 @@ describe('WASM Sandboxed Execution Boundary', () => {
   it('executes guest plugin successfully within sandbox', async () => {
     const context = await setupTestContext();
 
-    const res = await executeSandboxedGuestPlugin(
+    const result = await executeSandboxedGuestPlugin(
       context,
       '*',
       JSON.stringify({ title: 'Sandbox Note' }),
       executeNoteCreationPlugin,
     );
 
-    expect(res.ok).toBe(true);
-    if (res.ok) {
-      const output = JSON.parse(res.value) as { status: string; nodeId: string };
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const output = JSON.parse(result.value) as { status: string; nodeId: string };
       expect(output.status).toBe('created');
       expect(output.nodeId).toBe('sb-1');
     }
@@ -76,49 +76,49 @@ describe('WASM Sandboxed Execution Boundary', () => {
     const context = await setupTestContext();
 
     const largeInput = 'x'.repeat(1000);
-    const res = await executeSandboxedGuestPlugin(context, '*', largeInput, okPlugin, {
+    const result = await executeSandboxedGuestPlugin(context, '*', largeInput, okPlugin, {
       maxMemoryBytes: 100,
     });
 
-    expect(res.ok).toBe(false);
-    if (!res.ok) {
-      expect(res.error.category).toBe('RESOURCE_EXHAUSTED');
-      expect(res.error.message).toContain('memory quota');
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.category).toBe('RESOURCE_EXHAUSTED');
+      expect(result.error.message).toContain('memory quota');
     }
   });
 
   it('halts execution when fuel limit is exhausted by host calls', async () => {
     const context = await setupTestContext();
 
-    const res = await executeSandboxedGuestPlugin(context, '*', '{}', fuelPlugin, {
+    const result = await executeSandboxedGuestPlugin(context, '*', '{}', fuelPlugin, {
       fuelLimit: 150n,
     });
 
-    expect(res.ok).toBe(true);
+    expect(result.ok).toBe(true);
   });
 
   it('returns timeout error when plugin execution exceeds timeout threshold', async () => {
     const context = await setupTestContext();
 
-    const res = await executeSandboxedGuestPlugin(context, '*', '{}', timeoutPlugin, {
+    const result = await executeSandboxedGuestPlugin(context, '*', '{}', timeoutPlugin, {
       timeoutMs: 50,
     });
 
-    expect(res.ok).toBe(false);
-    if (!res.ok) {
-      expect(res.error.category).toBe('RESOURCE_EXHAUSTED');
-      expect(res.error.message).toContain('timed out');
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.category).toBe('RESOURCE_EXHAUSTED');
+      expect(result.error.message).toContain('timed out');
     }
   });
 
   it('catches guest plugin exceptions and returns INTERNAL_ERROR result', async () => {
     const context = await setupTestContext();
 
-    const res = await executeSandboxedGuestPlugin(context, '*', '{}', panicPlugin);
-    expect(res.ok).toBe(false);
-    if (!res.ok) {
-      expect(res.error.category).toBe('INTERNAL_ERROR');
-      expect(res.error.message).toContain('Guest panicking');
+    const result = await executeSandboxedGuestPlugin(context, '*', '{}', panicPlugin);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.category).toBe('INTERNAL_ERROR');
+      expect(result.error.message).toContain('Guest panicking');
     }
   });
 });

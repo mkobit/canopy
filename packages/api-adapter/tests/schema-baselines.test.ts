@@ -4,14 +4,14 @@ import path from 'node:path';
 import { CANOPY_WIT_SPECIFICATION, GRAPHQL_SDL_SCHEMA, PROTO_SERVICES_SDL } from '../src';
 
 describe('Schema Baseline Snapshots', () => {
-  const baselinesDir = path.resolve(__dirname, '../schema-baselines');
+  const baselinesDirectory = path.resolve(__dirname, '../schema-baselines');
 
   test('baseline snapshot files exist and match current exports', () => {
-    const gqlPath = path.join(baselinesDir, 'graphql.graphql');
-    const prototypePath = path.join(baselinesDir, 'connect.proto');
-    const witPath = path.join(baselinesDir, 'plugin.wit');
-    const schemaPath = path.join(baselinesDir, 'approved-breaking-changes.schema.json');
-    const waiverPath = path.join(baselinesDir, 'approved-breaking-changes.json');
+    const gqlPath = path.join(baselinesDirectory, 'graphql.graphql');
+    const prototypePath = path.join(baselinesDirectory, 'connect.proto');
+    const witPath = path.join(baselinesDirectory, 'plugin.wit');
+    const schemaPath = path.join(baselinesDirectory, 'approved-breaking-changes.schema.json');
+    const waiverPath = path.join(baselinesDirectory, 'approved-breaking-changes.json');
 
     expect(fs.existsSync(gqlPath)).toBe(true);
     expect(fs.existsSync(prototypePath)).toBe(true);

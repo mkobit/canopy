@@ -22,7 +22,7 @@ function createTestEventLog(): EventLogStore {
   const events: GraphEvent[] = [];
   return {
     appendEvents: (_graphId, newEvents) => {
-      const seen = new Set(events.map((e) => e.eventId));
+      const seen = new Set(events.map((event) => event.eventId));
       for (const event of newEvents) {
         if (seen.has(event.eventId)) {
           continue;
@@ -38,11 +38,11 @@ function createTestEventLog(): EventLogStore {
       let result = [...events];
       const after = options?.after;
       if (after !== undefined) {
-        result = result.filter((e) => e.eventId > after);
+        result = result.filter((event) => event.eventId > after);
       }
       const before = options?.before;
       if (before !== undefined) {
-        result = result.filter((e) => e.eventId < before);
+        result = result.filter((event) => event.eventId < before);
       }
       if (options?.reverse) {
         result.reverse();

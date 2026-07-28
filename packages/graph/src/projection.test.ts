@@ -24,7 +24,7 @@ describe('projection / LWW sync', () => {
     setSystemTime(Temporal.Instant.from('2024-01-01T10:00:00Z').epochMilliseconds);
     const t1 = createInstant();
     const id1 = createNodeId();
-    const e1: NodeCreated = {
+    const event1: NodeCreated = {
       type: 'NodeCreated',
       eventId: createEventId(),
       id: id1,
@@ -36,9 +36,9 @@ describe('projection / LWW sync', () => {
 
     setSystemTime(Temporal.Instant.from('2024-01-01T11:00:00Z').epochMilliseconds);
     const t2 = createInstant();
-    const e2: NodePropertiesUpdated = {
+    const event2: NodePropertiesUpdated = {
       type: 'NodePropertiesUpdated',
-      eventId: createEventId(), // this gets a later UUIDv7 than e1
+      eventId: createEventId(), // this gets a later UUIDv7 than event1
       id: id1,
       changes: new Map([['test', '2']]),
       timestamp: t2,
@@ -46,13 +46,13 @@ describe('projection / LWW sync', () => {
     };
 
     // Apply out of order
-    const result = projectGraph([e2, e1], g);
+    const result = projectGraph([event2, event1], g);
     expect(result.ok).toBe(true);
 
     const finalGraph = unwrap(result);
     const node = finalGraph.nodes.get(id1);
     expect(node).toBeDefined();
-    expect(node?.properties.get('test')).toBe('2'); // e2 applied after e1
+    expect(node?.properties.get('test')).toBe('2'); // event2 applied after event1
 
     // reset time
     setSystemTime();
@@ -65,7 +65,7 @@ describe('projection / LWW sync', () => {
     const t0 = '2024-01-01T10:00:00.000Z' as unknown as import('@canopy/graph').Instant;
     const t1 = '2024-01-01T11:00:00.000Z' as unknown as import('@canopy/graph').Instant;
 
-    const e0: NodeCreated = {
+    const event0: NodeCreated = {
       type: 'NodeCreated',
       eventId: createEventId(),
       id,
@@ -76,7 +76,7 @@ describe('projection / LWW sync', () => {
     };
 
     // New event (wins)
-    const e1: NodePropertiesUpdated = {
+    const event1: NodePropertiesUpdated = {
       type: 'NodePropertiesUpdated',
       eventId: createEventId(),
       id,
@@ -86,7 +86,7 @@ describe('projection / LWW sync', () => {
     };
 
     // Old event (discarded)
-    const e2: NodePropertiesUpdated = {
+    const event2: NodePropertiesUpdated = {
       type: 'NodePropertiesUpdated',
       eventId: createEventId(),
       id,
@@ -95,16 +95,16 @@ describe('projection / LWW sync', () => {
       deviceId: deviceA,
     };
 
-    const r0 = applyEvent(g, e0);
+    const r0 = applyEvent(g, event0);
     const g0 = unwrap(r0);
 
     // Apply new, then old
-    const r1 = applyEvent(g0, e1);
+    const r1 = applyEvent(g0, event1);
     const g1 = unwrap(r1);
 
     expect(g1.nodes.get(id)?.properties.get('test')).toBe('new');
 
-    const r2 = applyEvent(g1, e2);
+    const r2 = applyEvent(g1, event2);
     const g2 = unwrap(r2);
 
     expect(g2.nodes.get(id)?.properties.get('test')).toBe('new'); // still new
@@ -115,7 +115,7 @@ describe('projection / LWW sync', () => {
     const id = createNodeId();
     const t = '2024-01-01T10:00:00.000Z' as unknown as import('@canopy/graph').Instant;
 
-    const e0: NodeCreated = {
+    const event0: NodeCreated = {
       type: 'NodeCreated',
       eventId: createEventId(),
       id,
@@ -125,10 +125,10 @@ describe('projection / LWW sync', () => {
       deviceId: deviceA,
     };
 
-    const r0 = unwrap(applyEvent(g, e0));
+    const r0 = unwrap(applyEvent(g, event0));
 
     // event from A
-    const e1: NodePropertiesUpdated = {
+    const event1: NodePropertiesUpdated = {
       type: 'NodePropertiesUpdated',
       eventId: createEventId(),
       id,
@@ -138,7 +138,7 @@ describe('projection / LWW sync', () => {
     };
 
     // event from B (B > A lexicographically)
-    const e2: NodePropertiesUpdated = {
+    const event2: NodePropertiesUpdated = {
       type: 'NodePropertiesUpdated',
       eventId: createEventId(),
       id,
@@ -148,11 +148,11 @@ describe('projection / LWW sync', () => {
     };
 
     // Apply A then B -> B wins because B > A
-    const r1 = unwrap(applyEvent(unwrap(applyEvent(r0, e1)), e2));
+    const r1 = unwrap(applyEvent(unwrap(applyEvent(r0, event1)), event2));
     expect(r1.nodes.get(id)?.properties.get('test')).toBe('fromB');
 
     // Apply B then A -> B still wins
-    const r2 = unwrap(applyEvent(unwrap(applyEvent(r0, e2)), e1));
+    const r2 = unwrap(applyEvent(unwrap(applyEvent(r0, event2)), event1));
     expect(r2.nodes.get(id)?.properties.get('test')).toBe('fromB');
   });
 
@@ -162,7 +162,7 @@ describe('projection / LWW sync', () => {
     const t0 = '2024-01-01T10:00:00.000Z' as unknown as import('@canopy/graph').Instant;
     const t1 = '2024-01-01T11:00:00.000Z' as unknown as import('@canopy/graph').Instant;
 
-    const e0: NodeCreated = {
+    const event0: NodeCreated = {
       type: 'NodeCreated',
       eventId: createEventId(),
       id,
@@ -172,10 +172,10 @@ describe('projection / LWW sync', () => {
       deviceId: deviceB,
     };
 
-    const g0 = unwrap(applyEvent(g, e0));
+    const g0 = unwrap(applyEvent(g, event0));
 
     // this event has t0 < t1, it should be entirely ignored
-    const eOld: NodePropertiesUpdated = {
+    const eventOld: NodePropertiesUpdated = {
       type: 'NodePropertiesUpdated',
       eventId: createEventId(),
       id,
@@ -184,7 +184,7 @@ describe('projection / LWW sync', () => {
       deviceId: deviceA,
     };
 
-    const r1 = applyEvent(g0, eOld);
+    const r1 = applyEvent(g0, eventOld);
     const g1 = unwrap(r1);
 
     expect(g1.nodes.get(id)?.properties.has('test')).toBe(false);

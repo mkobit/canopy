@@ -39,14 +39,14 @@ describe('FileEventLog', () => {
     deviceId,
   });
 
-  let tempDir: string;
+  let temporaryDirectory: string;
   let store: FileEventLog;
 
   beforeEach(async () => {
-    tempDir = path.join(__dirname, `../dist/test-temp-${Math.random()}`);
-    await fs.mkdir(tempDir, { recursive: true });
+    temporaryDirectory = path.join(__dirname, `../dist/test-temp-${Math.random()}`);
+    await fs.mkdir(temporaryDirectory, { recursive: true });
     store = createFileEventLog({
-      rootDir: tempDir,
+      rootDir: temporaryDirectory,
       deviceId: 'device-1',
       maxEventsPerSegment: 3,
       maxBytesPerSegment: 1024,
@@ -56,7 +56,7 @@ describe('FileEventLog', () => {
 
   afterEach(async () => {
     await unwrap(await store.close());
-    await fs.rm(tempDir, { recursive: true, force: true });
+    await fs.rm(temporaryDirectory, { recursive: true, force: true });
   });
 
   it('appends events and retrieves them in order', async () => {
@@ -157,7 +157,7 @@ describe('FileEventLog', () => {
     await store.appendEvents('graph1', [event4]);
 
     const manifestContent = await fs.readFile(
-      path.join(tempDir, 'events/device-1/manifest.json'),
+      path.join(temporaryDirectory, 'events/device-1/manifest.json'),
       'utf8',
     );
     const manifest = JSON.parse(manifestContent);
@@ -181,7 +181,7 @@ describe('FileEventLog', () => {
     await unwrap(await store.close());
 
     const newStore = createFileEventLog({
-      rootDir: tempDir,
+      rootDir: temporaryDirectory,
       deviceId: 'device-1',
       maxEventsPerSegment: 3,
       maxBytesPerSegment: 1024,
@@ -197,7 +197,7 @@ describe('FileEventLog', () => {
 
   it('maintains batch integrity when batch size exceeds maxEventsPerSegment', async () => {
     const batchStore = createFileEventLog({
-      rootDir: tempDir,
+      rootDir: temporaryDirectory,
       deviceId: 'device-1',
       maxEventsPerSegment: 2,
       maxBytesPerSegment: 1024,
@@ -212,7 +212,7 @@ describe('FileEventLog', () => {
     await batchStore.appendEvents('graph1', [event1, event2, event3]);
 
     const manifestContent = await fs.readFile(
-      path.join(tempDir, 'events/device-1/manifest.json'),
+      path.join(temporaryDirectory, 'events/device-1/manifest.json'),
       'utf8',
     );
     const manifest = JSON.parse(manifestContent);
@@ -222,7 +222,7 @@ describe('FileEventLog', () => {
 
     const segmentFile = manifest.sealed[0];
     const segmentContent = await fs.readFile(
-      path.join(tempDir, 'events/device-1', segmentFile),
+      path.join(temporaryDirectory, 'events/device-1', segmentFile),
       'utf8',
     );
     const lines = segmentContent.split('\n').filter((l) => l.trim() !== '');
@@ -233,7 +233,7 @@ describe('FileEventLog', () => {
 
   it('seals segments correctly based on maxBytesPerSegment', async () => {
     const byteStore = createFileEventLog({
-      rootDir: tempDir,
+      rootDir: temporaryDirectory,
       deviceId: 'device-1',
       maxEventsPerSegment: 1000,
       maxBytesPerSegment: 300,
@@ -247,7 +247,7 @@ describe('FileEventLog', () => {
     await byteStore.appendEvents('graph1', [event1, event2, event3]);
 
     const manifestContent = await fs.readFile(
-      path.join(tempDir, 'events/device-1/manifest.json'),
+      path.join(temporaryDirectory, 'events/device-1/manifest.json'),
       'utf8',
     );
     const manifest = JSON.parse(manifestContent);
@@ -265,8 +265,8 @@ describe('FileEventLog', () => {
   });
 
   it('preserves remote watermarks in the manifest across reads/writes', async () => {
-    const deviceDir = path.join(tempDir, 'events/device-1');
-    await fs.mkdir(deviceDir, { recursive: true });
+    const deviceDirectory = path.join(temporaryDirectory, 'events/device-1');
+    await fs.mkdir(deviceDirectory, { recursive: true });
     const initialManifest = {
       sealed: [],
       lastEventId: null,
@@ -275,13 +275,13 @@ describe('FileEventLog', () => {
       },
     };
     await fs.writeFile(
-      path.join(deviceDir, 'manifest.json'),
+      path.join(deviceDirectory, 'manifest.json'),
       JSON.stringify(initialManifest, null, 2),
       'utf8',
     );
 
     const watermarkStore = createFileEventLog({
-      rootDir: tempDir,
+      rootDir: temporaryDirectory,
       deviceId: 'device-1',
       maxEventsPerSegment: 10,
       maxBytesPerSegment: 1024,
@@ -291,7 +291,7 @@ describe('FileEventLog', () => {
     const event = createTestEvent();
     await watermarkStore.appendEvents('graph1', [event]);
 
-    const manifestContent = await fs.readFile(path.join(deviceDir, 'manifest.json'), 'utf8');
+    const manifestContent = await fs.readFile(path.join(deviceDirectory, 'manifest.json'), 'utf8');
     const manifest = JSON.parse(manifestContent);
     expect(manifest.watermarks).toEqual({
       'remote-device-1': 'event-123',
@@ -302,16 +302,16 @@ describe('FileEventLog', () => {
 
   describe('remote device helpers', () => {
     it('scanRemoteManifests returns empty map if events dir does not exist', async () => {
-      const nonExistentDir = path.join(tempDir, 'does-not-exist');
-      const result = unwrap(await scanRemoteManifests(nonExistentDir, 'device-1'));
+      const nonExistentDirectory = path.join(temporaryDirectory, 'does-not-exist');
+      const result = unwrap(await scanRemoteManifests(nonExistentDirectory, 'device-1'));
       expect(result.size).toBe(0);
     });
 
     it('scanRemoteManifests scans manifests and ignores local device', async () => {
-      const eventsDir = path.join(tempDir, 'events');
-      await fs.mkdir(path.join(eventsDir, 'device-1'), { recursive: true });
-      await fs.mkdir(path.join(eventsDir, 'device-2'), { recursive: true });
-      await fs.mkdir(path.join(eventsDir, 'device-3'), { recursive: true });
+      const eventsDirectory = path.join(temporaryDirectory, 'events');
+      await fs.mkdir(path.join(eventsDirectory, 'device-1'), { recursive: true });
+      await fs.mkdir(path.join(eventsDirectory, 'device-2'), { recursive: true });
+      await fs.mkdir(path.join(eventsDirectory, 'device-3'), { recursive: true });
 
       const manifest2 = {
         sealed: ['1.jsonl'],
@@ -325,17 +325,17 @@ describe('FileEventLog', () => {
       };
 
       await fs.writeFile(
-        path.join(eventsDir, 'device-2', 'manifest.json'),
+        path.join(eventsDirectory, 'device-2', 'manifest.json'),
         JSON.stringify(manifest2),
         'utf8',
       );
       await fs.writeFile(
-        path.join(eventsDir, 'device-3', 'manifest.json'),
+        path.join(eventsDirectory, 'device-3', 'manifest.json'),
         JSON.stringify(manifest3),
         'utf8',
       );
 
-      const result = unwrap(await scanRemoteManifests(tempDir, 'device-1'));
+      const result = unwrap(await scanRemoteManifests(temporaryDirectory, 'device-1'));
       expect(result.size).toBe(2);
       expect(result.has('device-2')).toBe(true);
       expect(result.has('device-3')).toBe(true);
@@ -351,30 +351,30 @@ describe('FileEventLog', () => {
     });
 
     it('getRemoteSegmentsInOrder returns sorted segments and handles empty/missing dir', async () => {
-      const remoteDeviceDir = path.join(tempDir, 'events/device-2');
-      const missingDirResult = unwrap(await getRemoteSegmentsInOrder(remoteDeviceDir));
-      expect(missingDirResult).toEqual([]);
+      const remoteDeviceDirectory = path.join(temporaryDirectory, 'events/device-2');
+      const missingDirectoryResult = unwrap(await getRemoteSegmentsInOrder(remoteDeviceDirectory));
+      expect(missingDirectoryResult).toEqual([]);
 
-      await fs.mkdir(remoteDeviceDir, { recursive: true });
-      await fs.writeFile(path.join(remoteDeviceDir, 'b.jsonl'), 'data');
-      await fs.writeFile(path.join(remoteDeviceDir, 'a.jsonl'), 'data');
-      await fs.writeFile(path.join(remoteDeviceDir, 'other.txt'), 'data');
+      await fs.mkdir(remoteDeviceDirectory, { recursive: true });
+      await fs.writeFile(path.join(remoteDeviceDirectory, 'b.jsonl'), 'data');
+      await fs.writeFile(path.join(remoteDeviceDirectory, 'a.jsonl'), 'data');
+      await fs.writeFile(path.join(remoteDeviceDirectory, 'other.txt'), 'data');
 
-      const result = unwrap(await getRemoteSegmentsInOrder(remoteDeviceDir));
+      const result = unwrap(await getRemoteSegmentsInOrder(remoteDeviceDirectory));
       expect(result).toEqual(['a.jsonl', 'b.jsonl']);
     });
 
     it('readRemoteSegmentEvents reads and deserializes events correctly', async () => {
-      const remoteDeviceDir = path.join(tempDir, 'events/device-2');
-      await fs.mkdir(remoteDeviceDir, { recursive: true });
+      const remoteDeviceDirectory = path.join(temporaryDirectory, 'events/device-2');
+      await fs.mkdir(remoteDeviceDirectory, { recursive: true });
 
       const event1 = createTestEvent();
       const event2 = createTestEvent();
 
       const content = `${serializeEventForTest(event1)}\n${serializeEventForTest(event2)}\n`;
-      await fs.writeFile(path.join(remoteDeviceDir, 'a.jsonl'), content, 'utf8');
+      await fs.writeFile(path.join(remoteDeviceDirectory, 'a.jsonl'), content, 'utf8');
 
-      const result = unwrap(await readRemoteSegmentEvents(remoteDeviceDir, 'a.jsonl'));
+      const result = unwrap(await readRemoteSegmentEvents(remoteDeviceDirectory, 'a.jsonl'));
       expect(result).toHaveLength(2);
       expect(result[0]?.eventId).toBe(event1.eventId);
       expect(result[1]?.eventId).toBe(event2.eventId);
@@ -391,14 +391,14 @@ describe('FileEventLog', () => {
 
     it('ingests remote events and updates local manifest watermarks', async () => {
       const remoteDeviceId = asDeviceId('00000000-0000-4000-8000-000000000002');
-      const remoteDeviceDir = path.join(tempDir, 'events', remoteDeviceId);
-      await fs.mkdir(remoteDeviceDir, { recursive: true });
+      const remoteDeviceDirectory = path.join(temporaryDirectory, 'events', remoteDeviceId);
+      await fs.mkdir(remoteDeviceDirectory, { recursive: true });
 
       const event1 = { ...createTestEvent(), deviceId: remoteDeviceId };
       const event2 = { ...createTestEvent(), deviceId: remoteDeviceId };
 
       const content = `${serializeEventForTest(event1)}\n${serializeEventForTest(event2)}\n`;
-      await fs.writeFile(path.join(remoteDeviceDir, '1.jsonl'), content, 'utf8');
+      await fs.writeFile(path.join(remoteDeviceDirectory, '1.jsonl'), content, 'utf8');
 
       const remoteManifest = {
         sealed: ['1.jsonl'],
@@ -406,7 +406,7 @@ describe('FileEventLog', () => {
         watermarks: {},
       };
       await fs.writeFile(
-        path.join(remoteDeviceDir, 'manifest.json'),
+        path.join(remoteDeviceDirectory, 'manifest.json'),
         JSON.stringify(remoteManifest),
         'utf8',
       );
@@ -415,11 +415,11 @@ describe('FileEventLog', () => {
 
       const localEvents = unwrap(await store.getEvents('graph1'));
       expect(localEvents).toHaveLength(2);
-      expect(localEvents.map((e) => e.eventId)).toContain(event1.eventId);
-      expect(localEvents.map((e) => e.eventId)).toContain(event2.eventId);
+      expect(localEvents.map((event) => event.eventId)).toContain(event1.eventId);
+      expect(localEvents.map((event) => event.eventId)).toContain(event2.eventId);
 
       const manifestContent = await fs.readFile(
-        path.join(tempDir, 'events/device-1/manifest.json'),
+        path.join(temporaryDirectory, 'events/device-1/manifest.json'),
         'utf8',
       );
       const localManifest = JSON.parse(manifestContent);
@@ -428,8 +428,8 @@ describe('FileEventLog', () => {
 
     it('only ingests new remote events beyond the watermark', async () => {
       const remoteDeviceId = asDeviceId('00000000-0000-4000-8000-000000000002');
-      const remoteDeviceDir = path.join(tempDir, 'events', remoteDeviceId);
-      await fs.mkdir(remoteDeviceDir, { recursive: true });
+      const remoteDeviceDirectory = path.join(temporaryDirectory, 'events', remoteDeviceId);
+      await fs.mkdir(remoteDeviceDirectory, { recursive: true });
 
       const sortedEvents = [
         { ...createTestEvent(), deviceId: remoteDeviceId },
@@ -450,18 +450,18 @@ describe('FileEventLog', () => {
         },
       };
       await fs.writeFile(
-        path.join(tempDir, 'events/device-1/manifest.json'),
+        path.join(temporaryDirectory, 'events/device-1/manifest.json'),
         JSON.stringify(initialLocalManifest),
         'utf8',
       );
 
       await fs.writeFile(
-        path.join(remoteDeviceDir, '1.jsonl'),
+        path.join(remoteDeviceDirectory, '1.jsonl'),
         serializeEventForTest(event1) + '\n',
         'utf8',
       );
       await fs.writeFile(
-        path.join(remoteDeviceDir, '2.jsonl'),
+        path.join(remoteDeviceDirectory, '2.jsonl'),
         `${serializeEventForTest(event2)}\n${serializeEventForTest(event3)}\n`,
         'utf8',
       );
@@ -472,7 +472,7 @@ describe('FileEventLog', () => {
         watermarks: {},
       };
       await fs.writeFile(
-        path.join(remoteDeviceDir, 'manifest.json'),
+        path.join(remoteDeviceDirectory, 'manifest.json'),
         JSON.stringify(remoteManifest),
         'utf8',
       );
@@ -481,12 +481,12 @@ describe('FileEventLog', () => {
 
       const localEvents = unwrap(await store.getEvents('graph1'));
       expect(localEvents).toHaveLength(2);
-      expect(localEvents.map((e) => e.eventId)).not.toContain(event1.eventId);
-      expect(localEvents.map((e) => e.eventId)).toContain(event2.eventId);
-      expect(localEvents.map((e) => e.eventId)).toContain(event3.eventId);
+      expect(localEvents.map((event) => event.eventId)).not.toContain(event1.eventId);
+      expect(localEvents.map((event) => event.eventId)).toContain(event2.eventId);
+      expect(localEvents.map((event) => event.eventId)).toContain(event3.eventId);
 
       const manifestContent = await fs.readFile(
-        path.join(tempDir, 'events/device-1/manifest.json'),
+        path.join(temporaryDirectory, 'events/device-1/manifest.json'),
         'utf8',
       );
       const localManifest = JSON.parse(manifestContent);

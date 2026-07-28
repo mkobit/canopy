@@ -195,18 +195,18 @@ export function executeView(
 }
 
 export function resolveView(graph: Graph, viewNodeId: NodeId): Result<ResolvedView, Error> {
-  const viewDef = getViewDefinition(graph, viewNodeId);
-  if (!viewDef.ok) return err(viewDef.error);
+  const viewDefinition = getViewDefinition(graph, viewNodeId);
+  if (!viewDefinition.ok) return err(viewDefinition.error);
 
-  if (!viewDef.value.queryRef) {
+  if (!viewDefinition.value.queryRef) {
     return err(new Error(`View definition ${viewNodeId} does not have a queryRef`));
   }
 
-  const queryDef = getQueryDefinition(graph, viewDef.value.queryRef);
-  if (!queryDef.ok) return err(queryDef.error);
+  const queryDefinition = getQueryDefinition(graph, viewDefinition.value.queryRef);
+  if (!queryDefinition.ok) return err(queryDefinition.error);
 
   return ok({
-    definition: viewDef.value,
-    query: queryDef.value,
+    definition: viewDefinition.value,
+    query: queryDefinition.value,
   });
 }

@@ -20,7 +20,7 @@ describe('GraphQL adapter end-to-end integration', () => {
     const context = await setupTestContext();
     const adapter = createGraphQLAdapter(context);
 
-    const mutationRes = await adapter.execute({
+    const mutationResult = await adapter.execute({
       source: `
         mutation {
           createNode(input: { type: "system:nodetype:text-block", properties: { text: "Integration Note", content: [] } }) {
@@ -31,13 +31,13 @@ describe('GraphQL adapter end-to-end integration', () => {
       `,
     });
 
-    expect(mutationRes.errors).toBeUndefined();
-    const mutationData = mutationRes.data as unknown as {
+    expect(mutationResult.errors).toBeUndefined();
+    const mutationData = mutationResult.data as unknown as {
       readonly createNode: { readonly id: string; readonly success: boolean };
     };
     expect(mutationData.createNode.success).toBe(true);
 
-    const queryRes = await adapter.execute({
+    const queryResult = await adapter.execute({
       source: `
         query {
           nodes(type: "system:nodetype:text-block") {
@@ -52,8 +52,8 @@ describe('GraphQL adapter end-to-end integration', () => {
       `,
     });
 
-    expect(queryRes.errors).toBeUndefined();
-    const queryData = queryRes.data as unknown as {
+    expect(queryResult.errors).toBeUndefined();
+    const queryData = queryResult.data as unknown as {
       readonly nodes: {
         readonly totalCount: number;
         readonly edges: readonly { readonly node: { readonly type: string } }[];

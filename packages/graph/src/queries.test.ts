@@ -169,7 +169,7 @@ describe('Graph Queries', () => {
     test('returns all edges of a specific type', () => {
       const edges = getEdgesOfType(graph, asTypeId('custom-edge-type'));
       expect(edges.length).toBe(2);
-      expect(edges.every((e) => e.type === 'custom-edge-type')).toBe(true);
+      expect(edges.every((edge) => edge.type === 'custom-edge-type')).toBe(true);
     });
 
     test('returns empty array if no edges of type exist', () => {
@@ -182,13 +182,15 @@ describe('Graph Queries', () => {
     test('returns all edges originating from a node', () => {
       const edges = getEdgesFrom(graph, asNodeId('node-1'));
       expect(edges.length).toBe(3);
-      expect(edges.every((e) => e.source === 'node-1')).toBe(true);
+      expect(edges.every((edge) => edge.source === 'node-1')).toBe(true);
     });
 
     test('returns edges filtered by type if provided', () => {
       const edges = getEdgesFrom(graph, asNodeId('node-1'), asTypeId('custom-edge-type'));
       expect(edges.length).toBe(2);
-      expect(edges.every((e) => e.source === 'node-1' && e.type === 'custom-edge-type')).toBe(true);
+      expect(
+        edges.every((edge) => edge.source === 'node-1' && edge.type === 'custom-edge-type'),
+      ).toBe(true);
     });
 
     test('returns empty array for node with no outgoing edges', () => {

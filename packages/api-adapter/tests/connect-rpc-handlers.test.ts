@@ -26,95 +26,95 @@ describe('Connect query and mutation RPC handlers', () => {
     const queryHandlers = createConnectQueryHandlers(context);
 
     // 1. createNode
-    const createNodeRes1 = await mutationHandlers.createNode({
+    const createNodeResponse1 = await mutationHandlers.createNode({
       type_id: 'concept',
       properties_json: JSON.stringify({ title: 'First Node', category: 'architecture' }),
     });
-    expect(createNodeRes1.success).toBe(true);
-    expect(createNodeRes1.entity_id).toBeDefined();
-    const node1Id = createNodeRes1.entity_id ?? '';
+    expect(createNodeResponse1.success).toBe(true);
+    expect(createNodeResponse1.entity_id).toBeDefined();
+    const node1Id = createNodeResponse1.entity_id ?? '';
 
-    const createNodeRes2 = await mutationHandlers.createNode({
+    const createNodeResponse2 = await mutationHandlers.createNode({
       type_id: 'concept',
       properties_json: JSON.stringify({ title: 'Second Node', category: 'architecture' }),
     });
-    expect(createNodeRes2.success).toBe(true);
-    expect(createNodeRes2.entity_id).toBeDefined();
-    const node2Id = createNodeRes2.entity_id ?? '';
+    expect(createNodeResponse2.success).toBe(true);
+    expect(createNodeResponse2.entity_id).toBeDefined();
+    const node2Id = createNodeResponse2.entity_id ?? '';
 
     // 2. getNodeById
-    const getNodeRes = await queryHandlers.getNodeById({ id: node1Id });
-    expect(getNodeRes.success).toBe(true);
-    expect(getNodeRes.id).toBe(node1Id);
-    expect(getNodeRes.type_id).toBe('concept');
-    expect(getNodeRes.properties_json).toContain('First Node');
+    const getNodeResponse = await queryHandlers.getNodeById({ id: node1Id });
+    expect(getNodeResponse.success).toBe(true);
+    expect(getNodeResponse.id).toBe(node1Id);
+    expect(getNodeResponse.type_id).toBe('concept');
+    expect(getNodeResponse.properties_json).toContain('First Node');
 
     // 3. getNodesByType
-    const getByTypeRes = await queryHandlers.getNodesByType({ type_id: 'concept' });
-    expect(getByTypeRes.success).toBe(true);
-    expect(getByTypeRes.nodes.length).toBe(2);
+    const getByTypeResponse = await queryHandlers.getNodesByType({ type_id: 'concept' });
+    expect(getByTypeResponse.success).toBe(true);
+    expect(getByTypeResponse.nodes.length).toBe(2);
 
     // 4. getNodesByProperty
-    const getByPropRes = await queryHandlers.getNodesByProperty({
+    const getByPropertyResponse = await queryHandlers.getNodesByProperty({
       key: 'category',
       value_json: JSON.stringify('architecture'),
     });
-    expect(getByPropRes.success).toBe(true);
-    expect(getByPropRes.nodes.length).toBe(2);
+    expect(getByPropertyResponse.success).toBe(true);
+    expect(getByPropertyResponse.nodes.length).toBe(2);
 
     // 5. createEdge
-    const createEdgeRes = await mutationHandlers.createEdge({
+    const createEdgeResponse = await mutationHandlers.createEdge({
       source_node_id: node1Id,
       target_node_id: node2Id,
       predicate_type_id: 'relates_to',
       properties_json: JSON.stringify({ weight: 1 }),
     });
-    expect(createEdgeRes.success).toBe(true);
-    expect(createEdgeRes.entity_id).toBeDefined();
-    const edgeId = createEdgeRes.entity_id ?? '';
+    expect(createEdgeResponse.success).toBe(true);
+    expect(createEdgeResponse.entity_id).toBeDefined();
+    const edgeId = createEdgeResponse.entity_id ?? '';
 
     // 6. getInboundEdges
-    const getInboundRes = await queryHandlers.getInboundEdges({
+    const getInboundResponse = await queryHandlers.getInboundEdges({
       target_node_id: node2Id,
       predicate_type_id: 'relates_to',
     });
-    expect(getInboundRes.success).toBe(true);
-    expect(getInboundRes.edges.length).toBe(1);
-    expect(getInboundRes.edges[0]?.id).toBe(edgeId);
+    expect(getInboundResponse.success).toBe(true);
+    expect(getInboundResponse.edges.length).toBe(1);
+    expect(getInboundResponse.edges[0]?.id).toBe(edgeId);
 
     // 7. getOutboundEdges
-    const getOutboundRes = await queryHandlers.getOutboundEdges({
+    const getOutboundResponse = await queryHandlers.getOutboundEdges({
       source_node_id: node1Id,
       predicate_type_id: 'relates_to',
     });
-    expect(getOutboundRes.success).toBe(true);
-    expect(getOutboundRes.edges.length).toBe(1);
-    expect(getOutboundRes.edges[0]?.id).toBe(edgeId);
+    expect(getOutboundResponse.success).toBe(true);
+    expect(getOutboundResponse.edges.length).toBe(1);
+    expect(getOutboundResponse.edges[0]?.id).toBe(edgeId);
 
     // 8. executeTraversalQuery
-    const traversalRes = await queryHandlers.executeTraversalQuery({
+    const traversalResponse = await queryHandlers.executeTraversalQuery({
       start_node_id: node1Id,
       max_depth: 2,
       filter_predicate_type_ids: ['relates_to'],
     });
-    expect(traversalRes.success).toBe(true);
-    expect(traversalRes.steps.length).toBeGreaterThanOrEqual(1);
+    expect(traversalResponse.success).toBe(true);
+    expect(traversalResponse.steps.length).toBeGreaterThanOrEqual(1);
 
     // 9. updateNodeProperties
-    const updateRes = await mutationHandlers.updateNodeProperties({
+    const updateResponse = await mutationHandlers.updateNodeProperties({
       id: node1Id,
       properties_json: JSON.stringify({ title: 'Updated First Node' }),
     });
-    expect(updateRes.success).toBe(true);
-    expect(updateRes.entity_id).toBe(node1Id);
+    expect(updateResponse.success).toBe(true);
+    expect(updateResponse.entity_id).toBe(node1Id);
 
-    const verifyUpdateRes = await queryHandlers.getNodeById({ id: node1Id });
-    expect(verifyUpdateRes.properties_json).toContain('Updated First Node');
+    const verifyUpdateResponse = await queryHandlers.getNodeById({ id: node1Id });
+    expect(verifyUpdateResponse.properties_json).toContain('Updated First Node');
 
     // 10. deleteEdge
-    const deleteEdgeRes = await mutationHandlers.deleteEdge({ id: edgeId });
-    expect(deleteEdgeRes.success).toBe(true);
-    expect(deleteEdgeRes.entity_id).toBe(edgeId);
+    const deleteEdgeResponse = await mutationHandlers.deleteEdge({ id: edgeId });
+    expect(deleteEdgeResponse.success).toBe(true);
+    expect(deleteEdgeResponse.entity_id).toBe(edgeId);
 
     const getInboundAfterDelete = await queryHandlers.getInboundEdges({
       target_node_id: node2Id,
@@ -122,9 +122,9 @@ describe('Connect query and mutation RPC handlers', () => {
     expect(getInboundAfterDelete.edges.length).toBe(0);
 
     // 11. deleteNode
-    const deleteNodeRes = await mutationHandlers.deleteNode({ id: node2Id });
-    expect(deleteNodeRes.success).toBe(true);
-    expect(deleteNodeRes.entity_id).toBe(node2Id);
+    const deleteNodeResponse = await mutationHandlers.deleteNode({ id: node2Id });
+    expect(deleteNodeResponse.success).toBe(true);
+    expect(deleteNodeResponse.entity_id).toBe(node2Id);
 
     const getNodeAfterDelete = await queryHandlers.getNodeById({ id: node2Id });
     expect(getNodeAfterDelete.success).toBe(false);

@@ -7,7 +7,7 @@ import {
 } from '@canopy/graph';
 import type { PropertyTypeOption } from '../../utils/schema';
 
-export interface PropertyListEditorProps {
+export interface PropertyListEditorProperties {
   readonly value: readonly TypePropertyInput[];
   readonly onChange: (next: readonly TypePropertyInput[]) => unknown;
   readonly propertyTypeOptions: readonly PropertyTypeOption[];
@@ -32,14 +32,14 @@ const InlinePropertyRow: React.FC<
     <div className="flex-1 grid grid-cols-2 gap-2">
       <input
         value={row.name}
-        onChange={(e) => onChange({ ...row, name: e.target.value })}
+        onChange={(event_) => onChange({ ...row, name: event_.target.value })}
         placeholder="Property name"
         className="col-span-2 border rounded px-2 py-1 text-sm"
       />
       <select
         value={row.valueKind}
-        onChange={(e) => {
-          const parsed = PropertyValueKindSchema.safeParse(e.target.value);
+        onChange={(event_) => {
+          const parsed = PropertyValueKindSchema.safeParse(event_.target.value);
           if (parsed.success) onChange({ ...row, valueKind: parsed.data });
           return undefined;
         }}
@@ -55,14 +55,14 @@ const InlinePropertyRow: React.FC<
         <input
           type="checkbox"
           checked={row.required}
-          onChange={(e) => onChange({ ...row, required: e.target.checked })}
+          onChange={(event_) => onChange({ ...row, required: event_.target.checked })}
         />
         Required
       </label>
       <input
         value={row.description ?? ''}
-        onChange={(e) => {
-          const description = e.target.value;
+        onChange={(event_) => {
+          const description = event_.target.value;
           onChange({
             kind: 'inline',
             name: row.name,
@@ -98,8 +98,8 @@ const ReferencePropertyRow: React.FC<
     <div className="flex-1 space-y-2">
       <select
         value={row.propertyTypeId}
-        onChange={(e) => {
-          const selected = propertyTypeOptions.find((opt) => opt.id === e.target.value);
+        onChange={(event_) => {
+          const selected = propertyTypeOptions.find((opt) => opt.id === event_.target.value);
           if (selected) onChange({ ...row, propertyTypeId: selected.id });
           return undefined;
         }}
@@ -115,7 +115,7 @@ const ReferencePropertyRow: React.FC<
         <input
           type="checkbox"
           checked={row.required}
-          onChange={(e) => onChange({ ...row, required: e.target.checked })}
+          onChange={(event_) => onChange({ ...row, required: event_.target.checked })}
         />
         Required
       </label>
@@ -130,7 +130,7 @@ const ReferencePropertyRow: React.FC<
   </div>
 );
 
-export const PropertyListEditor: React.FC<PropertyListEditorProps> = ({
+export const PropertyListEditor: React.FC<PropertyListEditorProperties> = ({
   value,
   onChange,
   propertyTypeOptions,

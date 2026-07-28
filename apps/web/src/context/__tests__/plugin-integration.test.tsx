@@ -39,8 +39,8 @@ describe('plugin wizard integration', () => {
 
     // 2. Load empty graph
     await act(async () => {
-      const res = await result.current.graphCtx.loadGraph(testGraphId);
-      expect(res.ok).toBe(true);
+      const result_ = await result.current.graphCtx.loadGraph(testGraphId);
+      expect(result_.ok).toBe(true);
     });
 
     expect(result.current.graphCtx.graph).not.toBeNull();
@@ -69,12 +69,12 @@ describe('plugin wizard integration', () => {
 
     let pluginNodeId: NodeId | undefined;
     await act(async () => {
-      const res = await result.current.graphCtx.createNode(SYSTEM_IDS.TYPE_PLUGIN, {
+      const result_ = await result.current.graphCtx.createNode(SYSTEM_IDS.TYPE_PLUGIN, {
         wasm_binary: 'AGFzbQ==',
         manifest: JSON.stringify(mockManifest),
         version: '1.0.0',
       });
-      if (res.ok) pluginNodeId = res.value;
+      if (result_.ok) pluginNodeId = result_.value;
     });
 
     expect(pluginNodeId).toBeDefined();

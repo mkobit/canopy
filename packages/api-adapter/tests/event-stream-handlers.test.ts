@@ -40,8 +40,8 @@ describe('Real-Time Event Stream Subscriber', () => {
       type: asTypeId('doc'),
       properties: { title: 'Live Streaming Node' },
     });
-    const res = await executeCreateNode(request);
-    expect(res.ok).toBe(true);
+    const result = await executeCreateNode(request);
+    expect(result.ok).toBe(true);
 
     expect(messages.length).toBeGreaterThanOrEqual(1);
     const eventMessage = messages.find((m) => m.kind === 'event');
@@ -95,27 +95,27 @@ describe('Event Catch-Up Replay Handler', () => {
         type: asTypeId('doc'),
         properties: { count: index },
       });
-      const res = await executeCreateNode(request);
-      expect(res.ok).toBe(true);
+      const result = await executeCreateNode(request);
+      expect(result.ok).toBe(true);
     }
 
-    const allEventsRes = await eventLogStore.getEvents(graphId);
-    expect(allEventsRes.ok).toBe(true);
-    const allEvents = allEventsRes.ok ? allEventsRes.value : [];
+    const allEventsResult = await eventLogStore.getEvents(graphId);
+    expect(allEventsResult.ok).toBe(true);
+    const allEvents = allEventsResult.ok ? allEventsResult.value : [];
     const firstEventId = allEvents[0]?.eventId ?? '';
 
-    const replayRes = await executeReplayEventStream(context, {
+    const replayResult = await executeReplayEventStream(context, {
       tenantId: context.authContext?.tenantId ?? '',
       graphId: 'g1',
       lastSeenEventId: firstEventId,
     });
 
-    expect(replayRes.ok).toBe(true);
-    if (replayRes.ok) {
-      expect(replayRes.value).toHaveLength(2);
-      expect(replayRes.value[0]?.kind).toBe('event');
-      const firstEvent = replayRes.value[0]?.event;
-      const secondEvent = replayRes.value[1]?.event;
+    expect(replayResult.ok).toBe(true);
+    if (replayResult.ok) {
+      expect(replayResult.value).toHaveLength(2);
+      expect(replayResult.value[0]?.kind).toBe('event');
+      const firstEvent = replayResult.value[0]?.event;
+      const secondEvent = replayResult.value[1]?.event;
       if (firstEvent?.type === 'NodeCreated' && secondEvent?.type === 'NodeCreated') {
         expect(firstEvent.id).toBe(asNodeId('n-replay-2'));
         expect(secondEvent.id).toBe(asNodeId('n-replay-3'));
@@ -134,18 +134,18 @@ describe('Event Catch-Up Replay Handler', () => {
       await executeCreateNode(request);
     }
 
-    const replayRes = await executeReplayEventStream(context, {
+    const replayResult = await executeReplayEventStream(context, {
       tenantId: context.authContext?.tenantId ?? '',
       graphId: 'g1',
       lastSeenEventId: '00000000-0000-0000-0000-000000000000',
       maxReplayCount: 5,
     });
 
-    expect(replayRes.ok).toBe(true);
-    if (replayRes.ok) {
-      expect(replayRes.value).toHaveLength(1);
-      expect(replayRes.value[0]?.kind).toBe('gap');
-      expect(replayRes.value[0]?.reason).toContain('exceeds maximum replay threshold of 5');
+    expect(replayResult.ok).toBe(true);
+    if (replayResult.ok) {
+      expect(replayResult.value).toHaveLength(1);
+      expect(replayResult.value[0]?.kind).toBe('gap');
+      expect(replayResult.value[0]?.reason).toContain('exceeds maximum replay threshold of 5');
     }
   });
 
@@ -158,15 +158,15 @@ describe('Event Catch-Up Replay Handler', () => {
       authContext: { tenantId: 'tenant-a' },
     });
 
-    const replayRes = await executeReplayEventStream(contextWithTenant, {
+    const replayResult = await executeReplayEventStream(contextWithTenant, {
       tenantId: 'tenant-b',
       graphId: 'g1',
       lastSeenEventId: 'evt-0',
     });
 
-    expect(replayRes.ok).toBe(false);
-    if (!replayRes.ok) {
-      expect(replayRes.error.category).toBe('FORBIDDEN');
+    expect(replayResult.ok).toBe(false);
+    if (!replayResult.ok) {
+      expect(replayResult.error.category).toBe('FORBIDDEN');
     }
   });
 });

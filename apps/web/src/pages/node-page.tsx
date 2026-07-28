@@ -29,7 +29,7 @@ export const NodePage = () => {
   // Subscribe/Fetch node from graph
   useEffect(() => {
     if (graph && nodeId) {
-      void Promise.resolve().then(() => {
+      void Promise.try(() => {
         const node = graph.nodes.get(asNodeId(nodeId));
         setCurrentNode(node);
         if (node) {

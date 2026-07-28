@@ -11,7 +11,7 @@ export interface ListLayoutEvents {
   readonly onNodeClick: (node: Node) => unknown;
 }
 
-export type ListLayoutProps = ListLayoutData & ListLayoutEvents;
+export type ListLayoutProperties = ListLayoutData & ListLayoutEvents;
 
 function groupNodes(nodes: readonly Node[], groupBy: string): readonly [string, readonly Node[]][] {
   const getKey = (node: Node): string =>
@@ -63,7 +63,7 @@ const NodeListItem = ({
   );
 };
 
-export const ListLayout: React.FC<ListLayoutProps> = ({ nodes, groupBy, onNodeClick }) => {
+export const ListLayout: React.FC<ListLayoutProperties> = ({ nodes, groupBy, onNodeClick }) => {
   if (nodes.length === 0) {
     return <div className="p-8 text-center text-gray-500">No nodes found.</div>;
   }
