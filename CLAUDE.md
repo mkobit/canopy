@@ -51,22 +51,9 @@ Work is NOT complete until `git push` succeeds.
 - NEVER stop before pushing - that leaves work stranded locally.
 - NEVER say "ready to push when you are" - YOU must push.
 - If push fails, resolve and retry until it succeeds.
+
 <!-- END BEADS INTEGRATION -->
 
-## Build & test
+## Project conventions
 
-_Add your build and test commands here_
-
-```bash
-# Example:
-# npm install
-# npm test
-```
-
-## Architecture overview
-
-_Add a brief overview of your project architecture_
-
-## Conventions & patterns
-
-_Add your project-specific conventions here_
+See @AGENTS.md for design docs, package layout, architectural invariants, dev workflow, and style requirements.
