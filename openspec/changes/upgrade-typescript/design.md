@@ -71,3 +71,16 @@ We will verify that `@typescript-eslint/parser` and `@typescript-eslint/eslint-p
 - _Mitigation_: The root `.vscode/settings.json` (if present) or editor settings should be updated to use the workspace version of TypeScript.
 - _Risk_: Custom type guards or complex branded types in Canopy might fail due to type checker refinement changes in TS 7.
 - _Mitigation_: We will systematically inspect typecheck logs and adapt type definitions to satisfy the new rules while maintaining the exact same runtime behavior.
+
+## Amendments (2026-07-29, canopy-1qb)
+
+**The plain version-bump plan in tasks.md (1.1: "update `typescript` to `7.0.2`") was never actually executed, and what was implemented instead was broken.**
+TypeScript 7.0 ships without the old programmatic compiler API, which `typescript-eslint` depends on — confirmed via Microsoft's [TS 7.0 announcement](https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/) and a live typescript-eslint issue ([#12518](https://github.com/typescript-eslint/typescript-eslint/issues/12518)) reproducing the exact same crash/peer-dependency conflict this repo would have hit.
+Microsoft's own recommended interim workaround is a dual-package alias: keep plain `typescript` on 6.x (for tool compatibility) and alias the fast native 7.x compiler under a different devDependency name for the actual build.
+The implementation that landed followed that same shape but got the details wrong: it pinned `typescript-native` to `npm:typescript@7.0.1-rc` (a stale release candidate, not the GA `7.0.2`), and wired the swap through a `postinstall` script (`ln -sf ../typescript-native/bin/tsc node_modules/.bin/tsc`) that `bun install` silently skips whenever the lockfile has no changes — verified empirically. This means `tsc` non-deterministically fell back to plain 6.0.3 depending on install-cache state, so tasks 1.2/1.3/2.1/2.2 (compile/typecheck/test/lint gates "under TS 7") were likely never actually exercised against the native compiler.
+
+**Fix applied:** bumped `typescript-native` to stable `npm:typescript@7.0.2`, dropped the `postinstall` symlink race entirely, and instead prefix the root `build`/`typecheck` scripts with `PATH="$PWD/node_modules/typescript-native/bin:$PATH"`, which propagates deterministically through every `bun --filter` fan-out without touching `node_modules/.bin/tsc` (so `typescript-eslint`'s `require('typescript')` resolution stays on plain 6.0.3, unaffected). Verified clean `build`/`typecheck`/`lint`/`test` runs under this wiring.
+
+**Still open:** this remains an interim workaround. Microsoft has committed to shipping the real programmatic API in TypeScript 7.1 (~3-4 months after 7.0), at which point `typescript-eslint` is expected to add proper support and the dual-package split can be dropped in favor of a single `typescript` devDependency. Tracked as a follow-up bead, not part of this change.
+
+See `docs/architecture/decisions.md` (2026-07-29 entry) and beads issue `canopy-1qb`.

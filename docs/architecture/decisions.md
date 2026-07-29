@@ -7,6 +7,15 @@ Each entry states the decision, why, and where the full reasoning lives.
 Full design proposals still live in `design/` (dated, one file per proposal).
 This log complements those files — it's where decisions made _during_ implementation of an approved design get recorded, so they don't only live in a PR description or an agent's private memory.
 
+## 2026-07-29 — Fixed the TypeScript 7 dual-compiler interim setup (canopy-1qb)
+
+`upgrade-typescript` (PR #380, 2026-07-22) tried to adopt TypeScript 7's Go-based native compiler for its 8-12x build speedup while keeping `typescript-eslint` working, since TS 7.0 shipped without the old programmatic compiler API that `typescript-eslint` depends on (confirmed via Microsoft's [TS 7.0 announcement](https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/) and [typescript-eslint#12518](https://github.com/typescript-eslint/typescript-eslint/issues/12518) — this is an acknowledged, industry-wide gap, not specific to this repo).
+The dual-package strategy itself (plain `typescript` stays on 6.x for tooling, the fast compiler is aliased under a different devDependency name for the actual build) matches Microsoft's own recommended interim workaround.
+But the execution was broken: it pinned `typescript-native` to `npm:typescript@7.0.1-rc` (a stale release candidate; `7.0.2` is GA) and wired the swap through a `postinstall` script (`ln -sf ../typescript-native/bin/tsc node_modules/.bin/tsc`) that `bun install` silently skips whenever the lockfile has no changes — confirmed empirically, meaning `tsc` non-deterministically fell back to plain 6.0.3 on most machines/CI runs, so the "TS 7 validated" claim in the openspec change's `tasks.md` was likely never actually exercised.
+Fixed by bumping to stable `typescript-native@npm:typescript@7.0.2` and replacing the postinstall symlink race with a `PATH` prefix (`PATH="$PWD/node_modules/typescript-native/bin:$PATH"`) on the root `build`/`typecheck` scripts, which propagates deterministically to every `bun --filter` fan-out without touching `node_modules/.bin/tsc` (left alone, so `typescript-eslint`'s `require('typescript')` resolution is unaffected).
+Verified: full `build`/`typecheck`/`lint`/`test` all pass clean under this wiring.
+Microsoft has committed to shipping the real programmatic API in TypeScript 7.1 (~3-4 months after 7.0), at which point `typescript-eslint` is expected to add proper support and this dual-package workaround can be dropped — see `canopy-1qb` and its TS-7.1 follow-up bead.
+
 ## 2026-07-26 — Established recurring audit process and automated release checks for AI developer tools
 
 We created an automated release audit script (`tools/audit-ai-tool-releases.ts` accessible via `bun run audit:ai-tools`) to query upstream releases for `@fission-ai/openspec` and `gastownhall/beads`.
