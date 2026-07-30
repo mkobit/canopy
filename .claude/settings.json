@@ -21,6 +21,17 @@
         ],
         "matcher": ""
       }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "command": "bun tools/hooks/openspec-validate-hook.ts",
+            "type": "command"
+          }
+        ],
+        "matcher": "Edit|Write|MultiEdit"
+      }
     ]
   },
   "permissions": {

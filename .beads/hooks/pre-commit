@@ -22,3 +22,11 @@ if command -v bd >/dev/null 2>&1; then
   if [ $_bd_exit -ne 0 ]; then exit $_bd_exit; fi
 fi
 # --- END BEADS INTEGRATION v1.0.3 ---
+
+# --- BEGIN OPENSPEC VALIDATION ---
+# Validates any OpenSpec change directories touched by this commit's staged
+# files (bun tools/check-openspec-changes.ts). No-ops if none are staged.
+if command -v bun >/dev/null 2>&1; then
+  bun tools/check-openspec-changes.ts || exit $?
+fi
+# --- END OPENSPEC VALIDATION ---
