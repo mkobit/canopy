@@ -179,9 +179,7 @@ describe('createNodeType', () => {
 
     const created = result.value.value.nodes
       .values()
-      .find(
-        (node) => node.type === SYSTEM_IDS.NODE_TYPE && node.properties.get('name') === 'Task',
-      );
+      .find((node) => node.type === SYSTEM_IDS.NODE_TYPE && node.properties.get('name') === 'Task');
     const storedProperties = created?.properties.get('properties');
     expect(typeof storedProperties).toBe('string');
     const parsed = JSON.parse(storedProperties as string) as readonly {

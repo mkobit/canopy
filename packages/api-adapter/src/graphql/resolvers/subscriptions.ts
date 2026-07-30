@@ -63,9 +63,8 @@ export const createSubscriptionResolvers = (context: ApiAdapterContext, _eventBu
                 return { value: undefined, done: true };
               }
 
-              const { promise, resolve } = Promise.withResolvers<
-                Readonly<IteratorResult<EventStreamSubscriptionValue>>
-              >();
+              const { promise, resolve } =
+                Promise.withResolvers<Readonly<IteratorResult<EventStreamSubscriptionValue>>>();
               pendingResolve = resolve;
               return promise;
             },
