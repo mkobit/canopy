@@ -105,7 +105,7 @@ export default tseslint.config(
     languageOptions: {
       parserOptions: {
         projectService: {
-          allowDefaultProject: ['tools/*.ts', 'tools/lib/*.ts'],
+          allowDefaultProject: ['tools/*.ts', 'tools/lib/*.ts', 'tools/hooks/*.ts'],
         },
         tsconfigRootDir: __dirname,
       },
@@ -381,7 +381,12 @@ export default tseslint.config(
 
   // Specific file overrides
   {
-    files: ['tools/verify-versions.ts', 'tools/check-commands.ts'],
+    files: [
+      'tools/verify-versions.ts',
+      'tools/check-commands.ts',
+      'tools/check-openspec-changes.ts',
+      'tools/hooks/openspec-validate-hook.ts',
+    ],
     rules: {
       'unicorn/no-process-exit': 'off',
     },
