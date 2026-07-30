@@ -3,6 +3,5 @@ export * from './pipeline';
 export * from './engine';
 export * from './stored';
 export * from './views';
-export * from './legacy';
 export * from './cypher';
 export * from './query-node';
