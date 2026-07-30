@@ -32,10 +32,11 @@ describe('createNamespace', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error('expected success');
 
-    // eslint-disable-next-line unicorn/prefer-iterator-helpers -- MapIterator#find() needs a newer lib target than this project's tsconfig (ES2023)
-    const created = [...result.value.value.nodes.values()].find(
-      (node) => node.type === SYSTEM_IDS.NAMESPACE && node.properties.get('name') === 'research',
-    );
+    const created = result.value.value.nodes
+      .values()
+      .find(
+        (node) => node.type === SYSTEM_IDS.NAMESPACE && node.properties.get('name') === 'research',
+      );
     expect(created).toBeDefined();
     expect(created?.properties.get('kind')).toBe('user');
     expect(result.value.events).toHaveLength(1);
@@ -85,11 +86,12 @@ describe('createPropertyType', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error('expected success');
 
-    // eslint-disable-next-line unicorn/prefer-iterator-helpers -- MapIterator#find() needs a newer lib target than this project's tsconfig (ES2023)
-    const created = [...result.value.value.nodes.values()].find(
-      (node) =>
-        node.type === SYSTEM_IDS.PROPERTY_TYPE && node.properties.get('name') === 'priority',
-    );
+    const created = result.value.value.nodes
+      .values()
+      .find(
+        (node) =>
+          node.type === SYSTEM_IDS.PROPERTY_TYPE && node.properties.get('name') === 'priority',
+      );
     expect(created?.properties.get('valueKind')).toBe('number');
   });
 
@@ -151,11 +153,12 @@ describe('createNodeType', () => {
     if (!propertyTypeResult.ok) throw new Error('expected success');
     graph = propertyTypeResult.value.value;
 
-    // eslint-disable-next-line unicorn/prefer-iterator-helpers -- MapIterator#find() needs a newer lib target than this project's tsconfig (ES2023)
-    const propertyTypeId = [...graph.nodes.values()].find(
-      (node) =>
-        node.type === SYSTEM_IDS.PROPERTY_TYPE && node.properties.get('name') === 'priority',
-    )?.id;
+    const propertyTypeId = graph.nodes
+      .values()
+      .find(
+        (node) =>
+          node.type === SYSTEM_IDS.PROPERTY_TYPE && node.properties.get('name') === 'priority',
+      )?.id;
     if (!propertyTypeId) throw new Error('expected propertyTypeId');
 
     const result = createNodeType(
@@ -174,10 +177,9 @@ describe('createNodeType', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error('expected success');
 
-    // eslint-disable-next-line unicorn/prefer-iterator-helpers -- MapIterator#find() needs a newer lib target than this project's tsconfig (ES2023)
-    const created = [...result.value.value.nodes.values()].find(
-      (node) => node.type === SYSTEM_IDS.NODE_TYPE && node.properties.get('name') === 'Task',
-    );
+    const created = result.value.value.nodes
+      .values()
+      .find((node) => node.type === SYSTEM_IDS.NODE_TYPE && node.properties.get('name') === 'Task');
     const storedProperties = created?.properties.get('properties');
     expect(typeof storedProperties).toBe('string');
     const parsed = JSON.parse(storedProperties as string) as readonly {
@@ -273,10 +275,11 @@ describe('createEdgeType', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error('expected success');
 
-    // eslint-disable-next-line unicorn/prefer-iterator-helpers -- MapIterator#find() needs a newer lib target than this project's tsconfig (ES2023)
-    const created = [...result.value.value.nodes.values()].find(
-      (node) => node.type === SYSTEM_IDS.EDGE_TYPE && node.properties.get('name') === 'RelatesTo',
-    );
+    const created = result.value.value.nodes
+      .values()
+      .find(
+        (node) => node.type === SYSTEM_IDS.EDGE_TYPE && node.properties.get('name') === 'RelatesTo',
+      );
     expect(created?.properties.get('sourceTypes')).toEqual([SYSTEM_IDS.NODE_TYPE]);
     expect(created?.properties.get('targetTypes')).toEqual([SYSTEM_IDS.NODE_TYPE]);
   });

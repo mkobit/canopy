@@ -170,10 +170,9 @@ describe('Meta-circular bootstrap', () => {
 
     // Helper to find edge by type, source, target
     const findEdge = (type: string, source: string, target: string) => {
-      // eslint-disable-next-line unicorn/prefer-iterator-helpers -- MapIterator#find() needs a newer lib target than this project's tsconfig (ES2023)
-      return [...graph.edges.values()].find(
-        (edge) => edge.type === type && edge.source === source && edge.target === target,
-      );
+      return graph.edges
+        .values()
+        .find((edge) => edge.type === type && edge.source === source && edge.target === target);
     };
 
     // Check uses_renderer edges

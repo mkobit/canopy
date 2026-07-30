@@ -63,10 +63,10 @@ export const createSubscriptionResolvers = (context: ApiAdapterContext, _eventBu
                 return { value: undefined, done: true };
               }
 
-              // eslint-disable-next-line unicorn/prefer-promise-with-resolvers -- Promise.withResolvers needs lib ES2024, project targets ES2023
-              return new Promise((resolve) => {
-                pendingResolve = resolve;
-              });
+              const { promise, resolve } =
+                Promise.withResolvers<Readonly<IteratorResult<EventStreamSubscriptionValue>>>();
+              pendingResolve = resolve;
+              return promise;
             },
 
             async return(): Promise<Readonly<IteratorResult<EventStreamSubscriptionValue>>> {
