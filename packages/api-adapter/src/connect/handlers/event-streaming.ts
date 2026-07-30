@@ -148,10 +148,9 @@ const createSubscribeGenerator = async function* (
           yield head;
         }
       } else {
-        // eslint-disable-next-line unicorn/prefer-promise-with-resolvers -- Promise.withResolvers needs lib ES2024, project targets ES2023
-        const nextItem = await new Promise<ConnectEventStreamItem | null>((resolve) => {
-          resolveNext = resolve;
-        });
+        const { promise, resolve } = Promise.withResolvers<ConnectEventStreamItem | null>();
+        resolveNext = resolve;
+        const nextItem = await promise;
         if (nextItem === null) {
           break;
         }

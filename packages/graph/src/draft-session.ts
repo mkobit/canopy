@@ -110,8 +110,7 @@ export function createDraftSession(parentSession: GraphSession): DraftSession {
       if (node.id.toLowerCase().includes(query)) return true;
       if (node.type.toLowerCase().includes(query)) return true;
 
-      // eslint-disable-next-line unicorn/prefer-iterator-helpers -- MapIterator#some() needs a newer lib target than this project's tsconfig (ES2023)
-      return [...node.properties.values()].some((value) => {
+      return node.properties.values().some((value) => {
         if (typeof value === 'string' && value.toLowerCase().includes(query)) {
           return true;
         }

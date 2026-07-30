@@ -19,10 +19,9 @@ export function parseNamespace(graph: Readonly<Graph>, name: string): Result<Nam
     return error(new Error(formatResult.error.issues[0]?.message ?? `Invalid namespace '${name}'`));
   }
 
-  // eslint-disable-next-line unicorn/prefer-iterator-helpers -- MapIterator#some() needs a newer lib target than this project's tsconfig (ES2023)
-  const isExists = [...graph.nodes.values()].some(
-    (node) => node.type === SYSTEM_IDS.NAMESPACE && node.properties.get('name') === name,
-  );
+  const isExists = graph.nodes
+    .values()
+    .some((node) => node.type === SYSTEM_IDS.NAMESPACE && node.properties.get('name') === name);
   if (!isExists) {
     return error(new Error(`Namespace '${name}' does not exist`));
   }

@@ -36,9 +36,7 @@ declare module 'canopy:graph/wizard-execution' {
     value: PropertyValue;
   }
   export type StepDestination =
-    | StepDestinationForm
-    | StepDestinationComplete
-    | StepDestinationCancel;
+    StepDestinationForm | StepDestinationComplete | StepDestinationCancel;
   export interface StepDestinationForm {
     tag: 'form';
     val: FormSchema;
