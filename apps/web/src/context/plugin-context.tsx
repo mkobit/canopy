@@ -22,8 +22,7 @@ import type { DraftSession, GraphEvent } from '@canopy/graph';
 import { createDraftSession, SYSTEM_IDS } from '@canopy/graph';
 import { DraftSessionHandle } from '../plugin/draft-session-shim';
 import { Temporal } from 'temporal-polyfill';
-// eslint-disable-next-line import/extensions -- Mock javascript plugin must be loaded directly
-import * as mockPlugin from '../plugin/mock/guest.js';
+import * as mockPlugin from '../plugin/mock/guest';
 
 export interface MenuItem {
   readonly label: string;

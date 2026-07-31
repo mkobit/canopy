@@ -49,8 +49,6 @@ export const PlainDateSchema: z.ZodType<PlainDate, unknown> = z
   .regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid PlainDate format (YYYY-MM-DD)')
   .transform(asPlainDate);
 
-export const TimestampSchema = InstantSchema;
-
 // External Reference Value (the only complex scalar object)
 const ExternalReferenceValueSchema = z.object({
   graph: GraphIdSchema,

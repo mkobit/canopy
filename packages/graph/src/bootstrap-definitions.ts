@@ -7,7 +7,7 @@ import { SYSTEM_IDS, SYSTEM_EDGE_TYPES } from './system';
 export const SYSTEM_DEVICE_ID = asDeviceId('00000000-0000-0000-0000-000000000000');
 
 // Helper to create a property map
-export function createProperties(properties: Record<string, PropertyValue>): PropertyMap {
+function createProperties(properties: Record<string, PropertyValue>): PropertyMap {
   return new Map(Object.entries(properties));
 }
 

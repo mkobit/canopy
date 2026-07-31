@@ -15,7 +15,6 @@
   },
   "devDependencies": {
     "fake-indexeddb": "^6.2.5",
-    "temporal-polyfill": "^0.3.2",
     "typescript": "6.0.3"
   }
 }

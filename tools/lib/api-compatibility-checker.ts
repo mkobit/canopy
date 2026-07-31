@@ -8,7 +8,7 @@ import {
   CANOPY_WIT_SPECIFICATION,
 } from '../../packages/api-adapter/src/index.js';
 
-export interface Violation {
+interface Violation {
   readonly protocol: 'graphql' | 'connect' | 'wit';
   readonly changeType: string;
   readonly path: string;
@@ -28,7 +28,7 @@ export interface Waiver {
   readonly ticket: string;
 }
 
-export interface CompatibilityResult {
+interface CompatibilityResult {
   readonly success: boolean;
   readonly violations: readonly Violation[];
   readonly approvedWaivers: readonly Waiver[];
@@ -37,7 +37,7 @@ export interface CompatibilityResult {
   readonly formattedDiagnostic: string;
 }
 
-export interface CheckOptions {
+interface CheckOptions {
   readonly target?: 'graphql' | 'connect' | 'wit' | 'all';
   readonly overrideGql?: string;
   readonly overrideProto?: string;
@@ -45,7 +45,7 @@ export interface CheckOptions {
   readonly overrideWaivers?: readonly Waiver[];
 }
 
-export const checkGql = (liveSchema: string, baselineSchema?: string): readonly Violation[] => {
+const checkGql = (liveSchema: string, baselineSchema?: string): readonly Violation[] => {
   if (!baselineSchema) return [];
 
   const violations1: readonly Violation[] =
@@ -95,7 +95,7 @@ export const checkGql = (liveSchema: string, baselineSchema?: string): readonly 
   return [...violations1, ...violations2, ...violations3];
 };
 
-export const checkPrototype = (
+const checkPrototype = (
   liveSchema: string,
   baselineSchema?: string,
 ): readonly Violation[] => {
@@ -132,7 +132,7 @@ export const checkPrototype = (
   return [...violations1, ...violations2];
 };
 
-export const checkWit = (liveSchema: string, baselineSchema?: string): readonly Violation[] => {
+const checkWit = (liveSchema: string, baselineSchema?: string): readonly Violation[] => {
   if (!baselineSchema) return [];
 
   const violations1: readonly Violation[] =

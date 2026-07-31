@@ -27,7 +27,7 @@ export type IpcClientError = Readonly<{
   details?: unknown;
 }>;
 
-export const createIpcClientError = (
+const createIpcClientError = (
   payload: Readonly<{
     code: number;
     message: string;
@@ -73,7 +73,7 @@ export interface IpcClient {
   readonly close: () => Effect.Effect<void, never>;
 }
 
-export const IpcClientService = Context.GenericTag<IpcClient>('@canopy/cli/IpcClient');
+const IpcClientService = Context.GenericTag<IpcClient>('@canopy/cli/IpcClient');
 
 export const makeIpcClient = (socketPath: string): Effect.Effect<IpcClient, IpcClientError> => {
   return Effect.async<IpcClient, IpcClientError>((resume) => {
@@ -418,5 +418,5 @@ export const makeIpcClient = (socketPath: string): Effect.Effect<IpcClient, IpcC
   });
 };
 
-export const createIpcClientLayer = (socketPath: string): Layer.Layer<IpcClient, IpcClientError> =>
+const createIpcClientLayer = (socketPath: string): Layer.Layer<IpcClient, IpcClientError> =>
   Layer.effect(IpcClientService, makeIpcClient(socketPath));

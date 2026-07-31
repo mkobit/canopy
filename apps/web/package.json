@@ -18,7 +18,6 @@
     "@canopy/graph": "workspace:*",
     "@canopy/queries": "workspace:*",
     "@canopy/settings": "workspace:*",
-    "@canopy/storage": "workspace:*",
     "@canopy/storage-indexeddb": "workspace:*",
     "@fontsource/inter": "^5.2.8",
     "@fontsource/jetbrains-mono": "^5.2.8",
