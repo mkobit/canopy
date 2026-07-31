@@ -1,9 +1,9 @@
 import type { Preview } from '@storybook/react';
 import React from 'react';
 import { ReactFlowProvider } from '@xyflow/react';
-import '@fontsource/inter';
-import '@fontsource/jetbrains-mono';
-import '@fontsource/space-grotesk';
+import '@fontsource/inter/400.css';
+import '@fontsource/jetbrains-mono/400.css';
+import '@fontsource/space-grotesk/400.css';
 import '@xyflow/react/dist/style.css';
 import '../src/index.css';
 
