@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback, useEffect } from 'react';
 import {
   ReactFlow,
   Controls,
@@ -18,6 +18,7 @@ import { CustomNode } from './custom-node';
 import { CustomEdge } from './custom-edge';
 import { asNodeId } from '@canopy/graph';
 import { useSpatialGraphNavigation } from './use-spatial-graph-navigation';
+import { AriaLiveRegion, useAriaLiveAnnouncer } from './aria-live-region';
 
 const nodeTypes = {
   customNode: CustomNode,
@@ -33,6 +34,7 @@ export const InteractiveGraphView = () => {
   const navigate = useNavigate();
   const { graphId } = useParams();
   const [selectedNodeId, setSelectedNodeId] = React.useState<string | undefined>(undefined);
+  const { announcement, announce } = useAriaLiveAnnouncer();
 
   const initialNodes = useMemo(() => {
     if (!graph) return [];
@@ -91,20 +93,32 @@ export const InteractiveGraphView = () => {
     [nodes],
   );
 
+  const handleSelectNode = useCallback(
+    (nodeId: string | undefined) => {
+      setSelectedNodeId(nodeId);
+      if (nodeId) {
+        announce(`Selected node ${nodeId}`);
+      } else {
+        announce('Node selection cleared');
+      }
+    },
+    [announce],
+  );
+
   const { handleKeyDown } = useSpatialGraphNavigation({
     nodes: navigationNodes,
     selectedNodeId,
-    onSelectNode: setSelectedNodeId,
+    onSelectNode: handleSelectNode,
   });
 
-  React.useEffect(() => {
+  useEffect(() => {
     setNodes(initialNodes);
     setEdges(initialEdges);
     return undefined;
   }, [initialNodes, initialEdges, setNodes, setEdges]);
 
   const onNodeClick = (_: React.MouseEvent, node: Readonly<{ id: string }>) => {
-    setSelectedNodeId(node.id);
+    handleSelectNode(node.id);
     navigate(`/graph/${graphId}/node/${node.id}`);
     return undefined;
   };
@@ -117,14 +131,15 @@ export const InteractiveGraphView = () => {
       const sourceId = asNodeId(parameters.source);
       const targetId = asNodeId(parameters.target);
 
-      void withResultAlert(
-        () => createEdge(edgeType, sourceId, targetId),
-        'Failed to create edge',
-      )();
+      void withResultAlert(async () => {
+        const createEdgeResult = await createEdge(edgeType, sourceId, targetId);
+        announce(`Created edge ${edgeType} between node ${sourceId} and node ${targetId}`);
+        return createEdgeResult;
+      }, 'Failed to create edge')();
 
       return undefined;
     },
-    [createEdge],
+    [createEdge, announce],
   );
 
   const onDoubleClick = useCallback(
@@ -135,19 +150,26 @@ export const InteractiveGraphView = () => {
       const type = showPrompt('Enter node type (e.g., Note, Person):', 'Note');
       if (!type) return undefined;
 
-      void withResultAlert(() => createNode(type, { name }), 'Failed to create node')();
+      void withResultAlert(async () => {
+        const createNodeResult = await createNode(type, { name });
+        announce(`Created node ${type}: ${name}`);
+        return createNodeResult;
+      }, 'Failed to create node')();
 
       return undefined;
     },
-    [createNode],
+    [createNode, announce],
   );
 
   return (
     <div
       tabIndex={0}
+      role="region"
+      aria-label="Interactive graph canvas"
       onKeyDown={handleKeyDown}
       style={{ width: '100%', height: '100%', background: '#f8fafc' }}
     >
+      <AriaLiveRegion message={announcement} />
       <ReactFlow
         nodes={nodes}
         edges={edges}
