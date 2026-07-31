@@ -1,0 +1,32 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schemas/jsonconfig.json",
+  "workspaces": {
+    ".": {
+      "entry": ["tools/*.ts"],
+      "project": ["tools/**/*.ts"]
+    },
+    "packages/*": {
+      "entry": ["src/index.ts!"],
+      "project": ["src/**/*.ts"]
+    },
+    "apps/web": {
+      "entry": [
+        "src/main.tsx!",
+        "index.html",
+        "vite.config.ts",
+        ".storybook/main.ts",
+        ".storybook/preview.ts",
+        "src/**/*.stories.tsx"
+      ],
+      "project": ["src/**/*.{ts,tsx}"]
+    },
+    "apps/cli": {
+      "entry": ["src/index.ts!"],
+      "project": ["src/**/*.ts"]
+    }
+  },
+  "ignore": [
+    "**/transpiled/**/*",
+    "**/dist/**/*"
+  ]
+}
