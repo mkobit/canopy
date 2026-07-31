@@ -20,6 +20,8 @@
     "lint": "bun tools/check-commands.ts && bun run check:versions && bun run check:api-compatibility && eslint . --cache",
     "format": "prettier --write .",
     "typecheck": "PATH=\"$PWD/node_modules/typescript-native/bin:$PATH\" bun --filter '*' typecheck",
+    "storybook": "bun --filter '@canopy/web' storybook",
+    "build-storybook": "bun --filter '@canopy/web' build-storybook",
     "prepare": "husky",
     "preinstall": "node -e \"console.error('Error: use bun'); process.exit(1)\""
   },
