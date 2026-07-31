@@ -20,10 +20,12 @@
 ### Task 1: Create `useSpatialGraphNavigation` Hook with TDD Unit Tests
 
 **Files:**
+
 - Create: `apps/web/src/components/graph/use-spatial-graph-navigation.ts`
 - Create: `apps/web/src/components/graph/__tests__/use-spatial-graph-navigation.test.ts`
 
 **Interfaces:**
+
 - Consumes: `@canopy/graph` types, React keydown events
 - Produces: `useSpatialGraphNavigation({ nodes, selectedNodeId, onSelectNode })` returning `{ handleKeyDown }`
 
@@ -202,12 +204,14 @@ git commit -m "feat(web): add useSpatialGraphNavigation hook with unit tests (ca
 ### Task 2: Update Node Focusability & Canvas Keydown Wiring
 
 **Files:**
+
 - Modify: `apps/web/src/components/graph/custom-node.tsx`
 - Modify: `apps/web/src/components/graph/node-view.tsx`
 - Modify: `apps/web/src/components/graph/interactive-graph-view.tsx`
 - Modify: `apps/web/src/components/graph/graph-canvas.tsx`
 
 **Interfaces:**
+
 - Consumes: `useSpatialGraphNavigation`
 - Produces: Focusable graph node views with keyboard spatial navigation support
 
@@ -222,11 +226,13 @@ Add `tabIndex={0}` and `focus-visible:ring-2 focus-visible:ring-blue-500 focus:o
 - [ ] **Step 2: Wire `useSpatialGraphNavigation` in `InteractiveGraphView` & `GraphCanvas`**
 
 Update `apps/web/src/components/graph/interactive-graph-view.tsx`:
+
 - Track selected node ID state `[selectedNodeId, setSelectedNodeId] = React.useState<string | undefined>(undefined);`
 - Invoke `useSpatialGraphNavigation({ nodes, selectedNodeId, onSelectNode: setSelectedNodeId })`.
 - Pass `onKeyDown={handleKeyDown}` and `tabIndex={0}` to wrapper `div`.
 
 Update `apps/web/src/components/graph/graph-canvas.tsx`:
+
 - Receive optional `selectedNodeId` or infer from `selectedNodeIds`.
 - Invoke `useSpatialGraphNavigation`.
 - Pass `onKeyDown={handleKeyDown}` and `tabIndex={0}` to wrapper `div`.
@@ -248,6 +254,7 @@ git commit -m "feat(web): wire spatial graph keyboard navigation across canvas c
 ### Task 3: Quality Gates, OpenSpec & Bead Verification
 
 **Files:**
+
 - Modify: `openspec/changes/spatial-graph-keyboard-navigation/tasks.md`
 
 - [ ] **Step 1: Mark OpenSpec tasks complete**

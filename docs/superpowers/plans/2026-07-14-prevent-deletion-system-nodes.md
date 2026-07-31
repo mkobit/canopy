@@ -5,6 +5,7 @@
 **Goal:** Protect system-seeded default views, renderers, and other system-defined nodes from deletion, and refactor the large bootstrap file.
 
 **Architecture:**
+
 - Implement a helper function `isSystemNodeId` to detect system-prefixed NodeIds.
 - Add checks in `removeNode` and `validateCommit` to return a `Result` error when a system node deletion is requested.
 - Note on reinstatement: The existing `bootstrap` logic runs on graph loading and automatically re-adds (reinstates) any missing system nodes/edges if they are not present in the graph.
@@ -17,6 +18,7 @@
 ### Task 1: Add `isSystemNodeId` helper
 
 **Files:**
+
 - Modify: [system.ts](file:///home/mkobit/workspace/mkobit/canopy/packages/graph/src/system.ts)
 - Create: [system.test.ts](file:///home/mkobit/workspace/mkobit/canopy/packages/graph/src/system.test.ts)
 
@@ -98,6 +100,7 @@ git commit -m "feat: add isSystemNodeId helper and tests"
 ### Task 2: Prevent deletion in `removeNode` operation
 
 **Files:**
+
 - Modify: [node.ts](file:///home/mkobit/workspace/mkobit/canopy/packages/graph/src/ops/node.ts)
 - Modify: [graph.test.ts](file:///home/mkobit/workspace/mkobit/canopy/packages/graph/src/tests/graph.test.ts)
 
@@ -106,16 +109,16 @@ git commit -m "feat: add isSystemNodeId helper and tests"
 Add a test case at the end of the `removeNode` describe block or test suite in `packages/graph/src/tests/graph.test.ts`.
 
 ```typescript
-  it('should reject deleting system-defined nodes', () => {
-    const systemNodeId = asNodeId('system:renderer:text');
-    const result = removeNode(emptyGraph, systemNodeId, {
-      deviceId: asDeviceId('00000000-0000-0000-0000-000000000000'),
-    });
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.error.message).toContain('Cannot delete system node');
-    }
+it('should reject deleting system-defined nodes', () => {
+  const systemNodeId = asNodeId('system:renderer:text');
+  const result = removeNode(emptyGraph, systemNodeId, {
+    deviceId: asDeviceId('00000000-0000-0000-0000-000000000000'),
   });
+  expect(result.ok).toBe(false);
+  if (!result.ok) {
+    expect(result.error.message).toContain('Cannot delete system node');
+  }
+});
 ```
 
 - [x] **Step 2: Run test to verify it fails**
@@ -170,6 +173,7 @@ git commit -m "feat: reject system node deletion in removeNode"
 ### Task 3: Prevent deletion in `validateCommit` of `GraphSession`
 
 **Files:**
+
 - Modify: [graph-session.ts](file:///home/mkobit/workspace/mkobit/canopy/packages/graph/src/graph-session.ts)
 - Modify: [graph-session.test.ts](file:///home/mkobit/workspace/mkobit/canopy/packages/graph/src/graph-session.test.ts)
 
@@ -178,26 +182,26 @@ git commit -m "feat: reject system node deletion in removeNode"
 Add a test case in `packages/graph/src/graph-session.test.ts` to verify that committing a `NodeDeleted` event targeting a system node fails validation.
 
 ```typescript
-  it('rejects commits containing NodeDeleted events for system nodes', async () => {
-    const eventLog = createTestEventLog();
-    const graphId = createGraphId();
-    const session = createGraphSession(eventLog, graphId, sessionDeviceId);
-    await session.load();
+it('rejects commits containing NodeDeleted events for system nodes', async () => {
+  const eventLog = createTestEventLog();
+  const graphId = createGraphId();
+  const session = createGraphSession(eventLog, graphId, sessionDeviceId);
+  await session.load();
 
-    const deleteEvent: GraphEvent = {
-      type: 'NodeDeleted',
-      eventId: createEventId(),
-      id: asNodeId('system:renderer:text'),
-      timestamp: createInstant(),
-      deviceId: sessionDeviceId,
-    };
+  const deleteEvent: GraphEvent = {
+    type: 'NodeDeleted',
+    eventId: createEventId(),
+    id: asNodeId('system:renderer:text'),
+    timestamp: createInstant(),
+    deviceId: sessionDeviceId,
+  };
 
-    const result = await session.commit([deleteEvent]);
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.error.message).toContain('Cannot delete system node');
-    }
-  });
+  const result = await session.commit([deleteEvent]);
+  expect(result.ok).toBe(false);
+  if (!result.ok) {
+    expect(result.error.message).toContain('Cannot delete system node');
+  }
+});
 ```
 
 - [x] **Step 2: Run test to verify it fails**
@@ -246,6 +250,7 @@ git commit -m "feat: validate and reject system node deletion in GraphSession co
 ### Task 4: Refactor and split `bootstrap.ts`
 
 **Files:**
+
 - Create: [bootstrap-definitions.ts](file:///home/mkobit/workspace/mkobit/canopy/packages/graph/src/bootstrap-definitions.ts)
 - Modify: [bootstrap.ts](file:///home/mkobit/workspace/mkobit/canopy/packages/graph/src/bootstrap.ts)
 

@@ -1,23 +1,38 @@
-# Task 2 Report: Create Storybook configuration in `apps/web/.storybook/`
+# Task 2 Implementation & Fix Report: Configure Claude Code & Antigravity Settings and Permission Whitelist Rules
 
 ## Summary
 
-Task 2 created the Storybook configuration files for `apps/web` and updated project configuration to ignore build artifacts.
-All automated checks (test suite and linter) passed cleanly.
+Task 2 has been updated and fixed to strictly meet all design and review requirements:
+1. Updated `.claude/settings.local.json` to synchronize all permission whitelist rules with `.claude/settings.json` (including `Bash(mise exec:*)`, `Bash(git *)`, `Bash(bunx openspec *)`, `Bash(bd *)`, and `Bash(bun tools/*)`).
+2. Reverted modifications to `tools/hooks/agent-format-lint-hook.ts` so it matches the Task 1 clean state.
+3. Auto-formatted all settings files (`.claude/settings.json`, `.claude/settings.local.json`, `.gemini/settings.json`) with Prettier (`bunx prettier --write`).
+4. Executed full workspace quality gates (`bun run build && bun run lint && bun run typecheck && bun run test`).
+5. Amended commit cleanly under `feat: configure agent auto-format and lint PostToolUse hooks and permission rules`.
 
-## Key Changes
+## Detailed File Changes
 
-- Created `apps/web/.storybook/main.ts` configuring `@storybook/react-vite` framework, story paths (`../src/**/*.stories.@(js|jsx|mjs|ts|tsx)`), `@storybook/addon-essentials`, and Vite resolve alias for `canopy:graph/draft-session`.
-- Created `apps/web/.storybook/preview.tsx` importing Tailwind CSS (`src/index.css`), xyflow styles (`@xyflow/react/dist/style.css`), fonts (`inter`, `jetbrains-mono`, `space-grotesk`), and wrapping stories in `ReactFlowProvider`.
-- Updated `.gitignore` to ignore `.storybook-static`.
-- Updated `eslint.config.mjs` to ignore `**/apps/web/.storybook-static/**` and added `^StorybookConfig$` and `^Preview$` to `ignoreTypePattern` for `functional/prefer-immutable-types`.
-- Updated `apps/web/tsconfig.json` to include `.storybook/**/*` so Storybook configuration files are recognized by ESLint's TypeScript project service.
+1. [`.claude/settings.json`](file:///home/mkobit/workspace/mkobit/canopy/.claude/settings.json)
+   - Registered `bun tools/hooks/agent-format-lint-hook.ts` under `PostToolUse` for `Edit|Write|MultiEdit` alongside `openspec-validate-hook.ts`.
+   - Expanded `permissions.allow` whitelist rules with command permission patterns (including `bun tools/*`, `bun test *`, `bunx openspec *`, `git *`, and `bd *`).
 
-## Verification
+2. [`.gemini/settings.json`](file:///home/mkobit/workspace/mkobit/canopy/.gemini/settings.json)
+   - Created configuration file for Antigravity engine.
+   - Defined `PostToolUse` hook matcher for `Edit|Write|MultiEdit` executing `agent-format-lint-hook.ts` and `openspec-validate-hook.ts`.
+   - Populated complete `permissions.allow` list matching `.claude/settings.json`.
 
-- `bun test`: All 617 tests passed across 85 test files.
-- `bunx eslint .`: Passed cleanly with 0 errors and 0 warnings.
+3. [`.claude/settings.local.json`](file:///home/mkobit/workspace/mkobit/canopy/.claude/settings.local.json)
+   - Synchronized permission whitelist rules matching `.claude/settings.json`, including `Bash(mise exec:*)`, `Bash(git *)`, `Bash(bunx openspec *)`, `Bash(bd *)`, and `Bash(bun tools/*)`.
+
+4. [`tools/hooks/agent-format-lint-hook.ts`](file:///home/mkobit/workspace/mkobit/canopy/tools/hooks/agent-format-lint-hook.ts)
+   - Reverted out-of-scope modifications (`tools/hooks/agent-format-lint-hook.ts` restored to exact Task 1 implementation state).
+
+## Quality Gate Verification Results
+
+- `bun run build`: PASS (all workspace packages compiled successfully).
+- `bun run lint`: PASS (0 errors, 0 warnings across all packages and tools).
+- `bun run typecheck`: PASS (TypeScript type checking passed cleanly across all packages).
+- `bun run test`: PASS (all unit and integration tests passed across all packages).
 
 ## Commit
 
-- `4a3cedc` (`feat: configure storybook in apps/web`)
+- Commit `eaa048c9c65551567d33f611a3c62937cb8e4b75` (`feat: configure agent auto-format and lint PostToolUse hooks and permission rules`) amended with clean state.

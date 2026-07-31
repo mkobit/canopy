@@ -3,9 +3,7 @@
   "ignoreExportsUsedInFile": true,
   "workspaces": {
     ".": {
-      "ignoreDependencies": [
-        "@fission-ai/openspec"
-      ]
+      "ignoreDependencies": ["@fission-ai/openspec"]
     },
     "tools": {
       "entry": ["*.ts", "hooks/*.ts"],
@@ -15,17 +13,9 @@
       "project": ["src/**/*.ts"]
     },
     "apps/web": {
-      "entry": [
-        "src/plugin/mock/guest.ts",
-        "scripts/*.ts"
-      ],
+      "entry": ["src/plugin/mock/guest.ts", "scripts/*.ts"],
       "project": ["src/**/*.{ts,tsx}", "scripts/**/*.ts"],
-      "ignoreDependencies": [
-        "happy-dom",
-        "tailwindcss",
-        "canopy",
-        "@bytecodealliance/jco"
-      ]
+      "ignoreDependencies": ["happy-dom", "tailwindcss", "canopy", "@bytecodealliance/jco"]
     },
     "apps/cli": {
       "project": ["src/**/*.ts"]

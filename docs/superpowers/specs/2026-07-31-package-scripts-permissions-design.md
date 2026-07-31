@@ -1,9 +1,11 @@
 # Package scripts permission auto-approval design
 
 ## Overview
+
 Configure project permission rules to allow auto-approval for explicit `package.json` `bun run` scripts across agent workflows (`Claude Code` and `Antigravity CLI`).
 
 ## Requirements and security constraints
+
 1. **Strict explicit matching (no wildcards)**:
    - Prohibit wildcard (`*`) patterns in permission rules to prevent command line prompt injection vulnerabilities.
    - Enumerate exact command strings for all monorepo `package.json` scripts.
@@ -13,9 +15,11 @@ Configure project permission rules to allow auto-approval for explicit `package.
 ## Permission specification
 
 ### 1. Claude Code project configuration (`.claude/settings.json`)
+
 The `.claude/settings.json` file is checked into version control to provide consistent permission rules across environments.
 
 Explicit `permissions.allow` rules to include:
+
 - `Bash(bun run build)`
 - `Bash(bun run lint)`
 - `Bash(bun run typecheck)`
@@ -34,11 +38,14 @@ Explicit `permissions.allow` rules to include:
 - `Bash(bun run --cwd apps/web codegen:wit)`
 
 ### 2. Local settings synchronization (`.claude/settings.local.json`)
+
 Ensure local developer settings mirror the explicit, non-wildcard script entries without wildcard patterns.
 
 ### 3. Antigravity CLI permission handling
+
 Antigravity CLI manages permissions via runtime `ask_permission` calls. System settings files (`~/.gemini/config/config.json`) are sandboxed from direct agent edits for safety. To support seamless execution, permission requests in Antigravity will target exact command strings.
 
 ## Verification plan
+
 1. Run `prettier --check .claude/settings.json` to ensure valid JSON formatting.
 2. Run `bun run lint` and `bun run typecheck` to verify commands run smoothly.

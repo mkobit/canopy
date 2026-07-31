@@ -60,10 +60,7 @@ Create a root `knip.json` file configuring the workspace packages, entrypoints, 
       "project": ["src/**/*.ts"]
     }
   },
-  "ignore": [
-    "**/transpiled/**/*",
-    "**/dist/**/*"
-  ]
+  "ignore": ["**/transpiled/**/*", "**/dist/**/*"]
 }
 ```
 
@@ -76,17 +73,21 @@ Mise will continue to handle tool provisioning and version alignment for Bun in 
 ## Adversarial review and mitigations
 
 ### Resource and performance overhead
+
 Running Knip AST analysis across 11 packages and tools scripts could increase linting time.
-*Mitigation*: Knip uses cached TypeScript programs and executes in under 2 seconds. We will benchmark `bun run lint` to verify that linting time remains fast.
+_Mitigation_: Knip uses cached TypeScript programs and executes in under 2 seconds. We will benchmark `bun run lint` to verify that linting time remains fast.
 
 ### False positives on entrypoints and exports
+
 Library packages in `@canopy/*` export public interfaces that may not yet be consumed by `apps/*`.
-*Mitigation*: Mark public package entry points with `!` in `knip.json` to signal exported symbols as intentional entry points, and configure workspace package dependencies accurately.
+_Mitigation_: Mark public package entry points with `!` in `knip.json` to signal exported symbols as intentional entry points, and configure workspace package dependencies accurately.
 
 ### Supply chain and dependency risks
+
 Installing new development dependencies could introduce unstable versions.
-*Mitigation*: Pin an established version of `knip` in `package.json` adhering to minimum package release age guidelines.
+_Mitigation_: Pin an established version of `knip` in `package.json` adhering to minimum package release age guidelines.
 
 ### Legacy dead code cleanup
+
 First-time execution of Knip may discover unreferenced exports or unused dependencies currently in the tree.
-*Mitigation*: Perform a cleanup pass during implementation to resolve legitimate dead code, and explicitly annotate valid exceptions in `knip.json`.
+_Mitigation_: Perform a cleanup pass during implementation to resolve legitimate dead code, and explicitly annotate valid exceptions in `knip.json`.

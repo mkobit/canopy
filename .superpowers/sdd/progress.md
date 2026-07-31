@@ -1,6 +1,7 @@
-# Subagent Progress Ledger
+# SDD Progress Ledger: queries-graph-session-benchmark
 
-Plan: `docs/superpowers/plans/2026-07-31-agent-format-lint-hooks.md`
-
-- [x] Task 1: Create `tools/hooks/agent-format-lint-hook.ts` and Unit Tests
-- [ ] Task 2: Configure Claude Code & Antigravity Settings and Permission Whitelist Rules
+- Task 1: pending
+- Task 2: pending
+- Task 3: pending
+- Task 4: pending
+- Task 5: pending

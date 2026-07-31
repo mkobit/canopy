@@ -21,11 +21,13 @@
 ### Task 1: Install Knip and configure root `knip.json`
 
 **Files:**
+
 - Modify: [package.json](file:///home/mkobit/workspace/mkobit/canopy/package.json)
 - Create: [knip.json](file:///home/mkobit/workspace/mkobit/canopy/knip.json)
 - Modify: [mise.toml](file:///home/mkobit/workspace/mkobit/canopy/mise.toml)
 
 **Interfaces:**
+
 - Consumes: Monorepo workspace layout (`packages/*`, `apps/*`, `tools`).
 - Produces: `"check:unused"` script in `package.json` and `knip.json` workspace configuration.
 
@@ -77,10 +79,7 @@ Create `knip.json` at repository root:
       "project": ["src/**/*.ts"]
     }
   },
-  "ignore": [
-    "**/transpiled/**/*",
-    "**/dist/**/*"
-  ]
+  "ignore": ["**/transpiled/**/*", "**/dist/**/*"]
 }
 ```
 
@@ -111,9 +110,11 @@ git commit -m "build: install knip and configure workspace knip.json"
 ### Task 2: Resolve Knip warnings and dead code findings
 
 **Files:**
+
 - Modify: [knip.json](file:///home/mkobit/workspace/mkobit/canopy/knip.json) and affected source/package files as identified.
 
 **Interfaces:**
+
 - Consumes: Knip report from `bun run check:unused`.
 - Produces: Clean zero-warning Knip output.
 
@@ -149,9 +150,11 @@ git commit -m "refactor: resolve unused exports and dependencies reported by kni
 ### Task 3: Integrate `check:unused` into root `lint` quality gate
 
 **Files:**
+
 - Modify: [package.json](file:///home/mkobit/workspace/mkobit/canopy/package.json)
 
 **Interfaces:**
+
 - Consumes: `"check:unused"` script from Task 1.
 - Produces: Updated `"lint"` script in `package.json`.
 

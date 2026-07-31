@@ -40,18 +40,20 @@ export function useSpatialGraphNavigation({
   onSelectNode,
 }: SpatialNavigationProperties): {
   readonly handleKeyDown: (event: React.KeyboardEvent) => void;
-}
+};
 ```
 
 ### 2. Spatial Direction Algorithm
 
 Given the active node $A = (x_A, y_A)$ and pressed arrow key direction vector $V$:
+
 - `ArrowRight`: $V = (1, 0)$
 - `ArrowLeft`: $V = (-1, 0)$
 - `ArrowDown`: $V = (0, 1)$
 - `ArrowUp`: $V = (0, -1)$
 
 For each candidate node $B = (x_B, y_B)$ where $B.id \neq A.id$:
+
 1. Calculate candidate vector $D = (x_B - x_A, y_B - y_A)$.
 2. Calculate dot product $P = D \cdot V$.
 3. If $P \le 0$ (node is behind or perpendicular), skip candidate.
@@ -71,16 +73,17 @@ If no current node is selected, arrow key navigation defaults to selecting the f
 
 ## Adversarial Review and Mitigations
 
-| Risk / Failure Mode | Impact | Mitigation |
-| :--- | :--- | :--- |
-| **Performance Overhead**: $O(N)$ spatial distance scan on every keydown frame for large graphs. | Keypress lag on graphs with >1000 nodes. | Early exit on non-navigation keys (`Tab`, `Escape` skip spatial scan). $O(N)$ distance scan is $<1\text{ms}$ for $N \le 1000$. |
-| **Empty or Single Node Graph**: Keypress causes exception or null dereference. | UI runtime crash. | Guard against `nodes.length === 0`. If $N=1$, navigation is a safe no-op. |
-| **No Candidate in Quadrant**: Pressing `ArrowRight` when no node exists to the right. | Focus lost or undefined behavior. | Retain current selection and focus if candidate set is empty. |
-| **Component Compatibility**: ReactFlow node event propagation conflicts with container `onKeyDown`. | Keydown fires twice or is blocked by input elements. | Check `event.defaultPrevented` and ignore events originating from editable input fields (`input`, `textarea`). |
+| Risk / Failure Mode                                                                                 | Impact                                               | Mitigation                                                                                                                     |
+| :-------------------------------------------------------------------------------------------------- | :--------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------- |
+| **Performance Overhead**: $O(N)$ spatial distance scan on every keydown frame for large graphs.     | Keypress lag on graphs with >1000 nodes.             | Early exit on non-navigation keys (`Tab`, `Escape` skip spatial scan). $O(N)$ distance scan is $<1\text{ms}$ for $N \le 1000$. |
+| **Empty or Single Node Graph**: Keypress causes exception or null dereference.                      | UI runtime crash.                                    | Guard against `nodes.length === 0`. If $N=1$, navigation is a safe no-op.                                                      |
+| **No Candidate in Quadrant**: Pressing `ArrowRight` when no node exists to the right.               | Focus lost or undefined behavior.                    | Retain current selection and focus if candidate set is empty.                                                                  |
+| **Component Compatibility**: ReactFlow node event propagation conflicts with container `onKeyDown`. | Keydown fires twice or is blocked by input elements. | Check `event.defaultPrevented` and ignore events originating from editable input fields (`input`, `textarea`).                 |
 
 ## Verification Plan
 
 ### Automated Verification
+
 1. Unit test `useSpatialGraphNavigation` in `apps/web/src/components/graph/__tests__/use-spatial-graph-navigation.test.ts`.
 2. Run project quality gates:
    - `bun run build`

@@ -15,6 +15,7 @@ We will run automated tests and build checks to confirm correctness.
 ### Task 1: Theme configuration update
 
 **Files:**
+
 - Modify: `apps/web/src/index.css:3-7`
 
 - [ ] **Step 1: Update the CSS theme configuration**
@@ -31,16 +32,18 @@ Modify [index.css](file:///home/mkobit/workspace/mkobit/canopy/.worktrees/canopy
 - [ ] **Step 2: Commit the theme configuration changes**
 
 Run:
+
 ```bash
 git add apps/web/src/index.css
 git commit -m "style: rename body font variable to standard sans-serif theme variable"
 ```
-Expected: Commit succeeds.
 
+Expected: Commit succeeds.
 
 ### Task 2: Update layout class
 
 **Files:**
+
 - Modify: `apps/web/src/components/layout.tsx:55`
 
 - [ ] **Step 1: Replace font-body class with font-sans**
@@ -54,16 +57,18 @@ Modify [layout.tsx](file:///home/mkobit/workspace/mkobit/canopy/.worktrees/canop
 - [ ] **Step 2: Commit the layout class update**
 
 Run:
+
 ```bash
 git add apps/web/src/components/layout.tsx
 git commit -m "style: replace font-body class with font-sans in layout"
 ```
-Expected: Commit succeeds.
 
+Expected: Commit succeeds.
 
 ### Task 3: Quality gate verification
 
 **Files:**
+
 - Test: none
 
 - [ ] **Step 1: Verify the build process**
@@ -89,7 +94,9 @@ Expected: 341 tests pass.
 - [ ] **Step 5: Commit any remaining changes**
 
 Run:
+
 ```bash
 git status
 ```
+
 Expected: Working tree is clean.
