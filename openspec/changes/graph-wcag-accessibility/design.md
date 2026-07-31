@@ -30,14 +30,16 @@ Announcements are debounced / queued so rapid keyboard spatial navigation (holdi
 ### Decision 2: Node ARIA Semantics & Dynamic Labels
 
 Nodes in `CustomNode` and `NodeView` render with:
+
 - `role="button"`
 - `aria-selected={selected}`
 - Dynamic `aria-label`: `Node [Type]: [Name Property || ID]`
-This gives screen readers clear context when focused via `Tab` or directional arrows.
+  This gives screen readers clear context when focused via `Tab` or directional arrows.
 
 ### Decision 3: High-Contrast Color Palette (WCAG 2.1 AA Compliance)
 
 Update node component text colors:
+
 - Node type badge: `bg-slate-100 text-slate-800 border border-slate-200 font-mono text-xs px-2 py-0.5 rounded font-medium` (Contrast ratio 7.1:1 on white).
 - Node ID subtitle: `text-slate-600 font-mono text-[11px]` (Contrast ratio 4.6:1 on white, replacing `text-gray-400`/`text-gray-300`).
 - Property labels: `text-slate-700 font-semibold text-xs uppercase tracking-wider` (Contrast ratio 7.1:1 on white).

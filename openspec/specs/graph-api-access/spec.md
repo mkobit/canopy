@@ -1,8 +1,11 @@
 # graph-api-access Specification
 
 ## Purpose
+
 TBD - created by archiving change graph-api-architecture. Update Purpose after archive.
+
 ## Requirements
+
 ### Requirement: Querying projected graph state
 
 The graph API layer SHALL expose endpoints over GraphQL, gRPC, and WASM WIT to query projected nodes, edges, and properties without requiring clients to process low-level event logs.
@@ -45,4 +48,3 @@ The graph API layer SHALL support an optional event log streaming interface to d
 
 - **WHEN** a streaming client provides a last-seen event identifier upon subscribing
 - **THEN** the system SHALL replay unacknowledged events from `EventLogStore` before streaming new live events
-

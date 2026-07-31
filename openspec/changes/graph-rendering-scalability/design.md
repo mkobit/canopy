@@ -31,6 +31,7 @@ Configure `GraphCanvas` (`XYFlow`) with `onlyRenderVisibleElements={true}`. Visi
 ### Decision 2: $O(1)$ Memoized Node & Edge Indices
 
 In `InteractiveGraphView`, replace array scans for node and edge lookups with memoized maps:
+
 - `nodeMap`: `Map<NodeId, Node>` for instant $O(1)$ spatial coordinate and property lookups.
 - `edgeMap`: `Map<NodeId, Set<EdgeId>>` for $O(1)$ adjacency resolution during selection highlights.
 
@@ -55,7 +56,7 @@ export interface GraphBenchmarkFixture {
 }
 
 export function generateGraphBenchmarkFixture(
-  options: GraphBenchmarkFixtureOptions
+  options: GraphBenchmarkFixtureOptions,
 ): GraphBenchmarkFixture;
 ```
 

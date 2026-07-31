@@ -54,7 +54,7 @@ export function useSpatialGraphNavigation({
   onSelectNode,
 }: SpatialNavigationOptions): {
   readonly handleKeyDown: (event: React.KeyboardEvent) => void;
-}
+};
 ```
 
 ### Component Focusability
