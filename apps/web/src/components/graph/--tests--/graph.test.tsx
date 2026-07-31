@@ -70,4 +70,24 @@ describe('GraphCanvas', () => {
     fireEvent.click(container.firstChild);
     expect(onBgClick).toHaveBeenCalled();
   });
+
+  it('handles keyboard spatial navigation', () => {
+    const onNodeClick = jest.fn();
+    const node1 = { ...mockNode, id: asNodeId('node-1'), position: { x: 0, y: 0 } };
+    const node2 = { ...mockNode, id: asNodeId('node-2'), position: { x: 100, y: 0 } };
+
+    const { container } = render(
+      <GraphCanvas
+        nodes={[node1, node2]}
+        edges={[]}
+        selectedNodeIds={new Set(['node-1'])}
+        onNodeClick={onNodeClick}
+      />,
+    );
+
+    if (!container.firstChild) throw new Error('container must have a child');
+    fireEvent.keyDown(container.firstChild, { key: 'ArrowRight' });
+
+    expect(onNodeClick).toHaveBeenCalledWith(node2);
+  });
 });

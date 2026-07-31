@@ -13,7 +13,9 @@ export const CustomNode = ({ data, selected }: NodeProps<CustomNodeType>) => {
 
   return (
     <div
-      className={`bg-white border rounded shadow-sm p-4 w-64 cursor-pointer hover:shadow-md transition-shadow select-none ${
+      tabIndex={0}
+      data-node-id={node.id}
+      className={`bg-white border rounded shadow-sm p-4 w-64 cursor-pointer hover:shadow-md transition-shadow select-none focus-visible:ring-2 focus-visible:ring-blue-500 focus:outline-none ${
         selected ? 'ring-2 ring-blue-500' : 'border-gray-200'
       }`}
     >

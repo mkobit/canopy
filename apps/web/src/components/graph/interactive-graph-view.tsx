@@ -17,6 +17,7 @@ import { withResultAlert } from '../../utils/handlers';
 import { CustomNode } from './custom-node';
 import { CustomEdge } from './custom-edge';
 import { asNodeId } from '@canopy/graph';
+import { useSpatialGraphNavigation } from './use-spatial-graph-navigation';
 
 const nodeTypes = {
   customNode: CustomNode,
@@ -31,6 +32,7 @@ export const InteractiveGraphView = () => {
   const { graph, createNode, createEdge } = useGraph();
   const navigate = useNavigate();
   const { graphId } = useParams();
+  const [selectedNodeId, setSelectedNodeId] = React.useState<string | undefined>(undefined);
 
   const initialNodes = useMemo(() => {
     if (!graph) return [];
@@ -84,6 +86,17 @@ export const InteractiveGraphView = () => {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
+  const navigationNodes = useMemo(
+    () => nodes.map((n) => ({ id: n.id, position: n.position })),
+    [nodes],
+  );
+
+  const { handleKeyDown } = useSpatialGraphNavigation({
+    nodes: navigationNodes,
+    selectedNodeId,
+    onSelectNode: setSelectedNodeId,
+  });
+
   React.useEffect(() => {
     setNodes(initialNodes);
     setEdges(initialEdges);
@@ -91,6 +104,7 @@ export const InteractiveGraphView = () => {
   }, [initialNodes, initialEdges, setNodes, setEdges]);
 
   const onNodeClick = (_: React.MouseEvent, node: Readonly<{ id: string }>) => {
+    setSelectedNodeId(node.id);
     navigate(`/graph/${graphId}/node/${node.id}`);
     return undefined;
   };
@@ -129,7 +143,11 @@ export const InteractiveGraphView = () => {
   );
 
   return (
-    <div style={{ width: '100%', height: '100%', background: '#f8fafc' }}>
+    <div
+      tabIndex={0}
+      onKeyDown={handleKeyDown}
+      style={{ width: '100%', height: '100%', background: '#f8fafc' }}
+    >
       <ReactFlow
         nodes={nodes}
         edges={edges}

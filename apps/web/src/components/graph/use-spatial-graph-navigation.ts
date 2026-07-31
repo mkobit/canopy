@@ -63,7 +63,10 @@ export function useSpatialGraphNavigation({
         selectedNodeId === undefined ? undefined : nodes.find((node) => node.id === selectedNodeId);
 
       if (!currentNode) {
-        onSelectNode(nodes[0].id);
+        const firstNode = nodes[0];
+        if (firstNode) {
+          onSelectNode(firstNode.id);
+        }
         return;
       }
 
@@ -79,8 +82,9 @@ export function useSpatialGraphNavigation({
         .filter((item) => item.dotProduct > 0)
         .toSorted((itemA, itemB) => itemA.distributionSq - itemB.distributionSq);
 
-      if (candidates.length > 0) {
-        onSelectNode(candidates[0].node.id);
+      const bestCandidate = candidates[0];
+      if (bestCandidate) {
+        onSelectNode(bestCandidate.node.id);
       }
     },
     [nodes, selectedNodeId, onSelectNode],

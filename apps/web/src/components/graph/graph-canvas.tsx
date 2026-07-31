@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import type { Edge } from '@canopy/graph';
 import { NodeView } from './node-view';
 import type { GraphNode } from './edge-view';
 import { EdgeView } from './edge-view';
 import { cn } from '../../utils/cn';
+import { useSpatialGraphNavigation } from './use-spatial-graph-navigation';
 
 interface GraphCanvasData {
   readonly nodes: readonly GraphNode[];
@@ -42,8 +43,31 @@ export const GraphCanvas: React.FC<GraphCanvasProperties> = ({
   // Map for easy lookup
   const nodeMap = new Map(nodes.map((n) => [n.id, n]));
 
+  const selectedNodeId = [...selectedNodeIds][0];
+
+  const handleSelectNode = useCallback(
+    (nodeId: string | undefined) => {
+      if (nodeId === undefined) {
+        return;
+      }
+      const targetNode = nodes.find((n) => n.id === nodeId);
+      if (targetNode) {
+        onNodeClick(targetNode);
+      }
+    },
+    [nodes, onNodeClick],
+  );
+
+  const { handleKeyDown } = useSpatialGraphNavigation({
+    nodes,
+    selectedNodeId,
+    onSelectNode: handleSelectNode,
+  });
+
   return (
     <div
+      tabIndex={0}
+      onKeyDown={handleKeyDown}
       className={cn('relative overflow-hidden bg-slate-50 border', className)}
       style={{ width, height }}
       onClick={onBackgroundClick}

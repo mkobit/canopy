@@ -25,8 +25,9 @@ export const NodeView: React.FC<NodeViewProperties> = ({
 }) => {
   return (
     <div
+      tabIndex={0}
       className={cn(
-        'bg-white border rounded shadow-sm p-4 w-64 cursor-pointer hover:shadow-md transition-shadow select-none',
+        'bg-white border rounded shadow-sm p-4 w-64 cursor-pointer hover:shadow-md transition-shadow select-none focus-visible:ring-2 focus-visible:ring-blue-500 focus:outline-none',
         selected && 'ring-2 ring-blue-500',
         className,
       )}
