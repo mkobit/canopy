@@ -399,6 +399,7 @@ export default tseslint.config(
       'tools/check-commands.ts',
       'tools/check-openspec-changes.ts',
       'tools/hooks/openspec-validate-hook.ts',
+      'tools/hooks/agent-format-lint-hook.ts',
     ],
     rules: {
       'unicorn/no-process-exit': 'off',

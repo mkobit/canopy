@@ -1,4 +1,6 @@
-# Subagent-Driven Development Progress Ledger
+# Subagent Progress Ledger
 
-Task 1: complete (commits 5726c25..da29f1c, review clean)
-Task 2: complete (commits da29f1c..7056a9f, review clean)
+Plan: `docs/superpowers/plans/2026-07-31-agent-format-lint-hooks.md`
+
+- [x] Task 1: Create `tools/hooks/agent-format-lint-hook.ts` and Unit Tests
+- [ ] Task 2: Configure Claude Code & Antigravity Settings and Permission Whitelist Rules
