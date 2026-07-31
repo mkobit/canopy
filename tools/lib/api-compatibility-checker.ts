@@ -95,10 +95,7 @@ const checkGql = (liveSchema: string, baselineSchema?: string): readonly Violati
   return [...violations1, ...violations2, ...violations3];
 };
 
-const checkPrototype = (
-  liveSchema: string,
-  baselineSchema?: string,
-): readonly Violation[] => {
+const checkPrototype = (liveSchema: string, baselineSchema?: string): readonly Violation[] => {
   if (!baselineSchema) return [];
 
   const violations1: readonly Violation[] =

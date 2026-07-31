@@ -1,11 +1,9 @@
 import type { Result } from './result';
-import type { NodeId, EdgeId, TypeId, GraphId } from './identifiers';
+import type { NodeId, TypeId } from './identifiers';
 import type { Instant, PlainDate } from './temporal';
 import {
   asNodeId,
-  asEdgeId,
   asTypeId,
-  asGraphId,
   asInstant,
   asPlainDate,
   createNodeId as generateNodeId,
@@ -35,8 +33,6 @@ export function createNodeId(id?: string): Result<NodeId, Error> {
   if (!validation.ok) return error(validation.error);
   return ok(asNodeId(id));
 }
-
-
 
 /**
  * Creates a branded TypeId from a string.

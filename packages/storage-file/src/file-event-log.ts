@@ -23,8 +23,6 @@ const CanopyConfigSchema = z.object({
   name: z.string(),
 });
 
-type CanopyConfig = z.infer<typeof CanopyConfigSchema>;
-
 const FileStoreManifestSchema = z.object({
   sealed: z.array(z.string()),
   lastEventId: z.string().nullable(),

@@ -18,7 +18,7 @@
     "check:unused": "knip",
     "audit:ai-tools": "bun tools/audit-ai-tool-releases.ts",
     "test": "bun --filter '*' test",
-    "lint": "bun tools/check-commands.ts && bun run check:versions && bun run check:api-compatibility && eslint . --cache",
+    "lint": "bun tools/check-commands.ts && bun run check:versions && bun run check:api-compatibility && bun run check:unused && eslint . --cache",
     "format": "prettier --write .",
     "typecheck": "PATH=\"$PWD/node_modules/typescript-native/bin:$PATH\" bun --filter '*' typecheck",
     "storybook": "bun --filter '@canopy/web' storybook",

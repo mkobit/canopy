@@ -23,21 +23,24 @@ function createTestEventLog(): EventLogStore {
     appendEvents: (_graphId, newEvents) => {
       const seen = new Set(events.map((event) => event.eventId));
       for (const event of newEvents) {
-        if (!seen.has(event.eventId)) {
-          events.push(event);
-          seen.add(event.eventId);
+        if (seen.has(event.eventId)) {
+          continue;
         }
+        events.push(event);
+        seen.add(event.eventId);
       }
       events.sort((a, b) => a.eventId.localeCompare(b.eventId));
       return Promise.resolve(ok(undefined));
     },
     getEvents: (_graphId, options?: EventLogQueryOptions) => {
       let result = [...events];
-      if (options?.after !== undefined) {
-        result = result.filter((event) => event.eventId > options.after!);
+      const after = options?.after;
+      if (after !== undefined) {
+        result = result.filter((event) => event.eventId > after);
       }
-      if (options?.before !== undefined) {
-        result = result.filter((event) => event.eventId < options.before!);
+      const before = options?.before;
+      if (before !== undefined) {
+        result = result.filter((event) => event.eventId < before);
       }
       if (options?.reverse) {
         result.reverse();
