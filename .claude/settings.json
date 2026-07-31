@@ -41,8 +41,6 @@
   "permissions": {
     "allow": [
       "Bash(mise exec:*)",
-      "Bash(bun *)",
-      "Bash(bunx *)",
       "Bash(bun run build)",
       "Bash(bun run lint)",
       "Bash(bun run typecheck)",
