@@ -83,6 +83,7 @@ export function generateQueryBenchmarkFixture(
       properties,
       timestamp: createInstant(),
       deviceId: SYSTEM_DEVICE_ID,
+      batchId: 'benchmark-batch',
     });
   }
 
@@ -122,6 +123,7 @@ export function generateQueryBenchmarkFixture(
       properties: new Map(),
       timestamp: createInstant(),
       deviceId: SYSTEM_DEVICE_ID,
+      batchId: 'benchmark-batch',
     });
   }
 
