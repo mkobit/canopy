@@ -180,6 +180,7 @@ export const InteractiveGraphView = () => {
         onNodeClick={onNodeClick}
         onConnect={onConnect}
         onDoubleClick={onDoubleClick}
+        onlyRenderVisibleElements={true}
         fitView
       >
         <Controls />

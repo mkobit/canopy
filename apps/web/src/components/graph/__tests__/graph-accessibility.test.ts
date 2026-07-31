@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'bun:test';
+import { describe, it, expect, mock } from 'bun:test';
 import { renderHook, act, render } from '@testing-library/react';
 import React from 'react';
 import { AriaLiveRegion, useAriaLiveAnnouncer } from '../aria-live-region';
@@ -6,6 +6,45 @@ import { NodeView } from '../node-view';
 import { GraphCanvas } from '../graph-canvas';
 import type { Node } from '@canopy/graph';
 import { asNodeId, asTypeId, asDeviceId, createInstant } from '@canopy/graph';
+import { ReactFlowProvider } from '@xyflow/react';
+
+const captured = {
+  reactFlowProperties: undefined as Readonly<Record<string, unknown>> | undefined,
+};
+
+mock.module('@xyflow/react', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const actual = require('@xyflow/react');
+  return {
+    ...actual,
+    ReactFlow: (
+      properties: Readonly<Record<string, unknown>> & { readonly children?: React.ReactNode },
+    ) => {
+      captured.reactFlowProperties = properties;
+      return React.createElement('div', { 'data-testid': 'react-flow-mock' }, properties.children);
+    },
+  };
+});
+
+mock.module('../../context/graph-context', () => ({
+  useGraph: () => ({
+    graph: { nodes: new Map(), edges: new Map() },
+    createNode: mock(async () => ({ ok: true })),
+    createEdge: mock(async () => ({ ok: true })),
+  }),
+}));
+
+mock.module('react-router-dom', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const actual = require('react-router-dom');
+  return {
+    ...actual,
+    useNavigate: () => mock(() => undefined),
+    useParams: () => ({ graphId: 'g1' }),
+  };
+});
+
+import { InteractiveGraphView } from '../interactive-graph-view';
 
 const mockNode: Node = {
   id: asNodeId('n12345'),
@@ -88,6 +127,15 @@ describe('Graph WCAG 2.1 AA Accessibility', () => {
       const canvasContainer = container.querySelector('div[role="region"]');
       expect(canvasContainer).not.toBeNull();
       expect(canvasContainer?.getAttribute('aria-label')).toBe('Graph visualization canvas');
+    });
+  });
+
+  describe('InteractiveGraphView Performance & Viewport Culling', () => {
+    it('verifies onlyRenderVisibleElements prop setting on ReactFlow', () => {
+      render(
+        React.createElement(ReactFlowProvider, null, React.createElement(InteractiveGraphView)),
+      );
+      expect(captured.reactFlowProperties?.onlyRenderVisibleElements).toBe(true);
     });
   });
 });

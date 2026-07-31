@@ -6,7 +6,25 @@ import type { Node as GraphNode, PropertyValue } from '@canopy/graph';
 
 type CustomNodeType = Node<Readonly<{ node?: GraphNode }>>;
 
-export const CustomNode = ({ data, selected }: NodeProps<CustomNodeType>) => {
+const customNodePropertiesAreEqual = (
+  previousProperties: Readonly<NodeProps<CustomNodeType>>,
+  nextProperties: Readonly<NodeProps<CustomNodeType>>,
+): boolean => {
+  return (
+    previousProperties.selected === nextProperties.selected &&
+    previousProperties.id === nextProperties.id &&
+    previousProperties.data?.node === nextProperties.data?.node &&
+    previousProperties.dragging === nextProperties.dragging &&
+    previousProperties.targetPosition === nextProperties.targetPosition &&
+    previousProperties.sourcePosition === nextProperties.sourcePosition &&
+    previousProperties.isConnectable === nextProperties.isConnectable
+  );
+};
+
+export const CustomNode = React.memo(function CustomNode({
+  data,
+  selected,
+}: NodeProps<CustomNodeType>) {
   const node = data.node;
 
   if (!node) return null;
@@ -52,4 +70,4 @@ export const CustomNode = ({ data, selected }: NodeProps<CustomNodeType>) => {
       </div>
     </div>
   );
-};
+}, customNodePropertiesAreEqual);
