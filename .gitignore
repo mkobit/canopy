@@ -19,3 +19,7 @@ test-results/
 
 # Generated guest plugin JS outputs
 apps/web/src/plugin/mock/guest.js
+
+# Storybook
+.storybook-static
+

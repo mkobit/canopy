@@ -12,6 +12,6 @@
     "composite": false,
     "noEmit": true
   },
-  "include": ["src/**/*", "e2e/**/*", "*.ts"],
+  "include": ["src/**/*", "e2e/**/*", ".storybook/**/*", "*.ts"],
   "exclude": []
 }

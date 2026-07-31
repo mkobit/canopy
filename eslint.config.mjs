@@ -30,6 +30,7 @@ export default tseslint.config(
       'apps/web/src/plugin/draft-session-shim.ts',
       'apps/web/scripts/**/*',
       '**/transpiled/**/*',
+      '**/apps/web/.storybook-static/**',
     ],
   },
   // Base configurations
@@ -238,6 +239,8 @@ export default tseslint.config(
             '^Effect', // Effect.Effect, Effect.Layer, etc. (Effect TS framework types)
             '^Layer', // Layer.Layer (Effect TS framework types)
             '^Context', // Context.Tag (Effect TS framework types)
+            '^StorybookConfig$', // Storybook configuration type (@storybook/react-vite)
+            '^Preview$', // Storybook preview configuration type (@storybook/react)
           ],
         },
       ],
