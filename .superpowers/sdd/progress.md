@@ -1,12 +1,12 @@
-# SDD Progress Ledger - Connect-Web and gRPC Protocol Adapter (canopy-1dk.6)
+# Subagent-Driven Development Progress Ledger
 
-Base commit: 6b62eb39a3ed389988fea9b98ecdd671e8c1dffb
-Plan: openspec/changes/graph-api-architecture/plans/2026-07-23-connect-web-grpc-adapter.md
+Plan: `docs/superpowers/plans/2026-07-30-storybook-setup.md`
+Base Commit: `69cedabf26e74eef9c14664f254260a2e3529353`
 
 ## Tasks
 
-- Task 1: complete (commits 6b62eb3..457a635, review clean)
-- Task 2: complete (commits 457a635..93730be, review clean)
-- Task 3: complete (commits 93730be..4cd5617, review clean)
-- Task 4: complete (commits 4cd5617..ab7e41d, review clean)
-- Task 5: complete (commits ab7e41d..3b3141b, review clean)
+- [x] Task 1: Configure Storybook dependencies and package scripts (commits `69cedab..56176f7`, review clean)
+- [x] Task 2: Create Storybook configuration in `apps/web/.storybook/` (commits `56176f7..4a3cedc`, review clean)
+- [x] Task 3: Create stories for core Graph canvas and node components (commits `4a3cedc..ef50cab`, review clean)
+- [x] Task 4: Validate Storybook build and runtime execution (build-storybook verified clean)
+- [x] Task 5: Execute quality gates (build, lint, typecheck, 617 tests passed; bead `canopy-gtv.1` closed)
