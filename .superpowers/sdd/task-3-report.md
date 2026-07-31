@@ -1,30 +1,37 @@
-# Task 3 Report: Connect-Web Query and Mutation RPC Handlers
+# Task 3 report: Create stories for core Graph canvas and node components
 
-## Summary
+## Overview
 
-Task 3 of the Connect-Web and gRPC Protocol Adapter (`canopy-1dk.6`) has been fully implemented and verified according to TDD principles and functional programming constraints.
+Created Storybook stories for the core graph visualization components in `apps/web/src/components/graph/`.
 
-## Created & Modified Files
+## Files created
 
-- Created: [queries-mutations.ts](file:///home/mkobit/workspace/mkobit/canopy/packages/api-adapter/src/connect/handlers/queries-mutations.ts)
-  - Implements `createConnectQueryHandlers` covering all 6 query RPC methods: `getNodeById`, `getNodesByType`, `getNodesByProperty`, `getInboundEdges`, `getOutboundEdges`, and `executeTraversalQuery`.
-  - Implements `createConnectMutationHandlers` covering all 5 mutation RPC methods: `createNode`, `updateNodeProperties`, `deleteNode`, `createEdge`, and `deleteEdge`.
-  - Handles JSON property payloads and maps domain result errors to Connect/gRPC status codes using `createConnectErrorPayload`.
-- Created: [connect-rpc-handlers.test.ts](file:///home/mkobit/workspace/mkobit/canopy/packages/api-adapter/tests/connect-rpc-handlers.test.ts)
-  - Comprehensive integration test suite covering end-to-end execution of all 11 Connect-Web RPC handlers against a real `GraphSession` and `InMemoryEventStore`.
-  - 32 assertions passed cleanly.
-- Modified: [index.ts](file:///home/mkobit/workspace/mkobit/canopy/packages/api-adapter/src/index.ts)
-  - Re-exports `./connect/handlers/queries-mutations` from `@canopy/api-adapter`.
+- [`custom-node.stories.tsx`](file:///home/mkobit/workspace/mkobit/canopy/apps/web/src/components/graph/custom-node.stories.tsx)
+- [`custom-edge.stories.tsx`](file:///home/mkobit/workspace/mkobit/canopy/apps/web/src/components/graph/custom-edge.stories.tsx)
+- [`graph-canvas.stories.tsx`](file:///home/mkobit/workspace/mkobit/canopy/apps/web/src/components/graph/graph-canvas.stories.tsx)
 
-## Key Implementation Details
+## Implementation details
 
-1. **Branded Domain Types**: All request string IDs (`id`, `type_id`, `source_node_id`, `target_node_id`, `predicate_type_id`) are converted to branded kernel domain types (`asNodeId`, `asEdgeId`, `asTypeId`) prior to core handler execution.
-2. **Result-based Error Flow**: Domain errors returned as `Result<T, E>` are caught and converted into Connect gRPC error payloads (`errorCode`, `message`, `details`) without throwing exceptions.
-3. **Immutable Functional Style**: All functions maintain zero side-effects, strict `Readonly` type modifiers, array immutability (`readonly T[]`), and object freezing (`Object.freeze`) for properties map objects.
+### CustomNode stories
 
-## Quality Gates Verification
+- Configured Storybook meta for `Graph/CustomNode`.
+- Created `Default` story for standard node display.
+- Created `Selected` story verifying active selection styling.
+- Mocked `@canopy/graph` `Node` with branded IDs and temporal metadata to ensure compatibility with `CustomNode` component requirements.
 
-- **Tests**: `bun test` passed 559 out of 559 tests across 70 test files (including 32 assertions in `connect-rpc-handlers.test.ts`).
-- **Build**: `bun run build` completed cleanly across all workspace packages (`@canopy/graph`, `@canopy/queries`, `@canopy/api-adapter`, etc.).
-- **Typecheck**: `bun run typecheck` passed with zero errors across all packages.
-- **Lint**: `bun run lint` passed cleanly with zero ESLint or Prettier violations.
+### CustomEdge stories
+
+- Configured Storybook meta for `Graph/CustomEdge`.
+- Created `Default` story demonstrating directional edge rendering between source and target nodes.
+- Integrated `ReactFlow` preview wrapper with `CustomNode` and `CustomEdge` type bindings.
+
+### GraphCanvas stories
+
+- Configured Storybook meta for `Graph/GraphCanvas`.
+- Created `SampleGraph` story demonstrating layout and rendering of graph nodes and edges.
+- Used typed domain objects conforming to `@canopy/graph` schemas.
+
+## Verification
+
+- Verified all component imports and props align with `@canopy/graph` domain models and `@xyflow/react` interfaces.
+- Ensured strict typing and `readonly` parameter modifiers compliance with ESLint functional rules.

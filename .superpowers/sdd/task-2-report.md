@@ -1,27 +1,23 @@
-# Task 2 report: gRPC status code & result error mapping
-
-**Status:** DONE
-**Commit:** `a5c762a`
-
-**Task:** Task 2 of Connect-Web and gRPC Protocol Adapter (`canopy-1dk.6`)
+# Task 2 Report: Create Storybook configuration in `apps/web/.storybook/`
 
 ## Summary
 
-Implemented gRPC status code enum definitions and result error mapping functions in `@canopy/api-adapter`.
-The mapping translates domain error payloads (`ApiAdapterErrorPayload` and `ApiAdapterError`) to standard gRPC status codes (`GrpcStatusCode`) and constructs structured `ConnectRpcError` payloads.
+Task 2 created the Storybook configuration files for `apps/web` and updated project configuration to ignore build artifacts.
+All automated checks (test suite and linter) passed cleanly.
 
-## Key changes
+## Key Changes
 
-- Created `packages/api-adapter/src/connect/grpc-errors.ts` implementing `GrpcStatusCode` enum, `mapResultErrorToGrpcStatusCode`, and `createConnectErrorPayload`.
-- Standardized gRPC status codes covering `OK`, `INVALID_ARGUMENT`, `NOT_FOUND`, `ALREADY_EXISTS`, `ABORTED`, `UNAUTHENTICATED`, `PERMISSION_DENIED`, `RESOURCE_EXHAUSTED`, and `INTERNAL`.
-- Re-exported `GrpcStatusCode` cleanly across `@canopy/api-adapter` package entrypoints.
-- Implemented comprehensive test suite in `packages/api-adapter/tests/connect-errors.test.ts`.
+- Created `apps/web/.storybook/main.ts` configuring `@storybook/react-vite` framework, story paths (`../src/**/*.stories.@(js|jsx|mjs|ts|tsx)`), `@storybook/addon-essentials`, and Vite resolve alias for `canopy:graph/draft-session`.
+- Created `apps/web/.storybook/preview.tsx` importing Tailwind CSS (`src/index.css`), xyflow styles (`@xyflow/react/dist/style.css`), fonts (`inter`, `jetbrains-mono`, `space-grotesk`), and wrapping stories in `ReactFlowProvider`.
+- Updated `.gitignore` to ignore `.storybook-static`.
+- Updated `eslint.config.mjs` to ignore `**/apps/web/.storybook-static/**` and added `^StorybookConfig$` and `^Preview$` to `ignoreTypePattern` for `functional/prefer-immutable-types`.
+- Updated `apps/web/tsconfig.json` to include `.storybook/**/*` so Storybook configuration files are recognized by ESLint's TypeScript project service.
 
-## Verification results
+## Verification
 
-- Test suite: `bun test packages/api-adapter/tests/connect-errors.test.ts` (11 pass, 0 fail).
-- Package quality gates: `bun run build`, `bun run lint`, `bun run typecheck`, and `bun test` passed cleanly.
+- `bun test`: All 617 tests passed across 85 test files.
+- `bunx eslint .`: Passed cleanly with 0 errors and 0 warnings.
 
-## Concerns or follow-ups
+## Commit
 
-None.
+- `4a3cedc` (`feat: configure storybook in apps/web`)

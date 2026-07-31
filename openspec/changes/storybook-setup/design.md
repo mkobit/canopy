@@ -61,6 +61,7 @@ We provide mock state and a shared `withReactFlow` decorator in `.storybook/prev
 ## Adversarial review and mitigations
 
 ### 1. Resource and performance overhead
+
 - **Risk**: Adding Storybook 8 dependencies introduces 100+ transitive packages to `apps/web`, increasing `bun install` duration, lockfile size, and telemetry background requests.
 - **Mitigation**:
   - Keep Storybook dependencies restricted strictly to `devDependencies` in `apps/web/package.json`.
@@ -68,6 +69,7 @@ We provide mock state and a shared `withReactFlow` decorator in `.storybook/prev
   - Add `.storybook-static/` to `.gitignore` and `eslint.config.mjs` ignores list to prevent build artifact pollution.
 
 ### 2. Failure modes and edge cases
+
 - **Risk 1**: Components depending on `@xyflow/react` hooks (`useReactFlow`, `useNodes`) fail at runtime when rendered inside Storybook without a `<ReactFlowProvider>`.
 - **Mitigation**: Implement a shared `withReactFlow` decorator in `.storybook/preview.tsx` and story definitions to supply `ReactFlowProvider` context and default canvas nodes/edges.
 - **Risk 2**: Tailwind CSS v4 (`@tailwindcss/postcss`) styles fail to compile in Storybook if Vite PostCSS processing is not inherited.
@@ -76,9 +78,11 @@ We provide mock state and a shared `withReactFlow` decorator in `.storybook/prev
 - **Mitigation**: Re-use `apps/web/vite.config.ts` path aliases in `.storybook/main.ts` `viteFinal` hook and point WASM imports to pure JavaScript shims (`guest.js`).
 
 ### 3. Security and isolation
+
 - **Risk**: `storybook dev` default server settings may listen on external network interfaces (`0.0.0.0`), exposing internal component previews to local network peers.
 - **Mitigation**: Configure `storybook dev` flags to bind explicitly to `127.0.0.1` / `localhost`.
 
 ### 4. Migration and backward compatibility risks
+
 - **Risk**: Planned build tool migration from Vite to Bun's native bundler (`canopy-kjg`) creates tech debt if stories rely on Vite-specific features.
 - **Mitigation**: Enforce standard Component Story Format (CSF 3) for all story files without Vite-specific APIs. Keep `.storybook/main.ts` minimal so replacing `@storybook/react-vite` in the future requires modifying only the builder config.

@@ -20,16 +20,19 @@
 ### Task 1: Configure Storybook dependencies and package scripts
 
 **Files:**
+
 - Modify: `apps/web/package.json`
 - Modify: `package.json`
 
 **Interfaces:**
+
 - Consumes: None
 - Produces: `"storybook"` and `"build-storybook"` scripts in `apps/web/package.json` and root `package.json`.
 
 - [ ] **Step 1: Add Storybook devDependencies to `apps/web/package.json`**
 
 Edit `apps/web/package.json` to include Storybook packages under `devDependencies`:
+
 ```json
   "devDependencies": {
     "@storybook/addon-essentials": "^8.6.14",
@@ -42,6 +45,7 @@ Edit `apps/web/package.json` to include Storybook packages under `devDependencie
 - [ ] **Step 2: Add Storybook scripts to `apps/web/package.json` and root `package.json`**
 
 In `apps/web/package.json`:
+
 ```json
   "scripts": {
     "storybook": "STORYBOOK_DISABLE_TELEMETRY=1 storybook dev -p 6006 --host 127.0.0.1",
@@ -50,6 +54,7 @@ In `apps/web/package.json`:
 ```
 
 In root `package.json`:
+
 ```json
   "scripts": {
     "storybook": "bun --filter '@canopy/web' storybook",
@@ -74,12 +79,14 @@ git commit -m "build: add storybook dependencies and scripts to apps/web"
 ### Task 2: Create Storybook configuration in `apps/web/.storybook/`
 
 **Files:**
+
 - Create: `apps/web/.storybook/main.ts`
 - Create: `apps/web/.storybook/preview.tsx`
 - Modify: `.gitignore`
 - Modify: `eslint.config.mjs`
 
 **Interfaces:**
+
 - Consumes: `apps/web/vite.config.ts`, `apps/web/src/index.css`
 - Produces: `.storybook/main.ts` and `.storybook/preview.tsx` for Storybook dev server and static build.
 
@@ -153,6 +160,7 @@ export default preview;
 - [ ] **Step 3: Update `.gitignore` and `eslint.config.mjs` to ignore `.storybook-static`**
 
 In `.gitignore`:
+
 ```
 .storybook-static
 ```
@@ -172,11 +180,13 @@ git commit -m "feat: configure storybook in apps/web"
 ### Task 3: Create stories for core Graph canvas and node components
 
 **Files:**
+
 - Create: `apps/web/src/components/graph/custom-node.stories.tsx`
 - Create: `apps/web/src/components/graph/custom-edge.stories.tsx`
 - Create: `apps/web/src/components/graph/graph-canvas.stories.tsx`
 
 **Interfaces:**
+
 - Consumes: `CustomNode`, `CustomEdge`, `GraphCanvas` from `apps/web/src/components/graph/`
 - Produces: Storybook story modules for visual testing of graph components.
 
@@ -337,6 +347,7 @@ git commit -m "feat: add storybook stories for graph canvas and node components"
 ### Task 4: Validate Storybook build and runtime execution
 
 **Files:**
+
 - None (verification task)
 
 - [ ] **Step 1: Run static Storybook build**
@@ -353,6 +364,7 @@ Run: `rm -rf apps/web/.storybook-static`
 ### Task 5: Execute quality gates
 
 **Files:**
+
 - None (verification task)
 
 - [ ] **Step 1: Run build, lint, typecheck, and unit tests**
