@@ -1,14 +1,14 @@
 ## 1. `canopy status` command implementation
 
-- [ ] 1.1 Create `apps/cli/src/commands/status.ts` implementing `status` command and `daemon status` subcommand executing `canopy.v1.handshake` and printing `gh auth status`-style output or JSON (`--json`)
-- [ ] 1.2 Deprecate standalone `handshakeCommand` in favor of `statusCommand`
-- [ ] 1.3 Add unit and integration tests in `apps/cli/tests/status-command.test.ts` verifying connected and disconnected socket behavior
+- [x] 1.1 Create `apps/cli/src/commands/status.ts` implementing `status` command and `daemon status` subcommand executing `canopy.v1.handshake` and printing `gh auth status`-style output or JSON (`--json`)
+- [x] 1.2 Deprecate standalone `handshakeCommand` in favor of `statusCommand`
+- [x] 1.3 Add unit and integration tests in `apps/cli/tests/status-command.test.ts` verifying connected and disconnected socket behavior
 
 ## 2. `canopy events` command implementation
 
-- [ ] 2.1 Create `apps/cli/src/commands/events.ts` implementing `events tail` subcommand streaming live event notifications over IPC socket
-- [ ] 2.2 Implement SIGINT signal traps for clean socket closure on interruption
-- [ ] 2.3 Add tests in `apps/cli/tests/events-command.test.ts` verifying event streaming and option flags (`--json`, `--graph-id`, `--from-sequence`)
+- [x] 2.1 Create `apps/cli/src/commands/events.ts` implementing `events tail` subcommand streaming live event notifications over IPC socket
+- [x] 2.2 Implement SIGINT signal traps for clean socket closure on interruption
+- [x] 2.3 Add tests in `apps/cli/tests/events-command.test.ts` verifying event streaming and option flags (`--json`, `--graph-id`, `--from-sequence`)
 
 ## 3. Schema types & query subcommands
 
@@ -18,5 +18,5 @@
 
 ## 4. Root CLI integration & quality gates
 
-- [ ] 4.1 Update `apps/cli/src/index.ts` to expose `node`, `edge`, `types`, `query`, `events`, `status`, and `daemon` root subcommands
-- [ ] 4.2 Run full quality gate (`bun run build && bun run lint && bun run typecheck && bun test`)
+- [x] 4.1 Update `apps/cli/src/index.ts` to expose `node`, `edge`, `types`, `query`, `events`, `status`, and `daemon` root subcommands
+- [x] 4.2 Run full quality gate (`bun run build && bun run lint && bun run typecheck && bun test`)

@@ -15,7 +15,9 @@ const fromSequenceOption = Options.optional(Options.integer('from-sequence')).pi
 const eventsTailEffect = (
   socketPath: string,
   json: boolean,
+  // eslint-disable-next-line functional/prefer-immutable-types -- Effect Option is immutable
   graphId: Option.Option<string>,
+  // eslint-disable-next-line functional/prefer-immutable-types -- Effect Option is immutable
   fromSequence: Option.Option<number>,
 ) =>
   Effect.gen(function* () {
@@ -47,7 +49,6 @@ const eventsTailEffect = (
 
     const subscribeResult = yield* Effect.either(
       client.subscribe(parameters, (event) => {
-        // eslint-disable-next-line no-console
         if (json) {
           // eslint-disable-next-line no-console
           console.log(JSON.stringify(event));
