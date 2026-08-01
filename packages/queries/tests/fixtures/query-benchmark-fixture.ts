@@ -81,7 +81,7 @@ export function generateQueryBenchmarkFixture(
       id: nodeId,
       nodeType: nodeTypeId,
       properties,
-      timestamp: createInstant(),
+      timestamp: graphInstant,
       deviceId: SYSTEM_DEVICE_ID,
       batchId: 'benchmark-batch',
     });
@@ -121,7 +121,7 @@ export function generateQueryBenchmarkFixture(
       source: sourceId,
       target: targetId,
       properties: new Map(),
-      timestamp: createInstant(),
+      timestamp: graphInstant,
       deviceId: SYSTEM_DEVICE_ID,
       batchId: 'benchmark-batch',
     });

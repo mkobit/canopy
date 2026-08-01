@@ -1,4 +1,3 @@
-/* eslint-disable no-console -- Agent PostToolUse hook script */
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
