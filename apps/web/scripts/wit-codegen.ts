@@ -2,16 +2,7 @@ import { spawn, build } from 'bun';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-interface PluginConfig {
-  readonly name: string;
-  readonly entrypoint: string;
-  readonly world: string;
-  readonly outDir: string;
-}
-
-interface ConfigSchema {
-  readonly plugins: readonly PluginConfig[];
-}
+import { type PluginConfig, type ConfigSchema } from './plugin-config.js';
 
 async function runCommand(cmd: readonly string[]): Promise<void> {
   console.log(`Running: ${cmd.join(' ')}`);
