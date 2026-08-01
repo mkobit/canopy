@@ -12,9 +12,9 @@
 
 ## 3. Schema types & query subcommands
 
-- [ ] 3.1 Create `apps/cli/src/commands/types.ts` implementing `types list` and `types get` subcommands
-- [ ] 3.2 Create `apps/cli/src/commands/query.ts` implementing `query execute` subcommand
-- [ ] 3.3 Add tests in `apps/cli/tests/types-and-query-commands.test.ts` for schema types and query execution over IPC
+- [x] 3.1 Create `apps/cli/src/commands/types.ts` implementing `types list` and `types get` subcommands
+- [x] 3.2 Create `apps/cli/src/commands/query.ts` implementing `query execute` subcommand
+- [x] 3.3 Add tests in `apps/cli/tests/types-and-query-commands.test.ts` for schema types and query execution over IPC
 
 ## 4. Root CLI integration & quality gates
 
