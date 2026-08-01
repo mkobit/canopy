@@ -45,11 +45,15 @@ describe('Canopy CLI status commands', () => {
   });
 
   it('runs status command when disconnected', async () => {
-    await expect(runCli(['status', '--socket-path', socketPath])).rejects.toThrow('Socket disconnected');
+    await expect(runCli(['status', '--socket-path', socketPath])).rejects.toThrow(
+      'Socket disconnected',
+    );
   });
 
   it('runs daemon status command when disconnected', async () => {
-    await expect(runCli(['daemon', 'status', '--socket-path', socketPath])).rejects.toThrow('Socket disconnected');
+    await expect(runCli(['daemon', 'status', '--socket-path', socketPath])).rejects.toThrow(
+      'Socket disconnected',
+    );
   });
 
   it('runs status command when connected', async () => {
@@ -66,7 +70,7 @@ describe('Canopy CLI status commands', () => {
     await runCli(['status', '--socket-path', socketPath, '--json']);
     await runCli(['status', '--socket-path', socketPath]);
   });
-  
+
   it('runs daemon status command when connected', async () => {
     const eventLogStore = createInMemoryEventStore();
     const graphId = asGraphId('graph_cli_cmd_test');
