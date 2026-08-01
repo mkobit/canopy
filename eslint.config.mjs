@@ -113,6 +113,7 @@ export default tseslint.config(
       parserOptions: {
         projectService: {
           allowDefaultProject: ['tools/*.ts', 'tools/lib/*.ts', 'tools/hooks/*.ts'],
+          maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING: 20,
         },
         tsconfigRootDir: __dirname,
       },
