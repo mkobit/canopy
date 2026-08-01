@@ -26,16 +26,7 @@ interface GraphNode {
   };
 }
 
-interface PluginConfig {
-  readonly name: string;
-  readonly entrypoint: string;
-  readonly world: string;
-  readonly outDir: string;
-}
-
-interface ConfigSchema {
-  readonly plugins: readonly PluginConfig[];
-}
+import { type PluginConfig, type ConfigSchema } from './plugin-config.js';
 
 // Extract manifest from guest.ts using regex and Function evaluation
 function extractManifest(filePath: string): PluginManifest {

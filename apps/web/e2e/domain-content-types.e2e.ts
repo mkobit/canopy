@@ -1,4 +1,5 @@
 import { test, expect, type Locator, type Page } from '@playwright/test';
+import { type InlinePropertyOptions } from './test-helpers';
 
 async function createAndOpenGraph(page: Page): Promise<void> {
   // 1. Create a fresh graph and open it.
@@ -55,11 +56,6 @@ async function createNamespacesAndStatusPropertyType(page: Page): Promise<void> 
   await propertyTypeForm.getByLabel('Value kind').selectOption('text');
   await propertyTypeForm.getByRole('button', { name: 'Create PropertyType' }).click();
   await expect(page.locator('li', { hasText: 'status' })).toBeVisible();
-}
-
-interface InlinePropertyOptions {
-  readonly required?: boolean;
-  readonly valueKind?: string;
 }
 
 async function addInlineProperty(
