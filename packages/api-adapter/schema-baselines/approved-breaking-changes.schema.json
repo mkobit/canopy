@@ -24,7 +24,7 @@
           },
           "protocol": {
             "type": "string",
-            "enum": ["graphql", "connect", "wit", "all"]
+            "enum": ["graphql", "connect", "wit", "ipc", "all"]
           },
           "path": {
             "type": "string"

@@ -7,6 +7,7 @@ import type {
   CreateNodeParams,
   DeleteEdgeParams,
   DeleteNodeParams,
+  ExecuteQueryParams,
   GetEdgesParams,
   GetNodesParams,
   HandshakeResult,
@@ -48,6 +49,9 @@ export interface IpcClient {
   readonly getEdges: (
     parameters?: Readonly<GetEdgesParams>,
   ) => Effect.Effect<readonly ApiEdgePayload[], IpcClientError>;
+  readonly executeQuery: (
+    parameters?: Readonly<ExecuteQueryParams>,
+  ) => Effect.Effect<readonly ApiNodePayload[], IpcClientError>;
   readonly createNode: (
     parameters: Readonly<CreateNodeParams>,
   ) => Effect.Effect<ApiNodePayload, IpcClientError>;
@@ -195,6 +199,25 @@ export const makeIpcClient = (socketPath: string): Effect.Effect<IpcClient, IpcC
             try: () =>
               sendRpcRequest<readonly ApiEdgePayload[]>(
                 IPC_METHODS.QUERY_GET_EDGES,
+                parameters ?? {},
+              ),
+            catch: (error) =>
+              typeof error === 'object' &&
+              error !== null &&
+              '_tag' in error &&
+              error._tag === 'IpcClientError'
+                ? (error as IpcClientError)
+                : createIpcClientError({
+                    code: JSON_RPC_ERROR_CODES.INTERNAL_ERROR,
+                    message: String(error),
+                  }),
+          }),
+
+        executeQuery: (parameters) =>
+          Effect.tryPromise({
+            try: () =>
+              sendRpcRequest<readonly ApiNodePayload[]>(
+                IPC_METHODS.QUERY_EXECUTE_QUERY,
                 parameters ?? {},
               ),
             catch: (error) =>

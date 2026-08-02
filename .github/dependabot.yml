@@ -29,7 +29,6 @@ updates:
           - 'vite*'
           - '@vitejs/*'
           - 'husky'
-          - 'lint-staged'
           - 'happy-dom'
           - '@happy-dom/*'
           - '@testing-library/*'

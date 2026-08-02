@@ -40,6 +40,7 @@ Six packages:
 7. No raw primitives in domain types — use branded IDs and domain wrappers.
 8. Errors are returned as `Result<T, E>`, not thrown.
 9. No `any` or `Record<string, unknown>` — use `unknown` with narrowing.
+10. Rendering is decoupled from content storage — content nodes hold pure properties (nodes, edges, properties); rendering format resolution (Markdown, rST, AsciiDoc, HTML, custom formats) is dynamically performed via `ViewDefinition` and `RendererDefinition` graph nodes referencing WASM plugin components.
 
 ## Development workflow
 

@@ -6,10 +6,11 @@ import {
   GRAPHQL_SDL_SCHEMA,
   PROTO_SERVICES_SDL,
   CANOPY_WIT_SPECIFICATION,
+  JSON_RPC_IPC_SPECIFICATION,
 } from '../../packages/api-adapter/src/index.js';
 
 export interface Violation {
-  readonly protocol: 'graphql' | 'connect' | 'wit';
+  readonly protocol: 'graphql' | 'connect' | 'wit' | 'ipc';
   readonly changeType: string;
   readonly path: string;
   readonly description: string;
@@ -19,7 +20,7 @@ export interface Violation {
 
 export interface Waiver {
   readonly id: string;
-  readonly protocol: 'graphql' | 'connect' | 'wit' | 'all';
+  readonly protocol: 'graphql' | 'connect' | 'wit' | 'ipc' | 'all';
   readonly path: string;
   readonly changeType: string;
   readonly reason: string;
@@ -38,10 +39,11 @@ export interface CompatibilityResult {
 }
 
 export interface CheckOptions {
-  readonly target?: 'graphql' | 'connect' | 'wit' | 'all';
+  readonly target?: 'graphql' | 'connect' | 'wit' | 'ipc' | 'all';
   readonly overrideGql?: string;
   readonly overrideProto?: string;
   readonly overrideWit?: string;
+  readonly overrideIpc?: string;
   readonly overrideWaivers?: readonly Waiver[];
 }
 
@@ -167,6 +169,164 @@ export const checkWit = (liveSchema: string, baselineSchema?: string): readonly 
   return [...violations1, ...violations2];
 };
 
+interface OpenRpcParameter {
+  readonly name: string;
+  readonly required?: boolean;
+  readonly schema?: unknown;
+}
+
+interface OpenRpcResultSchema {
+  readonly properties?: Readonly<Record<string, unknown>>;
+  readonly required?: readonly string[];
+  readonly type?: string;
+}
+
+interface OpenRpcResult {
+  readonly name?: string;
+  readonly schema?: OpenRpcResultSchema;
+}
+
+interface OpenRpcMethod {
+  readonly name: string;
+  readonly params?: readonly OpenRpcParameter[];
+  readonly result?: OpenRpcResult;
+  readonly paramStructure?: string;
+}
+
+interface OpenRpcError {
+  readonly code: number;
+  readonly message: string;
+}
+
+interface OpenRpcSpec {
+  readonly openrpc?: string;
+  readonly info?: Readonly<{ title?: string; version?: string }>;
+  readonly methods?: readonly OpenRpcMethod[];
+  readonly errors?: readonly OpenRpcError[];
+}
+
+const parseOpenRpc = (jsonString: string): OpenRpcSpec | undefined => {
+  // eslint-disable-next-line functional/no-try-statements -- Safe JSON parsing fallback for OpenRPC specifications
+  try {
+    const cleaned = jsonString.replace(/^\/\*[\s\S]*?\*\/\s*/, '');
+    return JSON.parse(cleaned) as OpenRpcSpec;
+  } catch {
+    return undefined;
+  }
+};
+
+const checkIpcMethodParameters = (bm: OpenRpcMethod, lm: OpenRpcMethod): readonly Violation[] => {
+  const baselineParameters = bm.params ?? [];
+  const liveParameters = lm.params ?? [];
+
+  return baselineParameters.flatMap((bp): readonly Violation[] => {
+    const lp = liveParameters.find((p) => p.name === bp.name);
+    if (!lp) {
+      return [
+        {
+          protocol: 'ipc',
+          changeType: 'PARAM_REMOVAL',
+          path: `${bm.name}.${bp.name}`,
+          description: `Parameter ${bp.name} removed from method ${bm.name}`,
+          snippet: `-  ${bm.name}(${bp.name})\n`,
+        },
+      ];
+    }
+    if (!bp.required && lp.required) {
+      return [
+        {
+          protocol: 'ipc',
+          changeType: 'PARAM_TIGHTENING',
+          path: `${bm.name}.${bp.name}`,
+          description: `Parameter ${bp.name} in method ${bm.name} changed from optional to required`,
+          snippet: `-  ${bp.name}: optional\n+  ${bp.name}: required\n`,
+        },
+      ];
+    }
+    return [];
+  });
+};
+
+const checkIpcMethodResult = (bm: OpenRpcMethod, lm: OpenRpcMethod): readonly Violation[] => {
+  const bmProperties = bm.result?.schema?.properties;
+  if (!bmProperties) return [];
+
+  const lmProperties = lm.result?.schema?.properties ?? {};
+  return Object.keys(bmProperties).flatMap((propertyKey): readonly Violation[] => {
+    if (!Object.prototype.hasOwnProperty.call(lmProperties, propertyKey)) {
+      return [
+        {
+          protocol: 'ipc',
+          changeType: 'RESULT_PROPERTY_REMOVAL',
+          path: `${bm.name}.result.${propertyKey}`,
+          description: `Result property ${propertyKey} removed from method ${bm.name}`,
+          snippet: `-  ${bm.name}.result.${propertyKey}\n`,
+        },
+      ];
+    }
+    return [];
+  });
+};
+
+const checkIpcMethods = (
+  baselineMethods: readonly OpenRpcMethod[],
+  liveMethods: readonly OpenRpcMethod[],
+): readonly Violation[] => {
+  return baselineMethods.flatMap((bm): readonly Violation[] => {
+    const lm = liveMethods.find((m) => m.name === bm.name);
+    if (!lm) {
+      return [
+        {
+          protocol: 'ipc',
+          changeType: 'METHOD_REMOVAL',
+          path: bm.name,
+          description: `Method ${bm.name} removed from IPC schema`,
+          snippet: `-  ${bm.name}\n`,
+        },
+      ];
+    }
+
+    const parameterViolations = checkIpcMethodParameters(bm, lm);
+    const resultViolations = checkIpcMethodResult(bm, lm);
+    return [...parameterViolations, ...resultViolations];
+  });
+};
+
+const checkIpcErrors = (
+  baselineErrors: readonly OpenRpcError[],
+  liveErrors: readonly OpenRpcError[],
+): readonly Violation[] => {
+  return baselineErrors.flatMap((be): readonly Violation[] => {
+    const hasError = liveErrors.some((errorItem) => errorItem.code === be.code);
+    if (!hasError) {
+      return [
+        {
+          protocol: 'ipc',
+          changeType: 'ERROR_CODE_REMOVAL',
+          path: `Error.${be.code}`,
+          description: `Error code ${be.code} (${be.message}) removed from IPC schema`,
+          snippet: `-  ${be.code}: ${be.message}\n`,
+        },
+      ];
+    }
+    return [];
+  });
+};
+
+export const checkIpc = (liveSchema: string, baselineSchema?: string): readonly Violation[] => {
+  if (!baselineSchema) return [];
+
+  const baseline = parseOpenRpc(baselineSchema);
+  const live = parseOpenRpc(liveSchema);
+
+  if (!baseline || !live) return [];
+
+  const methodViolations = checkIpcMethods(baseline.methods ?? [], live.methods ?? []);
+  const errorViolations = checkIpcErrors(baseline.errors ?? [], live.errors ?? []);
+
+  return [...methodViolations, ...errorViolations];
+};
+
 export const checkApiCompatibility = (options?: CheckOptions): CompatibilityResult => {
   const waivers = options?.overrideWaivers ?? [];
   const target = options?.target ?? 'all';
@@ -187,10 +347,12 @@ export const checkApiCompatibility = (options?: CheckOptions): CompatibilityResu
   const gqlLive = options?.overrideGql ?? GRAPHQL_SDL_SCHEMA;
   const prototypeLive = options?.overrideProto ?? PROTO_SERVICES_SDL;
   const witLive = options?.overrideWit ?? CANOPY_WIT_SPECIFICATION;
+  const ipcLive = options?.overrideIpc ?? JSON_RPC_IPC_SPECIFICATION;
 
   const gqlBaseline = readBaseline('graphql.graphql');
   const prototypeBaseline = readBaseline('connect.proto');
   const witBaseline = readBaseline('plugin.wit');
+  const ipcBaseline = readBaseline('ipc-openrpc.json');
 
   const violations1 =
     target === 'all' || target === 'graphql' ? checkGql(gqlLive, gqlBaseline) : [];
@@ -199,7 +361,8 @@ export const checkApiCompatibility = (options?: CheckOptions): CompatibilityResu
       ? checkPrototype(prototypeLive, prototypeBaseline)
       : [];
   const violations3 = target === 'all' || target === 'wit' ? checkWit(witLive, witBaseline) : [];
-  const violations = [...violations1, ...violations2, ...violations3];
+  const violations4 = target === 'all' || target === 'ipc' ? checkIpc(ipcLive, ipcBaseline) : [];
+  const violations = [...violations1, ...violations2, ...violations3, ...violations4];
 
   const expiredWaivers = waivers.filter((w) => w.expiresAt < now);
 
