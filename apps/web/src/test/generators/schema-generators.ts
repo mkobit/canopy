@@ -165,7 +165,14 @@ const INITIAL_EDGE_TYPES: readonly GeneratedEdgeTypeSchema[] = [
   },
 ];
 
-export function generateSchemaPayload(_options?: GenerateSchemaOptions): GeneratedSchemaPayload {
+export function generateSchemaPayload(options?: GenerateSchemaOptions): GeneratedSchemaPayload {
+  const seed = options?.seed;
+  if (seed === undefined) {
+    return {
+      nodeTypes: INITIAL_NODE_TYPES,
+      edgeTypes: INITIAL_EDGE_TYPES,
+    };
+  }
   return {
     nodeTypes: INITIAL_NODE_TYPES,
     edgeTypes: INITIAL_EDGE_TYPES,

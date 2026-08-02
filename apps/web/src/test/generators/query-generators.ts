@@ -4,7 +4,7 @@ export type GeneratedQueryPayload = Readonly<{
   id: NodeId;
   name: string;
   description: string;
-  definition: Readonly<Record<string, unknown>>;
+  definition: unknown;
 }>;
 
 export type GenerateQueryOptions = Readonly<{
@@ -16,7 +16,7 @@ const DEFAULT_QUERY: Readonly<{
   id: string;
   name: string;
   description: string;
-  definition: Readonly<Record<string, unknown>>;
+  definition: unknown;
 }> = {
   id: 'demo:query:all-projects',
   name: 'All Projects',
@@ -33,7 +33,7 @@ const QUERIES: readonly Readonly<{
   id: string;
   name: string;
   description: string;
-  definition: Readonly<Record<string, unknown>>;
+  definition: unknown;
 }>[] = [
   DEFAULT_QUERY,
   {

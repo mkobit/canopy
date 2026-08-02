@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { generateGraphVault } from '../graph-generators';
+import { generateGraphVault, generateVault } from '../graph-generators';
 import { generateNodePayload } from '../node-generators';
 import { generateSchemaPayload } from '../schema-generators';
 import { generateQueryPayload } from '../query-generators';
@@ -16,6 +16,13 @@ describe('Property-Based Vault Generators', () => {
     const ids1 = [...vault1.nodes.keys()].toSorted((a, b) => a.localeCompare(b));
     const ids2 = [...vault2.nodes.keys()].toSorted((a, b) => a.localeCompare(b));
     expect(ids1).toEqual(ids2);
+  });
+
+  test('generates graph session vault backed by seeded event store', async () => {
+    const session = generateVault({ preset: 'demo', seed: 42 });
+    await session.load();
+    expect(session.graph().nodes.size).toBeGreaterThan(0);
+    expect(session.graph().edges.size).toBeGreaterThan(0);
   });
 
   test('generates thin, convention-driven initial schemas', () => {

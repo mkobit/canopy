@@ -21,7 +21,7 @@ const TASK_STATUSES: readonly string[] = ['todo', 'in-progress', 'done'];
 const PROJECT_STATUSES: readonly string[] = ['planning', 'in-progress', 'completed', 'on-hold'];
 
 function createLcg(seed: number): () => number {
-  // eslint-disable-next-line functional/no-let
+  // eslint-disable-next-line functional/no-let -- seedable LCG random number generator state
   let state = seed;
   return () => {
     state = (state * 1_664_525 + 1_013_904_223) % 4_294_967_296;

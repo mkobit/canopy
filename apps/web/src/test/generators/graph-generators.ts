@@ -4,14 +4,17 @@ import {
   asGraphId,
   asNodeId,
   asTypeId,
+  createEventId,
   createGraph,
   createInstant,
   createGraphSession,
   unwrap,
   SYSTEM_IDS,
   SYSTEM_EDGE_TYPES,
+  type DeviceId,
   type Edge,
   type Graph,
+  type GraphEvent,
   type GraphSession,
   type Node,
   type NodeId,
@@ -31,7 +34,7 @@ export type GenerateVaultOptions = Readonly<{
 const SYSTEM_DEVICE_ID = asDeviceId('00000000-0000-0000-0000-000000000000');
 
 function createLcg(seed: number): () => number {
-  // eslint-disable-next-line functional/no-let
+  // eslint-disable-next-line functional/no-let -- seedable LCG random number generator state
   let state = seed;
   return () => {
     state = (state * 1_664_525 + 1_013_904_223) % 4_294_967_296;
@@ -243,14 +246,34 @@ function buildContentEdges(
   }).filter((entry): entry is Readonly<[EdgeId, Edge]> => entry !== undefined);
 }
 
-export function generateGraphVault(options: GenerateVaultOptions): Graph {
-  const store = createInMemoryEventStore();
-  const session = createGraphSession(store, asGraphId('demo-graph'), asDeviceId('demo-device'));
+function graphToEvents(graph: Graph, deviceId: DeviceId): readonly GraphEvent[] {
+  const nodeEvents: readonly GraphEvent[] = [...graph.nodes.values()].map((node) => ({
+    type: 'NodeCreated',
+    eventId: createEventId(),
+    id: node.id,
+    nodeType: node.type,
+    properties: node.properties,
+    timestamp: node.metadata.created,
+    deviceId: node.metadata.modifiedBy ?? deviceId,
+  }));
 
-  const baseGraph =
-    session.graph().nodes.size > 0
-      ? session.graph()
-      : unwrap(createGraph(asGraphId('demo-graph'), 'demo-graph'));
+  const edgeEvents: readonly GraphEvent[] = [...graph.edges.values()].map((edge) => ({
+    type: 'EdgeCreated',
+    eventId: createEventId(),
+    id: edge.id,
+    edgeType: edge.type,
+    source: edge.source,
+    target: edge.target,
+    properties: edge.properties,
+    timestamp: edge.metadata.created,
+    deviceId: edge.metadata.modifiedBy ?? deviceId,
+  }));
+
+  return [...nodeEvents, ...edgeEvents];
+}
+
+export function generateGraphVault(options: GenerateVaultOptions): Graph {
+  const baseGraph = unwrap(createGraph(asGraphId('demo-graph'), 'demo-graph'));
 
   const seed = options.seed;
   const count = options.preset === 'large' ? 500 : 25;
@@ -285,7 +308,16 @@ export function generateGraphVault(options: GenerateVaultOptions): Graph {
   };
 }
 
-export function generateVault(_options: GenerateVaultOptions): GraphSession {
+export function generateVault(options: GenerateVaultOptions): GraphSession {
+  const graph = generateGraphVault(options);
   const store = createInMemoryEventStore();
-  return createGraphSession(store, asGraphId('demo-graph'), asDeviceId('demo-device'));
+  const graphId = asGraphId('demo-graph');
+  const deviceId = asDeviceId('demo-device');
+  const events = graphToEvents(graph, deviceId);
+  void store.appendEvents('demo-graph', events);
+
+  const session = createGraphSession(store, graphId, deviceId);
+  void session.commit(events);
+
+  return session;
 }
