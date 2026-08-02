@@ -66,6 +66,10 @@ Rendering behavior is resolved dynamically at runtime:
   - Schema creation and node instantiation.
 - **Manual Mode (`bun --filter @canopy/web dev:demo`)**: Adds `dev:demo` script to `apps/web/package.json`: `CANOPY_DEMO_SEED=true vite`. On boot, the web app checks `CANOPY_DEMO_SEED`. If set and local storage is uninitialized, it executes `generateVault({ preset: 'demo' })` to seed IndexedDB.
 
+### Decision 5: Thin, convention-driven initial schemas
+
+System nodes, node types, and property types start thin and follow minimal, conventional schemas (e.g. `title`, `content`, `tags`, basic `project`/`task` types). Complex schema structures are avoided until exact domain requirements are dialed in through iterative testing.
+
 ## Adversarial review and mitigations
 
 ### Resource and performance overhead

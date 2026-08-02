@@ -14,6 +14,10 @@ The web application (`apps/web`) MUST provide a modular, property-based vault se
 - **WHEN** `generateVault({ preset: 'large' })` is invoked
 - **THEN** it MUST return a high-density graph containing 500+ nodes and 1000+ edges for performance testing
 
+#### Scenario: Generate thin, convention-driven initial schemas
+- **WHEN** node types and property types are generated for the demo seed vault
+- **THEN** they MUST adhere to minimal, conventional schema definitions (title, content, tags, project, task) without unnecessary complexity
+
 ### Requirement: Decoupled WASM renderer resolution (Invariant 10)
 Content nodes MUST hold pure graph properties (`Node`, `Edge`, `Properties`). Rendering formats (Markdown, rST, AsciiDoc, HTML, custom block formats) MUST be resolved dynamically at runtime via `ViewDefinition` and `RendererDefinition` nodes pointing to WASM plugin entry points.
 
