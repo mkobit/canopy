@@ -41,7 +41,7 @@ export const defaultCapabilityValidator: CapabilityValidator = (
     return true;
   }
 
-  const [category] = requiredCapability.split(':');
+  const [category] = requiredCapability.split(':', 1);
   if (category && scopes.includes(`${category}:*`)) {
     return true;
   }

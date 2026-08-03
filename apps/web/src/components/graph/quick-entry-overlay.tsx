@@ -10,7 +10,7 @@ export const QuickEntryOverlay: React.FC<QuickEntryOverlayProperties> = ({ onSub
 
   const handleSubmit = (event_: React.FormEvent) => {
     event_.preventDefault();
-    if (inputValue.trim() && onSubmit) {
+    if (onSubmit && inputValue.trim()) {
       onSubmit(inputValue.trim());
       setInputValue('');
       setIsExpanded(false);

@@ -378,7 +378,7 @@ function validateProperties(
     flatMap((propertyDefinition): readonly ValidationError[] => {
       const value = properties.get(propertyDefinition.name);
 
-      if (propertyDefinition.required && value === undefined) {
+      if (value === undefined && propertyDefinition.required) {
         return [
           {
             path: [propertyDefinition.name],
