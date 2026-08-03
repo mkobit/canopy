@@ -3,6 +3,7 @@
 ## What Was Implemented
 
 Implemented the unified seed vault API helper for storage initialization:
+
 - `apps/web/src/test/seed-vault.ts`: Created `seedVaultStore(store: EventLogStore, options?: SeedVaultOptions)` helper which populates an `EventLogStore` with deterministic or pseudo-random graph events from `generateGraphVault` and `graphToEvents`. Supports optional graph metadata registration in `GraphRegistry` when passed in options.
 - `apps/web/src/test/generators/graph-generators.ts`: Exported `graphToEvents` helper function to convert graph instances into time-ordered `NodeCreated` and `EdgeCreated` graph events.
 - `apps/web/src/context/storage-context.tsx`: Updated storage provider to automatically seed storage and register graph metadata when `VITE_CANOPY_DEMO_SEED === 'true'` or `CANOPY_DEMO_SEED === 'true'`.
@@ -12,6 +13,7 @@ Implemented the unified seed vault API helper for storage initialization:
 ## What Was Tested and Test Results
 
 Executed unit tests in `apps/web/src/test/seed-vault.test.ts`:
+
 - Tested populating `EventLogStore` with demo preset seed events.
 - Tested custom `graphId` parameter and automatic `GraphRegistry` metadata registration.
 - Verified full test suite (`bun test`): 652 tests passed across 93 files.
@@ -21,6 +23,7 @@ Executed unit tests in `apps/web/src/test/seed-vault.test.ts`:
 ## TDD Evidence (RED/GREEN Output)
 
 ### RED Phase
+
 ```
 bun test apps/web/src/test/seed-vault.test.ts
 apps/web/src/test/seed-vault.test.ts:
@@ -32,6 +35,7 @@ error: Cannot find module './seed-vault' from '/home/mkobit/workspace/mkobit/can
 ```
 
 ### GREEN Phase
+
 ```
 bun test apps/web/src/test/seed-vault.test.ts
 apps/web/src/test/seed-vault.test.ts:

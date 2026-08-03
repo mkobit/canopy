@@ -46,6 +46,7 @@ canopy
 The standalone `canopy handshake` command is removed. `canopy status` automatically executes `canopy.v1.handshake` against the configured IPC socket path.
 
 Output in human-readable mode (`gh auth status` style):
+
 ```
 Canopy IPC Daemon Status
   ✓ Socket connected (/tmp/canopy.sock)
@@ -56,6 +57,7 @@ Canopy IPC Daemon Status
 ```
 
 Output in JSON mode (`canopy status --json`):
+
 ```json
 {
   "connected": true,
@@ -68,10 +70,12 @@ Output in JSON mode (`canopy status --json`):
 ```
 
 If the socket connection fails (e.g. `ECONNREFUSED` or file missing):
+
 ```
 Canopy IPC Daemon Status
   x Socket disconnected (/tmp/canopy.sock - ENOENT)
 ```
+
 And exits with code 1.
 
 ### Decision 3: Event stream tailing under `canopy events tail`
@@ -79,6 +83,7 @@ And exits with code 1.
 `canopy events tail` connects to the IPC socket and issues `canopy.v1.eventStream.subscribe`. It listens for `canopy.v1.eventStream.event` notifications and streams them line-by-line to `stdout` until SIGINT / Ctrl+C.
 
 Options:
+
 - `--socket-path`: Socket file path (default: `CANOPY_SOCKET_PATH` or `tmp/canopy.sock`)
 - `--graph-id`: Optional graph ID filter
 - `--from-sequence`: Optional starting sequence number

@@ -41,7 +41,9 @@ export interface GenerateVaultOptions {
   readonly seed?: number;
 }
 
-export function generateVault(options: GenerateVaultOptions): Effect.Effect<GraphSession, GraphError>;
+export function generateVault(
+  options: GenerateVaultOptions,
+): Effect.Effect<GraphSession, GraphError>;
 ```
 
 - `seed`: Optional seedable pseudo-random RNG (e.g. `fast-check` or seedable LCG). Specifying a seed produces identical, reproducible graph data.
@@ -53,6 +55,7 @@ export function generateVault(options: GenerateVaultOptions): Effect.Effect<Grap
 
 Content nodes store pure graph properties (`Node`, `Edge`, `Properties`).
 Rendering behavior is resolved dynamically at runtime:
+
 1. The UI inspects the node's `NodeType`.
 2. The UI queries the graph for connected `defaultView` edges pointing to a `ViewDefinition` node.
 3. The `ViewDefinition` references a `RendererDefinition` node (e.g. `system:renderer:markdown`, `system:renderer:code`, or a custom plugin renderer node) specifying the WASM guest entry point.

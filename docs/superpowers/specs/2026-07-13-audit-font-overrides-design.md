@@ -24,6 +24,7 @@ We will update `apps/web/src/components/layout.tsx` to use the `font-sans` class
 ### Automated verification
 
 We will run the following checks to ensure no regressions:
+
 - Run `bun run build` to verify the production bundle builds successfully.
 - Run `bun run lint` to verify formatting and lint rules.
 - Run `bun run typecheck` to verify TypeScript compile checks.
