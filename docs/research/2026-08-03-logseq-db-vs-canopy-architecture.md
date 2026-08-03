@@ -84,8 +84,9 @@ The gap is entirely in the build/instantiation pipeline, which is already tracke
 
 **Logseq**: DataScript — a mature, indexed, in-memory Datalog engine with real query planning, doing double duty as both the query layer and the live application state store.
 
-**Canopy**: `@canopy/queries` is a typed pipeline builder (`node-scan | edge-scan | filter | traversal | sort | limit | project` steps, composed via curried combinators) over a naive in-memory executor — brute-force scans, no indexes, no planner (`packages/queries/src/engine.ts:24-126`).
-GQL/Cypher support is a stub that pattern-matches a single `MATCH (n:Type) RETURN n` shape (`cypher.ts:19-55`); the design doc explicitly defers indexing and query push-down to future work.
+**Canopy**: the design target is an ISO GQL (ISO/IEC 39075, published April 2024) read layer, read-only by design — writes stay on the event system, reads execute only against the projected `Graph`, never the event log directly (`docs/design/2026-02-08-query-engine.md:41-50,118-135`).
+Today, only the layer underneath that target is real: a typed pipeline IR (`node-scan | edge-scan | filter | traversal | sort | limit | project` steps, composed via curried combinators) and a naive in-memory executor — brute-force scans, no indexes, no planner (`packages/queries/src/engine.ts:24-126`).
+GQL itself is unbuilt — `cypher.ts:19-55` is a placeholder that pattern-matches a single `MATCH (n:Type) RETURN n` shape and errors on anything else; the design doc lists the GQL parser strategy (from scratch, existing library, or a Cypher-first migration path) as an explicit open question, and defers indexing/push-down to future work.
 
 **Insight**: this is the most concrete capability gap surfaced by the comparison.
 Logseq's shipped, indexed Datalog engine is direct prior art for Canopy's own deferred indexing/planner work — worth consulting DataScript's design (or comparable Datalog engines) rather than hand-rolling an index/planner layer from scratch when that work is picked up.
