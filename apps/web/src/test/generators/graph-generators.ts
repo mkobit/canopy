@@ -246,7 +246,7 @@ function buildContentEdges(
   }).filter((entry): entry is Readonly<[EdgeId, Edge]> => entry !== undefined);
 }
 
-function graphToEvents(graph: Graph, deviceId: DeviceId): readonly GraphEvent[] {
+export function graphToEvents(graph: Graph, deviceId: DeviceId): readonly GraphEvent[] {
   const nodeEvents: readonly GraphEvent[] = [...graph.nodes.values()].map((node) => ({
     type: 'NodeCreated',
     eventId: createEventId(),
