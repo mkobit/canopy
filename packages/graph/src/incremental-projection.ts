@@ -219,7 +219,7 @@ function applyOneEventInternal(
           ? { exists: true, tombstoned: false, propertyWriters: new Map() }
           : undefined);
       const node = graph.nodes.get(event.id);
-      if (!meta || !meta.exists || meta.tombstoned || !node) {
+      if (!meta || !node || !meta.exists || meta.tombstoned) {
         return { graph, nodeMeta, edgeMeta };
       }
 
@@ -363,7 +363,7 @@ function applyOneEventInternal(
           ? { exists: true, tombstoned: false, propertyWriters: new Map() }
           : undefined);
       const edge = graph.edges.get(event.id);
-      if (!meta || !meta.exists || meta.tombstoned || !edge) {
+      if (!meta || !edge || !meta.exists || meta.tombstoned) {
         return { graph, nodeMeta, edgeMeta };
       }
 

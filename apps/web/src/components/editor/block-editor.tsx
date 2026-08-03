@@ -96,7 +96,7 @@ export const BlockEditor: React.FC<BlockEditorProperties> = ({
   }, [flush]);
 
   const handleInput = () => {
-    contentReference.current = editorReference.current?.innerHTML ?? contentReference.current;
+    contentReference.current = editorReference.current?.getHTML() ?? contentReference.current;
     if (timerReference.current !== undefined) clearTimeout(timerReference.current);
     timerReference.current = setTimeout(flush, idleMs);
   };

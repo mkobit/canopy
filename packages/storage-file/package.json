@@ -14,7 +14,7 @@
     "zod": "^4.4.1"
   },
   "devDependencies": {
-    "temporal-polyfill": "^0.3.2",
+    "temporal-polyfill": "^1.0.1",
     "typescript": "6.0.3"
   }
 }
