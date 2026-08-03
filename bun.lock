@@ -35,7 +35,7 @@
         "husky": "^9.1.7",
         "prettier": "^3.9.5",
         "tsx": "^4.22.4",
-        "typescript": "6.0.3",
+        "typescript": "7.0.2",
         "typescript-eslint": "^8.59.1",
         "typescript-native": "npm:typescript@7.0.2",
         "uuid": "^14.0.0",
@@ -58,7 +58,7 @@
         "effect": "^3.22.0",
       },
       "devDependencies": {
-        "typescript": "6.0.3",
+        "typescript": "7.0.2",
       },
     },
     "apps/web": {
@@ -100,7 +100,7 @@
         "happy-dom": "^20.4.0",
         "postcss": "^8.5.19",
         "tailwindcss": "^4.2.2",
-        "typescript": "6.0.3",
+        "typescript": "7.0.2",
         "vite": "^8.1.5",
       },
     },
@@ -117,7 +117,7 @@
       },
       "devDependencies": {
         "@canopy/storage": "workspace:*",
-        "typescript": "6.0.3",
+        "typescript": "7.0.2",
       },
     },
     "packages/graph": {
@@ -133,7 +133,7 @@
         "@canopy/storage-sqlite": "workspace:*",
         "@types/uuid": "^11.0.0",
         "fast-check": "^3.23.2",
-        "typescript": "6.0.3",
+        "typescript": "7.0.2",
       },
     },
     "packages/queries": {
@@ -145,7 +145,7 @@
       },
       "devDependencies": {
         "temporal-polyfill": "^0.3.2",
-        "typescript": "6.0.3",
+        "typescript": "7.0.2",
       },
     },
     "packages/settings": {
@@ -155,7 +155,7 @@
         "@canopy/graph": "workspace:*",
       },
       "devDependencies": {
-        "typescript": "6.0.3",
+        "typescript": "7.0.2",
       },
     },
     "packages/storage": {
@@ -166,7 +166,7 @@
       },
       "devDependencies": {
         "temporal-polyfill": "^0.3.2",
-        "typescript": "6.0.3",
+        "typescript": "7.0.2",
       },
     },
     "packages/storage-file": {
@@ -178,7 +178,7 @@
       },
       "devDependencies": {
         "temporal-polyfill": "^0.3.2",
-        "typescript": "6.0.3",
+        "typescript": "7.0.2",
       },
     },
     "packages/storage-http": {
@@ -189,7 +189,7 @@
       },
       "devDependencies": {
         "temporal-polyfill": "^0.3.2",
-        "typescript": "6.0.3",
+        "typescript": "7.0.2",
       },
     },
     "packages/storage-indexeddb": {
@@ -202,7 +202,7 @@
       "devDependencies": {
         "fake-indexeddb": "^6.2.5",
         "temporal-polyfill": "^0.3.2",
-        "typescript": "6.0.3",
+        "typescript": "7.0.2",
       },
     },
     "packages/storage-sqlite": {
@@ -215,7 +215,7 @@
       },
       "devDependencies": {
         "temporal-polyfill": "^0.3.2",
-        "typescript": "6.0.3",
+        "typescript": "7.0.2",
       },
     },
     "tools": {
@@ -1749,7 +1749,7 @@
 
     "typed-array-length": ["typed-array-length@1.0.8", "", { "dependencies": { "call-bind": "^1.0.9", "for-each": "^0.3.5", "gopd": "^1.2.0", "is-typed-array": "^1.1.15", "possible-typed-array-names": "^1.1.0", "reflect.getprototypeof": "^1.0.10" } }, "sha512-phPGCwqr2+Qo0fwniCE8e4pKnGu/yFb5nD5Y8bf0EEeiI5GklnACYA9GFy/DrAeRrKHXvHn+1SUsOWgJp6RO+g=="],
 
-    "typescript": ["typescript@6.0.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw=="],
+    "typescript": ["typescript@7.0.2", "", { "optionalDependencies": { "@typescript/typescript-aix-ppc64": "7.0.2", "@typescript/typescript-darwin-arm64": "7.0.2", "@typescript/typescript-darwin-x64": "7.0.2", "@typescript/typescript-freebsd-arm64": "7.0.2", "@typescript/typescript-freebsd-x64": "7.0.2", "@typescript/typescript-linux-arm": "7.0.2", "@typescript/typescript-linux-arm64": "7.0.2", "@typescript/typescript-linux-loong64": "7.0.2", "@typescript/typescript-linux-mips64el": "7.0.2", "@typescript/typescript-linux-ppc64": "7.0.2", "@typescript/typescript-linux-riscv64": "7.0.2", "@typescript/typescript-linux-s390x": "7.0.2", "@typescript/typescript-linux-x64": "7.0.2", "@typescript/typescript-netbsd-arm64": "7.0.2", "@typescript/typescript-netbsd-x64": "7.0.2", "@typescript/typescript-openbsd-arm64": "7.0.2", "@typescript/typescript-openbsd-x64": "7.0.2", "@typescript/typescript-sunos-x64": "7.0.2", "@typescript/typescript-win32-arm64": "7.0.2", "@typescript/typescript-win32-x64": "7.0.2" }, "bin": { "tsc": "bin/tsc" } }, "sha512-8FYau96o3NKOhbjKi/qNvG/W5jhzxkbdm5sj9AbZ/5T5sWqn3hJgLfGx27sRKZWTvyzCP8dLRBTf5tBTSRVUNA=="],
 
     "typescript-eslint": ["typescript-eslint@8.64.0", "", { "dependencies": { "@typescript-eslint/eslint-plugin": "8.64.0", "@typescript-eslint/parser": "8.64.0", "@typescript-eslint/typescript-estree": "8.64.0", "@typescript-eslint/utils": "8.64.0" }, "peerDependencies": { "eslint": "^8.57.0 || ^9.0.0 || ^10.0.0", "typescript": ">=4.8.4 <6.1.0" } }, "sha512-0qg+pDNMnqYzqH9AnNK+39tejHvsShUOUUoRUgtnTGE7QuMZhiFDnozq8nHJVq+Wae6NMLKNWLg5WmkcC/ndyQ=="],
 
