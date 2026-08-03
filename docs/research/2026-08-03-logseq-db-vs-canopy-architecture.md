@@ -74,11 +74,13 @@ A coarse two-tier trust model is emerging: on web builds, only plugins with no "
 
 **Canopy**: host-side WIT bindings, capability gating, and a real sandbox executor are implemented (`packages/api-adapter/src/wasm/`) — fuel metering (1M units default), a 16 MB memory quota, a 5s timeout, and per-call capability checks (`read:nodes`, `write:create-node`, etc.) in `sandboxed-executor.ts:12-153` and `host-bindings.ts:121-124`.
 This is already more fine-grained than Logseq's binary effect/no-effect split.
-The gap: `WasmGuestPlugin` is currently typed as a plain JS function, not an instantiated WASM component — real `.wasm` compile/instantiate/transpile plumbing is tracked as an active, in-progress OpenSpec change (`wasm-component-pipeline`), not yet implemented.
+The gap: `WasmGuestPlugin` is still typed as a plain JS function (`sandboxed-executor.ts:16`), not an instantiated WASM component.
+The `wasm-component-pipeline` OpenSpec change (epic `canopy-5hw`) is closed with all tasks complete, but its scope was the guest-side build/packaging pipeline only (TS-to-ESM bundling, Brotli compression, multi-plugin discovery) — it never touched `sandboxed-executor.ts`.
+Actually instantiating a real `.wasm` component on the host side is a distinct, still-open gap with **no beads or OpenSpec change tracking it** (`bd search "instantiat"` and `"component model"` both return nothing).
 Invariant 10 (rendering resolved via graph-resident `RendererDefinition`/`ViewDefinition` nodes) is likewise aspirational — `apps/web`'s block renderer is still a hardcoded switch statement.
 
 **Insight**: Canopy's plugin *security* design (per-call capabilities, resource metering) is already more rigorous than what Logseq has shipped.
-The gap is entirely in the build/instantiation pipeline, which is already tracked and being worked (no new bead needed here).
+But unlike the query engine's GQL gap, this one sits closer to being actionable — the build pipeline that would feed a real instantiation step already exists and is done; only the host-side wiring is missing, and it is currently untracked.
 
 ## 5. Query and access layer
 
@@ -87,6 +89,8 @@ The gap is entirely in the build/instantiation pipeline, which is already tracke
 **Canopy**: the design target is an ISO GQL (ISO/IEC 39075, published April 2024) read layer, read-only by design — writes stay on the event system, reads execute only against the projected `Graph`, never the event log directly (`docs/design/2026-02-08-query-engine.md:41-50,118-135`).
 Today, only the layer underneath that target is real: a typed pipeline IR (`node-scan | edge-scan | filter | traversal | sort | limit | project` steps, composed via curried combinators) and a naive in-memory executor — brute-force scans, no indexes, no planner (`packages/queries/src/engine.ts:24-126`).
 GQL itself is unbuilt — `cypher.ts:19-55` is a placeholder that pattern-matches a single `MATCH (n:Type) RETURN n` shape and errors on anything else; the design doc lists the GQL parser strategy (from scratch, existing library, or a Cypher-first migration path) as an explicit open question, and defers indexing/push-down to future work.
+The design doc itself is still marked `Status: draft` (`query-engine.md:3`), and unlike the plugin build pipeline above, it has never been staged into an OpenSpec change or a beads issue — `bd search` on `GQL`, `query engine`, `cypher`, and even bare `query` all return zero results.
+So this gap is one step more dormant than the plugin one: not just unimplemented, but not yet queued as work at all.
 
 **Insight**: this is the most concrete capability gap surfaced by the comparison.
 Logseq's shipped, indexed Datalog engine is direct prior art for Canopy's own deferred indexing/planner work — worth consulting DataScript's design (or comparable Datalog engines) rather than hand-rolling an index/planner layer from scratch when that work is picked up.
