@@ -22,6 +22,7 @@ export const seedVaultStore = async (
   const graphId = options?.graphId ?? 'demo-graph';
   const deviceId = options?.deviceId ?? asDeviceId('demo-device');
 
+  // Skip appending duplicate events if store already contains events for graphId.
   const existingEvents = await store.getEvents(graphId);
   if (!existingEvents.ok) {
     return existingEvents;
