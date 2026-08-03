@@ -42,9 +42,6 @@ export const StorageProvider: React.FC<Readonly<{ children: React.ReactNode }>> 
         const regInit = await reg.init();
         if (!regInit.ok) throw regInit.error;
 
-        setEventLog(log);
-        setRegistry(reg);
-
         const isDemoSeedEnabled =
           import.meta.env.VITE_CANOPY_DEMO_SEED === 'true' ||
           import.meta.env.CANOPY_DEMO_SEED === 'true' ||
@@ -56,6 +53,9 @@ export const StorageProvider: React.FC<Readonly<{ children: React.ReactNode }>> 
             console.error('Failed to seed demo vault:', seedResult.error);
           }
         }
+
+        setEventLog(log);
+        setRegistry(reg);
 
         return undefined;
       });
