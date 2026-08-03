@@ -6,7 +6,7 @@ import type { GenerateVaultOptions } from './generators/graph-generators';
 import { generateGraphVault, graphToEvents } from './generators/graph-generators';
 import { Temporal } from 'temporal-polyfill';
 
-export type SeedVaultOptions = GenerateVaultOptions &
+export type SeedVaultOptions = Partial<GenerateVaultOptions> &
   Readonly<{
     graphId?: string | undefined;
     deviceId?: DeviceId | undefined;
@@ -22,12 +22,19 @@ export const seedVaultStore = async (
   const graphId = options?.graphId ?? 'demo-graph';
   const deviceId = options?.deviceId ?? asDeviceId('demo-device');
 
-  const graph = generateGraphVault({ preset, seed });
-  const events = graphToEvents(graph, deviceId);
+  const existingEvents = await store.getEvents(graphId);
+  if (!existingEvents.ok) {
+    return existingEvents;
+  }
 
-  const appendResult = await store.appendEvents(graphId, events);
-  if (!appendResult.ok) {
-    return appendResult;
+  if (existingEvents.value.length === 0) {
+    const graph = generateGraphVault({ preset, seed });
+    const events = graphToEvents(graph, deviceId);
+
+    const appendResult = await store.appendEvents(graphId, events);
+    if (!appendResult.ok) {
+      return appendResult;
+    }
   }
 
   if (options?.registry) {

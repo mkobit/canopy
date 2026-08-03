@@ -46,4 +46,24 @@ describe('seedVaultStore', () => {
 
     await unwrap(await registry.close());
   });
+
+  test('is idempotent when called multiple times on the same store and graphId', async () => {
+    const store = createInMemoryEventStore();
+    const firstResult = await seedVaultStore(store, { preset: 'demo', seed: 100 });
+    expect(firstResult.ok).toBe(true);
+
+    const initialEvents = await store.getEvents('demo-graph');
+    expect(initialEvents.ok).toBe(true);
+    const initialCount = initialEvents.ok ? initialEvents.value.length : 0;
+    expect(initialCount).toBeGreaterThan(0);
+
+    const secondResult = await seedVaultStore(store, { preset: 'demo', seed: 100 });
+    expect(secondResult.ok).toBe(true);
+
+    const finalEvents = await store.getEvents('demo-graph');
+    expect(finalEvents.ok).toBe(true);
+    if (finalEvents.ok) {
+      expect(finalEvents.value.length).toBe(initialCount);
+    }
+  });
 });
