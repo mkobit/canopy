@@ -9,6 +9,7 @@ Both systems converged on similar high-level bets from different starting points
 They diverge sharply on sync: Logseq built a custom, only partially documented CRDT-inspired rebase protocol behind a closed-source server; Canopy deliberately rejected CRDTs in favor of a fully open event log with per-property last-writer-wins, at the cost of losing fine-grained (e.g. character-level) merge.
 Logseq ships a working, if young, product surface — an official MCP server, a real Datalog query engine, a plugin marketplace with 65+ DB-compatible plugins — that validates several of Canopy's still-partially-implemented bets (WASM plugin sandboxing, IPC-based agent access, meta-circular node typing) but also exposes gaps Canopy hasn't closed yet (query indexing/planning, a shipped daemon host, an MCP-compatible adapter, dry-run previews for agent writes).
 The most actionable insight: Canopy already has the primitive Logseq had to bolt on after the fact — `DraftSession` (packages/graph/src/draft-session.ts) is architecturally the same idea as Logseq's "pretend mode" dry-run for AI edits, but it is not yet exposed over the IPC/agent surface.
+Two deep dives (§6, §7) go further than comparison and check Canopy's own "decided" and "draft" design docs against their own stated goals, using Logseq as a stress test rather than a target: the event-log storage decision holds up well against its actual goal (single-user multi-device durability/auditability, not Logseq's real-time multi-user collaboration goal), with query performance under agentic load as the one genuinely unmeasured risk; the plugin/extension model's security primitives are individually more rigorous than Logseq's, but the architecture as a whole is not yet rock solid — the wizard doc's HTML-injection mitigation doesn't cover the conceptual renderer interface that will need it most, and the plugin manifest's declared capabilities don't yet connect to the runtime capability check.
 
 ## Methodology and source currency
 
@@ -95,6 +96,75 @@ So this gap is one step more dormant than the plugin one: not just unimplemented
 **Insight**: this is the most concrete capability gap surfaced by the comparison.
 Logseq's shipped, indexed Datalog engine is direct prior art for Canopy's own deferred indexing/planner work — worth consulting DataScript's design (or comparable Datalog engines) rather than hand-rolling an index/planner layer from scratch when that work is picked up.
 
+## 6. Deep dive: does the event-log storage model accomplish our own stated goals?
+
+The first five sections compare mechanisms; this section checks the persistence/sync decision against what Canopy itself said it was optimizing for, using Logseq as a stress test rather than a target to match.
+
+### Our stated goals, verbatim
+
+`docs/design/2026-07-03-event-log-storage-and-sync.md` is marked `Status: decided`, not draft — this is a closed decision, not an open design question.
+Its own rationale (§6): "durability, auditability, and backend portability matter more" than intra-session live collaboration, character-level merge, or presence, which are explicitly named as accepted losses.
+The target deployment is stated plainly: **single-user, multi-device, eventual sync** — not real-time multi-user collaboration.
+
+This framing matters more than it looks: Logseq's RTC is explicitly built for real-time multi-*user* collaboration ("like Google Docs").
+Canopy has no such goal.
+A large fraction of what makes Logseq's sync engineering hard — the custom rebase protocol, the WebSocket relay, the full-graph-pull-on-conflict fallback — exists to solve a problem Canopy isn't trying to solve.
+So "whose sync is better" is close to a category error; the fair question is whether Canopy's simpler model holds up for the goal it actually has.
+
+### Mechanism comparison, same goal only
+
+| Concern | Logseq DB | Canopy |
+| --- | --- | --- |
+| Local durability of pending writes | separate `client_ops` SQLite DB holding ops pending sync | the event log itself is the durable store — no separate pending-ops layer, because there's no separate materialized-state DB to keep authoritative |
+| Conflict granularity | per-datom (≈ attribute-level), resolved by rebase | per-property (≈ same granularity), resolved by eventId-ordered LWW, no rebase step |
+| Recoverability of a "losing" write | undocumented publicly — rebase implies the loser is transformed or dropped, no stated recoverability guarantee | explicit and implemented: the log is append-only, so a losing LWW write is never deleted, only shadowed in the projection, and is recoverable from history |
+| Backend portability | state lives natively in SQLite tables + DataScript; no evidence of a portable abstraction over that pairing | `EventLogStore` port (`packages/graph/src/event-log.ts:12-21`) is genuinely backend-agnostic — 5 implementations (memory/IndexedDB/SQLite/HTTP/file) against the same 2-method port, none of them Canopy-specific glue |
+| Query performance | DataScript is a real indexed Datalog engine — fast by construction | brute-force scan over an in-memory `Map` on every query call (`engine.ts:116-126`) — the direct cost of choosing durable-log-plus-naive-projection over a queryable materialized store |
+
+### Verdict
+
+The durability, auditability, and backend-portability goals are met, not just claimed — the convergence invariant has a property-based test, and the 5-backend port is real, working code, not an aspiration.
+Logseq's own experience is corroborating evidence for the CRDT-avoidance call: they needed a bespoke, still partly-undocumented rebase engine to get equivalent-granularity conflict resolution, which is real complexity Canopy's simpler model sidesteps by not sharing Logseq's real-time-collaboration goal.
+
+Two risks worth naming plainly rather than waving away:
+
+1. **Query performance under agentic load is unvalidated.** The design doc's justification for skipping a persisted projection snapshot is that "replaying a personal vault's log (thousands of events) through `projectGraph` is milliseconds-scale" — that's replay cost, not the cost of repeatedly scanning the resulting `Map` on every subsequent query.
+   Canopy's own stated goal includes "AI and agentic workflows query the graph programmatically" (`query-engine.md:20`) — a workload pattern of many small queries per turn, which is exactly where O(n) brute-force scans start to hurt, unlike the one-big-query-per-page-load pattern a human UI produces.
+   No benchmark, bead, or doc gives a number for vault size or query volume where this becomes a problem.
+   This isn't evidence the architecture is wrong; it's evidence the boundary of the architecture hasn't been measured.
+2. **Signing/E2EE is deferred (own doc, §9), but the threat exists today, not just for a hypothetical multi-user future.** Even single-user Drive-folder sync means vault content transits and rests on a third party's servers in plaintext under the current file-transport design (§5).
+   Logseq baking per-graph E2EE into RTC from the start (admittedly for a different, multi-user threat model) is a signal that this isn't purely a "someday" item once any real file-based sync backend is turned on for a real user.
+
+Net: the decision is rock solid for the goal it was actually made for.
+It was never trying to be Logseq's RTC, and holding it to that bar would be the wrong comparison.
+The honest gap is that "will it hold up" has an unmeasured dimension (query load) and a deferred-but-live threat (plaintext sync) — not that the wrong architecture was chosen.
+
+## 7. Deep dive: plugin/extension model — design rigor vs Logseq's shipped ecosystem
+
+### Our stated goals
+
+`docs/design/2026-02-08-extension-and-execution-model.md` (`Status: draft — conceptual, not implementation-ready`) wants: WASM sandboxing so extensions can be written in any language, capability-based least privilege, extensions represented as graph nodes, and one uniform permission model across humans, AI agents, and extensions (§1, §4).
+`docs/design/2026-07-16-wasm-plugin-lifecycle-and-wizard.md` is the one part of this space with a real adversarial-review pass, but its scope is narrower — multi-step data-entry wizards specifically, not the general extension model.
+
+### What's actually true today, verified against source
+
+- **Language-agnostic WASM is architecturally possible but practically unproven.** The only build pipeline that exists (`canopy-5hw`, closed/complete) compiles guest plugins from **TypeScript only** — "any language that compiles to WASM" has never been exercised.
+- **The wizard doc's XSS mitigation is real and doesn't generalize.** Its adversarial review states plugins "cannot return raw HTML or JS strings" — the host renders forms natively from declarative schemas, closing off a whole vulnerability class Logseq's JS-sandbox model cannot structurally close off (Logseq's plugins are arbitrary JS in an isolated iframe/Shadow DOM; isolation limits blast radius but does not prevent the plugin from generating and returning arbitrary markup within its own boundary).
+  But this mitigation is scoped to wizards, which are inherently form-based.
+  The conceptual extension model's `canopy:ui/render` interface (`extension-and-execution-model.md:63`) is explicitly designed to "Return HTML output to the viewport" for custom renderers — precisely the pattern the wizard doc's mitigation exists to avoid — and that document has no adversarial review section at all (it is still draft/conceptual).
+  **This is an unresolved internal tension between Canopy's own two plugin design docs**, not a Logseq-comparison finding: the one plugin type that's been security-reviewed is also the one type structurally incapable of the HTML-injection risk; the type that will need to return HTML hasn't been reviewed to the same standard.
+- **The policy model in the design doc and the capability model in the code are two disconnected systems.** The design doc's intent is a policy "attached to its node in the graph" (`extension-and-execution-model.md:85`).
+  What's implemented (`packages/api-adapter/src/wasm/capabilities.ts:6-19,31-50`) is a flat bearer-token scope string (e.g. `read:nodes write:create-node`, wildcard-capable), checked at call time, structurally identical to generic API-adapter auth — nothing graph-resident or per-extension about it.
+  The plugin manifest schema does declare a `capabilities: string[]` field, and `packages/graph/src/plugin-validation.ts:181-200` validates that it's shaped correctly — but grep confirms nothing reads that manifest-declared list and feeds it into `verifyCapability`/`WasmCapability`.
+  They are two capability systems that don't talk to each other yet.
+- **Distribution/discovery is explicitly out of scope** (`extension-and-execution-model.md:163`, "Extension marketplace or registry — Future consideration") — a deliberate, reasonable deferral for a system with no user-provided extensions yet (§1), but real distance from Logseq's working marketplace with compatibility filtering across 65+ plugins.
+
+### Verdict
+
+Individually, Canopy's plugin *security primitives* — fuel/memory/timeout metering, capability-token checks, and the wizard's no-raw-HTML constraint — are more rigorous than anything Logseq ships today, which relies on iframe/Shadow-DOM isolation plus a coarse effect/no-effect trust tier.
+But it would be premature to call the plugin *architecture* rock solid as a whole: the rigor that exists is real but narrow (wizards only), the manifest-declared and runtime-enforced capability systems don't connect, and the one extension type that structurally needs to return HTML to a viewport (renderers) hasn't had an adversarial pass at all.
+Before renderer-type extensions get built, they need their own security review — the wizard doc's mitigations do not automatically transfer.
+
 ## Design insights for Canopy evolution
 
 1. **Wire up the IPC daemon** — the agent-facing query/mutation server exists and is tested but nothing hosts it yet; this is the single highest-leverage, lowest-risk gap found.
@@ -103,6 +173,9 @@ Logseq's shipped, indexed Datalog engine is direct prior art for Canopy's own de
 4. **Treat DataScript as prior art** when Canopy's query engine indexing/planner work is eventually staged — don't design that from a blank page.
 5. **No case for reopening the CRDT decision** — Logseq's need for a custom, partially-undocumented rebase protocol reinforces that Canopy's simpler, fully-specified event-log LWW model was the right trade for a pre-1.0, single-maintainer project.
 6. **Tag-based typing is relevant prior art for `canopy-6cz`** (per-domain namespace question) — Logseq's lightweight tag-inheritance typing is a different point in the design space from Canopy's formal `NodeTypeDefinition` registry, worth citing when that question is revisited, not adopting wholesale.
+7. **Benchmark query performance under agentic load before it becomes a felt problem** — the naive scan executor has never been measured against realistic vault size or agent query volume; the design doc's "milliseconds-scale" justification covers replay cost only, not repeated post-projection query cost.
+8. **Reconcile the two plugin design docs' HTML-output security posture before building renderer extensions** — the wizard doc's no-raw-HTML mitigation is real but scoped to forms; the conceptual extension model's `canopy:ui/render` interface needs its own adversarial review before implementation, since it reintroduces exactly the risk the wizard doc closed off.
+9. **Wire the plugin manifest's declared `capabilities` into the runtime `WasmCapability` check** — they validate independently today and don't reference each other; a plugin's manifest currently has no actual enforcement effect on what it can call at runtime.
 
 ## Open questions not resolved by this research
 
