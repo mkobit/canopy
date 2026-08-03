@@ -20,17 +20,20 @@
 ### Task 1: OpenRPC Specification Generator & Export (`JSON_RPC_IPC_SPECIFICATION`)
 
 **Files:**
+
 - Create: `packages/api-adapter/src/ipc/ipc-openrpc-spec.ts`
 - Modify: `packages/api-adapter/src/ipc/index.ts`
 - Modify: `packages/api-adapter/src/index.ts`
 - Test: `packages/api-adapter/tests/ipc-openrpc-spec.test.ts`
 
 **Interfaces:**
+
 - Produces: `JSON_RPC_IPC_SPECIFICATION: string` (exported canonical OpenRPC 1.3 JSON string)
 
 - [ ] **Step 1: Write failing test for `JSON_RPC_IPC_SPECIFICATION` export**
 
 Create `packages/api-adapter/tests/ipc-openrpc-spec.test.ts`:
+
 ```typescript
 import { describe, expect, test } from 'bun:test';
 import { JSON_RPC_IPC_SPECIFICATION } from '../src';
@@ -58,6 +61,7 @@ Expected: FAIL with missing `JSON_RPC_IPC_SPECIFICATION` export.
 - [ ] **Step 3: Implement OpenRPC spec generator in `ipc-openrpc-spec.ts`**
 
 Create `packages/api-adapter/src/ipc/ipc-openrpc-spec.ts`:
+
 ```typescript
 import { z } from 'zod';
 import {
@@ -110,8 +114,16 @@ const methodSchemas = [
   { name: IPC_METHODS.MUTATION_DELETE_NODE, params: DeleteNodeParamsSchema },
   { name: IPC_METHODS.MUTATION_CREATE_EDGE, params: CreateEdgeParamsSchema },
   { name: IPC_METHODS.MUTATION_DELETE_EDGE, params: DeleteEdgeParamsSchema },
-  { name: IPC_METHODS.EVENT_STREAM_SUBSCRIBE, params: SubscribeParamsSchema, result: SubscribeResultSchema },
-  { name: IPC_METHODS.EVENT_STREAM_UNSUBSCRIBE, params: UnsubscribeParamsSchema, result: UnsubscribeResultSchema },
+  {
+    name: IPC_METHODS.EVENT_STREAM_SUBSCRIBE,
+    params: SubscribeParamsSchema,
+    result: SubscribeResultSchema,
+  },
+  {
+    name: IPC_METHODS.EVENT_STREAM_UNSUBSCRIBE,
+    params: UnsubscribeParamsSchema,
+    result: UnsubscribeResultSchema,
+  },
   { name: IPC_METHODS.EVENT_STREAM_EVENT, params: EventNotificationParamsSchema },
 ] as const;
 
@@ -125,10 +137,12 @@ const openRpcObject = {
     name: m.name,
     paramStructure: 'by-name',
     params: Object.entries(
-      ((z.toJSONSchema(m.params) as { properties?: Record<string, unknown> }).properties ?? {})
+      (z.toJSONSchema(m.params) as { properties?: Record<string, unknown> }).properties ?? {},
     ).map(([paramName, schema]) => ({
       name: paramName,
-      required: ((z.toJSONSchema(m.params) as { required?: readonly string[] }).required ?? []).includes(paramName),
+      required: (
+        (z.toJSONSchema(m.params) as { required?: readonly string[] }).required ?? []
+      ).includes(paramName),
       schema,
     })),
     ...(m.result && { result: { name: 'result', schema: z.toJSONSchema(m.result) } }),
@@ -139,7 +153,8 @@ const openRpcObject = {
   })),
 };
 
-export const JSON_RPC_IPC_SPECIFICATION = JSON.stringify(sortKeysRecursively(openRpcObject), null, 2) + '\n';
+export const JSON_RPC_IPC_SPECIFICATION =
+  JSON.stringify(sortKeysRecursively(openRpcObject), null, 2) + '\n';
 ```
 
 Export `JSON_RPC_IPC_SPECIFICATION` from `packages/api-adapter/src/ipc/index.ts` and `packages/api-adapter/src/index.ts`.
@@ -161,6 +176,7 @@ git commit -m "feat(api-adapter): export canonical JSON_RPC_IPC_SPECIFICATION Op
 ### Task 2: Baseline Snapshot & Waiver Schema Updates
 
 **Files:**
+
 - Create: `packages/api-adapter/schema-baselines/ipc-openrpc.json`
 - Modify: `packages/api-adapter/schema-baselines/approved-breaking-changes.schema.json`
 - Modify: `packages/api-adapter/tests/schema-baselines.test.ts`
@@ -177,8 +193,14 @@ Generate `packages/api-adapter/schema-baselines/ipc-openrpc.json` containing `JS
 - [ ] **Step 3: Update `schema-baselines.test.ts` to assert IPC baseline snapshot**
 
 Modify `packages/api-adapter/tests/schema-baselines.test.ts` to check `ipc-openrpc.json`:
+
 ```typescript
-import { CANOPY_WIT_SPECIFICATION, GRAPHQL_SDL_SCHEMA, JSON_RPC_IPC_SPECIFICATION, PROTO_SERVICES_SDL } from '../src';
+import {
+  CANOPY_WIT_SPECIFICATION,
+  GRAPHQL_SDL_SCHEMA,
+  JSON_RPC_IPC_SPECIFICATION,
+  PROTO_SERVICES_SDL,
+} from '../src';
 
 // Inside test:
 const ipcPath = path.join(baselinesDirectory, 'ipc-openrpc.json');
@@ -205,6 +227,7 @@ git commit -m "feat(api-adapter): add ipc-openrpc.json baseline snapshot and wai
 ### Task 3: Compatibility Engine (`checkIpc`) & CLI Integration
 
 **Files:**
+
 - Modify: `tools/lib/api-compatibility-checker.ts`
 - Modify: `tools/check-api-compatibility.ts`
 - Modify: `docs/architecture/api-compatibility-policy.md`
@@ -212,6 +235,7 @@ git commit -m "feat(api-adapter): add ipc-openrpc.json baseline snapshot and wai
 - [ ] **Step 1: Implement `checkIpc` in `tools/lib/api-compatibility-checker.ts`**
 
 Update `tools/lib/api-compatibility-checker.ts`:
+
 1. Update `Violation['protocol']` and `Waiver['protocol']` to include `'ipc'`.
 2. Update `CheckOptions['target']` to `'graphql' | 'connect' | 'wit' | 'ipc' | 'all'`.
 3. Implement `checkIpc(liveSchema: string, baselineSchema?: string): readonly Violation[]`:
@@ -225,6 +249,7 @@ Update `tools/lib/api-compatibility-checker.ts`:
 - [ ] **Step 2: Update `tools/check-api-compatibility.ts` for target `ipc`**
 
 Update CLI target parsing, baseline updating logic, and waiver generation helper in `tools/check-api-compatibility.ts` to support `ipc`:
+
 ```typescript
 if (target === 'all' || target === 'ipc') {
   fs.writeFileSync(
@@ -259,11 +284,13 @@ git commit -m "feat(tools): integrate JSON-RPC IPC schema checking into check-ap
 ### Task 4: Regression Tests for IPC Compatibility Checker
 
 **Files:**
+
 - Modify: `packages/api-adapter/tests/api-compatibility.test.ts`
 
 - [ ] **Step 1: Add IPC compatibility regression tests to `api-compatibility.test.ts`**
 
 Add tests for:
+
 1. Method removal detection.
 2. Error code removal detection.
 3. Parameter tightening/removal detection.
@@ -280,7 +307,9 @@ test('detects breaking IPC method removal', () => {
     overrideIpc: JSON.stringify(modified),
   });
   expect(result.success).toBe(false);
-  expect(result.violations.some((v) => v.protocol === 'ipc' && v.changeType === 'METHOD_REMOVAL')).toBe(true);
+  expect(
+    result.violations.some((v) => v.protocol === 'ipc' && v.changeType === 'METHOD_REMOVAL'),
+  ).toBe(true);
 });
 ```
 

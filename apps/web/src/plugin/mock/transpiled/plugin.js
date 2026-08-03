@@ -2026,6 +2026,23 @@ export function instantiate(getCoreModule, imports, instantiateCore = WebAssembl
   }
   
   const utf16Decoder = new TextDecoder('utf-16');
+  
+  function _utf16AllocateAndEncode(str, realloc, memory) {
+    const len = str.length;
+    const ptr = realloc(0, 0, 2, len * 2);
+    const out = new Uint16Array(memory.buffer, ptr, len);
+    let i = 0;
+    if (isLE) {
+      while (i < len) { out[i] = str.charCodeAt(i++); }
+    } else {
+      while (i < len) {
+        const ch = str.charCodeAt(i);
+        out[i++] = (ch & 0xff) << 8 | ch >>> 8;
+      }
+    }
+    return { ptr, len, codepoints: [...str].length };
+  }
+  
   const TEXT_DECODER_UTF8 = new TextDecoder();
   const TEXT_ENCODER_UTF8 = new TextEncoder();
   
@@ -3330,7 +3347,7 @@ function _lowerFlatOption(meta) {
     _debugLog('[_lowerFlatOption()] args', { ctx });
     
     const v = ctx.vals[0];
-    if (v === null) {
+    if (v === null || v === undefined) {
       ctx.vals[0] = { tag: 'none' };
     } else {
       const isNotOptionObject = typeof v !== 'object'

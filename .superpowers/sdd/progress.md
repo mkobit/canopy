@@ -1,12 +1,11 @@
-# SDD Progress Ledger - Connect-Web and gRPC Protocol Adapter (canopy-1dk.6)
+# SDD Progress Ledger - Property-Based Vault Seed Generator
 
-Base commit: 6b62eb39a3ed389988fea9b98ecdd671e8c1dffb
-Plan: openspec/changes/graph-api-architecture/plans/2026-07-23-connect-web-grpc-adapter.md
+Base commit: b8635c831f839d3d7d8ac48a2acd81e786beca01
+Plan: docs/superpowers/plans/2026-08-02-property-based-ui-test-vault-seed.md
 
 ## Tasks
 
-- Task 1: complete (commits 6b62eb3..457a635, review clean)
-- Task 2: complete (commits 457a635..93730be, review clean)
-- Task 3: complete (commits 93730be..4cd5617, review clean)
-- Task 4: complete (commits 4cd5617..ab7e41d, review clean)
-- Task 5: complete (commits ab7e41d..3b3141b, review clean)
+- Task 1: complete (commits b8635c8..0f62629, review clean)
+- Task 2: complete (commits 0f62629..ec54c07, review clean)
+- Task 3: complete (commits ec54c07..4047e82, review clean)
+- Task 4: complete (commits ff6abfc..2e730d5, review clean)

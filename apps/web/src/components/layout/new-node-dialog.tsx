@@ -17,7 +17,7 @@ import type { NodeTypeOption } from '../../utils/node-types';
 export interface NewNodeDialogProperties {
   readonly open: boolean;
   readonly nodeTypes: readonly NodeTypeOption[];
-  readonly onSubmit: (type: TypeId, properties: Record<string, PropertyValue>) => unknown;
+  readonly onSubmit: (type: TypeId, properties: Readonly<Record<string, PropertyValue>>) => unknown;
   readonly onCancel: () => unknown;
 }
 
@@ -52,7 +52,7 @@ function getInitialValue(kind: PropertyValueKind): PropertyValue {
 
 function initialValuesFor(
   definitions: readonly PropertyDefinition[],
-): Record<string, PropertyValue> {
+): Readonly<Record<string, PropertyValue>> {
   return Object.fromEntries(
     definitions.map((definition) => [definition.name, getInitialValue(definition.valueKind)]),
   );
@@ -147,7 +147,7 @@ function useNewNodeDialogState(open: boolean, nodeTypes: readonly NodeTypeOption
 
 function hasRequiredMissing(
   selected: NodeTypeOption | undefined,
-  values: Record<string, PropertyValue>,
+  values: Readonly<Record<string, PropertyValue>>,
 ): boolean {
   if (!selected) return true;
   return selected.properties.some(

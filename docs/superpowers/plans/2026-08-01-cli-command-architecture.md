@@ -20,18 +20,21 @@
 ### Task 1: `canopy status` Command Implementation
 
 **Files:**
+
 - Create: `apps/cli/src/commands/status.ts`
 - Create: `apps/cli/tests/status-command.test.ts`
 - Modify: `apps/cli/src/index.ts`
 - Modify: `apps/cli/src/commands/handshake.ts`
 
 **Interfaces:**
+
 - Consumes: `makeIpcClient(socketPath).handshake()` from `apps/cli/src/ipc/ipc-client.ts`
 - Produces: `statusCommand` exported from `apps/cli/src/commands/status.ts`
 
 - [ ] **Step 1: Write failing status command test**
 
 Create `apps/cli/tests/status-command.test.ts`:
+
 ```typescript
 import { describe, expect, test } from 'bun:test';
 import { statusCommand } from '../src/commands/status';
@@ -62,11 +65,17 @@ export const statusEffect = (socketPath: string, json: boolean) =>
     if (clientResult._tag === 'Left') {
       if (json) {
         yield* Console.log(
-          JSON.stringify({ connected: false, socketPath, error: clientResult.left.message }, undefined, 2),
+          JSON.stringify(
+            { connected: false, socketPath, error: clientResult.left.message },
+            undefined,
+            2,
+          ),
         );
       } else {
         yield* Console.log(`Canopy IPC Daemon Status`);
-        yield* Console.log(`  x Socket disconnected (${socketPath} - ${clientResult.left.message})`);
+        yield* Console.log(
+          `  x Socket disconnected (${socketPath} - ${clientResult.left.message})`,
+        );
       }
       return yield* Effect.fail(new Error(`Socket disconnected`));
     }
@@ -78,7 +87,11 @@ export const statusEffect = (socketPath: string, json: boolean) =>
     if (handshakeResult._tag === 'Left') {
       if (json) {
         yield* Console.log(
-          JSON.stringify({ connected: false, socketPath, error: handshakeResult.left.message }, undefined, 2),
+          JSON.stringify(
+            { connected: false, socketPath, error: handshakeResult.left.message },
+            undefined,
+            2,
+          ),
         );
       } else {
         yield* Console.log(`Canopy IPC Daemon Status`);
@@ -145,17 +158,20 @@ git commit -m "feat(cli): implement canopy status and canopy daemon status comma
 ### Task 2: `canopy events` Command Implementation
 
 **Files:**
+
 - Create: `apps/cli/src/commands/events.ts`
 - Create: `apps/cli/tests/events-command.test.ts`
 - Modify: `apps/cli/src/index.ts`
 
 **Interfaces:**
+
 - Consumes: `client.subscribe()` from `apps/cli/src/ipc/ipc-client.ts`
 - Produces: `eventsCommand` exported from `apps/cli/src/commands/events.ts`
 
 - [ ] **Step 1: Write failing events command test**
 
 Create `apps/cli/tests/events-command.test.ts`:
+
 ```typescript
 import { describe, expect, test } from 'bun:test';
 import { eventsCommand } from '../src/commands/events';
@@ -240,12 +256,14 @@ git commit -m "feat(cli): implement canopy events tail command for live event st
 ### Task 3: Root Command Integration & Cleanup
 
 **Files:**
+
 - Modify: `apps/cli/src/index.ts`
 - Modify: `apps/cli/src/commands/handshake.ts`
 
 - [ ] **Step 1: Deprecate `handshake.ts` and re-export `statusCommand`**
 
 Update `apps/cli/src/commands/handshake.ts`:
+
 ```typescript
 import { statusCommand } from './status';
 
@@ -255,6 +273,7 @@ export const handshakeCommand = statusCommand;
 - [ ] **Step 2: Update `apps/cli/src/index.ts`**
 
 Update `apps/cli/src/index.ts`:
+
 ```typescript
 import { Command } from '@effect/cli';
 import { NodeContext, NodeRuntime } from '@effect/platform-node';

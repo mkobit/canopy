@@ -51,5 +51,8 @@ export default defineConfig({
     command: `bun run dev -- --port ${port} --strictPort`,
     url: `http://localhost:${port}`,
     reuseExistingServer: false,
+    env: {
+      VITE_CANOPY_DEMO_SEED: 'true',
+    },
   },
 });

@@ -219,12 +219,8 @@ function bootstrapGraph(): Graph {
     properties: {
       name: 'NodeType',
       description: 'Defines a type of node',
-      properties: [
-        /* PropertyDefinition[] schema */
-      ],
-      requiredProperties: [
-        /* string[] */
-      ],
+      properties: [/* PropertyDefinition[] schema */],
+      requiredProperties: [/* string[] */],
       // ...
     },
   });

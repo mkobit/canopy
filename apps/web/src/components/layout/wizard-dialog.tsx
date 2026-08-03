@@ -105,7 +105,9 @@ const FormFieldInput: React.FC<FormFieldInputProperties> = ({ field, value, onCh
   );
 };
 
-const getInitialValues = (fields: readonly FieldDefinition[]): Record<string, unknown> => {
+const getInitialValues = (
+  fields: readonly FieldDefinition[],
+): Readonly<Record<string, unknown>> => {
   const entries = fields.map((field) => {
     const defaultValue = field.defaultValue === undefined ? '' : field.defaultValue;
     const value =
@@ -117,8 +119,8 @@ const getInitialValues = (fields: readonly FieldDefinition[]): Record<string, un
 
 const updateDefaultValues = (
   fields: readonly FieldDefinition[],
-  previous: Record<string, unknown>,
-): Record<string, unknown> => {
+  previous: Readonly<Record<string, unknown>>,
+): Readonly<Record<string, unknown>> => {
   const entries = fields.map((field) => {
     const previousValue = previous[field.name];
     const defaultValue = field.defaultValue === undefined ? '' : field.defaultValue;

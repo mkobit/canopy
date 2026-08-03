@@ -50,7 +50,7 @@ export const executeCreateNode = async (
     }
   }
 
-  const finalProperties: Record<string, PropertyValue> = authContext?.tenantId
+  const finalProperties: Readonly<Record<string, PropertyValue>> = authContext?.tenantId
     ? { ...properties, tenantId: authContext.tenantId }
     : properties;
 
