@@ -15,8 +15,11 @@ import '@fontsource/space-grotesk/600.css';
 import '@fontsource/space-grotesk/700.css';
 import './index.css';
 
-if (import.meta.env.VITE_CANOPY_DEMO_SEED === 'true' || import.meta.env.CANOPY_DEMO_SEED === 'true') {
-  console.info('Canopy demo seed mode active');
+if (
+  import.meta.env.VITE_CANOPY_DEMO_SEED === 'true' ||
+  import.meta.env.CANOPY_DEMO_SEED === 'true'
+) {
+  console.warn('Canopy demo seed mode active');
 }
 
 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- #root is guaranteed by index.html
