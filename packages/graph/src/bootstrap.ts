@@ -296,7 +296,7 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
             return ok(cg);
           }
           const properties = 'properties' in definition ? definition.properties : undefined;
-          const extraProperties: Record<string, PropertyValue> = properties
+          const extraProperties: Readonly<Record<string, PropertyValue>> = properties
             ? {
                 namespace: text('system'),
                 properties: text(JSON.stringify(properties)),

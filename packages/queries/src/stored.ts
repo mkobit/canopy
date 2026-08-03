@@ -127,7 +127,7 @@ export function listQueryDefinitions(graph: Graph): readonly Node[] {
 
 // Helper to substitute parameters in the query structure
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function substituteParameters(object: any, parameters: Record<string, unknown>): any {
+function substituteParameters(object: any, parameters: Readonly<Record<string, unknown>>): any {
   if (Array.isArray(object)) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return object.map((item: any) => substituteParameters(item, parameters));

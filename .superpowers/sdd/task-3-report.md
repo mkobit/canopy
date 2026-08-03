@@ -24,5 +24,5 @@ Resolved initial storage provider race condition to ensure state update occurs a
 
 ## Commit details
 
-- Commit SHA: `440a40df594be91d98139f55494aa47048ca89b4`
+- Commit SHA: `7614d4e3a2e57a8523f35956d58882cbf22fb909`
 - Commit Message: `test(web): add automated Playwright user journey E2E spec`

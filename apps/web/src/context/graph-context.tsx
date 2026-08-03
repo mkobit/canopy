@@ -71,13 +71,13 @@ interface GraphContextActions {
   readonly closeGraph: () => Result<void, Error>;
   readonly createNode: (
     type: string,
-    properties?: Record<string, unknown>,
+    properties?: Readonly<Record<string, unknown>>,
   ) => Promise<Result<NodeId, Error>>;
   readonly createEdge: (
     type: string,
     source: NodeId,
     target: NodeId,
-    properties?: Record<string, unknown>,
+    properties?: Readonly<Record<string, unknown>>,
   ) => Promise<Result<EdgeId, Error>>;
   readonly updateNodeProperties: (
     nodeId: NodeId,
@@ -186,7 +186,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
   const createNode = useCallback(
     async (
       type: string,
-      properties: Record<string, unknown> = {},
+      properties: Readonly<Record<string, unknown>> = {},
     ): Promise<Result<NodeId, Error>> => {
       const session = sessionReference.current;
       if (!session) return err(new Error('No graph loaded'));
@@ -222,7 +222,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
       type: string,
       source: NodeId,
       target: NodeId,
-      properties: Record<string, unknown> = {},
+      properties: Readonly<Record<string, unknown>> = {},
     ): Promise<Result<EdgeId, Error>> => {
       const session = sessionReference.current;
       if (!session) return err(new Error('No graph loaded'));

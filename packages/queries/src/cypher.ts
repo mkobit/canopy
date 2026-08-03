@@ -11,7 +11,7 @@ export interface QueryEngine {
   readonly execute: (
     graph: Graph,
     query: string | QueryNode,
-    parameters?: Record<string, unknown>,
+    parameters?: Readonly<Record<string, unknown>>,
   ) => Result<QueryResult, Error>;
   readonly validate: (query: string | QueryNode) => ValidationResult;
 }

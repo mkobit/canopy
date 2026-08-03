@@ -84,7 +84,7 @@ export function createNamespace(
     return error({ path: ['name'], message: `Namespace '${input.name}' already exists` });
   }
 
-  const properties: Record<string, PropertyValue> = {
+  const properties: Readonly<Record<string, PropertyValue>> = {
     name: input.name,
     kind: input.kind,
     ...(input.description !== undefined && { description: input.description }),
@@ -219,7 +219,7 @@ export function createNodeType(
     return propertiesResult;
   }
 
-  const properties: Record<string, PropertyValue> = {
+  const properties: Readonly<Record<string, PropertyValue>> = {
     name: input.name,
     namespace: input.namespace,
     properties: JSON.stringify(propertiesResult.value),
@@ -273,7 +273,7 @@ export function createEdgeType(
     return propertiesResult;
   }
 
-  const properties: Record<string, PropertyValue> = {
+  const properties: Readonly<Record<string, PropertyValue>> = {
     name: input.name,
     namespace: input.namespace,
     properties: JSON.stringify(propertiesResult.value),
@@ -333,7 +333,7 @@ export function createPropertyType(
     return error({ path: ['name'], message: `PropertyType '${input.name}' already exists` });
   }
 
-  const properties: Record<string, PropertyValue> = {
+  const properties: Readonly<Record<string, PropertyValue>> = {
     name: input.name,
     namespace: input.namespace,
     valueKind: valueKindResult.data,

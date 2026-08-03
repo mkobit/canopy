@@ -433,8 +433,10 @@ export function validateNode(graph: Graph, node: Node): ValidationResult {
   return SUCCESS;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function matchesCondition(payload: Record<string, any>, conditionJson: string): boolean {
+export function matchesCondition(
+  payload: Readonly<Record<string, unknown>>,
+  conditionJson: string,
+): boolean {
   const result = fromThrowable(() => JSON.parse(conditionJson));
 
   if (!result.ok) {

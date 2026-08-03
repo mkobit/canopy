@@ -8,6 +8,7 @@
     "package:plugin": "bun run scripts/package-plugin.ts",
     "build": "bun run codegen:wit && tsc && vite build",
     "dev": "vite",
+    "dev:demo": "VITE_CANOPY_DEMO_SEED=true vite",
     "typecheck": "bun run codegen:wit && tsc -p tsconfig.check.json",
     "test": "bun test ./src --preload ./src/test/setup.ts",
     "test:e2e": "playwright test"
