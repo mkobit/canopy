@@ -4,6 +4,7 @@ import { Temporal } from 'temporal-polyfill';
 import { mergeEvents, createMergeState } from './incremental-projection';
 import { projectGraph } from './projection';
 import { createGraph } from './create-graph';
+import { getGraphIndexes, buildGraphIndexes, verifyIndexes } from './indexes';
 import {
   createGraphId,
   createNodeId,
@@ -300,6 +301,42 @@ describe('incremental-projection / convergence property', () => {
           }
 
           expect(graph).toEqual(canonical);
+        },
+      ),
+      { numRuns: 200 },
+    );
+  });
+
+  it('indexes(incremental(shuffle(E))) === buildFromScratch(projectGraph(sort(E)))', () => {
+    fc.assert(
+      fc.property(
+        fc.array(stepArb, { minLength: 1, maxLength: 60 }),
+        fc.integer({ min: 0, max: 0xff_ff_ff_ff }),
+        (steps, seed) => {
+          const events = resolveSteps(steps);
+          if (events.length === 0) return;
+
+          const initial = unwrap(createGraph(createGraphId(), 'prop-test'));
+          const canonicalResult = projectGraph(events, initial);
+          expect(canonicalResult.ok).toBe(true);
+          if (!canonicalResult.ok) return;
+          const canonical = canonicalResult.value;
+
+          // Seed _indexes on the initial graph so mergeEvents actually maintains them
+          // incrementally through applyOneEvent (see indexes.ts: incrementalUpdateIndexes is a
+          // no-op passthrough unless graph._indexes is already populated).
+          const seededInitial: typeof initial = { ...initial, _indexes: getGraphIndexes(initial) };
+
+          const shuffled = seededShuffle(events, seed);
+          const state0 = createMergeState();
+          const merged = mergeEvents(state0, seededInitial, shuffled);
+
+          // The incrementally-maintained indexes must equal a from-scratch rebuild over the
+          // canonical (sorted-fold) result -- this is the read-model half of the convergence
+          // invariant; the graph half is already asserted by the sibling test above.
+          expect(merged.graph._indexes).toBeDefined();
+          expect(verifyIndexes(merged.graph).ok).toBe(true); // internal self-consistency
+          expect(merged.graph._indexes).toEqual(buildGraphIndexes(canonical));
         },
       ),
       { numRuns: 200 },
