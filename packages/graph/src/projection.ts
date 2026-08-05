@@ -302,7 +302,7 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
   }
   const nextGraph = result.value;
   const nextIndexes = graph._indexes
-    ? incrementalUpdateIndexes(graph._indexes, event, nextGraph)
+    ? incrementalUpdateIndexes(graph._indexes, event, graph, nextGraph)
     : undefined;
   return ok({
     ...nextGraph,

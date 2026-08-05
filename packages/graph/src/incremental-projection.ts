@@ -150,7 +150,7 @@ function applyOneEvent(
   const result = applyOneEventInternal(graph, nodeMeta, edgeMeta, event);
   const nextGraph = result.graph;
   const nextIndexes = graph._indexes
-    ? incrementalUpdateIndexes(graph._indexes, event, nextGraph)
+    ? incrementalUpdateIndexes(graph._indexes, event, graph, nextGraph)
     : undefined;
   return {
     ...result,
