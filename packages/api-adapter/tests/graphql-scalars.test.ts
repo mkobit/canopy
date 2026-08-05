@@ -144,13 +144,13 @@ describe('Custom GraphQL scalars', () => {
 
     it('parses primitive AST literals (INT, FLOAT, BOOLEAN, NULL)', () => {
       expect(GraphQLPropertyMap.parseLiteral({ kind: Kind.INT, value: '42' }, undefined)).toBe(42);
-      // eslint-disable-next-line unicorn/prefer-math-constants -- 3.14 is a parsed FLOAT fixture value, not an approximation of pi
       expect(GraphQLPropertyMap.parseLiteral({ kind: Kind.FLOAT, value: '3.14' }, undefined)).toBe(
+        // eslint-disable-next-line unicorn/prefer-math-constants -- 3.14 is a parsed FLOAT fixture value, not an approximation of pi
         3.14,
       );
-      expect(
-        GraphQLPropertyMap.parseLiteral({ kind: Kind.BOOLEAN, value: false }, undefined),
-      ).toBe(false);
+      expect(GraphQLPropertyMap.parseLiteral({ kind: Kind.BOOLEAN, value: false }, undefined)).toBe(
+        false,
+      );
       expect(GraphQLPropertyMap.parseLiteral({ kind: Kind.NULL }, undefined)).toBeNull();
     });
 
