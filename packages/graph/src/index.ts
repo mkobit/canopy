@@ -37,6 +37,8 @@ export type { Node } from './node';
 export type { Edge } from './edge';
 export type { Graph, QueryResult } from './graph';
 export * from './indexes';
+export type { EdgeDirection, ReadModelPort, ReadModelNotCovered } from './read-model';
+export { READ_MODEL_NOT_COVERED } from './read-model';
 
 export type { NodeTypeDefinition, EdgeTypeDefinition } from './definitions';
 
