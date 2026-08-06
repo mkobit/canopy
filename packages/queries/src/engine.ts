@@ -2,12 +2,14 @@ import type {
   Graph,
   Node,
   Edge,
+  NodeId,
   QueryResult,
   PropertyValue,
+  ReadModelPort,
   Result,
   ScalarValue,
 } from '@canopy/graph';
-import { ok, err } from '@canopy/graph';
+import { ok, err, asTypeId, createIndexedReadModel } from '@canopy/graph';
 import type { Query, Filter, Sort, QueryStep } from './model';
 import { reduce, filter, unique, flatMap, map } from 'remeda';
 
@@ -25,6 +27,7 @@ export function executeQuery(graph: Graph, query: Query): Result<QueryResult, Er
   // We need to keep track of isNodeContext which changes based on steps.
   // reduce is suitable here.
   const initial: Accumulator = { items: [], isNodeContext: false };
+  const readModel = createIndexedReadModel(graph);
 
   const result = reduce(
     query.steps,
@@ -34,7 +37,7 @@ export function executeQuery(graph: Graph, query: Query): Result<QueryResult, Er
       switch (step.kind) {
         case 'node-scan': {
           return {
-            items: scanNodes(graph, step.type),
+            items: step.type ? scanNodesIndexed(readModel, graph, step.type) : scanNodes(graph),
             isNodeContext: true,
           };
         }
@@ -47,7 +50,12 @@ export function executeQuery(graph: Graph, query: Query): Result<QueryResult, Er
         case 'filter': {
           return {
             ...accumulator,
-            items: applyFilter(accumulator.items, step.predicate),
+            items: applyFilterIndexed(
+              readModel,
+              accumulator.items,
+              accumulator.isNodeContext,
+              step.predicate,
+            ),
           };
         }
         case 'traversal': {
@@ -58,7 +66,8 @@ export function executeQuery(graph: Graph, query: Query): Result<QueryResult, Er
             };
           }
           return {
-            items: traverse(
+            items: traverseIndexed(
+              readModel,
               graph,
               accumulator.items as readonly Node[],
               step.edgeType,
@@ -113,16 +122,153 @@ export function executeQuery(graph: Graph, query: Query): Result<QueryResult, Er
   return ok(result.rows === undefined ? baseResult : { ...baseResult, rows: result.rows });
 }
 
+/**
+ * Reference oracle for the scan-vs-index equivalence property test (design.md Decision 7):
+ * identical step handling to `executeQuery`, but never consults the read model -- every step
+ * scans `graph.nodes`/`graph.edges` directly. Deliberately a standalone copy of the reduce loop
+ * rather than derived from `executeQuery`, so a bug shared by both wouldn't be masked; the two are
+ * kept in lockstep only by the property test that compares their output on random graphs/queries.
+ */
+export function executeQueryScanOnly(graph: Graph, query: Query): Result<QueryResult, Error> {
+  const initial: Accumulator = { items: [], isNodeContext: false };
+
+  const result = reduce(
+    query.steps,
+    (accumulator, step: QueryStep): Accumulator => {
+      if (accumulator.error) return accumulator;
+
+      switch (step.kind) {
+        case 'node-scan': {
+          return { items: scanNodes(graph, step.type), isNodeContext: true };
+        }
+        case 'edge-scan': {
+          return { items: scanEdges(graph, step.type), isNodeContext: false };
+        }
+        case 'filter': {
+          return { ...accumulator, items: applyFilter(accumulator.items, step.predicate) };
+        }
+        case 'traversal': {
+          if (!accumulator.isNodeContext) {
+            return {
+              ...accumulator,
+              error: new Error('Traversal can only be performed on nodes.'),
+            };
+          }
+          return {
+            items: traverse(
+              graph,
+              accumulator.items as readonly Node[],
+              step.edgeType,
+              step.direction,
+            ),
+            isNodeContext: true,
+          };
+        }
+        case 'sort': {
+          return { ...accumulator, items: applySort(accumulator.items, step.sort) };
+        }
+        case 'limit': {
+          return { ...accumulator, items: accumulator.items.slice(0, step.limit) };
+        }
+        case 'project': {
+          const rows = map(accumulator.items, (item) =>
+            reduce(
+              step.properties,
+              (row, property) => ({ ...row, [property]: getItemFieldValue(item, property) }),
+              {} as Readonly<Record<string, unknown>>,
+            ),
+          );
+          return { ...accumulator, rows };
+        }
+        default: {
+          return accumulator;
+        }
+      }
+    },
+    initial,
+  );
+
+  if (result.error) {
+    return err(result.error);
+  }
+
+  const baseResult = result.isNodeContext
+    ? { nodes: result.items as readonly Node[], edges: [] }
+    : { nodes: [], edges: result.items as readonly Edge[] };
+
+  return ok(result.rows === undefined ? baseResult : { ...baseResult, rows: result.rows });
+}
+
 function scanNodes(graph: Graph, type?: string): readonly Node[] {
   const nodes = [...graph.nodes.values()];
   if (!type) return nodes;
   return filter(nodes, (node) => node.type === type);
 }
 
+/** Resolves a `node-scan` by type through the read model's type index instead of a full scan. */
+function scanNodesIndexed(readModel: ReadModelPort, graph: Graph, type: string): readonly Node[] {
+  return resolveNodeIds(graph, readModel.typedNodeIds(asTypeId(type)));
+}
+
 function scanEdges(graph: Graph, type?: string): readonly Edge[] {
   const edges = [...graph.edges.values()];
   if (!type) return edges;
   return filter(edges, (edge) => edge.type === type);
+}
+
+function resolveNodeIds(graph: Graph, ids: Iterable<NodeId>): readonly Node[] {
+  return [...ids]
+    .map((id) => graph.nodes.get(id))
+    .filter((node): node is Node => node !== undefined);
+}
+
+/**
+ * Resolves a `traversal` step through the read model's adjacency index instead of scanning every
+ * edge once per hop. Semantically identical to `traverse` below (same per-node out/in/both union,
+ * same edge-type narrowing, same dedup-by-id), just sourced from the index.
+ */
+function traverseIndexed(
+  readModel: ReadModelPort,
+  graph: Graph,
+  nodes: readonly Node[],
+  edgeType: string | undefined,
+  direction: 'out' | 'in' | 'both',
+): readonly Node[] {
+  const typeId = edgeType ? asTypeId(edgeType) : undefined;
+  const neighbourIds = new Set(
+    flatMap(nodes, (node) => [...readModel.neighbours(node.id, typeId, direction)]),
+  );
+  return resolveNodeIds(graph, neighbourIds);
+}
+
+/**
+ * Resolves an equality `filter` step on node items through the read model's property-equality
+ * index, falling back to `applyFilter` for anything the index can't answer: non-`eq` operators,
+ * edge items (only node properties are indexed), and values that aren't a plain scalar (`null`
+ * and `ExternalReferenceValue` unwrap differently than they're indexed -- see `unwrapScalar`).
+ * The index result is a narrowing pre-filter, not a final arbiter: `applyFilter` re-verifies every
+ * candidate, so an index/scan serialization mismatch (e.g. `NaN` self-equality) can only produce a
+ * false *negative* pre-filter, never a wrong final result.
+ */
+function applyFilterIndexed(
+  readModel: ReadModelPort,
+  items: readonly GraphItem[],
+  isNodeContext: boolean,
+  predicate: Filter,
+): readonly GraphItem[] {
+  if (!isNodeContext || predicate.operator !== 'eq') {
+    return applyFilter(items, predicate);
+  }
+  const { value } = predicate;
+  if (typeof value !== 'string' && typeof value !== 'number' && typeof value !== 'boolean') {
+    return applyFilter(items, predicate);
+  }
+  // isNodeContext guarantees `items` are Node[] here -- same invariant the 'traversal' case above
+  // relies on when it casts accumulator.items to readonly Node[].
+  const nodes = items as readonly Node[];
+  const candidateIds = new Set(readModel.nodesWhereEquals(predicate.property, value));
+  const candidates = filter(nodes, (node) => candidateIds.has(node.id));
+  return applyFilter(candidates, predicate);
 }
 
 function applyFilter(items: readonly GraphItem[], predicate: Filter): readonly GraphItem[] {

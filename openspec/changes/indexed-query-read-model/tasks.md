@@ -14,9 +14,9 @@
 
 ## 3. Executor integration (`@canopy/queries`)
 
-- [ ] 3.1 Update `node-scan`, `traversal`, and equality `filter` step handling in `packages/queries/src/engine.ts` to consult the read-model port, falling back to full scan for any step/predicate the port reports as not covered (non-equality operators, unindexed properties).
-- [ ] 3.2 Preserve `executeQuery`'s signature `(graph, query) => Result<QueryResult, Error>` and `QueryResult` shape exactly — no changes required in any consumer (renderers, `packages/queries/src/stored.ts`, view resolution).
-- [ ] 3.3 Add a scan-vs-index equivalence property test: for random graphs and random queries, indexed execution and scan-only execution return equal result sets (Decision 7).
+- [x] 3.1 Update `node-scan`, `traversal`, and equality `filter` step handling in `packages/queries/src/engine.ts` to consult the read-model port, falling back to full scan for any step/predicate the port reports as not covered (non-equality operators, unindexed properties).
+- [x] 3.2 Preserve `executeQuery`'s signature `(graph, query) => Result<QueryResult, Error>` and `QueryResult` shape exactly — no changes required in any consumer (renderers, `packages/queries/src/stored.ts`, view resolution).
+- [x] 3.3 Add a scan-vs-index equivalence property test: for random graphs and random queries, indexed execution and scan-only execution return equal result sets (Decision 7).
 
 ## 4. Verification and rollout
 
