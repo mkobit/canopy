@@ -194,6 +194,9 @@ Steps are applied sequentially: scan all nodes of a type, filter by properties, 
 This is correct but not scalable.
 It is sufficient for small-to-medium graphs and establishes the execution semantics that optimized implementations must preserve.
 
+As of the `indexed-query-read-model` change (see section 6), `node-scan` by type, `traversal`, and equality `filter` steps consult an in-memory read-model index instead of a full scan.
+Any step or predicate the index does not cover falls back to the scan behavior described above, so the naive-execution semantics remain the correctness baseline.
+
 ### Storage engine push-down (future)
 
 When the storage engine is a graph database (e.g., Neo4j or similar), the query planner can push the query down to the engine for native execution.
@@ -210,6 +213,17 @@ Indexing is a **storage engine concern**, not a query engine concern.
 The query engine defines what queries are expressible.
 The storage engine decides how to make them fast.
 
+### Tier 1: in-memory read-model index (implemented)
+
+The `indexed-query-read-model` change (`openspec/changes/indexed-query-read-model/`) implements the first concrete index behind this contract.
+A `ReadModelPort` (`packages/graph/src/read-model.ts`) exposes typed-node lookup, adjacency lookup, and property-equality lookup.
+The in-memory implementation (`packages/graph/src/indexes.ts`) extends the existing `GraphIndexes` structure and is maintained in O(delta) per event inside the incremental projection fold, so it stays a pure derivation of the projected graph with no second convergence proof.
+The executor (`packages/queries/src/engine.ts`) consults this port for `node-scan` by type, `traversal`, and equality `filter` steps, falling back to a full scan for anything the port doesn't cover (non-equality operators, unindexed value shapes).
+`executeQuery`'s signature and result shape are unchanged.
+
+This is Tier 1 only: `@canopy/graph` stays the dependency-free leaf that owns the port, and `apps/web` stays on `@canopy/storage-indexeddb` with no storage-engine change.
+A Tier 2 SQL/OPFS-backed read model behind the same port (living in `@canopy/storage-sqlite`) is designed for but deferred; see the change's `design.md` Decisions 5 and 6.
+
 ### Index contract
 
 The storage engine may expose an index hint interface that tells the query planner:
@@ -219,7 +233,7 @@ The storage engine may expose an index hint interface that tells the query plann
 - Which traversal patterns are optimized.
 
 The query planner uses these hints to choose execution strategies.
-The query engine does not create, manage, or expose indexes directly.
+The query engine does not create, manage, or expose indexes directly: the Tier 1 read-model index above is created and maintained entirely within `@canopy/graph`, and the executor only consults it through the `ReadModelPort` contract.
 
 ### Common index patterns
 
