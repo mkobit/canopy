@@ -59,9 +59,7 @@
       "Bash(bun run --cwd apps/web codegen:wit)",
       "Bash(bun tools/*)",
       "Bash(bun test *)",
-      "Bash(bunx openspec *)",
-      "Bash(git *)",
-      "Bash(bd *)"
+      "Bash(bunx openspec *)"
     ]
   }
 }
