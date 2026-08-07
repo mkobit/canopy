@@ -1,11 +1,18 @@
 import '../../../test/setup';
-import { describe, it, expect, jest } from 'bun:test';
+import { describe, it, expect, jest, afterEach } from 'bun:test';
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { NodeView } from '../node-view';
 import { GraphCanvas } from '../graph-canvas';
 import { Node, asDeviceId } from '@canopy/graph';
 import { asNodeId, asTypeId, createInstant } from '@canopy/graph';
+
+// See graph-accessibility.test.ts for why this is needed: @testing-library/react doesn't
+// auto-cleanup under Bun's test runner, and this file's `screen.getByText`/`getAllByText` queries
+// are bound to the shared happy-dom `document`, not a scoped container.
+afterEach(() => {
+  cleanup();
+});
 
 // Mocks
 const mockNodeId = asNodeId('node-1');

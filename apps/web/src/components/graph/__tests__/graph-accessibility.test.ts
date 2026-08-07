@@ -1,5 +1,5 @@
-import { describe, it, expect, mock } from 'bun:test';
-import { renderHook, act, render } from '@testing-library/react';
+import { describe, it, expect, mock, afterEach } from 'bun:test';
+import { renderHook, act, render, cleanup } from '@testing-library/react';
 import React from 'react';
 import { AriaLiveRegion, useAriaLiveAnnouncer } from '../aria-live-region';
 import { NodeView } from '../node-view';
@@ -7,6 +7,15 @@ import { GraphCanvas } from '../graph-canvas';
 import type { Node } from '@canopy/graph';
 import { asNodeId, asTypeId, asDeviceId, createInstant } from '@canopy/graph';
 import { ReactFlowProvider } from '@xyflow/react';
+
+// @testing-library/react's auto-cleanup only self-registers under Jest/Vitest globals, which Bun's
+// test runner doesn't provide, so `render()` output (including nested `AriaLiveRegion` instances,
+// which all share `data-testid="aria-live-region"`) persists in the shared happy-dom `document`
+// across `it()` blocks in this file unless torn down explicitly. Matches the convention already
+// used in block-editor.test.tsx, new-node-dialog.test.tsx, and command-palette.test.tsx.
+afterEach(() => {
+  cleanup();
+});
 
 const captured = {
   reactFlowProperties: undefined as Readonly<Record<string, unknown>> | undefined,
