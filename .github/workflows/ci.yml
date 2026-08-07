@@ -60,12 +60,12 @@ jobs:
 
       - name: Lint
         if: "!cancelled() && steps.install.outcome == 'success'"
+        # `bun run lint` runs eslint once per workspace (tools/lint-workspaces.ts)
+        # instead of one root-level `eslint .`, bounding peak RSS to the single
+        # largest workspace's type-aware program (~1.1GB) instead of the sum of
+        # all of them (~3GB), which used to need an explicit NODE_OPTIONS bump
+        # to avoid OOM-crashing on GitHub's macos-14 runners (canopy-9ec).
         run: bun run lint
-        env:
-          # typescript-eslint's projectService type-aware parsing across the
-          # whole monorepo exceeds V8's default old-space size on GitHub's
-          # macos-14 runners, aborting eslint with an OOM.
-          NODE_OPTIONS: '--max-old-space-size=6144'
 
       - name: Typecheck
         if: "!cancelled() && steps.install.outcome == 'success'"

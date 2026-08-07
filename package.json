@@ -20,7 +20,7 @@
     "audit:ai-tools": "bun tools/audit-ai-tool-releases.ts",
     "test": "bun --filter '*' test",
     "dev:demo": "bun --filter @canopy/web dev:demo",
-    "lint": "bun tools/check-commands.ts && bun run check:versions && bun run check:api-compatibility && eslint . --cache",
+    "lint": "bun tools/check-commands.ts && bun run check:versions && bun run check:api-compatibility && bun tools/lint-workspaces.ts",
     "format": "prettier --write .",
     "typecheck": "PATH=\"$PWD/node_modules/typescript-native/bin:$PATH\" bun --filter '*' typecheck",
     "prepare": "husky",
