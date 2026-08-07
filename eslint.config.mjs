@@ -31,6 +31,7 @@ export default tseslint.config(
       'apps/web/scripts/**/*',
       'packages/graph/scripts/**/*',
       '**/transpiled/**/*',
+      '**/apps/web/.storybook-static/**',
     ],
   },
   // Base configurations
@@ -64,6 +65,8 @@ export default tseslint.config(
       '**/__tests__/**/*.ts',
       '**/*.test.tsx',
       '**/*.spec.tsx',
+      '**/*.stories.ts',
+      '**/*.stories.tsx',
       '**/tests/**/*.tsx',
       '**/__tests__/**/*.tsx',
       'apps/web/src/test/setup.ts',
@@ -79,6 +82,8 @@ export default tseslint.config(
       '**/__tests__/**/*.ts',
       '**/*.test.tsx',
       '**/*.spec.tsx',
+      '**/*.stories.ts',
+      '**/*.stories.tsx',
       '**/tests/**/*.tsx',
       '**/__tests__/**/*.tsx',
       'apps/web/src/test/setup.ts',
@@ -94,6 +99,8 @@ export default tseslint.config(
       '**/__tests__/**/*.ts',
       '**/*.test.tsx',
       '**/*.spec.tsx',
+      '**/*.stories.ts',
+      '**/*.stories.tsx',
       '**/tests/**/*.tsx',
       '**/__tests__/**/*.tsx',
       'apps/web/src/test/setup.ts',
@@ -134,6 +141,8 @@ export default tseslint.config(
       '**/__tests__/**/*.ts',
       '**/*.test.tsx',
       '**/*.spec.tsx',
+      '**/*.stories.ts',
+      '**/*.stories.tsx',
       '**/tests/**/*.tsx',
       '**/__tests__/**/*.tsx',
       'apps/web/src/test/setup.ts',
@@ -237,6 +246,10 @@ export default tseslint.config(
             '^Effect', // Effect.Effect, Effect.Layer, etc. (Effect TS framework types)
             '^Layer', // Layer.Layer (Effect TS framework types)
             '^Context', // Context.Tag (Effect TS framework types)
+            '^StorybookConfig$', // Storybook configuration type (@storybook/react-vite)
+            '^Preview$', // Storybook preview configuration type (@storybook/react)
+            '^Meta$', // Storybook Meta type (@storybook/react)
+            '^StoryObj$', // Storybook StoryObj type (@storybook/react)
           ],
         },
       ],

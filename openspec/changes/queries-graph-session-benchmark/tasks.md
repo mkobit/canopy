@@ -1,0 +1,5 @@
+- [ ] 1. Create synthetic query benchmark fixture generator `generateQueryBenchmarkFixture` in `packages/queries/tests/fixtures/query-benchmark-fixture.ts`
+- [ ] 2. Implement initial `GraphSession` fold projection performance test for 1k, 5k, and 10k nodes in `packages/queries/tests/query-session-projection.load.test.ts`
+- [ ] 3. Implement query engine execution benchmarks for `node-scan`, `filter`, `traversal`, `sort`, `limit`, and `project` steps in `packages/queries/tests/query-session-projection.load.test.ts`
+- [ ] 4. Implement incremental re-projection latency benchmark for single and batch event commits in `packages/queries/tests/query-session-projection.load.test.ts`
+- [ ] 5. Run full test gate (`bun test`) and verify all assertions pass cleanly

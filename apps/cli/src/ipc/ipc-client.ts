@@ -19,7 +19,7 @@ import type {
   UpdateNodePropertiesParams,
 } from '@canopy/api-adapter';
 import { IPC_METHODS, JSON_RPC_ERROR_CODES } from '@canopy/api-adapter';
-import { Context, Effect, Layer } from 'effect';
+import { Effect } from 'effect';
 
 export type IpcClientError = Readonly<{
   _tag: 'IpcClientError';
@@ -28,7 +28,7 @@ export type IpcClientError = Readonly<{
   details?: unknown;
 }>;
 
-export const createIpcClientError = (
+const createIpcClientError = (
   payload: Readonly<{
     code: number;
     message: string;
@@ -76,8 +76,6 @@ export interface IpcClient {
   ) => Effect.Effect<UnsubscribeResult, IpcClientError>;
   readonly close: () => Effect.Effect<void, never>;
 }
-
-export const IpcClientService = Context.GenericTag<IpcClient>('@canopy/cli/IpcClient');
 
 export const makeIpcClient = (socketPath: string): Effect.Effect<IpcClient, IpcClientError> => {
   return Effect.async<IpcClient, IpcClientError>((resume) => {
@@ -440,6 +438,3 @@ export const makeIpcClient = (socketPath: string): Effect.Effect<IpcClient, IpcC
     });
   });
 };
-
-export const createIpcClientLayer = (socketPath: string): Layer.Layer<IpcClient, IpcClientError> =>
-  Layer.effect(IpcClientService, makeIpcClient(socketPath));

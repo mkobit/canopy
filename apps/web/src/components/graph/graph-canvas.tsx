@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import type { Edge } from '@canopy/graph';
 import { NodeView } from './node-view';
 import type { GraphNode } from './edge-view';
 import { EdgeView } from './edge-view';
 import { cn } from '../../utils/cn';
+import { useSpatialGraphNavigation } from './use-spatial-graph-navigation';
+import { AriaLiveRegion, useAriaLiveAnnouncer } from './aria-live-region';
 
 interface GraphCanvasData {
   readonly nodes: readonly GraphNode[];
@@ -41,13 +43,46 @@ export const GraphCanvas: React.FC<GraphCanvasProperties> = ({
 }) => {
   // Map for easy lookup
   const nodeMap = new Map(nodes.map((n) => [n.id, n]));
+  const selectedNodeId = [...selectedNodeIds][0];
+  const { announcement, announce } = useAriaLiveAnnouncer();
+
+  const handleSelectNode = useCallback(
+    (nodeId: string | undefined) => {
+      if (nodeId === undefined) {
+        announce('Node selection cleared');
+        return;
+      }
+      const targetNode = nodes.find((n) => n.id === nodeId);
+      if (targetNode) {
+        onNodeClick(targetNode);
+        announce(`Selected node ${nodeId}`);
+      }
+    },
+    [nodes, onNodeClick, announce],
+  );
+
+  const { handleKeyDown } = useSpatialGraphNavigation({
+    nodes,
+    selectedNodeId,
+    onSelectNode: handleSelectNode,
+  });
+
+  const handleBackgroundClick = useCallback(() => {
+    onBackgroundClick();
+    announce('Node selection cleared');
+  }, [onBackgroundClick, announce]);
 
   return (
     <div
+      tabIndex={0}
+      role="region"
+      aria-label="Graph visualization canvas"
+      onKeyDown={handleKeyDown}
       className={cn('relative overflow-hidden bg-slate-50 border', className)}
       style={{ width, height }}
-      onClick={onBackgroundClick}
+      onClick={handleBackgroundClick}
     >
+      <AriaLiveRegion message={announcement} />
       <svg className="absolute inset-0 pointer-events-none w-full h-full">
         {edges.map((edge) => {
           const source = nodeMap.get(edge.source);
@@ -79,6 +114,7 @@ export const GraphCanvas: React.FC<GraphCanvasProperties> = ({
           selected={selectedNodeIds.has(node.id)}
           onClick={() => {
             onNodeClick(node);
+            announce(`Selected node ${node.id}`);
             return undefined;
           }}
           style={{

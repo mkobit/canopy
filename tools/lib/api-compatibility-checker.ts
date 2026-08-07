@@ -29,7 +29,7 @@ export interface Waiver {
   readonly ticket: string;
 }
 
-export interface CompatibilityResult {
+interface CompatibilityResult {
   readonly success: boolean;
   readonly violations: readonly Violation[];
   readonly approvedWaivers: readonly Waiver[];
@@ -47,7 +47,7 @@ export interface CheckOptions {
   readonly overrideWaivers?: readonly Waiver[];
 }
 
-export const checkGql = (liveSchema: string, baselineSchema?: string): readonly Violation[] => {
+const checkGql = (liveSchema: string, baselineSchema?: string): readonly Violation[] => {
   if (!baselineSchema) return [];
 
   const violations1: readonly Violation[] =
@@ -97,10 +97,7 @@ export const checkGql = (liveSchema: string, baselineSchema?: string): readonly 
   return [...violations1, ...violations2, ...violations3];
 };
 
-export const checkPrototype = (
-  liveSchema: string,
-  baselineSchema?: string,
-): readonly Violation[] => {
+const checkPrototype = (liveSchema: string, baselineSchema?: string): readonly Violation[] => {
   if (!baselineSchema) return [];
 
   const violations1: readonly Violation[] =
@@ -134,7 +131,7 @@ export const checkPrototype = (
   return [...violations1, ...violations2];
 };
 
-export const checkWit = (liveSchema: string, baselineSchema?: string): readonly Violation[] => {
+const checkWit = (liveSchema: string, baselineSchema?: string): readonly Violation[] => {
   if (!baselineSchema) return [];
 
   const violations1: readonly Violation[] =

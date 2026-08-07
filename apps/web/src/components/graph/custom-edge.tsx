@@ -1,7 +1,27 @@
 import React from 'react';
 import { BaseEdge, EdgeLabelRenderer, getBezierPath, type EdgeProps } from '@xyflow/react';
 
-export const CustomEdge = ({
+type CustomEdgeProperties = EdgeProps & Readonly<{ _id?: string }>;
+
+const customEdgePropertiesAreEqual = (
+  previousProperties: Readonly<CustomEdgeProperties>,
+  nextProperties: Readonly<CustomEdgeProperties>,
+): boolean => {
+  return (
+    previousProperties.id === nextProperties.id &&
+    previousProperties.selected === nextProperties.selected &&
+    previousProperties.sourceX === nextProperties.sourceX &&
+    previousProperties.sourceY === nextProperties.sourceY &&
+    previousProperties.targetX === nextProperties.targetX &&
+    previousProperties.targetY === nextProperties.targetY &&
+    previousProperties.sourcePosition === nextProperties.sourcePosition &&
+    previousProperties.targetPosition === nextProperties.targetPosition &&
+    previousProperties.label === nextProperties.label &&
+    previousProperties.markerEnd === nextProperties.markerEnd
+  );
+};
+
+export const CustomEdge = React.memo(function CustomEdge({
   _id,
   sourceX,
   sourceY,
@@ -9,11 +29,11 @@ export const CustomEdge = ({
   targetY,
   sourcePosition,
   targetPosition,
-  style = {},
+  style,
   markerEnd,
   label,
   selected,
-}: EdgeProps & Readonly<{ _id?: string }>) => {
+}: Readonly<CustomEdgeProperties>) {
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
     sourceY,
@@ -53,4 +73,4 @@ export const CustomEdge = ({
       )}
     </>
   );
-};
+}, customEdgePropertiesAreEqual);

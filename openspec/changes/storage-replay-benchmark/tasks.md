@@ -1,0 +1,5 @@
+- [x] 1. Implement SQLite 50k event log replay load benchmark suite in `packages/storage-sqlite/src/sqlite-replay.load.test.ts`
+- [x] 2. Implement IndexedDB 50k event log replay load benchmark suite in `packages/storage-indexeddb/src/indexeddb-replay.load.test.ts`
+- [x] 3. Benchmark GraphSession cold-start fold materialization with 50,000 persistent storage events
+- [x] 4. Verify all performance SLAs pass under `bun test` across storage packages
+- [x] 5. Run full quality gates (`bun run build`, `bun run lint`, `bun run typecheck`, `bun test`)

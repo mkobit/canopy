@@ -23,11 +23,21 @@ export const NodeView: React.FC<NodeViewProperties> = ({
   onClick,
   style,
 }) => {
+  const nameValue = node.properties.get('name') ?? node.properties.get('title');
+  const nameString = typeof nameValue === 'string' ? nameValue : undefined;
+  const label = nameString
+    ? `Node ${node.type}: ${nameString} (ID: ${node.id.slice(0, 6)})`
+    : `Node ${node.type} (ID: ${node.id.slice(0, 6)})`;
+
   return (
     <div
+      tabIndex={0}
+      role="button"
+      aria-selected={selected ?? false}
+      aria-label={label}
       className={cn(
-        'bg-white border rounded shadow-sm p-4 w-64 cursor-pointer hover:shadow-md transition-shadow select-none',
-        selected && 'ring-2 ring-blue-500',
+        'bg-white border border-slate-300 rounded shadow-sm p-4 w-64 cursor-pointer hover:shadow-md transition-shadow select-none focus-visible:ring-2 focus-visible:ring-blue-500 focus:outline-none',
+        selected && 'ring-2 ring-blue-500 border-blue-500',
         className,
       )}
       onClick={() => {
@@ -38,10 +48,10 @@ export const NodeView: React.FC<NodeViewProperties> = ({
       data-node-id={node.id}
     >
       <div className="flex justify-between items-start mb-2">
-        <span className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded font-mono">
+        <span className="bg-slate-100 text-slate-800 border border-slate-200 text-xs px-2 py-1 rounded font-mono font-medium">
           {node.type}
         </span>
-        <span className="text-gray-300 text-[10px] font-mono" title={node.id}>
+        <span className="text-slate-600 text-[10px] font-mono" title={node.id}>
           {node.id.slice(0, 6)}
         </span>
       </div>
@@ -49,7 +59,7 @@ export const NodeView: React.FC<NodeViewProperties> = ({
       <div className="space-y-2">
         {[...node.properties].map(([key, value]) => (
           <div key={key} className="text-sm">
-            <div className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-0.5">
+            <div className="text-slate-700 text-xs font-semibold uppercase tracking-wider mb-0.5">
               {key}
             </div>
             <PropertyDisplay value={value} />

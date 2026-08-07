@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'bun:test';
 import { Temporal } from 'temporal-polyfill';
 import { maxEventIdForTimestamp, incrementEventId, getGraphAt } from './history';
-import { createInMemoryEventStore } from '@canopy/storage';
+import type { EventLogStore, EventLogQueryOptions } from './event-log';
+import type { GraphEvent } from './events';
+import { ok } from './result';
 import {
   unwrap,
   createEventId,
@@ -13,7 +15,43 @@ import {
   asGraphId,
   asNodeId,
   type NodeCreated,
-} from '@canopy/graph';
+} from './index';
+
+function createTestEventLog(): EventLogStore {
+  const events: GraphEvent[] = [];
+  return {
+    appendEvents: (_graphId, newEvents) => {
+      const seen = new Set(events.map((event) => event.eventId));
+      for (const event of newEvents) {
+        if (seen.has(event.eventId)) {
+          continue;
+        }
+        events.push(event);
+        seen.add(event.eventId);
+      }
+      events.sort((a, b) => a.eventId.localeCompare(b.eventId));
+      return Promise.resolve(ok(undefined));
+    },
+    getEvents: (_graphId, options?: EventLogQueryOptions) => {
+      let result = [...events];
+      const after = options?.after;
+      if (after !== undefined) {
+        result = result.filter((event) => event.eventId > after);
+      }
+      const before = options?.before;
+      if (before !== undefined) {
+        result = result.filter((event) => event.eventId < before);
+      }
+      if (options?.reverse) {
+        result.reverse();
+      }
+      if (options?.limit !== undefined) {
+        result = result.slice(0, options.limit);
+      }
+      return Promise.resolve(ok(result));
+    },
+  };
+}
 
 describe('time-travel', () => {
   describe('maxEventIdForTimestamp', () => {
@@ -105,7 +143,7 @@ describe('time-travel', () => {
     };
 
     it('returns empty graph on an empty store', async () => {
-      const store = createInMemoryEventStore();
+      const store = createTestEventLog();
       const result = await getGraphAt(store, graphId, { eventId: createEventId() });
       const graph = unwrap(result);
 
@@ -114,7 +152,7 @@ describe('time-travel', () => {
     });
 
     it('returns a graph with nodes created up to a specific eventId', async () => {
-      const store = createInMemoryEventStore();
+      const store = createTestEventLog();
       const events = [createEvent(1), createEvent(2), createEvent(3)];
       await store.appendEvents(graphId, events);
 
@@ -136,7 +174,7 @@ describe('time-travel', () => {
     });
 
     it('returns a graph with nodes created up to a specific timestamp', async () => {
-      const store = createInMemoryEventStore();
+      const store = createTestEventLog();
       const events = [createEvent(1), createEvent(2), createEvent(3)];
       await store.appendEvents(graphId, events);
 
@@ -158,7 +196,7 @@ describe('time-travel', () => {
     });
 
     it('returns a graph with all nodes when given the last eventId', async () => {
-      const store = createInMemoryEventStore();
+      const store = createTestEventLog();
       const events = [createEvent(1), createEvent(2), createEvent(3)];
       await store.appendEvents(graphId, events);
 

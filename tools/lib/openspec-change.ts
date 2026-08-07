@@ -1,6 +1,6 @@
 const CHANGE_PATH_PATTERN = /(?:^|\/)openspec\/changes\/(?!archive\/)([^/]+)\//;
 
-export function resolveChangeName(filePath: string): string | undefined {
+function resolveChangeName(filePath: string): string | undefined {
   return filePath.match(CHANGE_PATH_PATTERN)?.[1];
 }
 

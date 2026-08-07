@@ -17,15 +17,13 @@ export interface FileEventLog extends EventLogStore {
   readonly reconcile: (graphId: string) => Promise<Result<void, Error>>;
 }
 
-export const CanopyConfigSchema = z.object({
+const CanopyConfigSchema = z.object({
   version: z.literal(1),
   graphId: z.string(),
   name: z.string(),
 });
 
-export type CanopyConfig = z.infer<typeof CanopyConfigSchema>;
-
-export const FileStoreManifestSchema = z.object({
+const FileStoreManifestSchema = z.object({
   sealed: z.array(z.string()),
   lastEventId: z.string().nullable(),
   watermarks: z.record(z.string(), z.string()).default({}),

@@ -28,6 +28,10 @@
           {
             "command": "bun tools/hooks/openspec-validate-hook.ts",
             "type": "command"
+          },
+          {
+            "command": "bun tools/hooks/agent-format-lint-hook.ts",
+            "type": "command"
           }
         ],
         "matcher": "Edit|Write|MultiEdit"
@@ -35,6 +39,27 @@
     ]
   },
   "permissions": {
-    "allow": ["Bash(mise exec:*)"]
+    "allow": [
+      "Bash(mise exec:*)",
+      "Bash(bun run build)",
+      "Bash(bun run lint)",
+      "Bash(bun run typecheck)",
+      "Bash(bun run test)",
+      "Bash(bun run format)",
+      "Bash(bun run dev)",
+      "Bash(bun run check:api-compatibility)",
+      "Bash(bun run check:versions)",
+      "Bash(bun run check:openspec-changes)",
+      "Bash(bun run audit:ai-tools)",
+      "Bash(bun run storybook)",
+      "Bash(bun run build-storybook)",
+      "Bash(bun run codegen:wit)",
+      "Bash(bun run package:plugin)",
+      "Bash(bun run test:e2e)",
+      "Bash(bun run --cwd apps/web codegen:wit)",
+      "Bash(bun tools/*)",
+      "Bash(bun test *)",
+      "Bash(bunx openspec *)"
+    ]
   }
 }

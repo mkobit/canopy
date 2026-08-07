@@ -1,0 +1,24 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schemas/jsonconfig.json",
+  "ignoreExportsUsedInFile": true,
+  "workspaces": {
+    ".": {
+      "ignoreDependencies": ["@fission-ai/openspec"]
+    },
+    "tools": {
+      "entry": ["*.ts", "hooks/*.ts"],
+      "project": ["**/*.ts"]
+    },
+    "packages/*": {
+      "project": ["src/**/*.ts"]
+    },
+    "apps/web": {
+      "entry": ["src/plugin/mock/guest.ts", "scripts/*.ts"],
+      "project": ["src/**/*.{ts,tsx}", "scripts/**/*.ts"],
+      "ignoreDependencies": ["happy-dom", "tailwindcss", "canopy", "@bytecodealliance/jco"]
+    },
+    "apps/cli": {
+      "project": ["src/**/*.ts"]
+    }
+  }
+}

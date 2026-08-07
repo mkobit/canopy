@@ -1,16 +1,12 @@
 import type { Result } from './result';
-import type { NodeId, EdgeId, TypeId, GraphId } from './identifiers';
+import type { NodeId, TypeId } from './identifiers';
 import type { Instant, PlainDate } from './temporal';
 import {
   asNodeId,
-  asEdgeId,
   asTypeId,
-  asGraphId,
   asInstant,
   asPlainDate,
   createNodeId as generateNodeId,
-  createEdgeId as generateEdgeId,
-  createGraphId as generateGraphId,
 } from './factories';
 import { ok, err as error, fromThrowable } from './result';
 import { Temporal } from 'temporal-polyfill';
@@ -36,32 +32,6 @@ export function createNodeId(id?: string): Result<NodeId, Error> {
   const validation = validateUuid(id, 'NodeId');
   if (!validation.ok) return error(validation.error);
   return ok(asNodeId(id));
-}
-
-/**
- * Creates a branded EdgeId from a string, validating that it is a valid UUID.
- * If no string is provided, generates a new random EdgeId.
- */
-export function createEdgeId(id?: string): Result<EdgeId, Error> {
-  if (id === undefined) {
-    return ok(generateEdgeId());
-  }
-  const validation = validateUuid(id, 'EdgeId');
-  if (!validation.ok) return error(validation.error);
-  return ok(asEdgeId(id));
-}
-
-/**
- * Creates a branded GraphId from a string, validating that it is a valid UUID.
- * If no string is provided, generates a new random GraphId.
- */
-export function createGraphId(id?: string): Result<GraphId, Error> {
-  if (id === undefined) {
-    return ok(generateGraphId());
-  }
-  const validation = validateUuid(id, 'GraphId');
-  if (!validation.ok) return error(validation.error);
-  return ok(asGraphId(id));
 }
 
 /**
