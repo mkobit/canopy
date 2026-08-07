@@ -7,6 +7,18 @@ Each entry states the decision, why, and where the full reasoning lives.
 Full design proposals still live in `design/` (dated, one file per proposal).
 This log complements those files — it's where decisions made _during_ implementation of an approved design get recorded, so they don't only live in a PR description or an agent's private memory.
 
+## 2026-08-03 — Identified root causes for package version drift and automated workspace dependency alignment (canopy-ckd)
+
+Analysis of 116 Dependabot PRs and cross-package `package.json` configurations identified three primary causes of dependency version drift:
+(1) Subpackages declaring independent, mismatched version specifiers when adding dependencies (e.g., `zod: ^4.4.3` in `@canopy/api-adapter` versus `^4.4.1` in `@canopy/graph`, `@canopy/storage-file`, and `apps/web`).
+(2) Un-ignored pinned dependencies in `.github/dependabot.yml` generating redundant PRs that break build/tooling gates (e.g., Dependabot PR #405 proposing a major `typescript` 6.0.3 → 7.0.2 bump, which breaks `@typescript-eslint` compatibility while the `typescript-native` dual-compiler setup from `canopy-1qb` is active).
+(3) Manual package additions bypassing workspace version checks and Dependabot's 14-day release cooldown window.
+
+Mitigations implemented:
+(1) Standardized `zod` to `^4.4.1` across all workspace packages in [package.json](file:///home/mkobit/workspace/mkobit/canopy/packages/api-adapter/package.json).
+(2) Configured `.github/dependabot.yml` with `ignore` for `typescript` semver-major updates to prevent invalid PR generation during the dual-compiler transition.
+(3) Extended [verify-versions.ts](file:///home/mkobit/workspace/mkobit/canopy/tools/verify-versions.ts) to scan all workspace `package.json` files and enforce identical version specifiers across all non-workspace dependencies as part of `bun run check:versions` and `bun run lint`.
+
 ## 2026-07-29 — Fixed the TypeScript 7 dual-compiler interim setup (canopy-1qb)
 
 `upgrade-typescript` (PR #380, 2026-07-22) tried to adopt TypeScript 7's Go-based native compiler for its 8-12x build speedup while keeping `typescript-eslint` working, since TS 7.0 shipped without the old programmatic compiler API that `typescript-eslint` depends on (confirmed via Microsoft's [TS 7.0 announcement](https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/) and [typescript-eslint#12518](https://github.com/typescript-eslint/typescript-eslint/issues/12518) — this is an acknowledged, industry-wide gap, not specific to this repo).

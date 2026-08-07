@@ -1,38 +1,67 @@
-# Task 2 Implementation & Fix Report: Configure Claude Code & Antigravity Settings and Permission Whitelist Rules
+# Task 2 Report: Unified Seed Vault API Integration
 
-## Summary
+## What Was Implemented
 
-Task 2 has been updated and fixed to strictly meet all design and review requirements:
-1. Updated `.claude/settings.local.json` to synchronize all permission whitelist rules with `.claude/settings.json` (including `Bash(mise exec:*)`, `Bash(git *)`, `Bash(bunx openspec *)`, `Bash(bd *)`, and `Bash(bun tools/*)`).
-2. Reverted modifications to `tools/hooks/agent-format-lint-hook.ts` so it matches the Task 1 clean state.
-3. Auto-formatted all settings files (`.claude/settings.json`, `.claude/settings.local.json`, `.gemini/settings.json`) with Prettier (`bunx prettier --write`).
-4. Executed full workspace quality gates (`bun run build && bun run lint && bun run typecheck && bun run test`).
-5. Amended commit cleanly under `feat: configure agent auto-format and lint PostToolUse hooks and permission rules`.
+Implemented the unified seed vault API helper for storage initialization:
 
-## Detailed File Changes
+- `apps/web/src/test/seed-vault.ts`: Created `seedVaultStore(store: EventLogStore, options?: SeedVaultOptions)` helper which populates an `EventLogStore` with deterministic or pseudo-random graph events from `generateGraphVault` and `graphToEvents`. Supports optional graph metadata registration in `GraphRegistry` when passed in options.
+- `apps/web/src/test/generators/graph-generators.ts`: Exported `graphToEvents` helper function to convert graph instances into time-ordered `NodeCreated` and `EdgeCreated` graph events.
+- `apps/web/src/context/storage-context.tsx`: Updated storage provider to automatically seed storage and register graph metadata when `VITE_CANOPY_DEMO_SEED === 'true'` or `CANOPY_DEMO_SEED === 'true'`.
+- `apps/web/src/main.tsx`: Added demo seed mode console notification during application startup.
+- `apps/web/src/vite-env.d.ts`: Added environment type declarations for `VITE_CANOPY_DEMO_SEED` and `CANOPY_DEMO_SEED`.
 
-1. [`.claude/settings.json`](file:///home/mkobit/workspace/mkobit/canopy/.claude/settings.json)
-   - Registered `bun tools/hooks/agent-format-lint-hook.ts` under `PostToolUse` for `Edit|Write|MultiEdit` alongside `openspec-validate-hook.ts`.
-   - Expanded `permissions.allow` whitelist rules with command permission patterns (including `bun tools/*`, `bun test *`, `bunx openspec *`, `git *`, and `bd *`).
+## What Was Tested and Test Results
 
-2. [`.gemini/settings.json`](file:///home/mkobit/workspace/mkobit/canopy/.gemini/settings.json)
-   - Created configuration file for Antigravity engine.
-   - Defined `PostToolUse` hook matcher for `Edit|Write|MultiEdit` executing `agent-format-lint-hook.ts` and `openspec-validate-hook.ts`.
-   - Populated complete `permissions.allow` list matching `.claude/settings.json`.
+Executed unit tests in `apps/web/src/test/seed-vault.test.ts`:
 
-3. [`.claude/settings.local.json`](file:///home/mkobit/workspace/mkobit/canopy/.claude/settings.local.json)
-   - Synchronized permission whitelist rules matching `.claude/settings.json`, including `Bash(mise exec:*)`, `Bash(git *)`, `Bash(bunx openspec *)`, `Bash(bd *)`, and `Bash(bun tools/*)`.
+- Tested populating `EventLogStore` with demo preset seed events.
+- Tested custom `graphId` parameter and automatic `GraphRegistry` metadata registration.
+- Verified full test suite (`bun test`): 652 tests passed across 93 files.
+- Verified typecheck (`bun run typecheck`): Clean exit code 0 across all 9 workspace packages.
+- Verified linter (`bun run lint`): Clean exit code 0.
 
-4. [`tools/hooks/agent-format-lint-hook.ts`](file:///home/mkobit/workspace/mkobit/canopy/tools/hooks/agent-format-lint-hook.ts)
-   - Reverted out-of-scope modifications (`tools/hooks/agent-format-lint-hook.ts` restored to exact Task 1 implementation state).
+## TDD Evidence (RED/GREEN Output)
 
-## Quality Gate Verification Results
+### RED Phase
 
-- `bun run build`: PASS (all workspace packages compiled successfully).
-- `bun run lint`: PASS (0 errors, 0 warnings across all packages and tools).
-- `bun run typecheck`: PASS (TypeScript type checking passed cleanly across all packages).
-- `bun run test`: PASS (all unit and integration tests passed across all packages).
+```
+bun test apps/web/src/test/seed-vault.test.ts
+apps/web/src/test/seed-vault.test.ts:
+# Unhandled error between tests
+-------------------------------
+error: Cannot find module './seed-vault' from '/home/mkobit/workspace/mkobit/canopy/apps/web/src/test/seed-vault.test.ts'
+-------------------------------
+0 pass, 1 fail, 1 error
+```
 
-## Commit
+### GREEN Phase
 
-- Commit `eaa048c9c65551567d33f611a3c62937cb8e4b75` (`feat: configure agent auto-format and lint PostToolUse hooks and permission rules`) amended with clean state.
+```
+bun test apps/web/src/test/seed-vault.test.ts
+apps/web/src/test/seed-vault.test.ts:
+✓ seedVaultStore > populates event log store with demo seed events [13.62ms]
+✓ seedVaultStore > populates event log store with custom graphId and registers graph entry [25.70ms]
+
+2 pass, 0 fail, 10 expect() calls
+```
+
+## Files Changed
+
+- `apps/web/src/test/seed-vault.ts` (created)
+- `apps/web/src/test/seed-vault.test.ts` (created)
+- `apps/web/src/test/generators/graph-generators.ts` (modified)
+- `apps/web/src/context/storage-context.tsx` (modified)
+- `apps/web/src/main.tsx` (modified)
+- `apps/web/src/vite-env.d.ts` (modified)
+- `.superpowers/sdd/progress.md` (modified)
+
+## Self-Review Findings
+
+- Verified all types use strict `readonly` modifiers.
+- Checked error handling to return `Result<void, Error>` instead of throwing.
+- Confirmed no `any` or untyped `Record<string, unknown>` values were introduced.
+- Sentence case headings and comments used throughout.
+
+## Issues or Concerns
+
+- None.

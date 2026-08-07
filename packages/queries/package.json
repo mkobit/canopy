@@ -15,7 +15,8 @@
   },
   "devDependencies": {
     "@canopy/storage": "workspace:*",
-    "temporal-polyfill": "^0.3.2",
+    "fast-check": "^4.9.0",
+    "temporal-polyfill": "^1.0.1",
     "typescript": "6.0.3"
   }
 }

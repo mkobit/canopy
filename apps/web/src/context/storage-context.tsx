@@ -4,6 +4,7 @@ import { fromAsyncThrowable } from '@canopy/graph';
 import type { IndexedDBEventLog, GraphRegistry } from '@canopy/storage-indexeddb';
 import { createIndexedDBEventLog, createGraphRegistry } from '@canopy/storage-indexeddb';
 import { getOrCreateDeviceId } from '../utils/device-id';
+import { seedVaultStore } from '../test/seed-vault';
 
 interface StorageContextType {
   readonly eventLog: IndexedDBEventLog | null;
@@ -41,8 +42,21 @@ export const StorageProvider: React.FC<Readonly<{ children: React.ReactNode }>> 
         const regInit = await reg.init();
         if (!regInit.ok) throw regInit.error;
 
+        const isDemoSeedEnabled =
+          import.meta.env.VITE_CANOPY_DEMO_SEED === 'true' ||
+          import.meta.env.CANOPY_DEMO_SEED === 'true' ||
+          (typeof process !== 'undefined' && process.env?.CANOPY_DEMO_SEED === 'true');
+
+        if (isDemoSeedEnabled) {
+          const seedResult = await seedVaultStore(log, { registry: reg });
+          if (!seedResult.ok) {
+            console.error('Failed to seed demo vault:', seedResult.error);
+          }
+        }
+
         setEventLog(log);
         setRegistry(reg);
+
         return undefined;
       });
 

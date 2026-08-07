@@ -32,7 +32,10 @@ export const Layout = () => {
     return undefined;
   };
 
-  const handleSubmitNewNode = (type: TypeId, properties: Record<string, PropertyValue>) => {
+  const handleSubmitNewNode = (
+    type: TypeId,
+    properties: Readonly<Record<string, PropertyValue>>,
+  ) => {
     if (!graph) return undefined;
     return withResultAlert(
       () => createNode(type, properties),

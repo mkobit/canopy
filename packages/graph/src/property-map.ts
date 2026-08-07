@@ -3,14 +3,16 @@ import type { PropertyMap, PropertyValue } from './properties';
 /**
  * Creates a PropertyMap from a plain object.
  */
-export function createPropertyMap(properties: Record<string, PropertyValue>): PropertyMap {
+export function createPropertyMap(
+  properties: Readonly<Record<string, PropertyValue>>,
+): PropertyMap {
   return new Map(Object.entries(properties));
 }
 
 /**
  * Converts a PropertyMap to a plain object.
  */
-export function propertyMapToObject(map: PropertyMap): Record<string, PropertyValue> {
+export function propertyMapToObject(map: PropertyMap): Readonly<Record<string, PropertyValue>> {
   return Object.fromEntries(map);
 }
 

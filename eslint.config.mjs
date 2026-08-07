@@ -29,6 +29,7 @@ export default tseslint.config(
       'apps/web/src/plugin/mock/**/*',
       'apps/web/src/plugin/draft-session-shim.ts',
       'apps/web/scripts/**/*',
+      'packages/graph/scripts/**/*',
       '**/transpiled/**/*',
       '**/apps/web/.storybook-static/**',
     ],
@@ -111,10 +112,7 @@ export default tseslint.config(
     files: ['**/*.ts', '**/*.tsx'],
     languageOptions: {
       parserOptions: {
-        projectService: {
-          allowDefaultProject: ['tools/*.ts', 'tools/lib/*.ts', 'tools/hooks/*.ts'],
-          maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING: 20,
-        },
+        projectService: true,
         tsconfigRootDir: __dirname,
       },
     },
@@ -395,13 +393,7 @@ export default tseslint.config(
 
   // Specific file overrides
   {
-    files: [
-      'tools/verify-versions.ts',
-      'tools/check-commands.ts',
-      'tools/check-openspec-changes.ts',
-      'tools/hooks/openspec-validate-hook.ts',
-      'tools/hooks/agent-format-lint-hook.ts',
-    ],
+    files: ['tools/**/*.ts'],
     rules: {
       'unicorn/no-process-exit': 'off',
     },

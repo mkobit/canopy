@@ -1,4 +1,5 @@
 import { test, expect, type Locator, type Page } from '@playwright/test';
+import { type InlinePropertyOptions } from './test-helpers';
 
 async function createAndOpenGraph(page: Page): Promise<void> {
   // 1. Create a fresh graph and open it.
@@ -39,11 +40,6 @@ async function createCadenceNamespace(page: Page): Promise<void> {
   await namespaceLink.click();
   await expect(page).toHaveURL(/\/graph\/[a-f0-9-]+\/schema\/cadence$/);
   await expect(page.getByRole('heading', { name: 'cadence' })).toBeVisible();
-}
-
-interface InlinePropertyOptions {
-  readonly required?: boolean;
-  readonly valueKind?: string;
 }
 
 // Shared by createNodeTypes below: each NodeType form submission adds one or more

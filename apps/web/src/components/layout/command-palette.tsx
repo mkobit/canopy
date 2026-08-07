@@ -393,6 +393,8 @@ export const CommandPalette: React.FC = () => {
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh] px-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
       <div
         ref={containerReference}
+        role="dialog"
+        aria-modal="true"
         className="w-full max-w-lg bg-[#0e141b] rounded-xl border border-[#2a3c54]/30 shadow-2xl overflow-hidden flex flex-col max-h-[300px] animate-in slide-in-from-top-4 duration-200"
       >
         <div className="flex items-center gap-3 px-4 py-3 border-b border-[#2a3c54]/30 bg-[#121a25]/50">
