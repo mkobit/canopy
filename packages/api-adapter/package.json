@@ -13,7 +13,6 @@
     "@canopy/graph": "workspace:*",
     "@canopy/queries": "workspace:*",
     "graphql": "^17.0.2",
-    "json-rpc-2.0": "^1.7.1",
     "temporal-polyfill": "^1.0.1",
     "zod": "^4.4.1"
   },

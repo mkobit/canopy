@@ -21,6 +21,15 @@ describe('@canopy/queries GraphSession Query Projection Load Test', () => {
       edgeDensity: 2,
       propertyCount: 4,
     });
+    // Warm the read-model index cache that `executeQuery` builds lazily per `Graph` reference
+    // (see `getGraphIndexes` in @canopy/graph). `fixture.graph` is a synthetic graph built by hand
+    // rather than through a `GraphSession`, so it starts with no `_indexes`; without this warm-up
+    // call, whichever benchmark below runs first against `fixture.graph` would pay a one-time
+    // O(V+E) index-build cost on top of its own query, measuring cold-start latency rather than the
+    // steady-state per-query cost the SLA assertions below are actually about.
+    executeQuery(fixture.graph, {
+      steps: [{ kind: 'node-scan', type: fixture.sampleNodeTypes[0] }],
+    });
   });
 
   it('benchmarks GraphSession initial fold projection under 10k nodes', async () => {
