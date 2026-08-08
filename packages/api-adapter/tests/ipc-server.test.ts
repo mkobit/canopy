@@ -156,7 +156,7 @@ describe('IpcServer integration and socket lifecycle', () => {
     client.destroy();
   });
 
-  it('subscribes to event stream and receives notifications over socket', async () => {
+  it('subscribes to event stream and pushes event notifications over the socket on mutation commit', async () => {
     const eventLogStore = createInMemoryEventStore();
     const graphId = asGraphId('graph_test');
     const deviceId = asDeviceId('dev_test');
@@ -169,19 +169,78 @@ describe('IpcServer integration and socket lifecycle', () => {
     const client = net.connect(socketPath);
     await new Promise((resolve) => client.on('connect', resolve));
 
-    const subRequest = JSON.stringify({
-      jsonrpc: '2.0',
-      method: IPC_METHODS.EVENT_STREAM_SUBSCRIBE,
-      params: {},
-      id: 10,
+    const messages: unknown[] = [];
+    let buffer = '';
+    client.on('data', (chunk: Buffer) => {
+      buffer += chunk.toString('utf8');
+      let newlineIndex = buffer.indexOf('\n');
+      while (newlineIndex !== -1) {
+        const line = buffer.slice(0, newlineIndex).trim();
+        buffer = buffer.slice(newlineIndex + 1);
+        if (line.length > 0) {
+          messages.push(JSON.parse(line));
+        }
+        newlineIndex = buffer.indexOf('\n');
+      }
     });
-    client.write(`${subRequest}\n`);
 
-    const subResp = await new Promise<string>((resolve) => {
-      client.once('data', (chunk) => resolve(chunk.toString('utf8').trim()));
-    });
-    const parsedSub = JSON.parse(subResp);
-    expect(parsedSub.result.subscriptionId).toBeDefined();
+    const waitForMessage = (
+      predicate: (message: Readonly<Record<string, unknown>>) => boolean,
+      timeoutMs = 2000,
+    ): Promise<Readonly<Record<string, unknown>>> =>
+      new Promise((resolve, reject) => {
+        const start = Temporal.Now.instant().epochMilliseconds;
+        const check = (): void => {
+          const found = messages.find((message) =>
+            predicate(message as Readonly<Record<string, unknown>>),
+          );
+          if (found) {
+            resolve(found as Readonly<Record<string, unknown>>);
+            return;
+          }
+          if (Temporal.Now.instant().epochMilliseconds - start > timeoutMs) {
+            reject(new Error('Timed out waiting for expected IPC message'));
+            return;
+          }
+          setTimeout(check, 10);
+        };
+        check();
+      });
+
+    client.write(
+      `${JSON.stringify({
+        jsonrpc: '2.0',
+        method: IPC_METHODS.EVENT_STREAM_SUBSCRIBE,
+        params: {},
+        id: 10,
+      })}\n`,
+    );
+
+    const subResp = await waitForMessage((message) => message.id === 10);
+    const subscriptionId = (subResp.result as Readonly<{ subscriptionId: string }>).subscriptionId;
+    expect(subscriptionId).toBeDefined();
+
+    client.write(
+      `${JSON.stringify({
+        jsonrpc: '2.0',
+        method: IPC_METHODS.MUTATION_CREATE_NODE,
+        params: { id: 'node_push_test', type: 'concept', properties: { title: 'Push Test' } },
+        id: 11,
+      })}\n`,
+    );
+
+    const pushNotification = await waitForMessage(
+      (message) =>
+        message.method === IPC_METHODS.EVENT_STREAM_EVENT &&
+        (message.params as Readonly<{ subscriptionId?: string }> | undefined)?.subscriptionId ===
+          subscriptionId,
+    );
+
+    const pushedEvent = (
+      pushNotification.params as Readonly<{ event: Readonly<{ type: string; id: string }> }>
+    ).event;
+    expect(pushedEvent.type).toBe('NodeCreated');
+    expect(pushedEvent.id).toBe('node_push_test');
 
     client.destroy();
   });
