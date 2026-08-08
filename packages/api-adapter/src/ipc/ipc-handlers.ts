@@ -1,8 +1,9 @@
-/* eslint-disable functional/no-return-void, max-lines-per-function, functional/prefer-immutable-types */
+/* eslint-disable max-lines-per-function, functional/prefer-immutable-types */
 import type { PropertyValue, Result } from '@canopy/graph';
 import { asEdgeId, asNodeId, asTypeId, ok } from '@canopy/graph';
 import type { ApiAdapterContext } from '../api-context';
 import { createApiRequest } from '../api-payloads';
+import type { EventStreamSubscription } from '../event-stream-handlers';
 import { createEventStreamSubscriber } from '../event-stream-handlers';
 import {
   executeCreateEdge,
@@ -45,7 +46,7 @@ export type IpcHandlerResponse = Readonly<{
   newSubscription?:
     | Readonly<{
         subscriptionId: string;
-        close: () => void;
+        subscriber: EventStreamSubscription;
       }>
     | undefined;
   unsubscribeId?: string | undefined;
@@ -495,9 +496,7 @@ export const handleIpcRequestLine = async (
           response: makeSuccessResponse(requestId, subscribeResult),
           newSubscription: {
             subscriptionId,
-            close: () => {
-              subscriber.close();
-            },
+            subscriber,
           },
         });
       }

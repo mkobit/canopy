@@ -8,6 +8,7 @@ import type { ApiAdapterContext } from '../api-context';
 import { handleIpcRequestLine } from './ipc-handlers';
 import type { IpcProtocolError, IpcSocketInUseError } from './ipc-schema';
 import {
+  IPC_METHODS,
   JSON_RPC_ERROR_CODES,
   createIpcProtocolError,
   createIpcSocketInUseError,
@@ -167,8 +168,25 @@ export const createIpcServer = (options: IpcServerOptions): IpcServer => {
             if (newSubscription) {
               const subsMap = activeSubscriptions.get(socket);
               if (subsMap) {
+                const { subscriptionId, subscriber } = newSubscription;
+                const unbindListener = subscriber.subscribe((message) => {
+                  if (message.kind !== 'event' || !message.event) {
+                    return;
+                  }
+                  sendToSocket(
+                    socket,
+                    JSON.stringify({
+                      jsonrpc: '2.0',
+                      method: IPC_METHODS.EVENT_STREAM_EVENT,
+                      params: { subscriptionId, event: message.event },
+                    }),
+                  );
+                });
                 // eslint-disable-next-line functional/immutable-data
-                subsMap.set(newSubscription.subscriptionId, newSubscription.close);
+                subsMap.set(subscriptionId, () => {
+                  unbindListener();
+                  subscriber.close();
+                });
               }
             }
 
