@@ -19,6 +19,7 @@
     "refactor:check": "bun tools/refactor-ts.ts --check",
     "refactor:fix": "bun tools/refactor-ts.ts --fix",
     "audit:ai-tools": "bun tools/audit-ai-tool-releases.ts",
+    "audit:beads": "bun tools/audit-beads-conventions.ts",
     "test": "bun --filter '*' test",
     "dev:demo": "bun --filter @canopy/web dev:demo",
     "lint": "bun tools/check-commands.ts && bun run check:versions && bun run check:api-compatibility && bun run check:unused && bun tools/lint-workspaces.ts",
