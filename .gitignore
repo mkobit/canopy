@@ -17,9 +17,13 @@ test-results/
 .worktrees/
 .eslintcache
 
-# Generated guest plugin JS outputs
+# Generated guest plugin outputs & WIT types
 apps/web/src/plugin/mock/guest.js
+apps/web/src/plugin/mock/plugin.wasm
+apps/web/src/plugin/mock/transpiled/
+apps/web/src/plugin/mock/plugin-node.json
+apps/web/src/plugin/types/
 
-# Storybook
-.storybook-static
+# Stray test output files
+test_output_2.txt
 
