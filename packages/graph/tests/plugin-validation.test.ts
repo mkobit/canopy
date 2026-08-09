@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'bun:test';
 import fs from 'node:fs';
 import path from 'node:path';
+import { execSync } from 'node:child_process';
 import { createGraph } from '../src/create-graph';
 import { validateNode } from '../src/validation';
 import {
@@ -267,6 +268,13 @@ describe('node validation integration for Plugin nodes', () => {
         directory,
         '../../../apps/web/src/plugin/mock/plugin-node.json',
       );
+      if (!fs.existsSync(jsonPath)) {
+        const webDirectory = path.resolve(directory, '../../../apps/web');
+        const wasmPath = path.resolve(webDirectory, 'src/plugin/mock/plugin.wasm');
+        const scriptName = fs.existsSync(wasmPath) ? 'package:plugin' : 'codegen:wit';
+        execSync(`bun run ${scriptName}`, { cwd: webDirectory, stdio: 'ignore' });
+      }
+
       if (fs.existsSync(jsonPath)) {
         const rawJson = fs.readFileSync(jsonPath, 'utf8');
         const nodeData = JSON.parse(rawJson) as {
@@ -298,5 +306,5 @@ describe('node validation integration for Plugin nodes', () => {
         error,
       );
     }
-  });
+  }, 120_000);
 });
