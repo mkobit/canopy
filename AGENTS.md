@@ -113,6 +113,7 @@ This project uses `bd` (beads) for issue tracking.
 Run `bd prime` for full workflow context before creating or updating any issues.
 Key commands: `bd ready` (unblocked work), `bd create "Title" --type task` (new issue), `bd close <id>` (complete).
 Task beads must not be created or set to `in_progress` until the corresponding design proposal has successfully passed the adversarial review phase.
+All git worktrees share one embedded bd database, so grab work only with `bd update <id> --claim` (atomic and conflict-checked) — never a manual status set — and parallel worktree sessions stay safe.
 
 ## Specs
 

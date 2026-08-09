@@ -13,6 +13,7 @@ import {
   SYSTEM_DEVICE_ID,
   addNode,
   addEdge,
+  createNodeType,
 } from '@canopy/graph';
 import type { Node, Edge } from '@canopy/graph';
 import { resolveViewDefinition } from '../src/view-resolution';
@@ -213,5 +214,117 @@ describe('View resolution engine', () => {
 
     const result = resolveViewDefinition(graph, nodeId, typeId, namespace);
     expect(result.ok).toBe(false);
+  });
+
+  it('resolves the auto-generated default view for a type authored via createNodeType', () => {
+    let graph = unwrap(createGraph(asGraphId('test-graph'), 'Test Graph'));
+
+    const authored = createNodeType(
+      graph,
+      {
+        name: 'Widget',
+        namespace: 'user',
+        properties: [{ kind: 'inline', name: 'title', valueKind: 'text', required: true }],
+      },
+      { deviceId: SYSTEM_DEVICE_ID },
+    );
+    if (!authored.ok) throw new Error('expected type authoring to succeed');
+    graph = authored.value.value;
+
+    const nodeType = graph.nodes
+      .values()
+      .find(
+        (node) => node.type === SYSTEM_IDS.NODE_TYPE && node.properties.get('name') === 'Widget',
+      );
+    if (!nodeType) throw new Error('expected authored NodeType');
+    const typeId = asTypeId(nodeType.id);
+
+    // An instance of the authored type carries the NodeType node id as its type.
+    const instanceId = asNodeId('user:node:widget-1');
+    const instance: Node = {
+      id: instanceId,
+      type: typeId,
+      properties: new Map(),
+      metadata: {
+        created: createInstant(),
+        modified: createInstant(),
+        modifiedBy: SYSTEM_DEVICE_ID,
+      },
+    };
+    graph = unwrap(addNode(graph, instance, { deviceId: SYSTEM_DEVICE_ID })).graph;
+
+    const result = resolveViewDefinition(graph, instanceId, typeId, asNamespace('user'));
+    expect(result.ok).toBe(true);
+    const view = unwrap(result);
+    expect(view.properties.get('name')).toBe('Widget (table)');
+    expect(view.properties.get('layout')).toBe('table');
+    expect(view.properties.get('displayProperties')).toEqual(['title']);
+  });
+
+  it('lets a node-level override win over the auto-generated default view', () => {
+    let graph = unwrap(createGraph(asGraphId('test-graph'), 'Test Graph'));
+
+    const authored = createNodeType(
+      graph,
+      { name: 'Widget', namespace: 'user', properties: [] },
+      { deviceId: SYSTEM_DEVICE_ID },
+    );
+    if (!authored.ok) throw new Error('expected type authoring to succeed');
+    graph = authored.value.value;
+
+    const nodeType = graph.nodes
+      .values()
+      .find(
+        (node) => node.type === SYSTEM_IDS.NODE_TYPE && node.properties.get('name') === 'Widget',
+      );
+    if (!nodeType) throw new Error('expected authored NodeType');
+    const typeId = asTypeId(nodeType.id);
+
+    // A hand-authored override view + instance with a view_override edge to it.
+    const overrideView: Node = {
+      id: asNodeId('user:view:override-target'),
+      type: SYSTEM_IDS.VIEW_DEFINITION,
+      properties: new Map([
+        ['name', 'Override View'],
+        ['layout', 'list'],
+      ]),
+      metadata: {
+        created: createInstant(),
+        modified: createInstant(),
+        modifiedBy: SYSTEM_DEVICE_ID,
+      },
+    };
+    graph = unwrap(addNode(graph, overrideView, { deviceId: SYSTEM_DEVICE_ID })).graph;
+
+    const instanceId = asNodeId('user:node:widget-1');
+    const instance: Node = {
+      id: instanceId,
+      type: typeId,
+      properties: new Map(),
+      metadata: {
+        created: createInstant(),
+        modified: createInstant(),
+        modifiedBy: SYSTEM_DEVICE_ID,
+      },
+    };
+    graph = unwrap(addNode(graph, instance, { deviceId: SYSTEM_DEVICE_ID })).graph;
+
+    const overrideEdge: Edge = {
+      id: asEdgeId('user:edge:override'),
+      type: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
+      source: instanceId,
+      target: overrideView.id,
+      properties: new Map(),
+      metadata: {
+        created: createInstant(),
+        modified: createInstant(),
+        modifiedBy: SYSTEM_DEVICE_ID,
+      },
+    };
+    graph = unwrap(addEdge(graph, overrideEdge, { deviceId: SYSTEM_DEVICE_ID })).graph;
+
+    const result = resolveViewDefinition(graph, instanceId, typeId, asNamespace('user'));
+    expect(result.ok).toBe(true);
+    expect(unwrap(result).id).toBe(overrideView.id);
   });
 });
