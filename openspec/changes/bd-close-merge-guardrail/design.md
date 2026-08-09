@@ -52,6 +52,14 @@ A `no-code` label on an individual issue exempts it from an otherwise-code-beari
 A `no-code` label on an individual issue exempts it (e.g. a decision record closed without a corresponding commit).
 **Alternative considered**: check every closed issue regardless of type. Rejected — epics and decisions routinely close without their own commit (their children carry the code), which would make the check permanently noisy and easy to ignore.
 
+## Rollout finding: informational-only, not a failure trigger (2026-08-08, post-implementation)
+
+Per the rollout-safety task, the ID-coverage measurement was run for real before enabling this in CI: of 48 issues closed in the prior 14 days, 18 (37.5%) would have been flagged as "drifted" even though most had genuinely landed — squash-merge commit messages routinely cite only some of the issue IDs a PR closes (e.g. `canopy-pf0.2` landed via commit `31a35e1` titled "Bootstrap @canopy/cli module using @effect/cli," which never mentions `pf0.2`). That is far noisier than useful for an automatic CI failure/tracking-issue trigger.
+
+**Decision**: the merge-drift check is informational-only in the CI/report path — findings are listed in the audit output but never fail the run or trigger `[Beads Audit Failure]` issue creation, the same treatment already given to the orphan-approximation check in `beads-ci-validation`. Locally (running `bun tools/audit-beads-conventions.ts` without `--report`), the CLI exits non-zero if there are _any_ findings at all, including informational ones — a developer running it directly is a human reading the output, not an automated gate, so surfacing everything as a non-zero exit is useful; it's the automated CI-failure/issue-creation path specifically that needs the lower-noise "failing" subset.
+
+This does not eliminate the value of the check — it still makes drift visible in the weekly audit report — but the original framing of this change as a "guardrail" that flags/blocks is more accurately, post-measurement, a low-confidence detector until commit-message hygiene improves (e.g. a structured trailer convention) or a better reachability signal is found. Revisit failure-triggering once there's real signal on the false-positive rate trending down.
+
 ## Ordering with beads-ci-validation (canopy-qvn.5)
 
 This change's CI step depends on `.github/workflows/beads-validation.yml` existing, and the check needs full git history (see shallow-clone risk below), which only the `beads-ci-validation` workflow's checkout step is currently specified to provide. To avoid two changes racing to create/own the same new workflow file, `beads-ci-validation` (canopy-qvn.5) is a hard prerequisite: this change's tasks add a step to the already-existing workflow, not create it. If `beads-ci-validation` hasn't landed when this change is picked up, its tasks land first.

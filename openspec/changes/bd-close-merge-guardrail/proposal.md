@@ -27,3 +27,8 @@ On 2026-08-06 a local/origin branch (`storybook-setup`) was found holding 50 unm
 - `.github/workflows/beads-validation.yml`: gains a step for this check if/when the beads-ci-validation workflow exists; this change's tasks must handle either creation order.
 - `package.json`: new `bd:check-merged` (or similarly named) script.
 - No changes to `bd` itself or to existing bd issue data.
+
+## Implementation note (2026-08-08, post-implementation)
+
+- Consolidated into the existing `beads-ci-validation` audit script rather than a standalone file: the merge-drift logic lives in `tools/lib/beads-merge-check.ts` (pure, unit-tested), wired into the same `tools/audit-beads-conventions.ts` entry point (`bun run audit:beads` for the full scheduled audit, `bun tools/audit-beads-conventions.ts --check-issue <id>` for the local single-issue advisory check) rather than a second script and a second `gh issue` search/create-or-update implementation.
+- A real coverage measurement found this check too noisy (37.5% false-positive rate) to fail CI or trigger tracking-issue creation on its own — it ships informational-only in the CI/report path, but a local invocation without `--report` still exits non-zero on any finding. See design.md's "Rollout finding" and the revised `beads-close-merge-guardrail` spec.

@@ -59,9 +59,18 @@ test('buildAuditResult fails when lint or label findings exist', () => {
   const lint = lintFindingsToReportFindings([
     { id: 'canopy-a', title: 'A', missing: ['## Acceptance Criteria'] },
   ]);
-  const result = buildAuditResult(lint, [], []);
+  const result = buildAuditResult(lint, [], [], []);
   expect(result.failed).toBe(true);
   expect(result.failingFindings).toHaveLength(1);
+});
+
+test('buildAuditResult never fails on unmerged-close findings alone', () => {
+  // A real coverage measurement (2026-08-08) found a 37.5% false-positive
+  // rate for this check -- too noisy to fail a run on. See design.md.
+  const drift = queryFindingsToReportFindings([{ id: 'canopy-c', title: 'C' }], 'unmerged-close');
+  const result = buildAuditResult([], [], drift, []);
+  expect(result.failed).toBe(false);
+  expect(result.informationalFindings).toHaveLength(1);
 });
 
 test('buildAuditResult never fails on orphan-informational findings alone', () => {
@@ -69,27 +78,41 @@ test('buildAuditResult never fails on orphan-informational findings alone', () =
     [{ id: 'canopy-b', title: 'B' }],
     'orphan-informational',
   );
-  const result = buildAuditResult([], [], orphan);
+  const result = buildAuditResult([], [], [], orphan);
   expect(result.failed).toBe(false);
   expect(result.informationalFindings).toHaveLength(1);
 });
 
-test('formatReportBody renders empty string when there are no findings at all', () => {
-  const result = buildAuditResult([], [], []);
-  expect(formatReportBody(result)).toBe('');
-});
-
-test('formatReportBody separates failing and informational sections', () => {
-  const lint = lintFindingsToReportFindings([
-    { id: 'canopy-a', title: 'A', missing: ['## Acceptance Criteria'] },
-  ]);
+test('buildAuditResult combines unmerged-close and orphan findings as informational', () => {
+  const drift = queryFindingsToReportFindings([{ id: 'canopy-c', title: 'C' }], 'unmerged-close');
   const orphan = queryFindingsToReportFindings(
     [{ id: 'canopy-b', title: 'B' }],
     'orphan-informational',
   );
-  const body = formatReportBody(buildAuditResult(lint, [], orphan));
+  const result = buildAuditResult([], [], drift, orphan);
+  expect(result.failed).toBe(false);
+  expect(result.informationalFindings).toHaveLength(2);
+});
+
+test('formatReportBody renders empty string when there are no findings at all', () => {
+  const result = buildAuditResult([], [], [], []);
+  expect(formatReportBody(result)).toBe('');
+});
+
+test('formatReportBody separates failing, drift, and informational sections', () => {
+  const lint = lintFindingsToReportFindings([
+    { id: 'canopy-a', title: 'A', missing: ['## Acceptance Criteria'] },
+  ]);
+  const drift = queryFindingsToReportFindings([{ id: 'canopy-c', title: 'C' }], 'unmerged-close');
+  const orphan = queryFindingsToReportFindings(
+    [{ id: 'canopy-b', title: 'B' }],
+    'orphan-informational',
+  );
+  const body = formatReportBody(buildAuditResult(lint, [], drift, orphan));
   expect(body).toContain('Missing recommended sections (bd lint)');
   expect(body).toContain('canopy-a');
+  expect(body).toContain('Informational: closed but not reachable from origin/main');
+  expect(body).toContain('canopy-c');
   expect(body).toContain('Informational: parentless, non-epic issues');
   expect(body).toContain('canopy-b');
 });

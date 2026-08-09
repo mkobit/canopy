@@ -81,7 +81,7 @@ export function parseIssueNumbers(raw: string): readonly number[] {
     .filter((value): value is number => typeof value === 'number');
 }
 
-export type FindingCheck = 'lint' | 'missing-label' | 'orphan-informational';
+export type FindingCheck = 'lint' | 'missing-label' | 'unmerged-close' | 'orphan-informational';
 
 export type Finding = Readonly<{
   check: FindingCheck;
@@ -101,7 +101,7 @@ export function lintFindingsToReportFindings(findings: readonly LintFinding[]): 
 
 export function queryFindingsToReportFindings(
   issues: readonly QueryIssueSummary[],
-  check: 'missing-label' | 'orphan-informational',
+  check: 'missing-label' | 'unmerged-close' | 'orphan-informational',
 ): readonly Finding[] {
   return issues.map((issue) => ({ check, id: issue.id, title: issue.title }));
 }
@@ -112,19 +112,23 @@ export type AuditResult = Readonly<{
   informationalFindings: readonly Finding[];
 }>;
 
-// Only lint/missing-label findings can fail the run -- orphan-informational never does
-// (see design.md: the orphan query is a low-signal approximation that would otherwise
-// encourage inventing fake parent issues just to silence it).
+// Only lint/missing-label findings can fail the run. unmerged-close and
+// orphan-informational never do: a real coverage measurement (2026-08-08,
+// 48 issues closed in the prior 14 days) found 18/48 (37.5%) would be
+// flagged as "drifted" even though most had genuinely landed -- squash-merge
+// commit messages routinely don't cite every closed issue's ID. That's too
+// noisy to fail a run on; see design.md's rollout-safety revision.
 export function buildAuditResult(
   lintFindings: readonly Finding[],
   labelFindings: readonly Finding[],
+  mergeDriftFindings: readonly Finding[],
   orphanFindings: readonly Finding[],
 ): AuditResult {
   const failingFindings = [...lintFindings, ...labelFindings];
   return {
     failed: failingFindings.length > 0,
     failingFindings,
-    informationalFindings: orphanFindings,
+    informationalFindings: [...mergeDriftFindings, ...orphanFindings],
   };
 }
 
@@ -150,11 +154,15 @@ export function formatReportBody(result: AuditResult): string {
     'Missing labels',
     result.failingFindings.filter((finding) => finding.check === 'missing-label'),
   );
+  const mergeDriftSection = formatSection(
+    'Informational: closed but not reachable from origin/main (approximation, not a failure -- see design.md)',
+    result.informationalFindings.filter((finding) => finding.check === 'unmerged-close'),
+  );
   const orphanSection = formatSection(
     'Informational: parentless, non-epic issues (approximation, not a failure -- see design.md)',
-    result.informationalFindings,
+    result.informationalFindings.filter((finding) => finding.check === 'orphan-informational'),
   );
-  return [lintSection, labelSection, orphanSection]
+  return [lintSection, labelSection, mergeDriftSection, orphanSection]
     .filter((section) => section.length > 0)
     .join('\n');
 }

@@ -48,28 +48,24 @@ The system SHALL NOT report a closed issue as drifted until a configurable grace
 - **WHEN** an issue was closed more than the grace period ago and still has no reachable commit
 - **THEN** the check reports it as drifted
 
-### Requirement: Automated CI reporting
+### Requirement: Informational-only CI reporting
 
-The system SHALL run the drift check in CI on a recurring schedule and, when drifted issues are found, ensure a single tracking GitHub issue exists summarizing them, reusing the reporting pattern established for other beads convention checks rather than duplicating scheduling/reporting infrastructure.
+The system SHALL surface drifted issues in the scheduled CI audit output as an informational section, but SHALL NOT fail the run or trigger `[Beads Audit Failure]` tracking-issue creation on drift findings alone. A real coverage measurement (2026-08-08, 48 issues closed in the prior 14 days) found a 37.5% false-positive rate for this check — squash-merge commit messages routinely omit some of the issue IDs a PR actually closes — too noisy to gate CI on; see design.md's "Rollout finding."
 
-#### Scenario: CI finds drift and no open report exists
+#### Scenario: CI finds drift
 
-- **WHEN** a scheduled CI run finds one or more drifted issues and no open `[Beads Audit Failure]`-style tracking issue exists
-- **THEN** CI creates one listing the drifted issue IDs
-
-#### Scenario: CI finds drift and a report already exists
-
-- **WHEN** a scheduled CI run finds drifted issues and an open tracking issue already exists
-- **THEN** CI updates that issue's body with the current drifted-ID list (removing IDs that are no longer drifted) instead of creating a duplicate
+- **WHEN** a scheduled CI run finds one or more drifted issues
+- **THEN** the drifted issue IDs appear in an informational section of the audit output
+- **AND** the run's pass/fail status and any `[Beads Audit Failure]` tracking-issue creation are unaffected by drift findings alone
 
 #### Scenario: CI finds no drift
 
 - **WHEN** a scheduled CI run finds zero drifted issues
-- **THEN** no issue is created and any prior open tracking issue is left for manual close
+- **THEN** no informational section is added for this check
 
-### Requirement: Local advisory check
+### Requirement: Local advisory check always reports drift as failure
 
-The system SHALL provide a locally runnable command that reports the same drift signal for a given issue ID (or the current HEAD's referenced issues), so a developer or agent can check before or after running `bd close` without requiring `bd` itself to support a blocking pre-close hook.
+The system SHALL provide a locally runnable command that reports the same drift signal for a given issue ID, so a developer or agent can check before or after running `bd close` without requiring `bd` itself to support a blocking pre-close hook. Unlike the CI path, a local invocation SHALL treat any finding — including ones that are informational-only in CI — as a failing (non-zero exit) result, since a human is reading the output directly rather than an automated gate consuming it.
 
 #### Scenario: Local check on an issue with no reachable commit
 
