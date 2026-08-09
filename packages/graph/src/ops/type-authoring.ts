@@ -1,15 +1,17 @@
 import type { Graph } from '../graph';
 import type { Node } from '../node';
+import type { Edge } from '../edge';
 import type { NodeId } from '../identifiers';
 import type { Result } from '../result';
 import type { GraphResult } from '../events';
 import type { ValidationError } from '../validation-types';
 import type { PropertyDefinition, PropertyValue } from '../properties';
 import type { NodeOperationOptions } from './node';
-import { createNodeId, createInstant } from '../factories';
+import { createNodeId, createEdgeId, createInstant } from '../factories';
 import { ok, err as error } from '../result';
 import { addNode } from './node';
-import { SYSTEM_IDS } from '../system';
+import { addEdge } from './edge';
+import { SYSTEM_IDS, SYSTEM_EDGE_TYPES } from '../system';
 import { RESTRICTED_NAMESPACE_KINDS } from '../namespace';
 import { getNodeType, getEdgeType, getNodesOfType } from '../queries';
 import { NamespaceSchema, PropertyValueKindSchema } from '../schemas';
@@ -189,6 +191,99 @@ function resolveProperties(
   return resolveProperties(graph, inputs, index + 1, [...resolved, result.value]);
 }
 
+/**
+ * Generates the default table-view artifacts for a just-created NodeType: a
+ * QueryDefinition that scans nodes of that type, a table ViewDefinition with one
+ * column per declared property, and a `default_view` edge linking the NodeType to
+ * the view (which populates `indexes.defaultViews`, read by `resolveViewDefinition`).
+ *
+ * Starts from a graph that already contains `nodeTypeNode`. All-or-nothing: any
+ * sub-step failure returns an error and emits no events. The generated definitions
+ * inhabit the NodeType's own (already-proven non-restricted) namespace.
+ */
+function generateDefaultView(
+  graph: Graph,
+  nodeTypeNode: Node,
+  properties: readonly PropertyDefinition[],
+  options: NodeOperationOptions,
+): Result<GraphResult<Graph>, ValidationError> {
+  const rawName = nodeTypeNode.properties.get('name');
+  const rawNamespace = nodeTypeNode.properties.get('namespace');
+  const typeName = typeof rawName === 'string' ? rawName : 'Type';
+  const namespace = typeof rawNamespace === 'string' ? rawNamespace : '';
+
+  const queryId = createNodeId();
+  const queryDefinition = { steps: [{ kind: 'node-scan', type: nodeTypeNode.id }] };
+  const queryProperties: Readonly<Record<string, PropertyValue>> = {
+    name: `${typeName} (all)`,
+    namespace,
+    description: `All ${typeName} nodes.`,
+    definition: JSON.stringify(queryDefinition),
+  };
+  const queryNode: Node = {
+    id: queryId,
+    type: SYSTEM_IDS.QUERY_DEFINITION,
+    properties: new Map(Object.entries(queryProperties)),
+    metadata: {
+      created: createInstant(),
+      modified: createInstant(),
+      modifiedBy: options.deviceId,
+    },
+  };
+
+  const viewProperties: Readonly<Record<string, PropertyValue>> = {
+    name: `${typeName} (table)`,
+    namespace,
+    description: `Default table view for ${typeName}.`,
+    layout: 'table',
+    queryRef: queryId,
+    displayProperties: properties.map((property) => property.name),
+  };
+  const viewNode: Node = {
+    id: createNodeId(),
+    type: SYSTEM_IDS.VIEW_DEFINITION,
+    properties: new Map(Object.entries(viewProperties)),
+    metadata: {
+      created: createInstant(),
+      modified: createInstant(),
+      modifiedBy: options.deviceId,
+    },
+  };
+
+  const queryResult = addNode(graph, queryNode, options);
+  if (!queryResult.ok) {
+    return error({ path: [], message: queryResult.error.message });
+  }
+
+  const viewResult = addNode(queryResult.value.graph, viewNode, options);
+  if (!viewResult.ok) {
+    return error({ path: [], message: viewResult.error.message });
+  }
+
+  const edge: Edge = {
+    id: createEdgeId(),
+    type: SYSTEM_EDGE_TYPES.DEFAULT_VIEW,
+    source: nodeTypeNode.id,
+    target: viewNode.id,
+    properties: new Map(),
+    metadata: {
+      created: createInstant(),
+      modified: createInstant(),
+      modifiedBy: options.deviceId,
+    },
+  };
+  const edgeResult = addEdge(viewResult.value.graph, edge, options);
+  if (!edgeResult.ok) {
+    return error({ path: [], message: edgeResult.error.message });
+  }
+
+  return ok({
+    graph: edgeResult.value.graph,
+    events: [...queryResult.value.events, ...viewResult.value.events, ...edgeResult.value.events],
+    value: edgeResult.value.graph,
+  });
+}
+
 export type CreateNodeTypeInput = Readonly<{
   name: string;
   namespace: string;
@@ -237,7 +332,29 @@ export function createNodeType(
     },
   };
 
-  return fromAddNodeResult(addNode(graph, node, options));
+  // Create the NodeType first so its NodeCreated event stays first in `events`
+  // (callers that take the first NodeCreated -- e.g. web `commitCreatedNode` --
+  // keep resolving the NodeType's id), then generate its default view.
+  const nodeResult = addNode(graph, node, options);
+  if (!nodeResult.ok) {
+    return error({ path: [], message: nodeResult.error.message });
+  }
+
+  const viewResult = generateDefaultView(
+    nodeResult.value.graph,
+    node,
+    propertiesResult.value,
+    options,
+  );
+  if (!viewResult.ok) {
+    return viewResult;
+  }
+
+  return ok({
+    graph: viewResult.value.graph,
+    events: [...nodeResult.value.events, ...viewResult.value.events],
+    value: viewResult.value.graph,
+  });
 }
 
 export type CreateEdgeTypeInput = Readonly<{

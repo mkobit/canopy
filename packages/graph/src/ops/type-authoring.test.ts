@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'bun:test';
 import { createGraph, createGraphId, asDeviceId, type Graph } from '@canopy/graph';
-import { SYSTEM_IDS } from '../system';
+import { SYSTEM_IDS, SYSTEM_EDGE_TYPES } from '../system';
 import {
   createNamespace,
   createNodeType,
@@ -252,6 +252,135 @@ describe('createNodeType', () => {
   });
 });
 
+describe('createNodeType default view generation', () => {
+  let graph: Graph;
+
+  beforeEach(() => {
+    graph = bootstrappedGraph();
+  });
+
+  function authorTask() {
+    return createNodeType(
+      graph,
+      {
+        name: 'Task',
+        namespace: 'user',
+        properties: [
+          { kind: 'inline', name: 'title', valueKind: 'text', required: true },
+          { kind: 'inline', name: 'status', valueKind: 'text', required: false },
+        ],
+      },
+      OPTIONS,
+    );
+  }
+
+  it('emits NodeType, QueryDefinition, ViewDefinition, and a default_view edge (NodeType first)', () => {
+    const result = authorTask();
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error('expected success');
+
+    const nodeCreated = result.value.events.filter((event) => event.type === 'NodeCreated');
+    const edgeCreated = result.value.events.filter((event) => event.type === 'EdgeCreated');
+    expect(nodeCreated).toHaveLength(3);
+    expect(edgeCreated).toHaveLength(1);
+
+    // NodeType event must be first so first-NodeCreated callers still get the type id.
+    const first = result.value.events[0];
+    expect(first?.type).toBe('NodeCreated');
+    if (first?.type !== 'NodeCreated') throw new Error('expected NodeCreated');
+    expect(first.nodeType).toBe(SYSTEM_IDS.NODE_TYPE);
+  });
+
+  it('generates a table view with one displayProperty per declared property', () => {
+    const result = authorTask();
+    if (!result.ok) throw new Error('expected success');
+
+    const view = result.value.value.nodes
+      .values()
+      .find(
+        (node) =>
+          node.type === SYSTEM_IDS.VIEW_DEFINITION &&
+          node.properties.get('name') === 'Task (table)',
+      );
+    expect(view).toBeDefined();
+    expect(view?.properties.get('layout')).toBe('table');
+    expect(view?.properties.get('displayProperties')).toEqual(['title', 'status']);
+    expect(view?.properties.get('namespace')).toBe('user');
+  });
+
+  it('generates a query that scans the new type and a default_view edge linking type to view', () => {
+    const result = authorTask();
+    if (!result.ok) throw new Error('expected success');
+    const finalGraph = result.value.value;
+
+    const nodeType = finalGraph.nodes
+      .values()
+      .find((node) => node.type === SYSTEM_IDS.NODE_TYPE && node.properties.get('name') === 'Task');
+    const query = finalGraph.nodes
+      .values()
+      .find(
+        (node) =>
+          node.type === SYSTEM_IDS.QUERY_DEFINITION && node.properties.get('name') === 'Task (all)',
+      );
+    const view = finalGraph.nodes
+      .values()
+      .find(
+        (node) =>
+          node.type === SYSTEM_IDS.VIEW_DEFINITION &&
+          node.properties.get('name') === 'Task (table)',
+      );
+    if (!nodeType || !query || !view) throw new Error('expected generated definitions');
+
+    // Query scans the new type by its NodeType node id.
+    const definition = JSON.parse(query.properties.get('definition') as string) as {
+      steps: readonly { kind: string; type?: string }[];
+    };
+    expect(definition.steps[0]).toEqual({ kind: 'node-scan', type: nodeType.id });
+
+    // View references the generated query.
+    expect(view.properties.get('queryRef')).toBe(query.id);
+
+    // default_view edge: NodeType -> ViewDefinition.
+    const edge = finalGraph.edges
+      .values()
+      .find(
+        (candidate) =>
+          candidate.type === SYSTEM_EDGE_TYPES.DEFAULT_VIEW && candidate.source === nodeType.id,
+      );
+    expect(edge).toBeDefined();
+    expect(edge?.target).toBe(view.id);
+  });
+
+  it('still generates a resolvable view for a type with no declared properties', () => {
+    const result = createNodeType(
+      graph,
+      { name: 'Marker', namespace: 'user', properties: [] },
+      OPTIONS,
+    );
+    if (!result.ok) throw new Error('expected success');
+
+    const view = result.value.value.nodes
+      .values()
+      .find(
+        (node) =>
+          node.type === SYSTEM_IDS.VIEW_DEFINITION &&
+          node.properties.get('name') === 'Marker (table)',
+      );
+    expect(view).toBeDefined();
+    expect(view?.properties.get('displayProperties')).toEqual([]);
+  });
+
+  it('emits no view, query, or edge events when type authoring fails', () => {
+    // 'Node Type' already exists in the bootstrapped graph -> duplicate name.
+    const result = createNodeType(
+      graph,
+      { name: 'Node Type', namespace: 'user', properties: [] },
+      OPTIONS,
+    );
+    expect(result.ok).toBe(false);
+  });
+});
+
 describe('createEdgeType', () => {
   let graph: Graph;
 
@@ -282,6 +411,10 @@ describe('createEdgeType', () => {
       );
     expect(created?.properties.get('sourceTypes')).toEqual([SYSTEM_IDS.NODE_TYPE]);
     expect(created?.properties.get('targetTypes')).toEqual([SYSTEM_IDS.NODE_TYPE]);
+
+    // EdgeType authoring does not generate default-view artifacts (unlike NodeType).
+    expect(result.value.events).toHaveLength(1);
+    expect(result.value.events[0]?.type).toBe('NodeCreated');
   });
 
   it('rejects a duplicate name', () => {
