@@ -33,7 +33,7 @@ Four storage adapters are implemented (in-memory, IndexedDB, SQLite, HTTP, file)
 Deferred: persisted projection snapshots, log compaction, signing/E2EE, conflict-surfacing UX.
 
 **Insight**: Logseq's experience is a real-world data point for Canopy's bet.
-Logseq needed a custom rebase engine to get CRDT-like behavior and *still* has undocumented, apparently ad hoc conflict semantics; Canopy's simpler, fully-specified LWW-per-property model is easier to audit and test (there's already a property-based convergence test) at the cost of losing character-level merge.
+Logseq needed a custom rebase engine to get CRDT-like behavior and _still_ has undocumented, apparently ad hoc conflict semantics; Canopy's simpler, fully-specified LWW-per-property model is easier to audit and test (there's already a property-based convergence test) at the cost of losing character-level merge.
 This validates rather than challenges the `event-log-source-of-truth` decision — nothing here suggests reopening it.
 
 ## 2. Graph / data model
@@ -41,12 +41,12 @@ This validates rather than challenges the `event-log-source-of-truth` decision �
 **Logseq**: DataScript (a Datalog/EAV triple-store fork) in memory, backed by SQLite (`sqlite3.wasm` in-browser, `better-sqlite3` on Node) via OPFS + WAL.
 Pages and blocks are unified into one "node" concept, referenced uniformly with `[[ ]]` (the old `(( ))` block-ref syntax is gone).
 Properties are typed (Text, Number, Date, DateTime, Checkbox, Node) and immutable-once-used in type.
-Node *typing* is done via tags: a tag can carry "Tag Properties" that all nodes inherit, with parent-child inheritance through an `Extends` property — a lightweight, incrementally-adoptable alternative to a separate type registry.
+Node _typing_ is done via tags: a tag can carry "Tag Properties" that all nodes inherit, with parent-child inheritance through an `Extends` property — a lightweight, incrementally-adoptable alternative to a separate type registry.
 
-**Canopy**: branded IDs, Zod schemas as the sole runtime-validation source of truth, and a genuinely meta-circular type system — the node that *defines* the node-type type has itself as its type (`packages/graph/src/system.ts:5,16`), and this same self-reference covers edge types, namespaces, property types, queries, views, templates, and renderers.
+**Canopy**: branded IDs, Zod schemas as the sole runtime-validation source of truth, and a genuinely meta-circular type system — the node that _defines_ the node-type type has itself as its type (`packages/graph/src/system.ts:5,16`), and this same self-reference covers edge types, namespaces, property types, queries, views, templates, and renderers.
 Node/edge typing goes through a formal `NodeTypeDefinition`/`EdgeTypeDefinition` node registry, not tag inheritance.
 
-**Insight**: Logseq validates "everything is a node" at the content layer (pages=blocks=nodes); Canopy already goes further, applying it to the *type system itself* (types/queries/views are nodes too).
+**Insight**: Logseq validates "everything is a node" at the content layer (pages=blocks=nodes); Canopy already goes further, applying it to the _type system itself_ (types/queries/views are nodes too).
 But Logseq's tag-as-class inheritance is a genuinely different, lighter-weight typing UX worth weighing against Canopy's more formal, heavier-to-author `NodeTypeDefinition` registry — relevant directly to the open `canopy-6cz` question (whether domain content types should live in per-domain namespaces).
 Not a reason to change course, but worth citing as prior art when `canopy-6cz` is revisited.
 
@@ -54,7 +54,7 @@ Not a reason to change course, but worth citing as prior art when `canopy-6cz` i
 
 **Logseq**: ships an official, native MCP server (Settings > AI > enable "MCP Server," HTTP transport on `127.0.0.1:12315/mcp`, bearer-token auth).
 It exposes tools to create/list pages, tags, properties, and blocks; search nodes; and — notably — a **dry-run "pretend" mode** that previews change counts before applying, plus full undo/redo integration for AI-made edits.
-There is no evidence of multi-agent orchestration built into Logseq itself; it is an MCP *tool provider*, with orchestration left to the external client (Claude, Gemini CLI, Cursor, LM Studio).
+There is no evidence of multi-agent orchestration built into Logseq itself; it is an MCP _tool provider_, with orchestration left to the external client (Claude, Gemini CLI, Cursor, LM Studio).
 
 **Canopy**: agent coordination today is almost entirely process/tooling-level — beads issue tracking, OpenSpec's proposal→design→adversarial-review→tasks workflow, and Jules remote-agent sessions (`.jules/AGENTS.md`) — not live graph interaction.
 The one graph-level agent-access surface is the CLI IPC transport from PR #404: a Unix-socket, NDJSON-framed, JSON-RPC 2.0 server (`packages/api-adapter/src/ipc/ipc-server.ts:96-322`) with a matching CLI client, supporting `getNode(s)`, `executeQuery`, `createNode`, `updateNodeProperties`, `deleteNode`, and event subscription.
@@ -62,9 +62,12 @@ Per the internal audit, this server is implemented and tested but **nothing curr
 There is no dry-run/preview mode for agent-issued mutations over this surface today, even though the kernel already has the primitive for one: `DraftSession` (`packages/graph/src/draft-session.ts:23-138`) is an overlay with optimistic-concurrency commit, built for plugin wizards but structurally identical to what Logseq's "pretend mode" needed.
 
 **Insight (highest-value finding)**: two concrete, low-risk moves fall out of this comparison:
+
 1. Wire up the already-implemented IPC server behind the CLI `daemon` command so agents can actually reach it — the gap is plumbing, not design.
 2. Expose `DraftSession` over that IPC/agent surface as a dry-run mode for agent-issued mutations, mirroring Logseq's "pretend" + undo-integrated flow, using a primitive Canopy already built for a different purpose.
-An MCP-protocol adapter alongside the existing GraphQL/Connect/IPC adapters in `@canopy/api-adapter` would let the same agents Logseq targets (Claude, Gemini CLI, etc.) address Canopy directly.
+   An MCP-protocol adapter alongside the existing GraphQL/Connect/IPC adapters in `@canopy/api-adapter` would let the same agents Logseq targets (Claude, Gemini CLI, etc.) address Canopy directly.
+
+**Correction (2026-08-10)**: point 1's phrasing — "behind the CLI `daemon` command" — is wrong and was caught during design review of `canopy-h7z`. `apps/cli` is a client package; hosting `createIpcServer` there would put server logic inside the client, a category error (no shipped tool works this way — `dockerd`/`docker`, `redis-server`/`redis-cli`, `postgres`/`psql` are always separate binaries). The corrected design hosts the server in a new standalone binary, `apps/daemon`, with `apps/cli` remaining a pure client. See `openspec/changes/agent-daemon-draft-preview/design.md`. Leaving the original text above unedited as a record of the mistake rather than erasing it — the point of this note is that the wrong framing propagated silently from here into the bead title and the first design draft before a human caught it three hops downstream.
 
 ## 4. Plugin pipeline
 
@@ -80,7 +83,7 @@ The `wasm-component-pipeline` OpenSpec change (epic `canopy-5hw`) is closed with
 Actually instantiating a real `.wasm` component on the host side is a distinct, still-open gap with **no beads or OpenSpec change tracking it** (`bd search "instantiat"` and `"component model"` both return nothing).
 Invariant 10 (rendering resolved via graph-resident `RendererDefinition`/`ViewDefinition` nodes) is likewise aspirational — `apps/web`'s block renderer is still a hardcoded switch statement.
 
-**Insight**: Canopy's plugin *security* design (per-call capabilities, resource metering) is already more rigorous than what Logseq has shipped.
+**Insight**: Canopy's plugin _security_ design (per-call capabilities, resource metering) is already more rigorous than what Logseq has shipped.
 But unlike the query engine's GQL gap, this one sits closer to being actionable — the build pipeline that would feed a real instantiation step already exists and is done; only the host-side wiring is missing, and it is currently untracked.
 
 ## 5. Query and access layer
@@ -106,20 +109,20 @@ The first five sections compare mechanisms; this section checks the persistence/
 Its own rationale (§6): "durability, auditability, and backend portability matter more" than intra-session live collaboration, character-level merge, or presence, which are explicitly named as accepted losses.
 The target deployment is stated plainly: **single-user, multi-device, eventual sync** — not real-time multi-user collaboration.
 
-This framing matters more than it looks: Logseq's RTC is explicitly built for real-time multi-*user* collaboration ("like Google Docs").
+This framing matters more than it looks: Logseq's RTC is explicitly built for real-time multi-_user_ collaboration ("like Google Docs").
 Canopy has no such goal.
 A large fraction of what makes Logseq's sync engineering hard — the custom rebase protocol, the WebSocket relay, the full-graph-pull-on-conflict fallback — exists to solve a problem Canopy isn't trying to solve.
 So "whose sync is better" is close to a category error; the fair question is whether Canopy's simpler model holds up for the goal it actually has.
 
 ### Mechanism comparison, same goal only
 
-| Concern | Logseq DB | Canopy |
-| --- | --- | --- |
-| Local durability of pending writes | separate `client_ops` SQLite DB holding ops pending sync | the event log itself is the durable store — no separate pending-ops layer, because there's no separate materialized-state DB to keep authoritative |
-| Conflict granularity | per-datom (≈ attribute-level), resolved by rebase | per-property (≈ same granularity), resolved by eventId-ordered LWW, no rebase step |
-| Recoverability of a "losing" write | undocumented publicly — rebase implies the loser is transformed or dropped, no stated recoverability guarantee | explicit and implemented: the log is append-only, so a losing LWW write is never deleted, only shadowed in the projection, and is recoverable from history |
-| Backend portability | state lives natively in SQLite tables + DataScript; no evidence of a portable abstraction over that pairing | `EventLogStore` port (`packages/graph/src/event-log.ts:12-21`) is genuinely backend-agnostic — 5 implementations (memory/IndexedDB/SQLite/HTTP/file) against the same 2-method port, none of them Canopy-specific glue |
-| Query performance | DataScript is a real indexed Datalog engine — fast by construction | brute-force scan over an in-memory `Map` on every query call (`engine.ts:116-126`) — the direct cost of choosing durable-log-plus-naive-projection over a queryable materialized store |
+| Concern                            | Logseq DB                                                                                                      | Canopy                                                                                                                                                                                                                 |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Local durability of pending writes | separate `client_ops` SQLite DB holding ops pending sync                                                       | the event log itself is the durable store — no separate pending-ops layer, because there's no separate materialized-state DB to keep authoritative                                                                     |
+| Conflict granularity               | per-datom (≈ attribute-level), resolved by rebase                                                              | per-property (≈ same granularity), resolved by eventId-ordered LWW, no rebase step                                                                                                                                     |
+| Recoverability of a "losing" write | undocumented publicly — rebase implies the loser is transformed or dropped, no stated recoverability guarantee | explicit and implemented: the log is append-only, so a losing LWW write is never deleted, only shadowed in the projection, and is recoverable from history                                                             |
+| Backend portability                | state lives natively in SQLite tables + DataScript; no evidence of a portable abstraction over that pairing    | `EventLogStore` port (`packages/graph/src/event-log.ts:12-21`) is genuinely backend-agnostic — 5 implementations (memory/IndexedDB/SQLite/HTTP/file) against the same 2-method port, none of them Canopy-specific glue |
+| Query performance                  | DataScript is a real indexed Datalog engine — fast by construction                                             | brute-force scan over an in-memory `Map` on every query call (`engine.ts:116-126`) — the direct cost of choosing durable-log-plus-naive-projection over a queryable materialized store                                 |
 
 ### Verdict
 
@@ -161,8 +164,8 @@ The honest gap is that "will it hold up" has an unmeasured dimension (query load
 
 ### Verdict
 
-Individually, Canopy's plugin *security primitives* — fuel/memory/timeout metering, capability-token checks, and the wizard's no-raw-HTML constraint — are more rigorous than anything Logseq ships today, which relies on iframe/Shadow-DOM isolation plus a coarse effect/no-effect trust tier.
-But it would be premature to call the plugin *architecture* rock solid as a whole: the rigor that exists is real but narrow (wizards only), the manifest-declared and runtime-enforced capability systems don't connect, and the one extension type that structurally needs to return HTML to a viewport (renderers) hasn't had an adversarial pass at all.
+Individually, Canopy's plugin _security primitives_ — fuel/memory/timeout metering, capability-token checks, and the wizard's no-raw-HTML constraint — are more rigorous than anything Logseq ships today, which relies on iframe/Shadow-DOM isolation plus a coarse effect/no-effect trust tier.
+But it would be premature to call the plugin _architecture_ rock solid as a whole: the rigor that exists is real but narrow (wizards only), the manifest-declared and runtime-enforced capability systems don't connect, and the one extension type that structurally needs to return HTML to a viewport (renderers) hasn't had an adversarial pass at all.
 Before renderer-type extensions get built, they need their own security review — the wizard doc's mitigations do not automatically transfer.
 
 ## Design insights for Canopy evolution
@@ -175,7 +178,7 @@ Before renderer-type extensions get built, they need their own security review �
 6. **Tag-based typing is relevant prior art for `canopy-6cz`** (per-domain namespace question) — Logseq's lightweight tag-inheritance typing is a different point in the design space from Canopy's formal `NodeTypeDefinition` registry, worth citing when that question is revisited, not adopting wholesale.
 7. **Query performance under agentic load, now measured (`canopy-c54`)**: no algorithmic cliff, just linear scan cost — flat filters stay cheap to 50k nodes (3.8ms), but traversal and sort+limit bend around **~10k nodes** and reach 20–30ms/call by 50k. Per-call overhead doesn't compound, but a 50-query agent turn scales straight with graph size and crosses ~100ms around 25–30k nodes. Gives the deferred indexing/planner work a real trigger point instead of a vague "someday."
 8. **Reconcile the two plugin design docs' HTML-output security posture before building renderer extensions (`canopy-7dj`)** — recommended direction: declarative-first rendering by default (mirroring the wizard doc's own no-raw-HTML precedent), with raw HTML gated behind an explicit `render:raw-html` capability routed through a sandboxed iframe + strict CSP, never inline — following the pattern VS Code, Obsidian, and Figma each converge on for untrusted plugin output.
-9. **Wire the plugin manifest's declared `capabilities` into the runtime `WasmCapability` check (`canopy-dr4`)** — recommended mechanism: mint a scoped capability token at plugin *load* time from `manifest.capabilities ∩ context-grantable-capabilities`, bound into the host bindings at instantiation rather than threaded per call — the same load-time-attenuation pattern Chrome and the WASM Component Model/WASI use.
+9. **Wire the plugin manifest's declared `capabilities` into the runtime `WasmCapability` check (`canopy-dr4`)** — recommended mechanism: mint a scoped capability token at plugin _load_ time from `manifest.capabilities ∩ context-grantable-capabilities`, bound into the host bindings at instantiation rather than threaded per call — the same load-time-attenuation pattern Chrome and the WASM Component Model/WASI use.
 
 ## Open questions not resolved by this research
 
