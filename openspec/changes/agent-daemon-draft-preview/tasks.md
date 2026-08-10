@@ -57,6 +57,6 @@
 
 ## 9. Quality gates
 
-- [ ] 9.1 `bun run build` then `bun run lint`, `bun run typecheck`, `bun test` all green (build before lint per repo CI ordering).
-- [ ] 9.2 `bunx openspec validate agent-daemon-draft-preview --strict` passes.
-- [ ] 9.3 Confirm `apps/cli` is untouched (no `daemon start`, no host/spawn logic added) and `docs/architecture/bounded-contexts.md` notes the new `apps/daemon` host if that doc enumerates apps.
+- [x] 9.1 `bun run build` then `bun run lint`, `bun run typecheck`, `bun test` all green (build before lint per repo CI ordering).
+- [x] 9.2 `bunx openspec validate agent-daemon-draft-preview --strict` passes.
+- [x] 9.3 Confirm `apps/cli` is untouched (no `daemon start`, no host/spawn logic added) and `docs/architecture/bounded-contexts.md` notes the new `apps/daemon` host if that doc enumerates apps.
