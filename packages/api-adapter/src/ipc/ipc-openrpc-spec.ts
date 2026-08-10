@@ -20,6 +20,14 @@ import {
   UnsubscribeParamsSchema,
   UnsubscribeResultSchema,
   EventNotificationParamsSchema,
+  DraftCreateParamsSchema,
+  DraftCreateResultSchema,
+  DraftApplyParamsSchema,
+  DraftApplyResultSchema,
+  DraftPreviewParamsSchema,
+  DraftPreviewResultSchema,
+  DraftCommitParamsSchema,
+  DraftDiscardParamsSchema,
 } from './ipc-schema';
 
 const sortKeysRecursively = (value: unknown): unknown => {
@@ -57,6 +65,23 @@ const methodSchemas = [
     result: UnsubscribeResultSchema,
   },
   { name: IPC_METHODS.EVENT_STREAM_EVENT, params: EventNotificationParamsSchema },
+  {
+    name: IPC_METHODS.DRAFT_CREATE,
+    params: DraftCreateParamsSchema,
+    result: DraftCreateResultSchema,
+  },
+  {
+    name: IPC_METHODS.DRAFT_APPLY,
+    params: DraftApplyParamsSchema,
+    result: DraftApplyResultSchema,
+  },
+  {
+    name: IPC_METHODS.DRAFT_PREVIEW,
+    params: DraftPreviewParamsSchema,
+    result: DraftPreviewResultSchema,
+  },
+  { name: IPC_METHODS.DRAFT_COMMIT, params: DraftCommitParamsSchema },
+  { name: IPC_METHODS.DRAFT_DISCARD, params: DraftDiscardParamsSchema },
 ] as const;
 
 const openRpcObject = {
@@ -66,7 +91,17 @@ const openRpcObject = {
     version: '0.1.0',
   },
   methods: methodSchemas.map((m) => {
-    const jsonSchema = z.toJSONSchema(m.params) as Readonly<{
+    // io: 'input' describes the wire-level JSON shape a client sends/receives (pre-transform), which
+    // is what an OpenRPC doc should describe anyway. It also sidesteps zod's "Transforms cannot be
+    // represented in JSON Schema" error for DraftApplyParamsSchema's GraphEventSchema, whose id/type/
+    // timestamp fields transform raw strings into branded domain types on parse.
+    const jsonSchema = z.toJSONSchema(m.params, {
+      io: 'input',
+      // PropertyMapSchema's z.map(...) union branch (packages/graph/src/schemas.ts) has no JSON
+      // Schema representation; degrade it to `{}` there rather than throwing, same as the record
+      // union branch already documents its shape.
+      unrepresentable: 'any',
+    }) as Readonly<{
       properties?: Readonly<Record<string, unknown>>;
       required?: readonly string[];
     }>;
@@ -82,7 +117,12 @@ const openRpcObject = {
         schema,
       })),
       ...('result' in m &&
-        m.result && { result: { name: 'result', schema: z.toJSONSchema(m.result) } }),
+        m.result && {
+          result: {
+            name: 'result',
+            schema: z.toJSONSchema(m.result, { io: 'input', unrepresentable: 'any' }),
+          },
+        }),
     };
   }),
   errors: Object.entries(JSON_RPC_ERROR_CODES).map(([key, code]) => ({

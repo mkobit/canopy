@@ -4,7 +4,9 @@ import * as net from 'node:net';
 import * as path from 'node:path';
 import type { Result } from '@canopy/graph';
 import { err, ok } from '@canopy/graph';
+import { Temporal } from 'temporal-polyfill';
 import type { ApiAdapterContext } from '../api-context';
+import type { DraftRegistryEntry } from './ipc-handlers';
 import { handleIpcRequestLine } from './ipc-handlers';
 import type { IpcProtocolError, IpcSocketInUseError } from './ipc-schema';
 import {
@@ -98,6 +100,10 @@ export const createIpcServer = (options: IpcServerOptions): IpcServer => {
   const { socketPath, context } = options;
   const activeSockets = new Set<net.Socket>();
   const activeSubscriptions = new Map<net.Socket, Map<string, () => void>>();
+  // Per-connection draft registries. Ephemeral and connection-scoped by design (design.md "No new
+  // persistence for draft state") -- never written to the event log or any store, and cleared
+  // whenever the owning socket closes (task 5.7 / "Cleanup on disconnect").
+  const activeDraftRegistries = new Map<net.Socket, Map<string, DraftRegistryEntry>>();
 
   // eslint-disable-next-line functional/no-let
   let netServer: net.Server | undefined;
@@ -118,11 +124,32 @@ export const createIpcServer = (options: IpcServerOptions): IpcServer => {
     }
   };
 
+  const cleanupSocketDrafts = (socket: net.Socket): void => {
+    const drafts = activeDraftRegistries.get(socket);
+    if (drafts) {
+      // eslint-disable-next-line functional/no-loop-statements
+      for (const entry of drafts.values()) {
+        entry.session.discard();
+      }
+      // eslint-disable-next-line functional/immutable-data
+      drafts.clear();
+      // eslint-disable-next-line functional/immutable-data
+      activeDraftRegistries.delete(socket);
+    }
+  };
+
+  // Sum of live draft counts across every connection, used to enforce the global concurrent-draft
+  // cap in ipc-handlers.ts's draft.create case.
+  const totalDraftCount = (): number =>
+    activeDraftRegistries.values().reduce((sum, drafts) => sum + drafts.size, 0);
+
   const handleConnection = (socket: net.Socket): void => {
     // eslint-disable-next-line functional/immutable-data
     activeSockets.add(socket);
     // eslint-disable-next-line functional/immutable-data
     activeSubscriptions.set(socket, new Map<string, () => void>());
+    // eslint-disable-next-line functional/immutable-data
+    activeDraftRegistries.set(socket, new Map<string, DraftRegistryEntry>());
 
     // eslint-disable-next-line functional/no-let
     let buffer = '';
@@ -145,7 +172,9 @@ export const createIpcServer = (options: IpcServerOptions): IpcServer => {
 
         if (line.length > 0) {
           // Process message asynchronously
-          void handleIpcRequestLine(line, context).then((result) => {
+          const draftsMap =
+            activeDraftRegistries.get(socket) ?? new Map<string, DraftRegistryEntry>();
+          void handleIpcRequestLine(line, context, draftsMap, totalDraftCount()).then((result) => {
             if (!result.ok) {
               const errorResp = {
                 jsonrpc: '2.0',
@@ -159,7 +188,8 @@ export const createIpcServer = (options: IpcServerOptions): IpcServer => {
               return undefined;
             }
 
-            const { response, newSubscription, unsubscribeId } = result.value;
+            const { response, newSubscription, unsubscribeId, newDraft, dropDraftIds, touchDraft } =
+              result.value;
 
             if (response) {
               sendToSocket(socket, JSON.stringify(response));
@@ -201,6 +231,36 @@ export const createIpcServer = (options: IpcServerOptions): IpcServer => {
                 }
               }
             }
+
+            // Apply draft registry mutations reported by ipc-handlers.ts. ipc-server.ts is the sole
+            // owner/writer of this socket's draft map, mirroring the subscription pattern above.
+            const socketDrafts = activeDraftRegistries.get(socket);
+            if (socketDrafts) {
+              if (newDraft) {
+                // eslint-disable-next-line functional/immutable-data
+                socketDrafts.set(newDraft.draftId, newDraft.entry);
+              }
+              if (touchDraft) {
+                const existing = socketDrafts.get(touchDraft.draftId);
+                if (existing) {
+                  // eslint-disable-next-line functional/immutable-data
+                  socketDrafts.set(touchDraft.draftId, {
+                    ...existing,
+                    lastTouchedAt: Temporal.Now.instant().epochMilliseconds,
+                    ...(touchDraft.stagedEventCount !== undefined && {
+                      stagedEventCount: touchDraft.stagedEventCount,
+                    }),
+                  });
+                }
+              }
+              if (dropDraftIds) {
+                // eslint-disable-next-line functional/no-loop-statements
+                for (const draftId of dropDraftIds) {
+                  // eslint-disable-next-line functional/immutable-data
+                  socketDrafts.delete(draftId);
+                }
+              }
+            }
             return undefined;
           });
         }
@@ -211,6 +271,7 @@ export const createIpcServer = (options: IpcServerOptions): IpcServer => {
 
     const onCloseOrError = (): void => {
       cleanupSocketSubscriptions(socket);
+      cleanupSocketDrafts(socket);
       // eslint-disable-next-line functional/immutable-data
       activeSockets.delete(socket);
     };
@@ -296,12 +357,15 @@ export const createIpcServer = (options: IpcServerOptions): IpcServer => {
     // eslint-disable-next-line functional/no-loop-statements
     for (const socket of activeSockets) {
       cleanupSocketSubscriptions(socket);
+      cleanupSocketDrafts(socket);
       socket.destroy();
     }
     // eslint-disable-next-line functional/immutable-data
     activeSockets.clear();
     // eslint-disable-next-line functional/immutable-data
     activeSubscriptions.clear();
+    // eslint-disable-next-line functional/immutable-data
+    activeDraftRegistries.clear();
 
     return new Promise((resolve) => {
       if (netServer) {

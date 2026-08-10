@@ -1,6 +1,7 @@
 /* eslint-disable unicorn/name-replacements -- Params* names are consumed by apps/cli/src/ipc/ipc-client.ts and tests/ipc-schema.test.ts, outside this batch's scope */
 import { z } from 'zod';
 import type { Result } from '@canopy/graph';
+import { GraphEventSchema } from '@canopy/graph';
 
 // Standard JSON-RPC 2.0 error codes.
 export const JSON_RPC_ERROR_CODES = {
@@ -67,6 +68,11 @@ export const IPC_METHODS = {
   EVENT_STREAM_SUBSCRIBE: 'canopy.v1.eventStream.subscribe',
   EVENT_STREAM_UNSUBSCRIBE: 'canopy.v1.eventStream.unsubscribe',
   EVENT_STREAM_EVENT: 'canopy.v1.eventStream.event',
+  DRAFT_CREATE: 'canopy.v1.draft.create',
+  DRAFT_APPLY: 'canopy.v1.draft.apply',
+  DRAFT_PREVIEW: 'canopy.v1.draft.preview',
+  DRAFT_COMMIT: 'canopy.v1.draft.commit',
+  DRAFT_DISCARD: 'canopy.v1.draft.discard',
 } as const;
 
 export type IpcMethodName = (typeof IPC_METHODS)[keyof typeof IPC_METHODS];
@@ -314,3 +320,84 @@ export const EventNotificationParamsSchema = z
   .passthrough();
 
 export type EventNotificationParams = z.infer<typeof EventNotificationParamsSchema>;
+
+// Draft create request parameters schema (no fields required beyond the envelope).
+export const DraftCreateParamsSchema = z.object({}).passthrough();
+
+export type DraftCreateParams = z.infer<typeof DraftCreateParamsSchema>;
+
+// Draft create result payload schema.
+export const DraftCreateResultSchema = z
+  .object({
+    draftId: z.string(),
+    parentRevision: z.string(),
+  })
+  .passthrough();
+
+export type DraftCreateResult = z.infer<typeof DraftCreateResultSchema>;
+
+// Draft apply request parameters schema; events are validated against the canonical GraphEvent union.
+export const DraftApplyParamsSchema = z
+  .object({
+    draftId: z.string(),
+    events: z.array(GraphEventSchema),
+  })
+  .passthrough();
+
+export type DraftApplyParams = z.infer<typeof DraftApplyParamsSchema>;
+
+// Draft apply result payload schema.
+export const DraftApplyResultSchema = z
+  .object({
+    staged: z.number().int().nonnegative(),
+  })
+  .passthrough();
+
+export type DraftApplyResult = z.infer<typeof DraftApplyResultSchema>;
+
+// Draft preview request parameters schema.
+export const DraftPreviewParamsSchema = z
+  .object({
+    draftId: z.string(),
+  })
+  .passthrough();
+
+export type DraftPreviewParams = z.infer<typeof DraftPreviewParamsSchema>;
+
+// Draft preview result payload schema: a bounded diff summary, never the full projected graph.
+export const DraftPreviewResultSchema = z
+  .object({
+    parentRevision: z.string(),
+    counts: z
+      .object({
+        created: z.number().int().nonnegative(),
+        updated: z.number().int().nonnegative(),
+        deleted: z.number().int().nonnegative(),
+      })
+      .passthrough(),
+    touchedNodeIds: z.array(z.string()),
+    touchedEdgeIds: z.array(z.string()),
+    truncated: z.boolean(),
+  })
+  .passthrough();
+
+export type DraftPreviewResult = z.infer<typeof DraftPreviewResultSchema>;
+
+// Draft commit request parameters schema.
+export const DraftCommitParamsSchema = z
+  .object({
+    draftId: z.string(),
+    expectedParentRevision: z.string(),
+  })
+  .passthrough();
+
+export type DraftCommitParams = z.infer<typeof DraftCommitParamsSchema>;
+
+// Draft discard request parameters schema.
+export const DraftDiscardParamsSchema = z
+  .object({
+    draftId: z.string(),
+  })
+  .passthrough();
+
+export type DraftDiscardParams = z.infer<typeof DraftDiscardParamsSchema>;
