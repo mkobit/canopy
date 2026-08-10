@@ -55,6 +55,26 @@
         "typescript": "6.0.3",
       },
     },
+    "apps/daemon": {
+      "name": "@canopy/daemon",
+      "version": "0.0.0",
+      "bin": {
+        "canopy-daemon": "./dist/index.js",
+      },
+      "dependencies": {
+        "@canopy/api-adapter": "workspace:*",
+        "@canopy/graph": "workspace:*",
+        "@canopy/storage": "workspace:*",
+        "@canopy/storage-sqlite": "workspace:*",
+        "@effect/cli": "^0.76.0",
+        "@effect/platform": "^0.97.0",
+        "@effect/platform-node": "^0.108.0",
+        "effect": "^3.22.0",
+      },
+      "devDependencies": {
+        "typescript": "6.0.3",
+      },
+    },
     "apps/web": {
       "name": "@canopy/web",
       "version": "0.0.0",
@@ -291,6 +311,8 @@
     "@canopy/api-adapter": ["@canopy/api-adapter@workspace:packages/api-adapter"],
 
     "@canopy/cli": ["@canopy/cli@workspace:apps/cli"],
+
+    "@canopy/daemon": ["@canopy/daemon@workspace:apps/daemon"],
 
     "@canopy/graph": ["@canopy/graph@workspace:packages/graph"],
 
