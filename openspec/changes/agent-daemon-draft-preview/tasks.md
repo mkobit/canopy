@@ -1,21 +1,21 @@
 ## 1. Scaffold `apps/daemon` (`@canopy/daemon`)
 
-- [ ] 1.1 Create `apps/daemon/package.json` mirroring `apps/cli/package.json`: `"name": "@canopy/daemon"`, `"private": true`, `"type": "module"`, a `bin` entry (e.g. `"canopy-daemon": "./dist/index.js"`), and `scripts` (`build`: `tsc -b tsconfig.build.json`, `dev`: `bun run src/index.ts`, `test`: `bun test ./src ./tests`, `typecheck`: `tsc -p tsconfig.json`). Depend on `@canopy/api-adapter`, `@canopy/graph`, `@canopy/storage-sqlite`, and the `effect` / `@effect/platform-node` packages at the same versions `apps/cli` pins; devDependency `typescript`.
-- [ ] 1.2 Create `apps/daemon/tsconfig.build.json` and `apps/daemon/tsconfig.json` mirroring `apps/cli`'s pair (extend `../../tsconfig.base.json`, `bundler` resolution, `noEmit`, `bun-types`; `references` to `packages/graph`, `packages/api-adapter`, `packages/storage-sqlite` build tsconfigs; `paths` for those `@canopy/*` entries so Bun/tsc resolve source). Confirm the root `apps/*` workspace glob and root `tsc -b && bun --filter './apps/*' build` pick the app up with no root changes.
-- [ ] 1.3 Create `apps/daemon/AGENTS.md` stating the package scope: "the foreground host process that stands up the `@canopy/api-adapter` IPC server; it is the server (dockerd-style), not a client; it does not self-daemonize and owns no launch/supervision logic."
-- [ ] 1.4 Run `bun install` and confirm `bun pm ls --all` shows `@canopy/daemon` with the intended dependency edges and no `yjs`/`y-protocols` (invariant 2).
+- [x] 1.1 Create `apps/daemon/package.json` mirroring `apps/cli/package.json`: `"name": "@canopy/daemon"`, `"private": true`, `"type": "module"`, a `bin` entry (e.g. `"canopy-daemon": "./dist/index.js"`), and `scripts` (`build`: `tsc -b tsconfig.build.json`, `dev`: `bun run src/index.ts`, `test`: `bun test ./src ./tests`, `typecheck`: `tsc -p tsconfig.json`). Depend on `@canopy/api-adapter`, `@canopy/graph`, `@canopy/storage-sqlite`, and the `effect` / `@effect/platform-node` packages at the same versions `apps/cli` pins; devDependency `typescript`.
+- [x] 1.2 Create `apps/daemon/tsconfig.build.json` and `apps/daemon/tsconfig.json` mirroring `apps/cli`'s pair (extend `../../tsconfig.base.json`, `bundler` resolution, `noEmit`, `bun-types`; `references` to `packages/graph`, `packages/api-adapter`, `packages/storage-sqlite` build tsconfigs; `paths` for those `@canopy/*` entries so Bun/tsc resolve source). Confirm the root `apps/*` workspace glob and root `tsc -b && bun --filter './apps/*' build` pick the app up with no root changes.
+- [x] 1.3 Create `apps/daemon/AGENTS.md` stating the package scope: "the foreground host process that stands up the `@canopy/api-adapter` IPC server; it is the server (dockerd-style), not a client; it does not self-daemonize and owns no launch/supervision logic."
+- [x] 1.4 Run `bun install` and confirm `bun pm ls --all` shows `@canopy/daemon` with the intended dependency edges and no `yjs`/`y-protocols` (invariant 2).
 
 ## 2. Host boot sequence (`apps/daemon/src`)
 
-- [ ] 2.1 Add `src/config.ts` resolving: socket path (default under `XDG_RUNTIME_DIR`, falling back to a user-private directory; validate the resolved path), event-log database path, and default `graphId`/`deviceId` (via `asGraphId`/`asDeviceId`). Return a `Result`/typed config, no thrown errors (invariant 8).
-- [ ] 2.2 Add `src/host.ts` `startHost(config)` that: opens a `createSQLiteEventLog(...)` from `@canopy/storage-sqlite`; `const session = createGraphSession(eventLog, graphId, deviceId)`; `await session.load()`; builds `createApiAdapterContext({ graph: session.graph(), session, eventLogStore: eventLog })` (session is mandatory so reads resolve live and mutations have a write path); calls `createIpcServer({ socketPath, context }).listen()`; on `IpcSocketInUseError` fails fast without binding a second listener.
-- [ ] 2.3 Support an ephemeral mode (flag/env) that swaps `createSQLiteEventLog` for the in-memory `EventLogStore` from `@canopy/storage`, for tests only.
+- [x] 2.1 Add `src/config.ts` resolving: socket path (default under `XDG_RUNTIME_DIR`, falling back to a user-private directory; validate the resolved path), event-log database path, and default `graphId`/`deviceId` (via `asGraphId`/`asDeviceId`). Return a `Result`/typed config, no thrown errors (invariant 8).
+- [x] 2.2 Add `src/host.ts` `startHost(config)` that: opens a `createSQLiteEventLog(...)` from `@canopy/storage-sqlite`; `const session = createGraphSession(eventLog, graphId, deviceId)`; `await session.load()`; builds `createApiAdapterContext({ graph: session.graph(), session, eventLogStore: eventLog })` (session is mandatory so reads resolve live and mutations have a write path); calls `createIpcServer({ socketPath, context }).listen()`; on `IpcSocketInUseError` fails fast without binding a second listener.
+- [x] 2.3 Support an ephemeral mode (flag/env) that swaps `createSQLiteEventLog` for the in-memory `EventLogStore` from `@canopy/storage`, for tests only.
 
 ## 3. Host lifecycle and entrypoint
 
-- [ ] 3.1 Add `src/index.ts` that runs `startHost` inside a scoped Effect: acquire the listening server with `Effect.acquireRelease`, whose release calls `server.close()` (destroys sockets, unbinds subscriptions, unlinks socket file).
-- [ ] 3.2 Keep the process alive on a never-completing Effect and wire `SIGINT`/`SIGTERM` to interrupt the scope so the release always runs; exit non-zero if `listen()` returns `err`. Do NOT fork, detach, write a PID file, or otherwise self-daemonize.
-- [ ] 3.3 Confirm no launch/supervision mechanism is introduced (no systemd unit, no launchd plist, no socket-activation code) — out of scope for this change.
+- [x] 3.1 Add `src/index.ts` that runs `startHost` inside a scoped Effect: acquire the listening server with `Effect.acquireRelease`, whose release calls `server.close()` (destroys sockets, unbinds subscriptions, unlinks socket file).
+- [x] 3.2 Keep the process alive on a never-completing Effect and wire `SIGINT`/`SIGTERM` to interrupt the scope so the release always runs; exit non-zero if `listen()` returns `err`. Do NOT fork, detach, write a PID file, or otherwise self-daemonize.
+- [x] 3.3 Confirm no launch/supervision mechanism is introduced (no systemd unit, no launchd plist, no socket-activation code) — out of scope for this change.
 
 ## 4. Draft JSON-RPC schemas (`packages/api-adapter/src/ipc/ipc-schema.ts`)
 
@@ -40,10 +40,10 @@
 
 ## 7. Host tests (`apps/daemon/tests`)
 
-- [ ] 7.1 Boot test: start the host in ephemeral mode on a temp socket path, connect a raw NDJSON socket (mirror `packages/api-adapter/tests/ipc-server-streaming.load.test.ts`), send `canopy.v1.handshake`, assert success and that `capabilities` includes `drafts`.
-- [ ] 7.2 Second-listener test: starting a second host on the same socket path fails with `IpcSocketInUseError` and does not bind.
-- [ ] 7.3 Shutdown test: on `SIGINT`/scope interrupt (or a direct release), the server closes, active connections are destroyed, and the socket file is unlinked.
-- [ ] 7.4 Live-read test: a mutation committed through the socket is visible to a subsequent query on the same host (confirms the context uses a loaded live `session`, not a stale snapshot).
+- [x] 7.1 Boot test: start the host in ephemeral mode on a temp socket path, connect a raw NDJSON socket (mirror `packages/api-adapter/tests/ipc-server-streaming.load.test.ts`), send `canopy.v1.handshake`, assert success and that `capabilities` includes `drafts`.
+- [x] 7.2 Second-listener test: starting a second host on the same socket path fails with `IpcSocketInUseError` and does not bind.
+- [x] 7.3 Shutdown test: on `SIGINT`/scope interrupt (or a direct release), the server closes, active connections are destroyed, and the socket file is unlinked.
+- [x] 7.4 Live-read test: a mutation committed through the socket is visible to a subsequent query on the same host (confirms the context uses a loaded live `session`, not a stale snapshot).
 
 ## 8. Draft flow tests (`packages/api-adapter/tests`)
 
