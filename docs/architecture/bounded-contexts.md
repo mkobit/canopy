@@ -16,6 +16,7 @@ graph TD
   storageSqlite[@canopy/storage-sqlite]
   web[apps/web]
   cli[apps/cli]
+  daemon[apps/daemon]
 
   queries --> graph
   settings --> graph
@@ -30,6 +31,9 @@ graph TD
   web --> storageIndexeddb
   cli --> graph
   cli --> storage
+  daemon --> graph
+  daemon --> storage
+  daemon --> storageSqlite
 ```
 
 `@canopy/graph` is the leaf and has no internal dependencies.
