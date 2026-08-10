@@ -19,24 +19,24 @@
 
 ## 4. Draft JSON-RPC schemas (`packages/api-adapter/src/ipc/ipc-schema.ts`)
 
-- [ ] 4.1 Add `canopy.v1.draft.create|apply|preview|commit|discard` entries to `IPC_METHODS`.
-- [ ] 4.2 Add `.passthrough()` Zod param/result schemas: `DraftCreateResult` `{ draftId, parentRevision }`; `DraftApplyParams` `{ draftId, events }` (events validated as `GraphEvent[]`) and result `{ staged }`; `DraftPreviewParams` `{ draftId }` and `DraftPreviewResult` `{ parentRevision, counts: { created, updated, deleted }, touchedNodeIds, touchedEdgeIds, truncated }`; `DraftCommitParams` `{ draftId, expectedParentRevision }`; `DraftDiscardParams` `{ draftId }`. Export types via `z.infer`.
-- [ ] 4.3 Add `drafts` to the handshake `capabilities` the server advertises (`HandshakeResult` in `ipc-handlers.ts` currently returns `['queries','mutations','subscriptions']`).
+- [x] 4.1 Add `canopy.v1.draft.create|apply|preview|commit|discard` entries to `IPC_METHODS`.
+- [x] 4.2 Add `.passthrough()` Zod param/result schemas: `DraftCreateResult` `{ draftId, parentRevision }`; `DraftApplyParams` `{ draftId, events }` (events validated as `GraphEvent[]`) and result `{ staged }`; `DraftPreviewParams` `{ draftId }` and `DraftPreviewResult` `{ parentRevision, counts: { created, updated, deleted }, touchedNodeIds, touchedEdgeIds, truncated }`; `DraftCommitParams` `{ draftId, expectedParentRevision }`; `DraftDiscardParams` `{ draftId }`. Export types via `z.infer`.
+- [x] 4.3 Add `drafts` to the handshake `capabilities` the server advertises (`HandshakeResult` in `ipc-handlers.ts` currently returns `['queries','mutations','subscriptions']`).
 
 ## 5. Draft handlers and server-side registry
 
-- [ ] 5.1 In `ipc-server.ts`, add a per-connection draft registry alongside `activeSubscriptions` (e.g. `Map<net.Socket, Map<draftId, DraftSession>>`); create/lookup/delete entries as the handler results direct, mirroring the existing `newSubscription`/`unsubscribeId` plumbing rather than reaching into module state.
-- [ ] 5.2 Extend `IpcHandlerResponse` (`ipc-handlers.ts`) with the draft lifecycle signals the server needs (new draft to register, draft id to drop) so `ipc-server.ts` owns the socket-keyed map and `ipc-handlers.ts` stays pure.
-- [ ] 5.3 Implement the five `canopy.v1.draft.*` cases in `handleIpcRequestLine`: `create` → `createDraftSession(context.session)` under a server-generated `draftId`, return `{ draftId, parentRevision }`; `apply` → `applyEvents`; `preview` → bounded diff (see 5.4); `commit` → `draft.commit(expectedParentRevision)` then drop the draft on success; `discard` → drop the draft.
-- [ ] 5.4 Compute `preview` as a bounded summary from the overlay-vs-parent projection: change counts plus capped `touchedNodeIds`/`touchedEdgeIds` lists (limit N, set `truncated`); never serialize the full projected graph and keep responses well under the 10 MB line cap.
-- [ ] 5.5 Map `DraftError` to a JSON-RPC error with `code = CANOPY_DOMAIN_ERROR` and `data.type` discriminant; for `concurrent-modification` include the server's current parent revision so the client can re-fetch, rebase, re-preview, and retry.
-- [ ] 5.6 Enforce and reject-past bounded limits: max concurrent drafts per connection and global, max staged events per draft, max preview result size; add idle-TTL eviction of abandoned drafts.
-- [ ] 5.7 On socket `close`/`error`, discard that connection's drafts in the existing `onCloseOrError`/`cleanupSocketSubscriptions` path so no draft state outlives its connection.
-- [ ] 5.8 Reject any `canopy.v1.draft.*` request when `context.session` is absent (read-only context) with a clear domain error, consistent with how mutation handlers require a session.
+- [x] 5.1 In `ipc-server.ts`, add a per-connection draft registry alongside `activeSubscriptions` (e.g. `Map<net.Socket, Map<draftId, DraftSession>>`); create/lookup/delete entries as the handler results direct, mirroring the existing `newSubscription`/`unsubscribeId` plumbing rather than reaching into module state.
+- [x] 5.2 Extend `IpcHandlerResponse` (`ipc-handlers.ts`) with the draft lifecycle signals the server needs (new draft to register, draft id to drop) so `ipc-server.ts` owns the socket-keyed map and `ipc-handlers.ts` stays pure.
+- [x] 5.3 Implement the five `canopy.v1.draft.*` cases in `handleIpcRequestLine`: `create` → `createDraftSession(context.session)` under a server-generated `draftId`, return `{ draftId, parentRevision }`; `apply` → `applyEvents`; `preview` → bounded diff (see 5.4); `commit` → `draft.commit(expectedParentRevision)` then drop the draft on success; `discard` → drop the draft.
+- [x] 5.4 Compute `preview` as a bounded summary from the overlay-vs-parent projection: change counts plus capped `touchedNodeIds`/`touchedEdgeIds` lists (limit N, set `truncated`); never serialize the full projected graph and keep responses well under the 10 MB line cap.
+- [x] 5.5 Map `DraftError` to a JSON-RPC error with `code = CANOPY_DOMAIN_ERROR` and `data.type` discriminant; for `concurrent-modification` include the server's current parent revision so the client can re-fetch, rebase, re-preview, and retry.
+- [x] 5.6 Enforce and reject-past bounded limits: max concurrent drafts per connection and global, max staged events per draft, max preview result size; add idle-TTL eviction of abandoned drafts.
+- [x] 5.7 On socket `close`/`error`, discard that connection's drafts in the existing `onCloseOrError`/`cleanupSocketSubscriptions` path so no draft state outlives its connection.
+- [x] 5.8 Reject any `canopy.v1.draft.*` request when `context.session` is absent (read-only context) with a clear domain error, consistent with how mutation handlers require a session.
 
 ## 6. Protocol discoverability
 
-- [ ] 6.1 Add the five draft methods (params/result schemas, error codes) to `ipc-openrpc-spec.ts` so the generated OpenRPC document stays in sync; update any snapshot test asserting the method list.
+- [x] 6.1 Add the five draft methods (params/result schemas, error codes) to `ipc-openrpc-spec.ts` so the generated OpenRPC document stays in sync; update any snapshot test asserting the method list.
 
 ## 7. Host tests (`apps/daemon/tests`)
 
@@ -47,13 +47,13 @@
 
 ## 8. Draft flow tests (`packages/api-adapter/tests`)
 
-- [ ] 8.1 Happy path: `draft.create` → `draft.apply` (valid events) → `draft.preview` returns non-zero counts and touched ids while the parent graph is unchanged → `draft.commit` with the matching `parentRevision` succeeds and the change is now visible via a normal query.
-- [ ] 8.2 Concurrent-modification + re-preview: create a draft, mutate the parent out-of-band so its revision advances, `draft.commit` returns `CANOPY_DOMAIN_ERROR` with `data.type = "concurrent-modification"` and the current revision, the draft stays active, and a re-`preview`-then-`commit` at the new revision succeeds.
-- [ ] 8.3 Validation-failure: `draft.apply` with invalid events returns a `data.type = "validation-failure"` domain error and leaves the draft unchanged.
-- [ ] 8.4 Bounded preview: a large staged batch yields a preview whose touched-id lists are capped with `truncated = true` and whose serialized response stays under the line cap.
-- [ ] 8.5 Cleanup on disconnect: after `draft.create`/`apply`, dropping the connection frees the draft (assert via `getActiveConnectionCount`/no leaked state); a later request on a fresh connection cannot reach the old `draftId`.
-- [ ] 8.6 Limits: exceeding the concurrent-draft cap (and staged-events cap) returns a domain error rather than growing state unbounded.
-- [ ] 8.7 Missing-session: draft methods against a read-only context (no `session`) return the expected domain error.
+- [x] 8.1 Happy path: `draft.create` → `draft.apply` (valid events) → `draft.preview` returns non-zero counts and touched ids while the parent graph is unchanged → `draft.commit` with the matching `parentRevision` succeeds and the change is now visible via a normal query.
+- [x] 8.2 Concurrent-modification + re-preview: create a draft, mutate the parent out-of-band so its revision advances, `draft.commit` returns `CANOPY_DOMAIN_ERROR` with `data.type = "concurrent-modification"` and the current revision, the draft stays active, and a re-`preview`-then-`commit` at the new revision succeeds.
+- [x] 8.3 Validation-failure: `draft.apply` with invalid events returns a `data.type = "validation-failure"` domain error and leaves the draft unchanged.
+- [x] 8.4 Bounded preview: a large staged batch yields a preview whose touched-id lists are capped with `truncated = true` and whose serialized response stays under the line cap.
+- [x] 8.5 Cleanup on disconnect: after `draft.create`/`apply`, dropping the connection frees the draft (assert via `getActiveConnectionCount`/no leaked state); a later request on a fresh connection cannot reach the old `draftId`.
+- [x] 8.6 Limits: exceeding the concurrent-draft cap (and staged-events cap) returns a domain error rather than growing state unbounded.
+- [x] 8.7 Missing-session: draft methods against a read-only context (no `session`) return the expected domain error.
 
 ## 9. Quality gates
 
