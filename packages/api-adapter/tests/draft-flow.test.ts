@@ -226,7 +226,12 @@ describe('canopy.v1.draft.* JSON-RPC flow', () => {
     expect(applyResp.error).toBeUndefined();
 
     // Mutate the parent out-of-band via a normal mutation call on a second connection, advancing
-    // graph.metadata.modified independently of the draft.
+    // graph.metadata.modified independently of the draft. graph.metadata.modified is a
+    // millisecond-resolution wall-clock string (temporal-polyfill's Temporal.Now.instant() is
+    // Date.now()-backed); on a fast runner the round trips above can complete within the same
+    // millisecond as draft-create, so force a tick boundary before the out-of-band write to keep
+    // this assertion deterministic rather than racing the clock.
+    await new Promise((resolve) => setTimeout(resolve, 10));
     const outOfBand = await createRpcClient(socketPath);
     const outOfBandResp = await outOfBand.call(IPC_METHODS.MUTATION_CREATE_NODE, {
       id: 'node_draft_conflict_out_of_band',
