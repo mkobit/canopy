@@ -22,6 +22,8 @@ import type {
 } from './events';
 import type { Instant } from './temporal';
 
+const freshGraph = (): Graph => unwrap(createGraph(createGraphId(), 'revision-fold-test'));
+
 describe('revision', () => {
   describe('zeroRevision', () => {
     it('returns a stable sentinel value', () => {
@@ -71,8 +73,6 @@ describe('revision', () => {
   describe('applyEvent folds revision to the eventId, per op type', () => {
     const device = asDeviceId('00000000-0000-0000-0000-00000000000a');
     const t: Instant = '2024-01-01T10:00:00.000Z' as Instant;
-
-    const freshGraph = (): Graph => unwrap(createGraph(createGraphId(), 'revision-fold-test'));
 
     it('NodeCreated advances revision to its eventId', () => {
       const graph = freshGraph();
