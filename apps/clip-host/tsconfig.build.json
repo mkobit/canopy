@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "moduleResolution": "bundler",
+    "target": "ESNext",
+    "module": "ESNext",
+    "lib": ["ESNext"],
+    "skipLibCheck": true,
+    "noEmit": true,
+    "types": ["bun-types"]
+  },
+  "include": ["src/**/*"],
+  "references": [
+    { "path": "../../packages/graph/tsconfig.build.json" },
+    { "path": "../../packages/api-adapter/tsconfig.build.json" }
+  ]
+}

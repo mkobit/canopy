@@ -1,13 +1,11 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
-import type { IpcServer } from '@canopy/api-adapter';
-import { createIpcServer } from '@canopy/api-adapter';
 import { asDeviceId, asGraphId, asNodeId, asTypeId, createGraphSession } from '@canopy/graph';
 import { createInMemoryEventStore } from '@canopy/storage';
 import { Effect } from 'effect';
-import type { IpcClient } from '../src/ipc/ipc-client';
-import { makeIpcClient } from '../src/ipc/ipc-client';
+import type { IpcClient, IpcServer } from '../src/ipc';
+import { createIpcServer, makeIpcClient } from '../src/ipc';
 
 const getSocketPath = (): string =>
   path.join(process.cwd(), 'tmp', `test-cli-client-${Math.random().toString(36).slice(2, 9)}.sock`);

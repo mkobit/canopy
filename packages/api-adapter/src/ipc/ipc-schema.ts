@@ -346,6 +346,14 @@ export const DraftApplyParamsSchema = z
 
 export type DraftApplyParams = z.infer<typeof DraftApplyParamsSchema>;
 
+// Pre-transform input shape: what a wire client actually sends (plain-object
+// `properties`/`changes`, unbranded id/string fields) before GraphEventSchema
+// parses and brands them into the in-process Map/branded-id representation
+// z.infer above describes. IpcClient.draftApply is typed against this, not
+// DraftApplyParams -- see packages/api-adapter/tests/draft-flow.test.ts's
+// `nodeCreatedEvent` helper for the same wire shape.
+export type DraftApplyParamsInput = z.input<typeof DraftApplyParamsSchema>;
+
 // Draft apply result payload schema.
 export const DraftApplyResultSchema = z
   .object({

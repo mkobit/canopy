@@ -1,24 +1,30 @@
 /* eslint-disable functional/no-return-void, functional/prefer-tacit, max-lines-per-function */
 import * as net from 'node:net';
+import type { ApiEdgePayload, ApiNodePayload } from '../api-payloads';
 import type {
-  ApiEdgePayload,
-  ApiNodePayload,
-  CreateEdgeParams,
-  CreateNodeParams,
-  DeleteEdgeParams,
-  DeleteNodeParams,
-  ExecuteQueryParams,
-  GetEdgesParams,
-  GetNodesParams,
+  CreateEdgeParams as CreateEdgeParameters,
+  CreateNodeParams as CreateNodeParameters,
+  DeleteEdgeParams as DeleteEdgeParameters,
+  DeleteNodeParams as DeleteNodeParameters,
+  DraftApplyParamsInput as DraftApplyParameters,
+  DraftApplyResult,
+  DraftCommitParams as DraftCommitParameters,
+  DraftCreateResult,
+  DraftDiscardParams as DraftDiscardParameters,
+  DraftPreviewParams as DraftPreviewParameters,
+  DraftPreviewResult,
+  ExecuteQueryParams as ExecuteQueryParameters,
+  GetEdgesParams as GetEdgesParameters,
+  GetNodesParams as GetNodesParameters,
   HandshakeResult,
   JsonRpcId,
   JsonRpcResponse,
-  SubscribeParams,
+  SubscribeParams as SubscribeParameters,
   SubscribeResult,
   UnsubscribeResult,
-  UpdateNodePropertiesParams,
-} from '@canopy/api-adapter';
-import { IPC_METHODS, JSON_RPC_ERROR_CODES } from '@canopy/api-adapter';
+  UpdateNodePropertiesParams as UpdateNodePropertiesParameters,
+} from './ipc-schema';
+import { IPC_METHODS, JSON_RPC_ERROR_CODES } from './ipc-schema';
 import { Effect } from 'effect';
 
 export type IpcClientError = Readonly<{
@@ -43,37 +49,50 @@ export interface IpcClient {
   readonly handshake: (clientVersion?: string) => Effect.Effect<HandshakeResult, IpcClientError>;
   readonly getNode: (id: string) => Effect.Effect<ApiNodePayload, IpcClientError>;
   readonly getNodes: (
-    parameters?: Readonly<GetNodesParams>,
+    parameters?: Readonly<GetNodesParameters>,
   ) => Effect.Effect<readonly ApiNodePayload[], IpcClientError>;
   readonly getEdge: (id: string) => Effect.Effect<ApiEdgePayload, IpcClientError>;
   readonly getEdges: (
-    parameters?: Readonly<GetEdgesParams>,
+    parameters?: Readonly<GetEdgesParameters>,
   ) => Effect.Effect<readonly ApiEdgePayload[], IpcClientError>;
   readonly executeQuery: (
-    parameters?: Readonly<ExecuteQueryParams>,
+    parameters?: Readonly<ExecuteQueryParameters>,
   ) => Effect.Effect<readonly ApiNodePayload[], IpcClientError>;
   readonly createNode: (
-    parameters: Readonly<CreateNodeParams>,
+    parameters: Readonly<CreateNodeParameters>,
   ) => Effect.Effect<ApiNodePayload, IpcClientError>;
   readonly updateNodeProperties: (
-    parameters: Readonly<UpdateNodePropertiesParams>,
+    parameters: Readonly<UpdateNodePropertiesParameters>,
   ) => Effect.Effect<ApiNodePayload, IpcClientError>;
   readonly deleteNode: (
-    parameters: Readonly<DeleteNodeParams>,
+    parameters: Readonly<DeleteNodeParameters>,
   ) => Effect.Effect<Readonly<{ id: string }>, IpcClientError>;
   readonly createEdge: (
-    parameters: Readonly<CreateEdgeParams>,
+    parameters: Readonly<CreateEdgeParameters>,
   ) => Effect.Effect<ApiEdgePayload, IpcClientError>;
   readonly deleteEdge: (
-    parameters: Readonly<DeleteEdgeParams>,
+    parameters: Readonly<DeleteEdgeParameters>,
   ) => Effect.Effect<Readonly<{ id: string }>, IpcClientError>;
   readonly subscribe: (
-    parameters?: Readonly<SubscribeParams>,
+    parameters?: Readonly<SubscribeParameters>,
     onEvent?: (event: unknown) => void,
   ) => Effect.Effect<SubscribeResult, IpcClientError>;
   readonly unsubscribe: (
     subscriptionId: string,
   ) => Effect.Effect<UnsubscribeResult, IpcClientError>;
+  readonly draftCreate: () => Effect.Effect<DraftCreateResult, IpcClientError>;
+  readonly draftApply: (
+    parameters: Readonly<DraftApplyParameters>,
+  ) => Effect.Effect<DraftApplyResult, IpcClientError>;
+  readonly draftPreview: (
+    parameters: Readonly<DraftPreviewParameters>,
+  ) => Effect.Effect<DraftPreviewResult, IpcClientError>;
+  readonly draftCommit: (
+    parameters: Readonly<DraftCommitParameters>,
+  ) => Effect.Effect<Readonly<{ success: boolean }>, IpcClientError>;
+  readonly draftDiscard: (
+    parameters: Readonly<DraftDiscardParameters>,
+  ) => Effect.Effect<Readonly<{ success: boolean }>, IpcClientError>;
   readonly close: () => Effect.Effect<void, never>;
 }
 
@@ -89,7 +108,30 @@ export const makeIpcClient = (socketPath: string): Effect.Effect<IpcClient, IpcC
 
     // eslint-disable-next-line functional/no-let
     let buffer = '';
-    const socket = net.connect(socketPath);
+
+    // net.connect() can throw synchronously for some immediately-knowable
+    // failures (e.g. ENOENT on a Unix domain socket path with no listener --
+    // observed as a sync throw under bun's stricter runtime/test semantics,
+    // vs. an async 'error' event elsewhere) rather than only failing async
+    // via the 'error' event below. Catching it here keeps both paths
+    // reporting through the same resume(Effect.fail(...)) channel instead of
+    // letting a sync throw escape Effect.async's registration uncaught.
+    // eslint-disable-next-line functional/no-let, functional/prefer-immutable-types -- net.Socket is an inherently mutable third-party EventEmitter
+    let socket: net.Socket;
+    // eslint-disable-next-line functional/no-try-statements
+    try {
+      socket = net.connect(socketPath);
+    } catch (error) {
+      resume(
+        Effect.fail(
+          createIpcClientError({
+            code: JSON_RPC_ERROR_CODES.INTERNAL_ERROR,
+            message: `Socket error: ${error instanceof Error ? error.message : String(error)}`,
+          }),
+        ),
+      );
+      return;
+    }
 
     socket.on('connect', () => {
       // eslint-disable-next-line unicorn/consistent-function-scoping
@@ -353,6 +395,83 @@ export const makeIpcClient = (socketPath: string): Effect.Effect<IpcClient, IpcC
               subscriptionCallbacks.delete(subscriptionId);
               return response;
             },
+            catch: (error) =>
+              typeof error === 'object' &&
+              error !== null &&
+              '_tag' in error &&
+              error._tag === 'IpcClientError'
+                ? (error as IpcClientError)
+                : createIpcClientError({
+                    code: JSON_RPC_ERROR_CODES.INTERNAL_ERROR,
+                    message: String(error),
+                  }),
+          }),
+
+        draftCreate: () =>
+          Effect.tryPromise({
+            try: () => sendRpcRequest<DraftCreateResult>(IPC_METHODS.DRAFT_CREATE),
+            catch: (error) =>
+              typeof error === 'object' &&
+              error !== null &&
+              '_tag' in error &&
+              error._tag === 'IpcClientError'
+                ? (error as IpcClientError)
+                : createIpcClientError({
+                    code: JSON_RPC_ERROR_CODES.INTERNAL_ERROR,
+                    message: String(error),
+                  }),
+          }),
+
+        draftApply: (parameters) =>
+          Effect.tryPromise({
+            try: () => sendRpcRequest<DraftApplyResult>(IPC_METHODS.DRAFT_APPLY, parameters),
+            catch: (error) =>
+              typeof error === 'object' &&
+              error !== null &&
+              '_tag' in error &&
+              error._tag === 'IpcClientError'
+                ? (error as IpcClientError)
+                : createIpcClientError({
+                    code: JSON_RPC_ERROR_CODES.INTERNAL_ERROR,
+                    message: String(error),
+                  }),
+          }),
+
+        draftPreview: (parameters) =>
+          Effect.tryPromise({
+            try: () => sendRpcRequest<DraftPreviewResult>(IPC_METHODS.DRAFT_PREVIEW, parameters),
+            catch: (error) =>
+              typeof error === 'object' &&
+              error !== null &&
+              '_tag' in error &&
+              error._tag === 'IpcClientError'
+                ? (error as IpcClientError)
+                : createIpcClientError({
+                    code: JSON_RPC_ERROR_CODES.INTERNAL_ERROR,
+                    message: String(error),
+                  }),
+          }),
+
+        draftCommit: (parameters) =>
+          Effect.tryPromise({
+            try: () =>
+              sendRpcRequest<Readonly<{ success: boolean }>>(IPC_METHODS.DRAFT_COMMIT, parameters),
+            catch: (error) =>
+              typeof error === 'object' &&
+              error !== null &&
+              '_tag' in error &&
+              error._tag === 'IpcClientError'
+                ? (error as IpcClientError)
+                : createIpcClientError({
+                    code: JSON_RPC_ERROR_CODES.INTERNAL_ERROR,
+                    message: String(error),
+                  }),
+          }),
+
+        draftDiscard: (parameters) =>
+          Effect.tryPromise({
+            try: () =>
+              sendRpcRequest<Readonly<{ success: boolean }>>(IPC_METHODS.DRAFT_DISCARD, parameters),
             catch: (error) =>
               typeof error === 'object' &&
               error !== null &&

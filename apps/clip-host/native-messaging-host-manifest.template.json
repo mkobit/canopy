@@ -1,0 +1,7 @@
+{
+  "name": "com.canopy.clip_host",
+  "description": "Canopy web clipper native messaging host",
+  "path": "REPLACE_WITH_ABSOLUTE_PATH_TO_canopy-clip-host",
+  "type": "stdio",
+  "allowed_origins": ["chrome-extension://REPLACE_WITH_BLESSED_EXTENSION_ID/"]
+}
