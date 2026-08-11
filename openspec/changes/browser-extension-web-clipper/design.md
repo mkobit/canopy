@@ -35,8 +35,10 @@ Two decisions carry this change: the transport/trust bridge (Decision 1) and the
 
 ## Decision 1 — a native-messaging host bridges the extension to the existing UDS; the daemon grows no new transport
 
-The extension talks to a small same-user **native-messaging host** (`apps/clip-host`) over the browser's native-messaging stdio protocol; that host relays to the daemon's existing Unix socket using the same `IpcClient` (`apps/cli/src/ipc/ipc-client.ts` pattern) `apps/cli` already uses.
+The extension talks to a small same-user **native-messaging host** (`apps/clip-host`) over the browser's native-messaging stdio protocol; that host relays to the daemon's existing Unix socket using the same `IpcClient` logic `apps/cli` already has.
 This is exactly how password managers and other browser-to-local-app integrations cross the same boundary: the browser launches a registered native host binary and exchanges length-prefixed JSON over its stdio; the host is an ordinary same-user process that can do same-user things — including opening the daemon's UDS.
+
+**A necessary prerequisite, confirmed against the code, not assumed:** `IpcClient` lives today at `apps/cli/src/ipc/ipc-client.ts` — a private module inside `apps/cli`, not exported by `@canopy/api-adapter`. `apps/clip-host` cannot legitimately depend on it there: `apps/cli` declares no exports for other packages to consume, and reaching into another package's `src/` is exactly the "cross-package shortcut" this repo's architectural rules forbid (`docs/architecture/bounded-contexts.md`: "A package may only import from the packages listed in its `package.json` `dependencies` ... Cross-package shortcuts (deep imports into another package's `src/`) are forbidden"). This change therefore includes relocating `IpcClient` into `@canopy/api-adapter/src/ipc/ipc-client.ts` — a natural sibling to `ipc-server.ts` in the same directory, both implementing the same wire protocol — and exporting it from that package's public `index.ts`. `apps/cli` switches its one import to `@canopy/api-adapter`'s new export (an import-path change only; `apps/cli/src/ipc/ipc-client.ts`'s existing test, `apps/cli/tests/ipc-client.test.ts`, moves or is re-pointed with no behavior change). `apps/clip-host` then imports the same export as a real `@canopy/api-adapter` dependency, no deep import required.
 
 The host is a **narrowing** proxy, not a transparent one. It relays only an allowlist: `canopy.v1.handshake`, the `canopy.v1.draft.*` family, `canopy.v1.mutation.createNode` constrained to the `clip` namespace, and the read/query calls needed to ensure the `WebClip` type exists. Anything else — including the broader `canopy.v1.mutation.*` surface (deletes, arbitrary-namespace writes) — is rejected at the host without reaching the daemon. The host's native-messaging manifest pins `allowed_origins`/`allowed_extensions` to the blessed extension ID, and the host rate-limits requests.
 
@@ -75,7 +77,7 @@ Why this over the alternatives:
 
 ## Migration Plan
 
-Purely additive and reversible. Add `apps/extension` and `apps/clip-host`; the daemon, `@canopy/api-adapter`, and `@canopy/graph` are untouched (the bridge is another UDS client using existing methods). The `clip` namespace + `WebClip` type are authored at runtime, so there is no storage or schema migration. Rollback: uninstall the native-messaging host manifest and remove both apps; already-created `WebClip` nodes remain valid graph nodes (the append-only log keeps them recoverable/auditable regardless).
+Additive and reversible. Add `apps/extension` and `apps/clip-host`; `apps/daemon` and `@canopy/graph` are untouched. `@canopy/api-adapter` gains one relocated module (`IpcClient`, moved from `apps/cli`, see Decision 1) and no behavior change to any existing method — the bridge is another UDS client using existing methods verbatim. `apps/cli` gets a one-line import-path change (same client, new location), no logic change. The `clip` namespace + `WebClip` type are authored at runtime, so there is no storage or schema migration. Rollback: uninstall the native-messaging host manifest and remove both new apps; `IpcClient`'s relocation can be reverted independently (it is a pure move); already-created `WebClip` nodes remain valid graph nodes (the append-only log keeps them recoverable/auditable regardless).
 
 ## Open Questions
 
@@ -112,6 +114,6 @@ A browser extension is a materially larger attack surface than the same-user CLI
 
 ### Migration and backward compatibility
 
-- **Purely additive.** New `apps/extension` and `apps/clip-host`; no change to `apps/daemon`, `@canopy/api-adapter`, or `@canopy/graph`; the bridge uses existing `handshake`/`draft.*`/`createNode`/`query.*` methods verbatim. No protocol version bump.
+- **Additive, plus one internal relocation.** New `apps/extension` and `apps/clip-host`; no change to `apps/daemon` or `@canopy/graph`. `@canopy/api-adapter` gains a relocated `IpcClient` module (moved from `apps/cli`, exported alongside `ipc-server.ts`) with no behavior change; `apps/cli` updates one import path to the new location. The bridge otherwise uses existing `handshake`/`draft.*`/`createNode`/`query.*` methods verbatim. No protocol version bump.
 - **No data migration.** The `clip` namespace + `WebClip` type are authored at runtime through public ops, not seeded into bootstrap; no on-disk or schema change.
 - **Reversibility.** Uninstall the host manifest and drop both apps; existing `WebClip` nodes remain valid and, being event-log-backed, remain recoverable and auditable.

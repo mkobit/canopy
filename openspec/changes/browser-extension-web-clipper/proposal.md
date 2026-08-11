@@ -28,6 +28,7 @@ This change designs the bridge across that boundary and the node shape a clip ta
 
 - `apps/extension` (new): MV3 WebExtension — action popup, content script (structured DOM/selection extraction, no page-code execution), and background service worker that opens a native-messaging port to the host. UI is capture-and-confirm only.
 - `apps/clip-host` (new): native-messaging host binary registered with the browser via a host manifest whose `allowed_origins`/`allowed_extensions` pins the blessed extension ID; relays allowlisted requests to the daemon UDS via `@canopy/api-adapter`'s `IpcClient`; rate-limits and rejects out-of-allowlist methods.
-- `apps/daemon`, `@canopy/api-adapter`, `@canopy/graph`: unchanged. The bridge consumes the existing `handshake`, `draft.*`, `mutation.createNode`, and `query.*` methods as-is; the `WebClip` type is authored at runtime.
+- `apps/daemon`, `@canopy/graph`: unchanged. The bridge consumes the existing `handshake`, `draft.*`, `mutation.createNode`, and `query.*` methods as-is; the `WebClip` type is authored at runtime.
+- `@canopy/api-adapter`: gains `IpcClient`, relocated from `apps/cli/src/ipc/ipc-client.ts` (a private module today, not importable by a new package) into `packages/api-adapter/src/ipc/`, exported publicly alongside `ipc-server.ts`. No behavior change to any existing method or handler — this is a move, not new logic. `apps/cli` updates its one import to the new location (see Design Decision 1).
 - `docs/architecture/bounded-contexts.md`: add `apps/extension` and `apps/clip-host` to the app map.
 - No storage or schema migration; the `clip` namespace + `WebClip` `NodeType` are created idempotently at runtime, not seeded into kernel bootstrap.

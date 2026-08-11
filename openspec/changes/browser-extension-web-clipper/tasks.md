@@ -1,6 +1,13 @@
+## 0. Relocate `IpcClient` into `@canopy/api-adapter` (prerequisite)
+
+- [ ] 0.1 Move `apps/cli/src/ipc/ipc-client.ts` to `packages/api-adapter/src/ipc/ipc-client.ts` (a sibling of `ipc-server.ts`, same directory) with no logic change; export it from `packages/api-adapter/src/ipc/index.ts` and the package's public `src/index.ts`.
+- [ ] 0.2 Move `apps/cli/tests/ipc-client.test.ts` to `packages/api-adapter/tests/ipc-client.test.ts` (or an equivalent new test in that package), updating only import paths; confirm it still passes unmodified in behavior.
+- [ ] 0.3 Update `apps/cli/src/commands/*.ts` (and any other `apps/cli` consumer) to import `IpcClient`/`makeIpcClient` from `@canopy/api-adapter` instead of the local `../ipc/ipc-client` path; delete the now-empty `apps/cli/src/ipc/` directory if nothing else remains in it.
+- [ ] 0.4 Run `apps/cli`'s existing test suite (`bun test` in that package) to confirm zero behavior change from the relocation before proceeding to `apps/clip-host` scaffolding.
+
 ## 1. Scaffold `apps/clip-host` (`@canopy/clip-host`)
 
-- [ ] 1.1 Create `apps/clip-host/package.json` mirroring `apps/cli/package.json` (`"private": true`, `"type": "module"`, a `bin` entry e.g. `"canopy-clip-host"`, and `build`/`dev`/`test`/`typecheck` scripts). Depend on `@canopy/api-adapter` (for `IpcClient`) and `@canopy/graph`; devDependency `typescript`.
+- [ ] 1.1 Create `apps/clip-host/package.json` mirroring `apps/cli/package.json` (`"private": true`, `"type": "module"`, a `bin` entry e.g. `"canopy-clip-host"`, and `build`/`dev`/`test`/`typecheck` scripts). Depend on `@canopy/api-adapter` (for the now-relocated `IpcClient`, task 0.1) and `@canopy/graph`; devDependency `typescript`.
 - [ ] 1.2 Create `apps/clip-host/tsconfig.build.json` and `apps/clip-host/tsconfig.json` mirroring `apps/cli`'s pair (extend `../../tsconfig.base.json`, `bundler` resolution, `references`/`paths` for the `@canopy/*` entries it uses). Confirm the root `apps/*` glob and `bun run build` pick it up with no root changes.
 - [ ] 1.3 Create `apps/clip-host/AGENTS.md` stating the scope: "a same-user native-messaging host that relays an allowlisted set of clip requests from the browser extension to the daemon's Unix-socket JSON-RPC surface; it is a narrowing proxy, not a transparent one, and opens no network socket."
 - [ ] 1.4 Run `bun install` and confirm `bun pm ls --all` shows `@canopy/clip-host` with the intended edges and no `yjs`/`y-protocols` (invariant 2).
@@ -54,4 +61,4 @@
 
 - [ ] 9.1 `bun run build` then `bun run lint`, `bun run typecheck`, `bun test` all green (build before lint per repo CI ordering).
 - [ ] 9.2 `bunx openspec validate browser-extension-web-clipper --strict` passes.
-- [ ] 9.3 Confirm `apps/daemon`, `@canopy/api-adapter`, and `@canopy/graph` are untouched (the bridge is a client using existing methods; the clip type is runtime-authored).
+- [ ] 9.3 Confirm `apps/daemon` and `@canopy/graph` are untouched, and that `@canopy/api-adapter`'s only change is the `IpcClient` relocation (task 0.1-0.4, no behavior change to any existing method/handler) — the bridge is a client using existing methods; the clip type is runtime-authored.
