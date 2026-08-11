@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'bun:test';
-import { createNodeId, createInstant, Graph, Node, createGraphId, asDeviceId } from '@canopy/graph';
+import {
+  createNodeId,
+  createInstant,
+  Graph,
+  Node,
+  createGraphId,
+  asDeviceId,
+  zeroRevision,
+} from '@canopy/graph';
 import { SYSTEM_IDS, SYSTEM_EDGE_TYPES } from '../system';
 import { insertBlock } from './blocks';
 import { addNode } from './node';
@@ -15,6 +23,7 @@ function createTestGraph(): Graph {
       modified: createInstant(),
       modifiedBy: asDeviceId('00000000-0000-0000-0000-000000000000'),
     },
+    revision: zeroRevision(),
   };
 }
 

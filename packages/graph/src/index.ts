@@ -6,6 +6,7 @@ export type {
   eventIdBrand,
   deviceIdBrand,
   namespaceBrand,
+  revisionBrand,
   NodeId,
   EdgeId,
   TypeId,
@@ -13,6 +14,7 @@ export type {
   EventId,
   DeviceId,
   Namespace,
+  Revision,
 } from './identifiers';
 
 export type {
@@ -79,6 +81,8 @@ export {
   asDeviceId,
   asNamespace,
 } from './factories';
+
+export { asRevision, zeroRevision, maxRevision } from './revision';
 
 export * from './schemas';
 export * from './guards';

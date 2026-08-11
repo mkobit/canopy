@@ -12,6 +12,7 @@ import {
   type Node,
   type NodeId,
   type ScalarValue,
+  zeroRevision,
 } from '@canopy/graph';
 import type { Filter, Operator, Query, QueryStep } from '../src/model';
 import { executeQuery, executeQueryScanOnly } from '../src/engine';
@@ -119,6 +120,7 @@ const graphArb: fc.Arbitrary<Graph> = fc
         modified: asInstant('2026-01-01T00:00:00Z'),
         modifiedBy: DEVICE_ID,
       },
+      revision: zeroRevision(),
       nodes,
       edges,
     };

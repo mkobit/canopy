@@ -1,6 +1,13 @@
 import { describe, it, expect } from 'bun:test';
 import { findNode } from '../src/utilities';
-import { asNodeId, asTypeId, createInstant, createGraphId, asDeviceId } from '@canopy/graph';
+import {
+  asNodeId,
+  asTypeId,
+  createInstant,
+  createGraphId,
+  asDeviceId,
+  zeroRevision,
+} from '@canopy/graph';
 import type { Graph, Node } from '@canopy/graph';
 
 describe('findNode', () => {
@@ -30,6 +37,7 @@ describe('findNode', () => {
         modified: createInstant(),
         modifiedBy: SYSTEM_DEVICE_ID,
       },
+      revision: zeroRevision(),
       nodes: new Map([
         [node1.id, node1],
         [node2.id, node2],
@@ -51,6 +59,7 @@ describe('findNode', () => {
         modified: createInstant(),
         modifiedBy: SYSTEM_DEVICE_ID,
       },
+      revision: zeroRevision(),
       nodes: new Map([[node1.id, node1]]),
       edges: new Map(),
     };
@@ -68,6 +77,7 @@ describe('findNode', () => {
         modified: createInstant(),
         modifiedBy: SYSTEM_DEVICE_ID,
       },
+      revision: zeroRevision(),
       nodes: new Map(),
       edges: new Map(),
     };
@@ -88,6 +98,7 @@ describe('findNode', () => {
         modified: createInstant(),
         modifiedBy: SYSTEM_DEVICE_ID,
       },
+      revision: zeroRevision(),
       nodes: new Map([
         [node1.id, node1],
         [node2.id, node2],

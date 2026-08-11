@@ -7,6 +7,7 @@ import {
   isOk,
   unwrap,
   SYSTEM_IDS,
+  zeroRevision,
   type Graph,
   type NodeOperationOptions,
 } from '@canopy/graph';
@@ -24,6 +25,7 @@ function createEmptyGraph(): Graph {
       modified: TEST_TIMESTAMP,
       modifiedBy: TEST_DEVICE_ID,
     },
+    revision: zeroRevision(),
     nodes: new Map(),
     edges: new Map(),
   };

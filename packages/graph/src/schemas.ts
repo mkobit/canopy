@@ -20,6 +20,7 @@ import {
   asNamespace,
   asEventId,
 } from './factories';
+import { asRevision } from './revision';
 
 // Helpers to transform strings to branded types using the "as" casters from types.
 // We rely on Zod's validation (regex/datetime) before casting.
@@ -30,6 +31,7 @@ export const EdgeIdSchema = z.string().min(1).transform(asEdgeId);
 export const TypeIdSchema = z.string().min(1).transform(asTypeId);
 export const GraphIdSchema = z.string().uuid().transform(asGraphId);
 export const DeviceIdSchema = z.string().uuid().transform(asDeviceId);
+export const RevisionSchema = z.string().uuid().transform(asRevision);
 
 export const NamespaceSchema: z.ZodType<Namespace, unknown> = z
   .string()
@@ -131,6 +133,7 @@ export const GraphSchema: z.ZodType<Graph, unknown> = z.object({
   id: GraphIdSchema,
   name: z.string(),
   metadata: TemporalMetadataSchema,
+  revision: RevisionSchema,
   nodes: z.union([
     z.map(NodeIdSchema, NodeSchema),
     z.record(z.string().uuid(), NodeSchema).transform((record) => {

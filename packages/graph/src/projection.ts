@@ -7,6 +7,7 @@ import type { Instant } from './temporal';
 import type { DeviceId } from './identifiers';
 import { ok, err as error, fromThrowable, unwrap } from './result';
 import { incrementalUpdateIndexes } from './indexes';
+import { maxRevision } from './revision';
 
 /**
  * Returns true if the incoming event should win over the current state.
@@ -59,6 +60,7 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
             return ok({
               ...graph,
               nodes: newNodes,
+              revision: maxRevision(graph.revision, event.eventId),
               metadata: {
                 ...graph.metadata,
                 modified:
@@ -113,6 +115,7 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
             return ok({
               ...graph,
               nodes: newNodes,
+              revision: maxRevision(graph.revision, event.eventId),
               metadata: {
                 ...graph.metadata,
                 modified:
@@ -146,6 +149,7 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
               ...graph,
               nodes: newNodes,
               edges: newEdges,
+              revision: maxRevision(graph.revision, event.eventId),
               metadata: {
                 ...graph.metadata,
                 modified:
@@ -191,6 +195,7 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
             return ok({
               ...graph,
               edges: newEdges,
+              revision: maxRevision(graph.revision, event.eventId),
               metadata: {
                 ...graph.metadata,
                 modified:
@@ -245,6 +250,7 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
             return ok({
               ...graph,
               edges: newEdges,
+              revision: maxRevision(graph.revision, event.eventId),
               metadata: {
                 ...graph.metadata,
                 modified:
@@ -271,6 +277,7 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
             return ok({
               ...graph,
               edges: newEdges,
+              revision: maxRevision(graph.revision, event.eventId),
               metadata: {
                 ...graph.metadata,
                 modified:

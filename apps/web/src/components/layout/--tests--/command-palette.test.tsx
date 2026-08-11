@@ -4,7 +4,14 @@ import React from 'react';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { CommandPalette } from '../command-palette';
-import { SYSTEM_IDS, createNodeId, createInstant, asGraphId, asDeviceId } from '@canopy/graph';
+import {
+  SYSTEM_IDS,
+  createNodeId,
+  createInstant,
+  asGraphId,
+  asDeviceId,
+  zeroRevision,
+} from '@canopy/graph';
 import type { Graph, Node } from '@canopy/graph';
 
 const mockNavigate = mock(() => undefined);
@@ -51,6 +58,7 @@ const mockGraph: Graph = {
     modified: createInstant(),
     modifiedBy: asDeviceId('dev-1'),
   },
+  revision: zeroRevision(),
   nodes: new Map([
     [mockNode1.id, mockNode1],
     [mockNode2.id, mockNode2],

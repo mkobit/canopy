@@ -65,7 +65,7 @@ export function createDraftSession(parentSession: GraphSession): DraftSession {
 
   const commit = async (expectedParentRevision: string): Promise<Result<void, DraftError>> => {
     const parentGraph = parentSession.graph();
-    const currentRevision = parentGraph.metadata.modified;
+    const currentRevision = parentGraph.revision;
     if (currentRevision !== expectedParentRevision) {
       return error({ type: 'concurrent-modification' });
     }
@@ -86,7 +86,7 @@ export function createDraftSession(parentSession: GraphSession): DraftSession {
 
   const getParentRevision = (): Result<string, DraftError> => {
     const parentGraph = parentSession.graph();
-    return ok(parentGraph.metadata.modified);
+    return ok(parentGraph.revision);
   };
 
   const getNode = (id: NodeId): Result<Node, QueryError> => {
