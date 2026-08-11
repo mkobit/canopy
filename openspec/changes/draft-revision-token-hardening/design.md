@@ -94,7 +94,15 @@ Rejected on cost and complexity disproportionate to the residual risk: hashing t
 **(c) Higher-resolution timestamp (microseconds/nanoseconds).**
 Rejected: `Temporal.Now.instant()` is `Date.now()`-backed at millisecond resolution in this environment, and even a higher-resolution clock only shrinks the collision window rather than eliminating it — two events can still collide, and clock non-monotonicity (NTP steps) can move the token backward. `EventId` is collision-free by construction and never moves backward for a given applied set.
 
-## Risks / Trade-offs
+## Adversarial review and mitigations
+
+### Resource and performance overhead
+
+- **Per-event cost.** The `revision` fold is O(1) per applied event — one branded-string comparison and assignment — identical cost to the existing `metadata.modified` max-fold it sits beside in the same apply sites. No additional per-event or per-commit overhead class.
+- **No new storage.** `revision` is derived at projection time from `EventId`s already present in every event; it adds one small field to the in-memory `Graph` object (a single string), not a new persisted record, index, or `EventLogStore` write.
+- **No change to overlay-projection cost.** `DraftSession.graph()`'s existing O(parent + staged) overlay projection (already bounded by the daemon's per-connection/global draft limits) is untouched — this change only replaces the OCC comparison value, not the projection algorithm's complexity.
+
+### Failure modes and edge cases
 
 - **[Residual out-of-order collision]** A remote event with an `EventId` _lower_ than the current max that nonetheless applies (e.g. an unrelated `NodeCreated` arriving late) changes graph state without advancing `max(EventId)`, so a stale draft could miss it. → **Mitigation:** this is strictly no worse than the status quo (`metadata.modified` misses the same lower-timestamp case identically), it does not affect the observed same-millisecond local bug this change fixes, and `session.commit` independently re-runs full structural/referential/type validation (`validateCommit`) so a missed conflict can still only add valid data, never corrupt invariants. The complete fix (state hash) is documented in Decision 3(b) as a deferred option, not silently dropped.
 - **[Convergence regression]** A wrong fold (e.g. touching `revision` on a losing write, or using a non-max update) could break permutation invariance. → **Mitigation:** implement `revision` with the identical max-guard used for `metadata.modified` at every apply site, and extend the existing permutation-invariance property test to assert `revision` is identical across permutations (task 4.2).
@@ -102,11 +110,17 @@ Rejected: `Temporal.Now.instant()` is `Date.now()`-backed at millisecond resolut
 - **[Empty-graph token]** A bootstrap-only graph must still yield a stable, comparable token. → **Mitigation:** seed with a fixed zero-UUID sentinel that sorts below any real `EventId`; drafts against a fresh graph compare correctly and advance on first commit.
 - **[Wire assumption drift]** A future change could start parsing the token as a timestamp. → **Mitigation:** the spec delta states the token is opaque; a test asserts the adapter forwards it without inspection, and `Revision` is a distinct brand so accidental use as an `Instant` fails to type-check.
 
-## Migration Plan
+### Security and isolation
 
-- Purely additive and backward-compatible. `revision` is derived at projection time from the existing event log, so any existing vault produces a correct token on its next `load()`; no data migration, no `EventLogStore` change, no protocol version bump.
-- Rollback: revert the `@canopy/graph` changes and repoint `DraftSession` at `metadata.modified`. Nothing external depends on the token's internal shape (it stays an opaque string), so rollback is local to one package.
-- Deploy order: land `@canopy/graph` first (self-contained); `@canopy/api-adapter`/`apps/daemon` need no coordinated change. The stopgap delay in `packages/api-adapter/tests/draft-flow.test.ts` (PR #434) can be removed once the new token is in place (task 3.3).
+- **No new trust boundary.** This is a pure `@canopy/graph` kernel data-representation change (one additional derived field on `Graph`), consumed unchanged by the same-user IPC surface that already trusted `metadata.modified` for the identical optimistic-concurrency purpose. It touches no validation, authentication, or transport code, and does not alter the daemon's UDS trust model.
+- **No new forgery surface.** The token was already opaque and server-derived — a client only ever echoes back a value the server itself previously returned. Switching its internal representation does not give a client any new way to influence or forge a value `commit` will accept; the equality check still requires an exact match against the server's current computation.
+- **No new information disclosure.** An `EventId` is already visible to any client with read access (every event and many entities expose one via `query.*`), so a token derived from a max over already-visible ids discloses nothing a same-user client couldn't already see.
+
+### Migration and backward compatibility
+
+- **Purely additive and backward-compatible.** `revision` is derived at projection time from the existing event log, so any existing vault produces a correct token on its next `load()`; no data migration, no `EventLogStore` change, no protocol version bump.
+- **Rollback.** Revert the `@canopy/graph` changes and repoint `DraftSession` at `metadata.modified`. Nothing external depends on the token's internal shape (it stays an opaque string), so rollback is local to one package.
+- **Deploy order.** Land `@canopy/graph` first (self-contained); `@canopy/api-adapter`/`apps/daemon` need no coordinated change. The stopgap delay in `packages/api-adapter/tests/draft-flow.test.ts` (PR #434) can be removed once the new token is in place (task 3.3).
 
 ## Open Questions
 
