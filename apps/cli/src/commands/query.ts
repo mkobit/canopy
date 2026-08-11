@@ -1,6 +1,6 @@
 import { Command, Options } from '@effect/cli';
 import { Console, Effect } from 'effect';
-import { makeIpcClient } from '../ipc/ipc-client';
+import { makeIpcClient } from '@canopy/api-adapter';
 import { jsonOption, socketPathOption } from '../options';
 
 const parseSteps = (raw?: string): Effect.Effect<readonly unknown[] | undefined, Error> => {

@@ -1,7 +1,7 @@
 import { Command, Options } from '@effect/cli';
 import type { Option } from 'effect';
 import { Console, Effect } from 'effect';
-import { makeIpcClient } from '../ipc/ipc-client';
+import { makeIpcClient } from '@canopy/api-adapter';
 import { jsonOption, socketPathOption } from '../options';
 
 const graphIdOption = Options.optional(Options.text('graph-id')).pipe(
