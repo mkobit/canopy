@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'bun:test';
 import { createGraphSession } from './graph-session';
 import { createDraftSession } from './draft-session';
-import { Temporal } from 'temporal-polyfill';
 
 import {
   createGraphId,
@@ -10,7 +9,6 @@ import {
   createEventId,
   asDeviceId,
   createInstant,
-  asInstant,
   unwrap,
   ok,
   type GraphEvent,
@@ -134,11 +132,10 @@ describe('DraftSession', () => {
     draftSession.applyEvents([event]);
 
     const expectedRevision = unwrap(draftSession.getParentRevision());
-    const laterInstant = asInstant(
-      Temporal.Instant.from(expectedRevision).add({ milliseconds: 10 }).toString(),
-    );
-
-    const concurrentEvent = nodeCreatedEvent({ timestamp: laterInstant });
+    // The revision token is now a collision-proof EventId-derived value, not
+    // a parseable Instant -- the out-of-band event just needs any timestamp
+    // (concurrency is detected via the revision advancing, not the clock).
+    const concurrentEvent = nodeCreatedEvent({ timestamp: createInstant() });
     await parentSession.commit([concurrentEvent]);
 
     const commitResult = await draftSession.commit(expectedRevision);

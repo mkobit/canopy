@@ -15,7 +15,7 @@ import { addNode } from './ops/node';
 import { addEdge } from './ops/edge';
 import { SYSTEM_IDS } from './system';
 import type { Graph, Node, Edge } from '@canopy/graph';
-import { createInstant, createEdgeId } from '@canopy/graph';
+import { createInstant, createEdgeId, zeroRevision } from '@canopy/graph';
 
 describe('Graph Queries', () => {
   let graph: Graph;
@@ -27,6 +27,7 @@ describe('Graph Queries', () => {
       id: createGraphId(),
       name: 'Test Graph',
       metadata: { created: createInstant(), modified: createInstant(), modifiedBy: DEVICE_ID },
+      revision: zeroRevision(),
       nodes: new Map(),
       edges: new Map(),
     };

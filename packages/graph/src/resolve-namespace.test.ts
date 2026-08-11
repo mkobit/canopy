@@ -12,6 +12,7 @@ import {
   asDeviceId,
   unwrap,
   asNamespace,
+  zeroRevision,
 } from '@canopy/graph';
 import { SYSTEM_IDS } from './system';
 import { createNamespace, removeNode } from './ops';
@@ -43,6 +44,7 @@ describe('resolveNamespace', () => {
     id: asGraphId('test-graph'),
     name: 'Test Graph',
     metadata: dummyMetadata,
+    revision: zeroRevision(),
     nodes: new Map<import('@canopy/graph').NodeId, Node>([
       namespaceNode('imported'),
       namespaceNode('user'),
@@ -134,6 +136,7 @@ describe('parseNamespace', () => {
     id: asGraphId('test-graph'),
     name: 'Test Graph',
     metadata: dummyMetadata,
+    revision: zeroRevision(),
     nodes: new Map<import('@canopy/graph').NodeId, Node>([
       [
         asNodeId('namespace:user'),

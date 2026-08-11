@@ -16,6 +16,7 @@ import {
   asTypeId,
   createGraphId,
   SYSTEM_DEVICE_ID,
+  zeroRevision,
 } from '@canopy/graph';
 
 export type NodeTypeId = TypeId;
@@ -135,6 +136,7 @@ export function generateQueryBenchmarkFixture(
       modified: graphInstant,
       modifiedBy: SYSTEM_DEVICE_ID,
     },
+    revision: zeroRevision(),
     nodes: nodesMap,
     edges: edgesMap,
   };

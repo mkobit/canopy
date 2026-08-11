@@ -267,6 +267,11 @@ describe('incremental-projection / convergence property', () => {
           const merged = mergeEvents(state0, initial, shuffled);
 
           expect(merged.graph).toEqual(canonical);
+          // Explicit alongside the full graph-state assertion above: the
+          // revision token (running max applied EventId) must itself converge
+          // under any delivery order, not just the nodes/edges/metadata it
+          // sits beside.
+          expect(merged.graph.revision).toEqual(canonical.revision);
         },
       ),
       { numRuns: 200 },

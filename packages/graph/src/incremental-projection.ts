@@ -10,6 +10,7 @@ import type { Result } from './result';
 import { ok, err as error } from './result';
 import { validateNode, validateEdge } from './validation';
 import { incrementalUpdateIndexes } from './indexes';
+import { maxRevision } from './revision';
 
 /**
  * Per-entity merge bookkeeping: which event last wrote each property
@@ -114,6 +115,17 @@ interface ApplyOutcome {
  * regardless of application order -- and correctly seeds from the incoming
  * graph's own pre-existing metadata (e.g. from bootstrap), not from a
  * merge-local marker.
+ *
+ * revision folds independently of the modified/modifiedBy timestamp-based
+ * isWins check above: it is a running max over EventId (see revision.ts),
+ * called unconditionally on every event this function is invoked for.
+ * maxRevision's own eventId comparison is what decides whether it actually
+ * advances, so no separate condition is needed -- and, critically, it must
+ * NOT be gated by the same timestamp comparison as modified/modifiedBy: two
+ * events sharing a wall-clock millisecond would both fail that check
+ * (isWins would be false for the second), which is exactly the same-
+ * millisecond collision the revision token exists to fix. An EventId-only
+ * comparison has no such gap.
  */
 function touchGraphMetadata(
   graph: Graph,
@@ -131,6 +143,7 @@ function touchGraphMetadata(
     ...graph,
     nodes,
     edges,
+    revision: maxRevision(graph.revision, event.eventId),
     metadata: isWins
       ? { ...graph.metadata, modified: event.timestamp, modifiedBy: event.deviceId }
       : graph.metadata,

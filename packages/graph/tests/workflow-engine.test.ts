@@ -12,6 +12,7 @@ import {
   createGraphId,
   asNodeId,
   PropertyValue,
+  zeroRevision,
 } from '@canopy/graph';
 
 describe('WorkflowTriggerRegistry', () => {
@@ -59,6 +60,7 @@ describe('WorkflowEngine', () => {
       modified: createInstant(),
       modifiedBy: asDeviceId('test-device'),
     },
+    revision: zeroRevision(),
   };
 
   it('should create an edge when create-edge action is executed', () => {

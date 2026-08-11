@@ -2,6 +2,7 @@ import type { Graph } from './graph';
 import type { GraphId } from './identifiers';
 import type { Result } from './result';
 import { createInstant } from './factories';
+import { zeroRevision } from './revision';
 import { bootstrap, SYSTEM_DEVICE_ID } from './bootstrap';
 
 export function createGraph(id: GraphId, name: string): Result<Graph, Error> {
@@ -13,6 +14,7 @@ export function createGraph(id: GraphId, name: string): Result<Graph, Error> {
       modified: createInstant(),
       modifiedBy: SYSTEM_DEVICE_ID,
     },
+    revision: zeroRevision(),
     nodes: new Map(),
     edges: new Map(),
   };

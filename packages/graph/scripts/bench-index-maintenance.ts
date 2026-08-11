@@ -38,6 +38,7 @@ import {
   createGraphId,
   getGraphIndexes,
   incrementalUpdateIndexes,
+  zeroRevision,
   type DeviceId,
   type Edge,
   type Graph,
@@ -124,6 +125,7 @@ function buildSeededGraph(nodeCount: number): Graph {
       modified: asInstant('2026-01-01T00:00:00Z'),
       modifiedBy: DEVICE_ID,
     },
+    revision: zeroRevision(),
     nodes,
     edges,
   };
