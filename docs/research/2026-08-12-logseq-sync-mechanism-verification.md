@@ -114,6 +114,14 @@ DeepWiki's reading described exactly this shape — a `client_ops` op log, `appl
 Source: [DeepWiki: DB worker and RTC](https://deepwiki.com/logseq/logseq/4.1-layout-and-theming).
 No official Logseq blog post or forum statement was found that names the mechanism "CRDT" or "not CRDT"; the authoritative naming here comes from the team-authored protocol and guide docs inside the repo, which describe ordering-and-rebase without any CRDT concept.
 
+### Official: Logseq brands RTC "CRDT-inspired", and real CRDT merge is a future roadmap item
+
+This is why the question is so easy to answer wrong, and worth recording separately from the source dive.
+Logseq's own materials describe RTC as "CRDT-inspired" and market it as real-time collaboration "like Google Docs", which invites the assumption that a CRDT is under the hood ([db-version.md](https://github.com/logseq/docs/blob/master/db-version.md)).
+But Logseq's public roadmap places actual CRDT conflict resolution in the unshipped future, not the present: "Use CRDT to resolve block content conflicts automatically" appears under Research, and "Present conflicts when multiple clients editing the same block's content" is a not-yet-shipped Features item ([Logseq roadmap](https://logseq.io/p/NX4mc_ggEV)).
+So even by Logseq's own stated plan, a CRDT is an aspiration for automatic block-content merge layered on top of the shipping op-log/rebase sync — not the mechanism that ships today, and the one place a CRDT would do genuine lattice merge (concurrent edits to the same block's text) is explicitly still unbuilt.
+The "CRDT-inspired" label is marketing over an op-log-plus-ordering core; it is the likely source of the impression that Logseq "uses a CRDT".
+
 ## Verdict
 
 (b) operation log plus server-authoritative rebase, with per-attribute last-writer/server-wins and conflict surfacing — **confidence: high**.
