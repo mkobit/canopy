@@ -141,6 +141,11 @@ They are not exclusive, but they imply very different next steps:
 Recommendation: treat `storage-drive` as the **preferred BYO-cloud path for reaching the web app without running a server**, and keep `storage-http` as the option for when a hosted backend is wanted anyway (teams, real-time, server-side search).
 Decide the fork before implementing either further; do not build both speculatively.
 
+> **Decided (2026-08-12, `canopy-ylr`)**: the primary multi-device story for web/mobile is **BYO-cloud (`storage-drive`)**.
+> `storage-http` and a hosted backend are retained as the secondary path and become the basis for a **possible paid, managed offering** — a service that runs all the APIs and stores/backs up a user's log for those who do not want to operate their own cloud sync.
+> BYO-cloud stays the default so the "user owns their data, maintainer runs no server" ethos holds for anyone who wants it; the managed service is an opt-in convenience layer over the same event-log format, never a replacement for the portable log.
+> `storage-drive` is new scope beyond the closed `canopy-1q5.4`; it needs its own OpenSpec change with the mandatory adversarial review before any tasks (open questions 2–5 below are the review's agenda).
+
 ---
 
 ## 9. Relationship to the CRDT decision (unchanged)
@@ -160,7 +165,7 @@ Do not design the sync engine further until the §8 fork is decided and the work
 
 **Open questions:**
 
-1. The §8 fork: BYO-cloud vs. server-you-run as the primary web/mobile story.
+1. ~~The §8 fork: BYO-cloud vs. server-you-run as the primary web/mobile story.~~ Resolved 2026-08-12 (`canopy-ylr`, §8): BYO-cloud (`storage-drive`) primary; hosted `storage-http` retained as the basis for an optional paid managed service.
 2. Where the Drive client runs for the browser: the web app's own tab (Drive JS SDK, CORS, token in the browser) vs. a companion process (like `apps/clip-host`/`apps/daemon`) that owns the Drive credentials and exposes an `EventLogStore` over IPC. The daemon route keeps OAuth secrets out of the browser and mirrors the existing clip-host pattern.
 3. Whether `storage-drive` generalizes to a `storage-cloud` port with per-provider adapters (Drive, Dropbox, iCloud, S3) or stays Drive-specific until a second provider is real (per "constrain speculative design," Drive-only first).
 4. End-to-end encryption of segments before upload — untrusted-transport concern carried over unresolved from the sync doc (§8), and more pressing when the app hands data to a third-party cloud than when a local daemon did.

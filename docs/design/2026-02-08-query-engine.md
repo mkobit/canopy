@@ -6,6 +6,26 @@
 
 ---
 
+## 0. Engine-direction decision (2026-08-12, `canopy-3jg`)
+
+Decided after evaluating Logseq 2.0's DataScript reuse against the hand-written-GQL-parser plan ([research](../research/2026-08-12-logseq-2.0-comparison.md) axis D).
+
+Canopy's projected graph is already entity-attribute-value shaped — nodes with typed property maps and typed edges — which is the shape a Datalog-style conjunctive query engine is built to evaluate.
+The execution engine (section 5) therefore evolves toward a **small conjunctive / relational core over the projected EAV graph**: pattern goals (edge and property patterns) with unification and join ordering that use the existing `ReadModelPort` indexes (section 6) as access paths.
+The current linear pipeline IR (section 3) is a degenerate single-variable case of that core and remains a valid compile target, so the visual builder and programmatic API keep working with no regression.
+
+Boundaries of the decision:
+
+- **This is an engine _shape_, not an end-user text language.** Datalog syntax is not exposed to users; the visual builder stays the primary surface.
+- **No ClojureScript in the repo.** DataScript is prior art for the shape only; Canopy stays strict functional TypeScript. Do not add DataScript or any ClojureScript dependency.
+- **ISO GQL is deferred, not dropped.** A standards-compliant ISO GQL **read** surface remains a committed future goal — Canopy is a graph and should be queryable with the standard — implemented later as a front-end that compiles GQL to the same conjunctive engine, not as a bespoke planner. GQL **writes** stay out of scope; all mutation goes through the event system.
+- **Sequencing.** This records direction only; no engine rewrite ships now. The conjunctive-core work and the eventual GQL front-end each become their own OpenSpec change (with adversarial review), de-risked by a time-boxed strict-TS spike, when actually prioritized.
+- A hosted/managed query-and-storage service (see [multi-device sync transports](2026-08-12-multi-device-sync-transports.md) §8) would expose this same engine over the API boundary; it does not change the engine choice.
+
+Sections 4 and 10 below are updated to reflect this; the rest of the document predates the decision and describes the target surfaces and pipeline that still stand.
+
+---
+
 ## 1. Principles
 
 The query engine is the read-side of the system.
@@ -149,8 +169,9 @@ Advanced GQL features (subqueries, graph construction, schema operations) are de
 
 The system needs a GQL parser that compiles GQL strings into the structured query representation.
 
-> **Open question**: whether to implement a GQL parser from scratch, use an existing parser library, or initially use a Cypher parser (Cypher being the precursor to GQL with significant overlap) and migrate to GQL.
-> The standard is new (April 2024) and parser tooling may be limited.
+> **Resolved (2026-08-12, `canopy-3jg`, see section 0)**: the GQL surface is deferred and, when built, is a thin front-end that compiles GQL to the conjunctive engine — not a bespoke parser-plus-planner.
+> Whether that front-end is hand-written, an existing parser library, or a Cypher-first stepping stone is a later sub-decision, made when the surface is actually prioritized.
+> The `cypher.ts` stub stays a placeholder until then.
 
 ---
 
@@ -352,7 +373,7 @@ The programmatic API should have convenience methods for these common patterns, 
 
 ## 10. Open questions
 
-1. GQL parser implementation: from scratch, existing library, or Cypher-first migration path.
+1. ~~GQL parser implementation: from scratch, existing library, or Cypher-first migration path.~~ Resolved 2026-08-12 (`canopy-3jg`, section 0): engine goes conjunctive/Datalog-shaped over the EAV projection; ISO GQL is a deferred read-only front-end compiling to it; no ClojureScript. Parser-vs-library is a later sub-decision.
 2. Exact GQL subset for initial implementation.
 3. Whether ad-hoc queries can be promoted to stored query nodes and what that UX looks like.
 4. Whether the no-code visual query builder state is stored as properties on query nodes (enabling round-trip editing).
