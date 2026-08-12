@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Clip to Canopy</title>
+    <style>
+      body {
+        width: 360px;
+        min-height: 160px;
+        margin: 0;
+        padding: 16px;
+        font-family: system-ui, sans-serif;
+        font-size: 13px;
+        color: #1a1a1a;
+      }
+      h1 {
+        font-size: 14px;
+        margin: 0 0 12px;
+      }
+      #status {
+        color: #555;
+      }
+      #preview {
+        display: none;
+      }
+      #preview h2 {
+        font-size: 13px;
+        margin: 0 0 4px;
+      }
+      #preview-source {
+        color: #666;
+        word-break: break-all;
+        margin: 0 0 8px;
+      }
+      #preview-content {
+        max-height: 160px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        background: #f5f5f5;
+        border-radius: 4px;
+        padding: 8px;
+        margin: 0 0 12px;
+      }
+      #actions {
+        display: flex;
+        gap: 8px;
+      }
+      button {
+        flex: 1;
+        padding: 6px 12px;
+        cursor: pointer;
+      }
+      #error {
+        display: none;
+        color: #a00;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Clip to Canopy</h1>
+    <p id="status">Capturing the page&hellip;</p>
+    <div id="error"></div>
+    <div id="preview">
+      <h2 id="preview-title"></h2>
+      <p id="preview-source"></p>
+      <div id="preview-content"></div>
+      <div id="actions">
+        <button id="confirm-button" type="button">Save to Canopy</button>
+        <button id="discard-button" type="button">Discard</button>
+      </div>
+    </div>
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

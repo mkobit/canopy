@@ -14,15 +14,20 @@ graph TD
   storage[@canopy/storage]
   storageIndexeddb[@canopy/storage-indexeddb]
   storageSqlite[@canopy/storage-sqlite]
+  apiAdapter[@canopy/api-adapter]
   web[apps/web]
   cli[apps/cli]
   daemon[apps/daemon]
+  clipHost[apps/clip-host]
+  extension[apps/extension]
 
   queries --> graph
   settings --> graph
   storage --> graph
   storageIndexeddb --> graph
   storageSqlite --> graph
+  apiAdapter --> graph
+  apiAdapter --> queries
 
   web --> graph
   web --> queries
@@ -31,10 +36,16 @@ graph TD
   web --> storageIndexeddb
   cli --> graph
   cli --> storage
+  cli --> apiAdapter
   daemon --> graph
   daemon --> storage
   daemon --> storageSqlite
+  daemon --> apiAdapter
+  clipHost --> graph
+  clipHost --> apiAdapter
 ```
+
+`apps/extension` has no `@canopy/*` dependencies (zero-dependency browser code, no bundler -- see `apps/extension/AGENTS.md`) and so has no outgoing edges above; it talks to `apps/clip-host` over native-messaging stdio, not an import.
 
 `@canopy/graph` is the leaf and has no internal dependencies.
 All other packages depend on it.
@@ -97,3 +108,4 @@ Within a package, prefer relative imports between sibling files; do not import t
 - Event log migration design: `docs/design/2026-07-03-event-log-storage-and-sync.md`.
 - Query interfaces: `docs/design/2026-02-08-query-engine.md`.
 - Extensions and plugin host (deferred design): `docs/design/2026-02-08-extension-and-execution-model.md`.
+- Browser extension web clipper (`apps/extension` + `apps/clip-host`): `openspec/changes/browser-extension-web-clipper/design.md`.

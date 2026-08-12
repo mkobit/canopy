@@ -19,7 +19,7 @@ import {
   isAllowedMethod,
   needsNamespaceCheck,
 } from './allowlist';
-import { ensureWebClipType } from './ensure-webclip-type';
+import { ensureWebClipType, toWireEvent } from './ensure-webclip-type';
 import type { RateLimiter } from './rate-limiter';
 
 // Reserved JSON-RPC "server error" range (-32000 to -32099, per spec);
@@ -54,10 +54,11 @@ const makeErrorResponse = (
   id: JsonRpcId | undefined,
   code: number,
   message: string,
+  data?: unknown,
 ): JsonRpcResponse => ({
   jsonrpc: '2.0',
   id: id ?? null,
-  error: { code, message },
+  error: { code, message, ...(data !== undefined && { data }) },
 });
 
 const makeSuccessResponse = (id: JsonRpcId | undefined, result: unknown): JsonRpcResponse => ({
@@ -111,7 +112,17 @@ const dispatch = (
       if (!parsed.success) {
         return Effect.fail({ _tag: 'InvalidParams', message: 'Invalid draft.apply params' });
       }
-      return client.draftApply(parsed.data);
+      // parsed.data's `events[].properties` is the zod-transformed (Map)
+      // shape -- structurally still assignable to draftApply's wider input
+      // type (Map | Record), so this compiles either way, but a Map
+      // silently serializes to `{}` under the real client's JSON.stringify.
+      // Converting back to the wire (plain-object) shape here is required,
+      // not cosmetic -- see ensure-webclip-type.ts's toWireEvent, which
+      // exists for exactly this trap.
+      return client.draftApply({
+        draftId: parsed.data.draftId,
+        events: parsed.data.events.map(toWireEvent),
+      });
     }
     case IPC_METHODS.DRAFT_PREVIEW: {
       const parsed = DraftPreviewParamsSchema.safeParse(parameters);
@@ -230,10 +241,16 @@ export const createClipHost = (options: ClipHostOptions): ClipHost => {
             ? checkCreateNodeParameters(params, typeId)
             : checkDraftApplyParameters(params, typeId);
         if (!check.ok) {
+          // Callers that don't yet know the ensured WebClip type id (e.g. a
+          // first-ever clip) can't pre-construct a matching event; surfacing
+          // the resolved id here (already ensured by getWebClipTypeId above)
+          // lets them retry the same request -- same open draftId for
+          // draft.apply -- with the correct nodeType instead of guessing.
           return makeErrorResponse(
             id,
             CLIP_HOST_ERROR_CODES.NAMESPACE_REJECTED,
             check.error.message,
+            { webClipTypeId: typeId },
           );
         }
       }
@@ -243,7 +260,12 @@ export const createClipHost = (options: ClipHostOptions): ClipHost => {
         const failure = dispatchResult.left;
         const code =
           failure._tag === 'IpcClientError' ? failure.code : JSON_RPC_ERROR_CODES.INVALID_PARAMS;
-        return makeErrorResponse(id, code, failure.message);
+        // The daemon's own error `data` (e.g. concurrent-modification's
+        // currentParentRevision) is preserved on IpcClientError.details --
+        // forwarding it is required for callers to retry, not cosmetic; see
+        // tasks.md 6.5's re-preview/retry flow.
+        const data = failure._tag === 'IpcClientError' ? failure.details : undefined;
+        return makeErrorResponse(id, code, failure.message, data);
       }
 
       return makeSuccessResponse(id, dispatchResult.right);
