@@ -1,6 +1,6 @@
 # Bounded contexts
 
-Canopy is split into six packages.
+Canopy is split into nine packages.
 Each owns a single bounded concept.
 Generic catch-all packages (`types`, `schema`, `api`) are not used.
 
@@ -14,6 +14,8 @@ graph TD
   storage[@canopy/storage]
   storageIndexeddb[@canopy/storage-indexeddb]
   storageSqlite[@canopy/storage-sqlite]
+  storageFile[@canopy/storage-file]
+  storageHttp[@canopy/storage-http]
   apiAdapter[@canopy/api-adapter]
   web[apps/web]
   cli[apps/cli]
@@ -26,6 +28,8 @@ graph TD
   storage --> graph
   storageIndexeddb --> graph
   storageSqlite --> graph
+  storageFile --> graph
+  storageHttp --> graph
   apiAdapter --> graph
   apiAdapter --> queries
 
@@ -88,9 +92,24 @@ Also owns `createGraphRegistry`, a small independent IndexedDB store of `{id, na
 
 Implements `EventLogStore` over SQLite via `sql.js`.
 
+### @canopy/storage-file
+
+Implements `EventLogStore` over the local filesystem as per-device JSONL segment files plus a manifest; the on-disk format doubles as the eventual-sync artifact.
+Adds a `reconcile` operation that ingests other devices' segment folders via per-device watermarks — single writer per device folder, so file conflicts are structurally impossible.
+
+### @canopy/storage-http
+
+Implements `EventLogStore` over a REST API (`POST`/`GET /graphs/:id/events`) — a stateless request/response event carrier with no background sync loop.
+
+### @canopy/api-adapter
+
+The transport and protocol adapter layer over `@canopy/graph` and `@canopy/queries`.
+Hosts the Unix-socket JSON-RPC IPC server (`createIpcServer`) and the `canopy.v1.draft.*` family that wraps `DraftSession`, plus the WASM plugin host bindings.
+Consumed by `apps/cli`, `apps/daemon`, and `apps/clip-host`.
+
 ## Cross-context ports
 
-- `EventLogStore` is defined in `@canopy/graph/event-log.ts` and implemented by `@canopy/storage`, `@canopy/storage-indexeddb`, and `@canopy/storage-sqlite`.
+- `EventLogStore` is defined in `@canopy/graph/event-log.ts` and implemented by `@canopy/storage`, `@canopy/storage-indexeddb`, `@canopy/storage-sqlite`, `@canopy/storage-file`, and `@canopy/storage-http`.
   This breaks what would otherwise be a cycle between `graph/history.ts` and the storage packages.
 - `GraphSession` (`@canopy/graph/graph-session.ts`) is the single write path for every consumer of an `EventLogStore`: it owns validation, append, incremental convergent projection, and subscriber notification so the app never mutates a graph directly.
 
