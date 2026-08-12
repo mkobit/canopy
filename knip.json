@@ -22,6 +22,14 @@
     },
     "apps/daemon": {
       "project": ["src/**/*.ts"]
+    },
+    "apps/extension": {
+      "entry": [
+        "src/background/service-worker.ts",
+        "src/content/content-script.ts",
+        "src/popup/popup.ts"
+      ],
+      "project": ["src/**/*.ts"]
     }
   }
 }

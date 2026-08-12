@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "Canopy Web Clipper",
+  "version": "0.0.1",
+  "description": "Capture the current page or selection into your Canopy graph, with a preview you confirm before anything is saved.",
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "Clip to Canopy"
+  },
+  "background": {
+    "service_worker": "background/service-worker.js",
+    "type": "module"
+  },
+  "permissions": ["activeTab", "scripting", "nativeMessaging", "storage"]
+}

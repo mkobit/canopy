@@ -138,6 +138,26 @@ describe('clip-host allowlist enforcement', () => {
     expect(calls).not.toContain('draftApply');
   });
 
+  it('3.5 (addendum) rejection carries the resolved webClipTypeId for the caller to retry with', async () => {
+    const { client } = createStubClient();
+    const host = createClipHost({
+      socketPath: '/unused',
+      rateLimiter: createRateLimiter({ maxRequests: 100, windowMs: 1000 }),
+      connect: () => Effect.succeed(client),
+    });
+
+    const response = await host.handleRequest({
+      method: 'canopy.v1.draft.apply',
+      params: {
+        draftId: 'draft_1',
+        events: [{ type: 'NodeCreated', nodeType: 'unknown-placeholder', properties: {} }],
+      },
+      id: 1,
+    });
+    expect(response.error).toBeDefined();
+    expect(response.error?.data).toEqual({ webClipTypeId: WEBCLIP_TYPE_ID });
+  });
+
   it('7.2 relays draft.create/preview/commit (no extra namespace check needed)', async () => {
     const { client, calls } = createStubClient();
     const host = createClipHost({
@@ -149,5 +169,82 @@ describe('clip-host allowlist enforcement', () => {
     const createResponse = await host.handleRequest({ method: 'canopy.v1.draft.create', id: 1 });
     expect(createResponse.error).toBeUndefined();
     expect(calls).toContain('draftCreate');
+  });
+
+  it('3.6 (addendum) draft.apply relays plain-object properties, not a Map, to the wire client', async () => {
+    const { client, calls } = createStubClient();
+    let captured: unknown;
+    const capturingClient: IpcClient = {
+      ...client,
+      draftApply: (parameters) => {
+        captured = parameters;
+        calls.push('draftApply');
+        return Effect.succeed({ staged: 1 });
+      },
+    };
+    const host = createClipHost({
+      socketPath: '/unused',
+      rateLimiter: createRateLimiter({ maxRequests: 100, windowMs: 1000 }),
+      connect: () => Effect.succeed(capturingClient),
+    });
+
+    const response = await host.handleRequest({
+      method: 'canopy.v1.draft.apply',
+      params: {
+        draftId: 'draft_1',
+        events: [
+          {
+            type: 'NodeCreated',
+            eventId: crypto.randomUUID(),
+            id: crypto.randomUUID(),
+            nodeType: WEBCLIP_TYPE_ID,
+            properties: { title: 'a real clip' },
+            timestamp: '2026-08-11T12:00:00.000Z',
+            deviceId: crypto.randomUUID(),
+          },
+        ],
+      },
+      id: 1,
+    });
+    expect(response.error).toBeUndefined();
+    const sentProperties = (
+      captured as Readonly<{ events: readonly Readonly<{ properties: unknown }>[] }>
+    ).events[0]?.properties;
+    // Regression: parsed.data.events[].properties (zod's transformed output) is a
+    // Map, structurally still assignable to draftApply's wider (Map | Record)
+    // input type -- so this compiled fine even when it silently JSON.stringify'd
+    // to `{}` over a real socket. Asserting the *plain-object* shape here, not
+    // just success, is the point.
+    expect(sentProperties instanceof Map).toBe(false);
+    expect(sentProperties).toEqual({ title: 'a real clip' });
+  });
+
+  it('3.6 (addendum) a relayed daemon error forwards error.data (e.g. concurrent-modification revision)', async () => {
+    const { client } = createStubClient();
+    const failingClient: IpcClient = {
+      ...client,
+      draftCommit: () =>
+        Effect.fail({
+          _tag: 'IpcClientError',
+          code: -32_000,
+          message: 'Draft commit failed: parent revision has advanced',
+          details: { type: 'concurrent-modification', currentParentRevision: 'rev_2' },
+        }),
+    };
+    const host = createClipHost({
+      socketPath: '/unused',
+      rateLimiter: createRateLimiter({ maxRequests: 100, windowMs: 1000 }),
+      connect: () => Effect.succeed(failingClient),
+    });
+
+    const response = await host.handleRequest({
+      method: 'canopy.v1.draft.commit',
+      params: { draftId: 'draft_1', expectedParentRevision: 'rev_1' },
+      id: 1,
+    });
+    expect(response.error?.data).toEqual({
+      type: 'concurrent-modification',
+      currentParentRevision: 'rev_2',
+    });
   });
 });

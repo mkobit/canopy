@@ -1,0 +1,16 @@
+{
+  "name": "@canopy/extension",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && bun run scripts/copy-static.ts",
+    "test": "bun test ./src ./tests",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.287",
+    "temporal-polyfill": "^1.0.1",
+    "typescript": "6.0.3"
+  }
+}
