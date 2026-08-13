@@ -89,6 +89,8 @@ export const PropertyDefinitionSchema: z.ZodType<PropertyDefinition, unknown> = 
     max: z.number().optional(),
     choices: z.array(z.string()).optional(),
     nullable: z.boolean().nullish(),
+    cardinality: z.enum(['one', 'many']).optional(),
+    targetTypeId: TypeIdSchema.optional(),
   })
   .transform((value) => ({
     ...value,
@@ -98,6 +100,8 @@ export const PropertyDefinitionSchema: z.ZodType<PropertyDefinition, unknown> = 
     max: value.max ?? undefined,
     choices: value.choices ?? undefined,
     nullable: value.nullable ?? undefined,
+    cardinality: value.cardinality ?? undefined,
+    targetTypeId: value.targetTypeId ?? undefined,
   }));
 
 export const TemporalMetadataSchema: z.ZodType<TemporalMetadata, unknown> = z.object({

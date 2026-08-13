@@ -77,7 +77,17 @@ describe('Meta-circular bootstrap', () => {
       JSON.parse(propertyTypeDefinition?.properties.get('properties') as string).map(
         (p: { name: string }) => p.name,
       ),
-    ).toEqual(['name', 'valueKind', 'description']);
+    ).toEqual([
+      'name',
+      'valueKind',
+      'description',
+      'cardinality',
+      'choices',
+      'targetTypeId',
+      'regex',
+      'min',
+      'max',
+    ]);
 
     // Check Core Edge Types
     const childOf = graph.nodes.get(SYSTEM_IDS.EDGE_CHILD_OF);

@@ -1,4 +1,5 @@
 import type { ScalarValue } from './scalars';
+import type { TypeId } from './identifiers';
 
 /**
  * A property value is either a scalar or a flat list of scalars.
@@ -19,6 +20,8 @@ export interface PropertyDefinition {
   readonly max?: number | undefined;
   readonly choices?: readonly string[] | undefined;
   readonly nullable?: boolean | undefined;
+  readonly cardinality?: 'one' | 'many' | undefined;
+  readonly targetTypeId?: TypeId | undefined;
 }
 
 /**

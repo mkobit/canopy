@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'bun:test';
-import { validateNode } from './validation';
+import { validateNode, validatePropertyByType } from './validation';
 import { createGraph } from './create-graph';
 import { addNode } from './ops';
 import { SYSTEM_IDS } from './system';
@@ -32,7 +32,10 @@ function createNode(properties: Record<string, unknown>): Node {
   } as unknown as Node;
 }
 
-function createGraphWithCustomType(propertyDefinition: PropertyDefinition) {
+function createGraphWithCustomType(
+  propertyDefinition: PropertyDefinition,
+  extraNodes: readonly Node[] = [],
+) {
   let g = unwrap(createGraph(createGraphId(), 'Test Graph'));
 
   const typeNode = createNode({
@@ -47,6 +50,12 @@ function createGraphWithCustomType(propertyDefinition: PropertyDefinition) {
   g = unwrap(
     addNode(g, typeNode, { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') }),
   ).graph;
+
+  for (const extraNode of extraNodes) {
+    g = unwrap(
+      addNode(g, extraNode, { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') }),
+    ).graph;
+  }
 
   return g;
 }
@@ -560,6 +569,262 @@ describe('validation constraints', () => {
       const [firstError] = result.errors;
       if (firstError === undefined) throw new Error('Expected error');
       expect(firstError.message).toContain("expected type 'text' but got incompatible value");
+    });
+  });
+
+  describe('cardinality constraint', () => {
+    it('allows scalar value when cardinality is one', () => {
+      const g = createGraphWithCustomType({
+        name: 'tag',
+        valueKind: 'text',
+        required: true,
+        description: undefined,
+        cardinality: 'one',
+      });
+      const node = createNode({
+        type: asTypeId('type-test'),
+        properties: { tag: 'urgent' },
+      });
+      const result = validateNode(g, node);
+      expect(result.valid).toBe(true);
+    });
+
+    it('rejects list value when cardinality is one', () => {
+      const g = createGraphWithCustomType({
+        name: 'tag',
+        valueKind: 'text',
+        required: true,
+        description: undefined,
+        cardinality: 'one',
+      });
+      const node = createNode({
+        type: asTypeId('type-test'),
+        properties: { tag: ['urgent', 'bug'] },
+      });
+      const result = validateNode(g, node);
+      expect(result.valid).toBe(false);
+      expect(result.errors).toHaveLength(1);
+      const [firstError] = result.errors;
+      if (firstError === undefined) throw new Error('Expected error');
+      expect(firstError.message).toContain("expected cardinality 'one' but got list value");
+    });
+
+    it('allows array value when cardinality is many', () => {
+      const g = createGraphWithCustomType({
+        name: 'tags',
+        valueKind: 'text',
+        required: true,
+        description: undefined,
+        cardinality: 'many',
+      });
+      const node = createNode({
+        type: asTypeId('type-test'),
+        properties: { tags: ['urgent', 'bug'] },
+      });
+      const result = validateNode(g, node);
+      expect(result.valid).toBe(true);
+    });
+
+    it('rejects scalar value when cardinality is many', () => {
+      const g = createGraphWithCustomType({
+        name: 'tags',
+        valueKind: 'text',
+        required: true,
+        description: undefined,
+        cardinality: 'many',
+      });
+      const node = createNode({
+        type: asTypeId('type-test'),
+        properties: { tags: 'urgent' },
+      });
+      const result = validateNode(g, node);
+      expect(result.valid).toBe(false);
+      expect(result.errors).toHaveLength(1);
+      const [firstError] = result.errors;
+      if (firstError === undefined) throw new Error('Expected error');
+      expect(firstError.message).toContain("expected cardinality 'many' but got scalar value");
+    });
+  });
+
+  describe('closed-values enum choices constraint', () => {
+    it('accepts value matching allowed choices', () => {
+      const g = createGraphWithCustomType({
+        name: 'status',
+        valueKind: 'text',
+        required: true,
+        description: undefined,
+        choices: ['draft', 'published', 'archived'],
+      });
+      const node = createNode({
+        type: asTypeId('type-test'),
+        properties: { status: 'published' },
+      });
+      const result = validateNode(g, node);
+      expect(result.valid).toBe(true);
+    });
+
+    it('rejects value not in allowed choices', () => {
+      const g = createGraphWithCustomType({
+        name: 'status',
+        valueKind: 'text',
+        required: true,
+        description: undefined,
+        choices: ['draft', 'published', 'archived'],
+      });
+      const node = createNode({
+        type: asTypeId('type-test'),
+        properties: { status: 'deleted' },
+      });
+      const result = validateNode(g, node);
+      expect(result.valid).toBe(false);
+      expect(result.errors).toHaveLength(1);
+      const [firstError] = result.errors;
+      if (firstError === undefined) throw new Error('Expected error');
+      expect(firstError.message).toContain('must be one of the allowed choices');
+      expect(firstError.expected).toBe('draft, published, archived');
+    });
+
+    it('validates array elements against choices when cardinality is many', () => {
+      const g = createGraphWithCustomType({
+        name: 'labels',
+        valueKind: 'text',
+        required: true,
+        description: undefined,
+        cardinality: 'many',
+        choices: ['frontend', 'backend', 'docs'],
+      });
+      const node = createNode({
+        type: asTypeId('type-test'),
+        properties: { labels: ['frontend', 'invalid-label'] },
+      });
+      const result = validateNode(g, node);
+      expect(result.valid).toBe(false);
+      expect(result.errors).toHaveLength(1);
+      const [firstError] = result.errors;
+      if (firstError === undefined) throw new Error('Expected error');
+      expect(firstError.path).toEqual(['labels', '1']);
+      expect(firstError.message).toContain('element at index 1 must be one of the allowed choices');
+    });
+  });
+
+  describe('typed-reference targetTypeId constraint', () => {
+    it('accepts reference targeting a node of matching targetTypeId', () => {
+      const targetType = asTypeId('node:type:book');
+      const targetNode = createNode({
+        id: asNodeId('book-1'),
+        type: targetType,
+        properties: { title: 'Dune' },
+      });
+      const g = createGraphWithCustomType(
+        {
+          name: 'bookRef',
+          valueKind: 'reference',
+          required: true,
+          description: undefined,
+          targetTypeId: targetType,
+        },
+        [targetNode],
+      );
+      const node = createNode({
+        type: asTypeId('type-test'),
+        properties: { bookRef: asNodeId('book-1') },
+      });
+      const result = validateNode(g, node);
+      expect(result.valid).toBe(true);
+    });
+
+    it('rejects reference targeting a node of mismatched type', () => {
+      const targetType = asTypeId('node:type:book');
+      const wrongType = asTypeId('node:type:movie');
+      const targetNode = createNode({
+        id: asNodeId('movie-1'),
+        type: wrongType,
+        properties: { title: 'Inception' },
+      });
+      const g = createGraphWithCustomType(
+        {
+          name: 'bookRef',
+          valueKind: 'reference',
+          required: true,
+          description: undefined,
+          targetTypeId: targetType,
+        },
+        [targetNode],
+      );
+      const node = createNode({
+        type: asTypeId('type-test'),
+        properties: { bookRef: asNodeId('movie-1') },
+      });
+      const result = validateNode(g, node);
+      expect(result.valid).toBe(false);
+      expect(result.errors).toHaveLength(1);
+      const [firstError] = result.errors;
+      if (firstError === undefined) throw new Error('Expected error');
+      expect(firstError.message).toContain("has type 'node:type:movie', expected 'node:type:book'");
+    });
+
+    it('rejects reference targeting a non-existent node', () => {
+      const targetType = asTypeId('node:type:book');
+      const g = createGraphWithCustomType({
+        name: 'bookRef',
+        valueKind: 'reference',
+        required: true,
+        description: undefined,
+        targetTypeId: targetType,
+      });
+      const node = createNode({
+        type: asTypeId('type-test'),
+        properties: { bookRef: asNodeId('missing-book') },
+      });
+      const result = validateNode(g, node);
+      expect(result.valid).toBe(false);
+      expect(result.errors).toHaveLength(1);
+      const [firstError] = result.errors;
+      if (firstError === undefined) throw new Error('Expected error');
+      expect(firstError.message).toContain("target node 'missing-book' not found in graph");
+    });
+  });
+
+  describe('validatePropertyByType with constraints', () => {
+    it('extracts and enforces cardinality, choices, and targetTypeId from PropertyType node', () => {
+      const targetType = asTypeId('node:type:author');
+      const authorNode = createNode({
+        id: asNodeId('author-1'),
+        type: targetType,
+        properties: { name: 'Asimov' },
+      });
+
+      const propertyTypeNode = createNode({
+        id: asNodeId('prop-author'),
+        type: SYSTEM_IDS.PROPERTY_TYPE,
+        properties: {
+          name: 'author',
+          valueKind: 'reference',
+          cardinality: 'one',
+          targetTypeId: targetType,
+        },
+      });
+
+      let graph = unwrap(createGraph(createGraphId(), 'Test Graph'));
+      graph = unwrap(
+        addNode(graph, authorNode, {
+          deviceId: asDeviceId('00000000-0000-0000-0000-000000000000'),
+        }),
+      ).graph;
+      graph = unwrap(
+        addNode(graph, propertyTypeNode, {
+          deviceId: asDeviceId('00000000-0000-0000-0000-000000000000'),
+        }),
+      ).graph;
+
+      const validResult = validatePropertyByType(graph, propertyTypeNode.id, asNodeId('author-1'));
+      expect(validResult.valid).toBe(true);
+
+      const invalidResult = validatePropertyByType(graph, propertyTypeNode.id, [
+        asNodeId('author-1'),
+      ]);
+      expect(invalidResult.valid).toBe(false);
+      expect(invalidResult.errors[0]?.message).toContain("expected cardinality 'one'");
     });
   });
 });

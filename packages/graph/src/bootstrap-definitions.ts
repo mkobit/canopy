@@ -174,6 +174,42 @@ export const propertyTypeProperties: readonly PropertyDefinition[] = [
     required: false,
     description: 'A description of the property type.',
   },
+  {
+    name: 'cardinality',
+    valueKind: 'text',
+    required: false,
+    description: 'Property cardinality constraint (one vs many).',
+  },
+  {
+    name: 'choices',
+    valueKind: 'text',
+    required: false,
+    description: 'Allowed values restriction for enums (JSON array string).',
+  },
+  {
+    name: 'targetTypeId',
+    valueKind: 'reference',
+    required: false,
+    description: 'Target node type requirement for typed references.',
+  },
+  {
+    name: 'regex',
+    valueKind: 'text',
+    required: false,
+    description: 'Regular expression pattern constraint.',
+  },
+  {
+    name: 'min',
+    valueKind: 'number',
+    required: false,
+    description: 'Minimum numeric value or minimum string length constraint.',
+  },
+  {
+    name: 'max',
+    valueKind: 'number',
+    required: false,
+    description: 'Maximum numeric value or maximum string length constraint.',
+  },
 ];
 
 // Migration: the 4 previously-hardcoded namespace strings become real Namespace nodes.
