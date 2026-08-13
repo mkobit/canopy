@@ -1,6 +1,28 @@
 import type { ValidationError } from './validation-types';
 import type { PropertyValue } from './properties';
 
+// Recognized WASM plugin capability vocabulary. Kept in sync with
+// `KNOWN_WASM_CAPABILITIES` in `@canopy/api-adapter`; duplicated here because
+// `@canopy/graph` is the leaf kernel and cannot import adapter packages.
+const RECOGNIZED_WASM_CAPABILITIES: ReadonlySet<string> = new Set([
+  'read:nodes',
+  'read:edges',
+  'read:properties',
+  'read:traversal',
+  'read:events',
+  'write:create-node',
+  'write:update-properties',
+  'write:delete-node',
+  'write:create-edge',
+  'write:delete-edge',
+  'render:declarative',
+  'render:raw-html',
+  'wizard',
+  'read:*',
+  'write:*',
+  '*',
+]);
+
 const brotliDecompressSync = (() => {
   // eslint-disable-next-line functional/no-try-statements
   try {
@@ -187,6 +209,14 @@ export function validatePluginManifestProperty(
                 message: `Manifest property 'capabilities' element at index ${index} must be a non-empty string`,
                 expected: 'non-empty string',
                 actual: typeof cap === 'string' ? cap : typeof cap,
+              };
+            }
+            if (!RECOGNIZED_WASM_CAPABILITIES.has(cap)) {
+              return {
+                path: [propertyName, 'capabilities', String(index)],
+                message: `Manifest property 'capabilities' element at index ${index} ('${cap}') is not a recognized capability`,
+                expected: 'recognized WasmCapability string',
+                actual: cap,
               };
             }
             return null;

@@ -16,7 +16,7 @@ export const pluginLifecycle: typeof PluginLifecycleInterface = {
       name: 'Mock Wizard Plugin',
       version: '1.0.0',
       description: 'A mock plugin for testing wizard UI flows',
-      capabilities: ['wizard'],
+      capabilities: ['wizard', 'read:nodes', 'write:create-node'],
       menuItems: [
         {
           label: 'Start Mock Wizard',

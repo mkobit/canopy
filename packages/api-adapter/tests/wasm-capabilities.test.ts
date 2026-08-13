@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'bun:test';
 import {
+  KNOWN_WASM_CAPABILITIES,
   defaultCapabilityValidator,
+  intersectCapabilities,
+  isWasmCapability,
   parseTokenScopes,
   verifyCapability,
 } from '../src/wasm/capabilities';
@@ -57,6 +60,46 @@ describe('WASM Capability Security Token Validation', () => {
     it('uses custom validator when provided', () => {
       expect(verifyCapability('super-secret', 'read:nodes', customValidator).ok).toBe(true);
       expect(verifyCapability('invalid', 'read:nodes', customValidator).ok).toBe(false);
+    });
+  });
+
+  describe('isWasmCapability', () => {
+    it('recognizes every known capability string', () => {
+      for (const capability of KNOWN_WASM_CAPABILITIES) {
+        expect(isWasmCapability(capability)).toBe(true);
+      }
+    });
+
+    it('recognizes the expanded render capabilities', () => {
+      expect(isWasmCapability('render:declarative')).toBe(true);
+      expect(isWasmCapability('render:raw-html')).toBe(true);
+    });
+
+    it('rejects unknown capability strings', () => {
+      expect(isWasmCapability('invalid:capability')).toBe(false);
+      expect(isWasmCapability('')).toBe(false);
+    });
+  });
+
+  describe('intersectCapabilities', () => {
+    it('attenuates manifest capabilities against a wildcard-category grant', () => {
+      expect(intersectCapabilities(['read:nodes', 'write:create-node'], 'read:*')).toBe(
+        'read:nodes',
+      );
+    });
+
+    it('retains all manifest capabilities under a global grant', () => {
+      expect(intersectCapabilities(['read:nodes', 'write:create-node'], '*')).toBe(
+        'read:nodes write:create-node',
+      );
+    });
+
+    it('produces an empty scope when the intersection is empty', () => {
+      expect(intersectCapabilities(['write:create-node'], 'read:*')).toBe('');
+    });
+
+    it('drops unrecognized manifest capability strings', () => {
+      expect(intersectCapabilities(['read:nodes', 'invalid:capability'], '*')).toBe('read:nodes');
     });
   });
 });
