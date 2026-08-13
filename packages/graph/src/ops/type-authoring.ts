@@ -8,7 +8,7 @@ import type { ValidationError } from '../validation-types';
 import type { PropertyDefinition, PropertyValue } from '../properties';
 import type { NodeOperationOptions } from './node';
 import { createNodeId, createEdgeId, createInstant } from '../factories';
-import { ok, err as error } from '../result';
+import { ok, err as error, fromThrowable } from '../result';
 import { addNode } from './node';
 import { addEdge } from './edge';
 import { SYSTEM_IDS, SYSTEM_EDGE_TYPES } from '../system';
@@ -418,12 +418,18 @@ export type CreatePropertyTypeInput = Readonly<{
   namespace: string;
   valueKind: string;
   description?: string;
+  cardinality?: 'one' | 'many';
+  choices?: readonly string[];
+  targetTypeId?: string;
+  regex?: string;
+  min?: number;
+  max?: number;
 }>;
 
 /**
  * Creates a new PropertyType node in `input.namespace`, resolvable by `validatePropertyByType`.
  * Rejects a duplicate `name`, a restricted target namespace, or a `valueKind` outside
- * the `PropertyValueKind` union.
+ * the `PropertyValueKind` union. Accepts optional constraint options (cardinality, choices, targetTypeId, regex, min, max).
  */
 export function createPropertyType(
   graph: Graph,
@@ -443,6 +449,17 @@ export function createPropertyType(
     });
   }
 
+  if (input.regex !== undefined) {
+    const regexPattern = input.regex;
+    const rxCheck = fromThrowable(() => new RegExp(regexPattern));
+    if (!rxCheck.ok) {
+      return error({
+        path: ['regex'],
+        message: `Invalid regular expression pattern '${input.regex}'`,
+      });
+    }
+  }
+
   const hasDuplicate = getNodesOfType(graph, SYSTEM_IDS.PROPERTY_TYPE).some(
     (node) => node.properties.get('name') === input.name,
   );
@@ -455,6 +472,12 @@ export function createPropertyType(
     namespace: input.namespace,
     valueKind: valueKindResult.data,
     ...(input.description !== undefined && { description: input.description }),
+    ...(input.cardinality !== undefined && { cardinality: input.cardinality }),
+    ...(input.choices !== undefined && { choices: JSON.stringify(input.choices) }),
+    ...(input.targetTypeId !== undefined && { targetTypeId: input.targetTypeId }),
+    ...(input.regex !== undefined && { regex: input.regex }),
+    ...(input.min !== undefined && { min: input.min }),
+    ...(input.max !== undefined && { max: input.max }),
   };
 
   const node: Node = {

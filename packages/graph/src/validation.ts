@@ -196,36 +196,116 @@ function validateRegex(
   return [];
 }
 
+function parseChoices(value: PropertyValue | undefined): readonly string[] | undefined {
+  if (value === undefined) return undefined;
+  if (Array.isArray(value)) {
+    return value.map(String);
+  }
+  if (typeof value === 'string') {
+    const parsed = fromThrowable(() => JSON.parse(value));
+    if (parsed.ok && Array.isArray(parsed.value)) {
+      return parsed.value.map(String);
+    }
+  }
+  return undefined;
+}
+
 function validateChoices(
   value: PropertyValue,
   name: string,
   choices: readonly string[],
 ): readonly ValidationError[] {
-  if (typeof value === 'string' && !choices.includes(value)) {
+  const isMatch = (item: unknown): boolean => choices.includes(String(item));
+
+  if (
+    (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') &&
+    !isMatch(value)
+  ) {
     return [
       {
         path: [name] as readonly string[],
         message: `Property '${name}' must be one of the allowed choices`,
         expected: choices.join(', '),
-        actual: value,
+        actual: String(value),
       },
     ];
   }
+
   if (Array.isArray(value)) {
     return value
       .map((item, index): ValidationError | null => {
-        if (typeof item !== 'string' || !choices.includes(item)) {
+        if (!isMatch(item)) {
           return {
             path: [name, String(index)] as readonly string[],
             message: `Property '${name}' element at index ${index} must be one of the allowed choices`,
             expected: choices.join(', '),
-            actual: typeof item === 'string' ? item : String(item),
+            actual: String(item),
           };
         }
         return null;
       })
       .filter((error): error is ValidationError => error !== null);
   }
+  return [];
+}
+
+function validateTargetType(
+  value: PropertyValue,
+  name: string,
+  targetTypeId: TypeId,
+  graph: Graph | undefined,
+): readonly ValidationError[] {
+  if (graph === undefined) {
+    return [];
+  }
+
+  const checkReference = (targetIdString: string, indexPath?: string): ValidationError | null => {
+    const targetNodeId = asNodeId(targetIdString);
+    const targetNode = graph.nodes.get(targetNodeId);
+    const path = indexPath === undefined ? [name] : [name, indexPath];
+
+    if (targetNode === undefined) {
+      return {
+        path,
+        message: `Property '${name}' target node '${targetIdString}' not found in graph`,
+        expected: targetTypeId,
+        actual: 'not_found',
+      };
+    }
+
+    if (targetNode.type !== targetTypeId) {
+      return {
+        path,
+        message: `Property '${name}' target node '${targetIdString}' has type '${targetNode.type}', expected '${targetTypeId}'`,
+        expected: targetTypeId,
+        actual: targetNode.type,
+      };
+    }
+
+    return null;
+  };
+
+  if (typeof value === 'string') {
+    const error = checkReference(value);
+    return error === null ? [] : [error];
+  }
+
+  if (Array.isArray(value)) {
+    return value
+      .map((item, index): ValidationError | null => {
+        if (typeof item === 'string') {
+          return checkReference(item, String(index));
+        }
+        return {
+          path: [name, String(index)],
+          message: `Property '${name}' element at index ${index} must be a reference string`,
+          expected: 'reference',
+          actual: typeof item,
+        };
+      })
+      .filter((error): error is ValidationError => error !== null);
+  }
+
   return [];
 }
 
@@ -297,7 +377,7 @@ function validateMax(
       {
         path: [name] as readonly string[],
         message: `Property '${name}' must contain at most ${limit} items`,
-        expected: `<= ${limit}`,
+        expected: `>= ${limit}`,
         actual: String(value.length),
       },
     ];
@@ -305,54 +385,102 @@ function validateMax(
   return [];
 }
 
-function validateValue(
+function isScalarKindValid(value_: unknown, valueKind: PropertyValueKind): boolean {
+  if (valueKind === 'list') {
+    return true;
+  }
+  switch (valueKind) {
+    case 'text':
+    case 'instant':
+    case 'plain-date':
+    case 'reference': {
+      return typeof value_ === 'string';
+    }
+    case 'number': {
+      return typeof value_ === 'number';
+    }
+    case 'boolean': {
+      return typeof value_ === 'boolean';
+    }
+    case 'external-reference': {
+      return typeof value_ === 'object' && value_ !== null && 'graph' in value_;
+    }
+    default: {
+      return false;
+    }
+  }
+}
+
+function validateValueType(
   value: PropertyValue,
   definition: PropertyDefinition,
 ): readonly ValidationError[] {
-  if (value === null && definition.nullable === true) {
-    return [];
+  const expectedCardinality =
+    definition.cardinality ?? (definition.valueKind === 'list' ? 'many' : 'one');
+
+  if (expectedCardinality === 'many') {
+    if (!Array.isArray(value)) {
+      return [
+        {
+          path: [definition.name],
+          message: `Property '${definition.name}' expected cardinality 'many' but got scalar value`,
+          expected: 'list',
+          actual: typeof value,
+        },
+      ];
+    }
+  } else if (Array.isArray(value)) {
+    return [
+      {
+        path: [definition.name],
+        message: `Property '${definition.name}' expected cardinality 'one' but got list value`,
+        expected: 'scalar',
+        actual: 'list',
+      },
+    ];
   }
 
-  const isValid = (): boolean => {
-    if (definition.valueKind === 'list') {
-      return Array.isArray(value);
+  if (Array.isArray(value)) {
+    const invalidElementIndex = value.findIndex(
+      (item) => !isScalarKindValid(item, definition.valueKind),
+    );
+    if (invalidElementIndex !== -1) {
+      const item = value[invalidElementIndex];
+      return [
+        {
+          path: [definition.name, String(invalidElementIndex)],
+          message: `Property '${definition.name}' element at index ${invalidElementIndex} expected type '${definition.valueKind}' but got incompatible value`,
+          expected: definition.valueKind,
+          actual: typeof item,
+        },
+      ];
     }
-
-    if (Array.isArray(value)) {
-      return false;
-    }
-
-    switch (definition.valueKind) {
-      case 'text':
-      case 'instant':
-      case 'plain-date':
-      case 'reference': {
-        return typeof value === 'string';
-      }
-      case 'number': {
-        return typeof value === 'number';
-      }
-      case 'boolean': {
-        return typeof value === 'boolean';
-      }
-      case 'external-reference': {
-        return typeof value === 'object' && value !== null && 'graph' in value;
-      }
-      default: {
-        return false;
-      }
-    }
-  };
-
-  if (!isValid()) {
+  } else if (!isScalarKindValid(value, definition.valueKind)) {
     return [
       {
         path: [definition.name],
         message: `Property '${definition.name}' expected type '${definition.valueKind}' but got incompatible value`,
         expected: definition.valueKind,
-        actual: Array.isArray(value) ? 'list' : typeof value,
+        actual: typeof value,
       },
     ];
+  }
+
+  return [];
+}
+
+function validateValue(
+  value: PropertyValue,
+  definition: PropertyDefinition,
+  graph?: Graph,
+): readonly ValidationError[] {
+  if (value === null && definition.nullable === true) {
+    return [];
+  }
+
+  const typeErrors = validateValueType(value, definition);
+  if (typeErrors.length > 0) {
+    return typeErrors;
   }
 
   const regexErrors =
@@ -365,13 +493,18 @@ function validateValue(
     definition.min === undefined ? [] : validateMin(value, definition.name, definition.min);
   const maxErrors =
     definition.max === undefined ? [] : validateMax(value, definition.name, definition.max);
+  const targetTypeErrors =
+    definition.targetTypeId === undefined || definition.valueKind !== 'reference'
+      ? []
+      : validateTargetType(value, definition.name, definition.targetTypeId, graph);
 
-  return [...regexErrors, ...choicesErrors, ...minErrors, ...maxErrors];
+  return [...regexErrors, ...choicesErrors, ...minErrors, ...maxErrors, ...targetTypeErrors];
 }
 
 function validateProperties(
   properties: ReadonlyMap<string, PropertyValue>,
   definitions: readonly PropertyDefinition[],
+  graph?: Graph,
 ): readonly ValidationError[] {
   return pipe(
     definitions,
@@ -390,7 +523,7 @@ function validateProperties(
       }
 
       if (value !== undefined) {
-        return validateValue(value, propertyDefinition);
+        return validateValue(value, propertyDefinition, graph);
       }
       return [];
     }),
@@ -407,7 +540,7 @@ export function validateNode(graph: Graph, node: Node): ValidationResult {
   const definition = extractNodeTypeDefinition(graph, definitionNode);
 
   // 2. Validate properties
-  const errors = validateProperties(node.properties, definition.properties);
+  const errors = validateProperties(node.properties, definition.properties, graph);
 
   const wasmBinaryValue = node.properties.get('wasm_binary');
   const manifestValue = node.properties.get('manifest');
@@ -479,14 +612,40 @@ export function validatePropertyByType(
     ]);
   }
 
+  const cardinalityProperty = definitionNode.properties.get('cardinality');
+  const cardinality: 'one' | 'many' | undefined =
+    cardinalityProperty === 'one' ? 'one' : cardinalityProperty === 'many' ? 'many' : undefined;
+
+  const choicesProperty = definitionNode.properties.get('choices');
+  const choices = parseChoices(choicesProperty);
+
+  const targetTypeIdProperty = definitionNode.properties.get('targetTypeId');
+  const targetTypeId =
+    typeof targetTypeIdProperty === 'string' ? asTypeId(targetTypeIdProperty) : undefined;
+
+  const regexProperty = definitionNode.properties.get('regex');
+  const regex = typeof regexProperty === 'string' ? regexProperty : undefined;
+
+  const minProperty = definitionNode.properties.get('min');
+  const min = typeof minProperty === 'number' ? minProperty : undefined;
+
+  const maxProperty = definitionNode.properties.get('max');
+  const max = typeof maxProperty === 'number' ? maxProperty : undefined;
+
   const definition: PropertyDefinition = {
     name,
     valueKind: valueKindProperty as PropertyValueKind,
     required: true,
     description: undefined,
+    cardinality,
+    choices,
+    targetTypeId,
+    regex,
+    min,
+    max,
   };
 
-  const errors = validateValue(value, definition);
+  const errors = validateValue(value, definition, graph);
   if (errors.length > 0) {
     return failure(errors);
   }

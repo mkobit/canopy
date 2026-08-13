@@ -454,3 +454,60 @@ describe('createEdgeType', () => {
     expect(result.error.path[0]).toBe('properties');
   });
 });
+
+describe('createPropertyType', () => {
+  let graph: Graph;
+
+  beforeEach(() => {
+    graph = bootstrappedGraph();
+  });
+
+  it('creates a PropertyType with constraint properties', () => {
+    const result = createPropertyType(
+      graph,
+      {
+        name: 'priority',
+        namespace: 'user',
+        valueKind: 'text',
+        description: 'Task priority level',
+        cardinality: 'one',
+        choices: ['low', 'medium', 'high'],
+        regex: '^(low|medium|high)$',
+      },
+      OPTIONS,
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error('expected success');
+
+    const createdNode = result.value.value.nodes
+      .values()
+      .find(
+        (node) =>
+          node.type === SYSTEM_IDS.PROPERTY_TYPE && node.properties.get('name') === 'priority',
+      );
+
+    expect(createdNode).toBeDefined();
+    expect(createdNode?.properties.get('valueKind')).toBe('text');
+    expect(createdNode?.properties.get('cardinality')).toBe('one');
+    expect(createdNode?.properties.get('choices')).toBe(JSON.stringify(['low', 'medium', 'high']));
+    expect(createdNode?.properties.get('regex')).toBe('^(low|medium|high)$');
+  });
+
+  it('rejects an invalid regular expression pattern', () => {
+    const result = createPropertyType(
+      graph,
+      {
+        name: 'badRegexProp',
+        namespace: 'user',
+        valueKind: 'text',
+        regex: '[a-z',
+      },
+      OPTIONS,
+    );
+
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error('expected failure');
+    expect(result.error.path).toEqual(['regex']);
+  });
+});
