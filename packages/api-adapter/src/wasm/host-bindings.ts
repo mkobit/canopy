@@ -45,6 +45,9 @@ export type MemoryChecker = Readonly<{
 
 export type WasmHostBindingsOptions = Readonly<{
   validateCapability?: CapabilityValidator;
+  // Load-time bound capability scope. When present, host imports enforce this
+  // token instead of the guest-supplied argument, preventing token injection.
+  boundToken?: string;
   fuelMeter?: FuelMeter;
   reentrancyGuard?: ReentrancyGuard;
   memoryChecker?: MemoryChecker;
@@ -118,7 +121,14 @@ const invokeHostBinding = async <TInput, TOutput>(
       }
     }
 
-    const capResult = verifyCapability(token, requiredCapability, options.validateCapability);
+    // Prefer the load-time bound token; fall back to the caller-supplied token
+    // for backward compatibility when no bound token is configured.
+    const effectiveToken = options.boundToken ?? token;
+    const capResult = verifyCapability(
+      effectiveToken,
+      requiredCapability,
+      options.validateCapability,
+    );
     if (!capResult.ok) {
       return err(toWitError(capResult.error));
     }

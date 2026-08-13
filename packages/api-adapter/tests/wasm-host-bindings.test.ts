@@ -103,6 +103,25 @@ describe('WASM WIT Host Import Bindings', () => {
     }
   });
 
+  it('enforces the load-time bound token over the guest-supplied argument', async () => {
+    const { context } = await setupTestContext();
+    // Bound scope grants only reads; the guest supplies a broad write token.
+    const hostBindings = createWasmHostBindings(context, { boundToken: 'read:*' });
+
+    const readResult = await hostBindings.queries.queryNodes('*', JSON.stringify({}));
+    expect(readResult.ok).toBe(true);
+
+    const writeResult = await hostBindings.mutations.createNode(
+      '*',
+      JSON.stringify({ id: 'blocked', type: 'doc', properties: {} }),
+    );
+    expect(writeResult.ok).toBe(false);
+    if (!writeResult.ok) {
+      expect(writeResult.error.code).toBe('PermissionDenied');
+      expect(writeResult.error.message).toContain('write:create-node');
+    }
+  });
+
   it('returns VALIDATION_ERROR when payload is invalid JSON', async () => {
     const { context } = await setupTestContext();
     const hostBindings = createWasmHostBindings(context);

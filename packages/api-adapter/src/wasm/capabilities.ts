@@ -14,9 +14,36 @@ export type WasmCapability =
   | 'write:delete-node'
   | 'write:create-edge'
   | 'write:delete-edge'
+  | 'render:declarative'
+  | 'render:raw-html'
+  | 'wizard'
   | 'read:*'
   | 'write:*'
   | '*';
+
+// Allowlist of every recognized capability string, source of truth for the type above.
+export const KNOWN_WASM_CAPABILITIES = [
+  'read:nodes',
+  'read:edges',
+  'read:properties',
+  'read:traversal',
+  'read:events',
+  'write:create-node',
+  'write:update-properties',
+  'write:delete-node',
+  'write:create-edge',
+  'write:delete-edge',
+  'render:declarative',
+  'render:raw-html',
+  'wizard',
+  'read:*',
+  'write:*',
+  '*',
+] as const satisfies readonly WasmCapability[];
+
+// Narrows an arbitrary string to a recognized WasmCapability.
+export const isWasmCapability = (value: string): value is WasmCapability =>
+  (KNOWN_WASM_CAPABILITIES as readonly string[]).includes(value);
 
 export type CapabilityValidator = (token: string, requiredCapability: WasmCapability) => boolean;
 
@@ -66,3 +93,17 @@ export const verifyCapability = (
   }
   return ok(undefined);
 };
+
+// Computes the effective capability scope by intersecting manifest declarations
+// with the session-granted scope token. Returns a space-delimited scope string
+// (empty when the intersection is empty) suitable for binding into host imports.
+export const intersectCapabilities = (
+  manifestCapabilities: readonly string[],
+  grantedCapabilities: string,
+): string =>
+  manifestCapabilities
+    .filter(
+      (capability): capability is WasmCapability =>
+        isWasmCapability(capability) && defaultCapabilityValidator(grantedCapabilities, capability),
+    )
+    .join(' ');

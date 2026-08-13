@@ -87,7 +87,7 @@ describe('plugin manifest property validation', () => {
     const manifestJson = JSON.stringify({
       name: 'test-plugin',
       version: '1.0.0',
-      capabilities: ['wizard'],
+      capabilities: ['read:nodes'],
     });
     const errors = validatePluginManifestProperty(manifestJson, 'manifest');
     expect(errors).toHaveLength(0);
@@ -98,7 +98,7 @@ describe('plugin manifest property validation', () => {
       name: 'full-plugin',
       version: '2.1.0',
       description: 'A test plugin description',
-      capabilities: ['wizard', 'settings'],
+      capabilities: ['read:nodes', 'write:create-node'],
       menuItems: [{ label: 'Run Wizard', command: 'test.run', shortcut: 'Ctrl+Shift+W' }],
       commands: [{ id: 'test.run', title: 'Run Test Plugin Wizard', category: 'Testing' }],
     });
@@ -127,7 +127,7 @@ describe('plugin manifest property validation', () => {
   it('rejects missing or empty name', () => {
     const manifestJson = JSON.stringify({
       version: '1.0.0',
-      capabilities: ['wizard'],
+      capabilities: ['read:nodes'],
     });
     const errors = validatePluginManifestProperty(manifestJson, 'manifest');
     expect(errors).toHaveLength(1);
@@ -137,7 +137,7 @@ describe('plugin manifest property validation', () => {
   it('rejects missing or empty version', () => {
     const manifestJson = JSON.stringify({
       name: 'my-plugin',
-      capabilities: ['wizard'],
+      capabilities: ['read:nodes'],
     });
     const errors = validatePluginManifestProperty(manifestJson, 'manifest');
     expect(errors).toHaveLength(1);
@@ -159,7 +159,7 @@ describe('plugin manifest property validation', () => {
     const manifestJson = JSON.stringify({
       name: 'my-plugin',
       version: '1.0.0',
-      capabilities: ['wizard', '', 123],
+      capabilities: ['read:nodes', '', 123],
     });
     const errors = validatePluginManifestProperty(manifestJson, 'manifest');
     expect(errors).toHaveLength(2);
@@ -167,11 +167,34 @@ describe('plugin manifest property validation', () => {
     expect(errors[1]?.message).toContain('element at index 2 must be a non-empty string');
   });
 
+  it('accepts recognized render capability strings', () => {
+    const manifestJson = JSON.stringify({
+      name: 'my-plugin',
+      version: '1.0.0',
+      capabilities: ['render:declarative', 'render:raw-html', 'read:*', '*'],
+    });
+    const errors = validatePluginManifestProperty(manifestJson, 'manifest');
+    expect(errors).toHaveLength(0);
+  });
+
+  it('rejects an unrecognized capability string', () => {
+    const manifestJson = JSON.stringify({
+      name: 'my-plugin',
+      version: '1.0.0',
+      capabilities: ['read:nodes', 'invalid:capability'],
+    });
+    const errors = validatePluginManifestProperty(manifestJson, 'manifest');
+    expect(errors).toHaveLength(1);
+    expect(errors[0]?.message).toContain('is not a recognized capability');
+    expect(errors[0]?.actual).toBe('invalid:capability');
+    expect(errors[0]?.path).toEqual(['manifest', 'capabilities', '1']);
+  });
+
   it('rejects invalid menuItems structure', () => {
     const manifestJson = JSON.stringify({
       name: 'my-plugin',
       version: '1.0.0',
-      capabilities: ['wizard'],
+      capabilities: ['read:nodes'],
       menuItems: 'not-an-array',
     });
     const errors = validatePluginManifestProperty(manifestJson, 'manifest');
@@ -183,7 +206,7 @@ describe('plugin manifest property validation', () => {
     const manifestJson = JSON.stringify({
       name: 'my-plugin',
       version: '1.0.0',
-      capabilities: ['wizard'],
+      capabilities: ['read:nodes'],
       menuItems: [{ command: 'test.cmd' }, { label: 'Item 2', shortcut: 'Ctrl+K' }],
     });
     const errors = validatePluginManifestProperty(manifestJson, 'manifest');
@@ -196,7 +219,7 @@ describe('plugin manifest property validation', () => {
     const manifestJson = JSON.stringify({
       name: 'my-plugin',
       version: '1.0.0',
-      capabilities: ['wizard'],
+      capabilities: ['read:nodes'],
       commands: 'not-an-array',
     });
     const errors = validatePluginManifestProperty(manifestJson, 'manifest');
@@ -208,7 +231,7 @@ describe('plugin manifest property validation', () => {
     const manifestJson = JSON.stringify({
       name: 'my-plugin',
       version: '1.0.0',
-      capabilities: ['wizard'],
+      capabilities: ['read:nodes'],
       commands: [{ title: 'Command 1' }, { id: 'cmd2', category: 'Testing' }],
     });
     const errors = validatePluginManifestProperty(manifestJson, 'manifest');
@@ -229,7 +252,7 @@ describe('node validation integration for Plugin nodes', () => {
         manifest: JSON.stringify({
           name: 'my-plugin',
           version: '1.0.0',
-          capabilities: ['wizard'],
+          capabilities: ['read:nodes'],
         }),
         version: '1.0.0',
       },
