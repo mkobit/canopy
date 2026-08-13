@@ -41,6 +41,17 @@
   "permissions": {
     "allow": [
       "Bash(mise exec:*)",
+      "Bash(mise run check-unused)",
+      "Bash(mise run test)",
+      "Bash(mise run build)",
+      "Bash(mise run lint)",
+      "Bash(mise run typecheck)",
+      "Bash(mise run check)",
+      "Bash(mise run bd-push)",
+      "Bash(mise run bd-sync)",
+      "Bash(mise run bd-check)",
+      "Bash(mise run spec-list)",
+      "Bash(mise run spec-validate)",
       "Bash(bun run build)",
       "Bash(bun run lint)",
       "Bash(bun run typecheck)",
