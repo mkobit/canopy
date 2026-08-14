@@ -4,7 +4,9 @@ import type { PropertyValue } from './properties';
 // Recognized WASM plugin capability vocabulary. Kept in sync with
 // `KNOWN_WASM_CAPABILITIES` in `@canopy/api-adapter`; duplicated here because
 // `@canopy/graph` is the leaf kernel and cannot import adapter packages.
-const RECOGNIZED_WASM_CAPABILITIES: ReadonlySet<string> = new Set([
+// Exported so a cross-package guard test can assert the two lists stay
+// identical until `canopy-3xr` derives them from a single source.
+export const RECOGNIZED_WASM_CAPABILITIES: ReadonlySet<string> = new Set([
   'read:nodes',
   'read:edges',
   'read:properties',
