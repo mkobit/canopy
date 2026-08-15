@@ -16,6 +16,7 @@ export type WasmCapability =
   | 'write:delete-edge'
   | 'render:declarative'
   | 'render:raw-html'
+  | 'render:interactive'
   | 'wizard'
   | 'read:*'
   | 'write:*'
@@ -35,6 +36,7 @@ export const KNOWN_WASM_CAPABILITIES = [
   'write:delete-edge',
   'render:declarative',
   'render:raw-html',
+  'render:interactive',
   'wizard',
   'read:*',
   'write:*',
@@ -53,6 +55,28 @@ export const parseTokenScopes = (token: string): readonly string[] =>
     .split(/[\s,]+/)
     .map((scope) => scope.trim())
     .filter((scope) => scope.length > 0);
+
+// Tests whether a granted scope token conveys a capability by an EXPLICIT,
+// non-wildcard grant — the literal capability string is present as a scope. A
+// `render:*` or `*` grant does NOT satisfy this (unlike `defaultCapabilityValidator`,
+// which expands wildcards). This is the gate for privilege that must never be
+// conveyed by a broad wildcard, e.g. Tier-2 interactive rendering (design
+// decision 2 / adversarial finding 5): adding a new vocabulary value must not
+// retroactively hand it to existing wildcard-grant holders.
+export const grantsCapabilityExplicitly = (
+  grantToken: string,
+  requiredCapability: WasmCapability,
+): boolean => parseTokenScopes(grantToken).includes(requiredCapability);
+
+export type RenderTier = 'tier1' | 'tier2';
+
+// Resolves the render tier from a plugin's EFFECTIVE GRANTED scope. Tier-2
+// (opaque-origin sandboxed iframe, scripts preserved) requires an explicit
+// non-wildcard `render:interactive` grant; everything else is Tier-1
+// (sanitized-inline). If both `render:raw-html` and `render:interactive` are
+// granted, the presence of `render:interactive` forces Tier-2 (finding 14).
+export const resolveRenderTier = (grantToken: string): RenderTier =>
+  grantsCapabilityExplicitly(grantToken, 'render:interactive') ? 'tier2' : 'tier1';
 
 // Validates whether token matches required capability or wildcard.
 export const defaultCapabilityValidator: CapabilityValidator = (

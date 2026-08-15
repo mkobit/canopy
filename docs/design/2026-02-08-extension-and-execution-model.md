@@ -64,6 +64,15 @@ The host imports standard interfaces that extensions can consume:
 
 Extensions export specific interface functions based on their type, such as `render(node)` or `execute(trigger)`.
 
+#### Security resolution for `canopy:ui/render` (canopy-7dj)
+
+The `canopy:ui/render` contract stays a **raw-HTML string**; it is deliberately not restructured into a declarative render AST.
+The security answer is _isolation, not constraint_.
+Static output (`render:raw-html`) is sanitized (DOMPurify) and mounted in a closed shadow DOM (Tier-1); untrusted interactive output (`render:interactive`) is loaded as the `srcdoc` of an opaque-origin sandboxed iframe and never reaches the host realm (Tier-2).
+Tier selection is gated by an explicit, non-wildcard `render:interactive` grant, and untrusted render computation runs in a terminable Web Worker.
+See the `tier2-sandboxed-render-engine` change (canopy-ay6) and [docs/research/2026-08-14-safe-rendering-untrusted-plugin-output.md](../research/2026-08-14-safe-rendering-untrusted-plugin-output.md) for the full model.
+A separate, still-unimplemented `render:declarative` capability remains the path for host-catalog constrained rendering.
+
 ### Inter-plugin communication
 
 Plugins communicate using two primary patterns depending on whether the call is synchronous or asynchronous.

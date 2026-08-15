@@ -47,6 +47,17 @@ export type MemoryChecker = Readonly<{
   checkBytes: (bytes: number) => Result<void, ApiAdapterError>;
 }>;
 
+// Marshals a single host import to a remote graph (the main-thread graph, when
+// the guest runs in a worker). Receives the required capability (which uniquely
+// identifies the operation), the effective bound token, and the raw payload;
+// returns the same already-serialized `Result` an executor would. The remote
+// side re-enforces the capability against its real graph (design decision 3a).
+export type RemoteHostDispatch = (
+  requiredCapability: WasmCapability,
+  effectiveToken: string,
+  payloadJson: string,
+) => Promise<Result<string, WitErrorPayload>>;
+
 export type WasmHostBindingsOptions = Readonly<{
   validateCapability?: CapabilityValidator;
   // Load-time bound capability scope. When present, host imports enforce this
@@ -56,6 +67,9 @@ export type WasmHostBindingsOptions = Readonly<{
   reentrancyGuard?: ReentrancyGuard;
   memoryChecker?: MemoryChecker;
   defaultFuelPerImport?: bigint;
+  // When present, host imports are marshaled here instead of run against the
+  // local graph, keeping the fuel/reentrancy/memory/capability guards in place.
+  remoteDispatch?: RemoteHostDispatch;
 }>;
 
 export type WasmHostQueryBindings = Readonly<{
@@ -135,6 +149,13 @@ const invokeHostBinding = async <TInput, TOutput>(
     );
     if (!capResult.ok) {
       return err(toWitError(capResult.error));
+    }
+
+    // Worker-isolated path: marshal to the main-thread graph after the in-worker
+    // guards have passed. The remote side re-checks the capability against its
+    // real graph before mutating (design decision 3a).
+    if (options.remoteDispatch) {
+      return options.remoteDispatch(requiredCapability, effectiveToken, payloadJson);
     }
 
     // eslint-disable-next-line functional/no-let -- parse input payload
