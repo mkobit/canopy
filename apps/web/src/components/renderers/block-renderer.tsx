@@ -13,6 +13,8 @@ import { TextBlockRenderer } from './text-block-renderer';
 import { CodeBlockRenderer } from './code-block-renderer';
 import { RENDERER_REGISTRY } from './registry';
 import { WasmRenderedBlock } from './wasm-rendered-block';
+import { Tier2RenderedBlock } from './tier2-rendered-block';
+import { resolveWasmRenderDispatch } from './render-tier';
 
 export interface BlockRendererProperties {
   readonly node: Node;
@@ -24,6 +26,7 @@ export interface BlockRendererProperties {
 type ResolvedRenderer =
   | Readonly<{ kind: 'system'; content: React.ReactNode }>
   | Readonly<{ kind: 'wasm'; pluginNode: Node }>
+  | Readonly<{ kind: 'tier2'; pluginNode: Node; guestId: string; token: string }>
   | null;
 
 function isSystemRendererEntryPoint(value: string): value is SystemRendererEntryPoint {
@@ -77,12 +80,19 @@ function resolveRenderer(node: Node, graph: Graph): ResolvedRenderer {
   }
 
   // WASM renderer: `entryPoint` is the plugin node id. Resolution failure
-  // (missing plugin node) degrades to the native fallback.
+  // (missing plugin node) degrades to the native fallback. The render tier is
+  // resolved from the plugin's effective granted scope: an explicit
+  // `render:interactive` grant routes to the Tier-2 sandboxed-iframe engine,
+  // everything else to the Tier-1 sanitized-inline path (decision 2).
   if (rendererNode.properties.get('rendererKind') === 'wasm') {
     const pluginNode = graph.nodes.get(asNodeId(entryPoint));
     if (!pluginNode) {
       console.warn(`WASM renderer plugin node not found: ${entryPoint}`);
       return null;
+    }
+    const dispatch = resolveWasmRenderDispatch(pluginNode);
+    if (dispatch.tier === 'tier2') {
+      return { kind: 'tier2', pluginNode, guestId: dispatch.guestId, token: dispatch.token };
     }
     return { kind: 'wasm', pluginNode };
   }
@@ -155,6 +165,15 @@ export const BlockRenderer: React.FC<BlockRendererProperties> = ({
         node={node}
         graph={graph}
         pluginNode={resolved.pluginNode}
+        fallback={renderNativeFallback(node)}
+      />
+    ) : resolved.kind === 'tier2' ? (
+      <Tier2RenderedBlock
+        node={node}
+        graph={graph}
+        pluginNode={resolved.pluginNode}
+        guestId={resolved.guestId}
+        token={resolved.token}
         fallback={renderNativeFallback(node)}
       />
     ) : (

@@ -5,7 +5,13 @@ import type { ApiAdapterContext } from '../api-context';
 import type { ApiAdapterError } from '../result-errors';
 import { createApiAdapterError } from '../result-errors';
 import type { CapabilityValidator } from './capabilities';
-import type { FuelMeter, MemoryChecker, ReentrancyGuard, WasmHostBindings } from './host-bindings';
+import type {
+  FuelMeter,
+  MemoryChecker,
+  ReentrancyGuard,
+  RemoteHostDispatch,
+  WasmHostBindings,
+} from './host-bindings';
 import { createWasmHostBindings } from './host-bindings';
 
 // UTF-8 byte length via TextEncoder so the executor runs in both Node and the
@@ -28,6 +34,12 @@ export type SandboxedExecutionOptions = Readonly<{
   maxMemoryBytes?: number;
   timeoutMs?: number;
   validateCapability?: CapabilityValidator;
+  // Marshals a guest host-import to a remote graph instead of the local one,
+  // preserving the executor's in-worker fuel/reentrancy/memory/capability guards.
+  // The worker-isolated path (terminable-execution) supplies this so host imports
+  // round-trip to the main-thread graph, where the bound-token check is
+  // re-enforced against the real graph (design decision 3a).
+  remoteDispatch?: RemoteHostDispatch;
 }>;
 
 // Creates a stateful fuel meter to bound host and guest operations.
@@ -109,6 +121,9 @@ export const executeSandboxedGuestPlugin = async (
   const fuelMeter = createFuelMeter(fuelLimit);
   const reentrancyGuard = createReentrancyGuard();
 
+  // The worker-isolated path supplies `remoteDispatch` so host imports round-trip
+  // to the main-thread graph while the executor's in-worker fuel/reentrancy/memory
+  // guards still wrap each call; absent it, imports run against the local graph.
   const hostBindings = createWasmHostBindings(context, {
     fuelMeter,
     reentrancyGuard,
@@ -116,6 +131,7 @@ export const executeSandboxedGuestPlugin = async (
     ...(options.validateCapability !== undefined && {
       validateCapability: options.validateCapability,
     }),
+    ...(options.remoteDispatch !== undefined && { remoteDispatch: options.remoteDispatch }),
   });
 
   const timeoutPromise = new Promise<Result<string, ApiAdapterError>>((resolve) => {

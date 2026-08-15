@@ -257,6 +257,8 @@ export default tseslint.config(
             '^Meta$', // Storybook Meta type (@storybook/react)
             '^StoryObj$', // Storybook StoryObj type (@storybook/react)
             '^DOMPurify', // DOMPurify instance type (mutable internals; dompurify)
+            '^Worker', // Web Worker instance / Worker[] pool (mutable DOM class)
+            '^MessageEvent', // Web Worker/postMessage event (mutable DOM class)
           ],
         },
       ],
@@ -459,6 +461,16 @@ export default tseslint.config(
     files: ['**/*.ts', '**/*.tsx'],
     rules: {
       '@typescript-eslint/consistent-generic-constructors': 'off',
+    },
+  },
+  // Playwright e2e specs run browser-context DOM glue inside `page.evaluate`
+  // (createElement/appendChild/setAttribute, collecting results into arrays):
+  // direct element mutation is the point, mirroring the popup.ts exception.
+  {
+    files: ['apps/web/e2e/**/*.ts'],
+    rules: {
+      'functional/immutable-data': 'off',
+      'functional/prefer-immutable-types': 'off',
     },
   },
   // Exceptions for mutable state in adapters/stores (since they encapsulate it behind pure interfaces).

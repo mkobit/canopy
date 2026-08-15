@@ -63,6 +63,59 @@ const measure = (root: Root, markdown: string, iterations: number): readonly num
   return timings.toSorted((a, b) => a - b);
 };
 
+// Measures the Tier-2 worker transport: one-time worker spin-up (construction +
+// first round-trip) and steady-state per-render round-trips through the fixture
+// interactive guest. This is the added cost an untrusted interactive renderer
+// pays over a main-thread call (design adversarial review: measured, not assumed).
+const benchWorker = async (): Promise<void> => {
+  const workerUrl = new URL('./bench-render-worker.ts', import.meta.url);
+  const worker = new Worker(workerUrl.href);
+
+  // eslint-disable-next-line functional/no-let -- monotonic message-id source
+  let nextId = 0;
+  const pending = new Map<number, () => void>();
+  worker.addEventListener('message', (event: MessageEvent<{ id: number }>) => {
+    const resolve = pending.get(event.data.id);
+    if (resolve !== undefined) {
+      pending.delete(event.data.id);
+      resolve();
+    }
+  });
+
+  const roundTrip = (inputJson: string): Promise<void> => {
+    const id = (nextId += 1);
+    return new Promise<void>((resolve) => {
+      pending.set(id, resolve);
+      worker.postMessage({ id, inputJson });
+    });
+  };
+
+  const input = JSON.stringify({ label: 'bench' });
+
+  const spinUpStart = performance.now();
+  await roundTrip(input);
+  const spinUpMs = performance.now() - spinUpStart;
+
+  const iterations = 500;
+  const timings: number[] = [];
+  for (let index = 0; index < iterations; index += 1) {
+    const start = performance.now();
+    await roundTrip(input);
+    timings.push(performance.now() - start);
+  }
+  const sorted = timings.toSorted((a, b) => a - b);
+  const median = percentile(sorted, 50);
+  const p95 = percentile(sorted, 95);
+  const mean = sorted.reduce((sum, value) => sum + value, 0) / sorted.length;
+
+  console.log(`\nTier-2 render-worker transport`);
+  console.log(`worker spin-up (construct + first round-trip): ${spinUpMs.toFixed(1)} ms`);
+  console.log(
+    `steady-state round-trip  median ${median.toFixed(3)} ms  p95 ${p95.toFixed(3)} ms  mean ${mean.toFixed(3)} ms`,
+  );
+  worker.terminate();
+};
+
 const main = async (): Promise<void> => {
   const imports = {
     // Disable network so the shim does not spin up its socket worker (which
@@ -95,6 +148,8 @@ const main = async (): Promise<void> => {
     );
   }
   console.log('');
+
+  await benchWorker();
 };
 
 void main();

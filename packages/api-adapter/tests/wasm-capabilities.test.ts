@@ -2,9 +2,11 @@ import { describe, expect, it } from 'bun:test';
 import {
   KNOWN_WASM_CAPABILITIES,
   defaultCapabilityValidator,
+  grantsCapabilityExplicitly,
   intersectCapabilities,
   isWasmCapability,
   parseTokenScopes,
+  resolveRenderTier,
   verifyCapability,
 } from '../src/wasm/capabilities';
 
@@ -73,6 +75,7 @@ describe('WASM Capability Security Token Validation', () => {
     it('recognizes the expanded render capabilities', () => {
       expect(isWasmCapability('render:declarative')).toBe(true);
       expect(isWasmCapability('render:raw-html')).toBe(true);
+      expect(isWasmCapability('render:interactive')).toBe(true);
     });
 
     it('rejects unknown capability strings', () => {
@@ -100,6 +103,53 @@ describe('WASM Capability Security Token Validation', () => {
 
     it('drops unrecognized manifest capability strings', () => {
       expect(intersectCapabilities(['read:nodes', 'invalid:capability'], '*')).toBe('read:nodes');
+    });
+  });
+
+  // Tier-2 interactive rendering is a privilege that a broad wildcard grant must
+  // NOT silently convey (design decision 2 / adversarial finding 5). Unlike
+  // `defaultCapabilityValidator`, the explicit-grant gate never expands wildcards.
+  describe('grantsCapabilityExplicitly (wildcard non-conveyance)', () => {
+    it('accepts a literal, non-wildcard grant of the capability', () => {
+      expect(grantsCapabilityExplicitly('render:interactive', 'render:interactive')).toBe(true);
+      expect(
+        grantsCapabilityExplicitly('render:raw-html render:interactive', 'render:interactive'),
+      ).toBe(true);
+    });
+
+    it('rejects a category wildcard grant', () => {
+      expect(grantsCapabilityExplicitly('render:*', 'render:interactive')).toBe(false);
+    });
+
+    it('rejects a global wildcard grant', () => {
+      expect(grantsCapabilityExplicitly('*', 'render:interactive')).toBe(false);
+    });
+
+    it('rejects an empty or unrelated grant', () => {
+      expect(grantsCapabilityExplicitly('', 'render:interactive')).toBe(false);
+      expect(grantsCapabilityExplicitly('render:raw-html', 'render:interactive')).toBe(false);
+    });
+  });
+
+  describe('resolveRenderTier', () => {
+    it('routes an explicit render:interactive grant to Tier-2', () => {
+      expect(resolveRenderTier('render:interactive')).toBe('tier2');
+    });
+
+    it('forces Tier-2 when both raw-html and interactive are granted', () => {
+      expect(resolveRenderTier('render:raw-html render:interactive')).toBe('tier2');
+    });
+
+    it('does NOT route a render:* wildcard grant to Tier-2', () => {
+      expect(resolveRenderTier('render:*')).toBe('tier1');
+    });
+
+    it('does NOT route a global * grant to Tier-2', () => {
+      expect(resolveRenderTier('*')).toBe('tier1');
+    });
+
+    it('keeps a raw-html-only grant on Tier-1', () => {
+      expect(resolveRenderTier('render:raw-html')).toBe('tier1');
     });
   });
 });
