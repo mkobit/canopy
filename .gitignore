@@ -22,6 +22,10 @@ apps/web/src/plugin/mock/guest.js
 apps/web/src/plugin/mock/plugin.wasm
 apps/web/src/plugin/mock/transpiled/
 apps/web/src/plugin/mock/plugin-node.json
+apps/web/src/plugin/markdown/guest.js
+apps/web/src/plugin/markdown/plugin.wasm
+apps/web/src/plugin/markdown/transpiled/
+apps/web/src/plugin/markdown/plugin-node.json
 apps/web/src/plugin/types/
 
 # Stray test output files

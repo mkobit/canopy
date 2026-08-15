@@ -2,7 +2,12 @@ package canopy:graph;
 
 world wizard-plugin {
   import draft-session;
-  
+
   export plugin-lifecycle;
   export wizard-execution;
+}
+
+world render-plugin {
+  export plugin-lifecycle;
+  export content-rendering;
 }

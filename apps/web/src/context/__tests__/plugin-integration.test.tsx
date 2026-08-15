@@ -79,13 +79,18 @@ describe('plugin wizard integration', () => {
 
     expect(pluginNodeId).toBeDefined();
 
-    // 4. Wait for PluginProvider to scan the graph and register the plugin
+    // 4. Wait for PluginProvider to scan the graph and register the plugin.
+    // Bootstrap now also seeds the first-party Markdown renderer plugin, so both
+    // it and the mock wizard are loaded; the wizard is looked up by name.
     await waitFor(() => {
-      expect(result.current.pluginCtx.loadedPlugins.length).toBe(1);
+      expect(result.current.pluginCtx.loadedPlugins.length).toBe(2);
     });
 
-    const loaded = result.current.pluginCtx.loadedPlugins[0];
+    const loaded = result.current.pluginCtx.loadedPlugins.find(
+      (plugin) => plugin.name === 'Mock Wizard Plugin',
+    );
     expect(loaded?.name).toBe('Mock Wizard Plugin');
+    // The Markdown plugin contributes no menu items or commands.
     expect(result.current.pluginCtx.menuItems.length).toBe(1);
     expect(result.current.pluginCtx.commands.length).toBe(1);
 

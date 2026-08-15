@@ -1,11 +1,18 @@
 import React, { useMemo } from 'react';
 import type { Graph, Node, NodeId, SystemRendererEntryPoint } from '@canopy/graph';
-import { SYSTEM_IDS, SYSTEM_EDGE_TYPES, getEdgesFrom, resolveNamespace } from '@canopy/graph';
+import {
+  SYSTEM_IDS,
+  SYSTEM_EDGE_TYPES,
+  getEdgesFrom,
+  resolveNamespace,
+  asNodeId,
+} from '@canopy/graph';
 import { resolveViewDefinition } from '@canopy/settings';
 import { MarkdownRenderer } from './markdown-renderer';
 import { TextBlockRenderer } from './text-block-renderer';
 import { CodeBlockRenderer } from './code-block-renderer';
 import { RENDERER_REGISTRY } from './registry';
+import { WasmRenderedBlock } from './wasm-rendered-block';
 
 export interface BlockRendererProperties {
   readonly node: Node;
@@ -14,11 +21,35 @@ export interface BlockRendererProperties {
   readonly visited?: ReadonlySet<NodeId>;
 }
 
+type ResolvedRenderer =
+  | Readonly<{ kind: 'system'; content: React.ReactNode }>
+  | Readonly<{ kind: 'wasm'; pluginNode: Node }>
+  | null;
+
 function isSystemRendererEntryPoint(value: string): value is SystemRendererEntryPoint {
   return (['system:text', 'system:code', 'system:markdown'] as readonly string[]).includes(value);
 }
 
-function resolveDynamicContent(node: Node, graph: Graph): React.ReactNode | null {
+// Native, type-based renderer used both when dynamic resolution fails and as the
+// pending/failure fallback for a WASM renderer.
+function renderNativeFallback(node: Node): React.ReactNode {
+  switch (node.type) {
+    case SYSTEM_IDS.TYPE_TEXT_BLOCK: {
+      return <TextBlockRenderer node={node} />;
+    }
+    case SYSTEM_IDS.TYPE_CODE_BLOCK: {
+      return <CodeBlockRenderer node={node} />;
+    }
+    case SYSTEM_IDS.TYPE_MARKDOWN: {
+      return <MarkdownRenderer node={node} />;
+    }
+    default: {
+      return <div className="text-gray-400 italic">Unknown block type: {node.type}</div>;
+    }
+  }
+}
+
+function resolveRenderer(node: Node, graph: Graph): ResolvedRenderer {
   const namespace = resolveNamespace(graph, node);
   const viewResult = resolveViewDefinition(graph, node.id, node.type, namespace);
   if (!viewResult.ok) {
@@ -41,18 +72,36 @@ function resolveDynamicContent(node: Node, graph: Graph): React.ReactNode | null
     return null;
   }
   const entryPoint = rendererNode.properties.get('entryPoint');
-  if (typeof entryPoint !== 'string' || !isSystemRendererEntryPoint(entryPoint)) {
+  if (typeof entryPoint !== 'string') {
+    return null;
+  }
+
+  // WASM renderer: `entryPoint` is the plugin node id. Resolution failure
+  // (missing plugin node) degrades to the native fallback.
+  if (rendererNode.properties.get('rendererKind') === 'wasm') {
+    const pluginNode = graph.nodes.get(asNodeId(entryPoint));
+    if (!pluginNode) {
+      console.warn(`WASM renderer plugin node not found: ${entryPoint}`);
+      return null;
+    }
+    return { kind: 'wasm', pluginNode };
+  }
+
+  if (!isSystemRendererEntryPoint(entryPoint)) {
     return null;
   }
   const rendererComponent = RENDERER_REGISTRY.get(entryPoint);
   if (!rendererComponent) {
     return null;
   }
-  return React.createElement(rendererComponent, {
-    node,
-    graph,
-    config: viewDefinitionNode.properties,
-  });
+  return {
+    kind: 'system',
+    content: React.createElement(rendererComponent, {
+      node,
+      graph,
+      config: viewDefinitionNode.properties,
+    }),
+  };
 }
 
 export const BlockRenderer: React.FC<BlockRendererProperties> = ({
@@ -93,27 +142,24 @@ export const BlockRenderer: React.FC<BlockRendererProperties> = ({
     );
   }
 
-  // Determine specific renderer
-  const dynamicContent = resolveDynamicContent(node, graph);
+  // Determine specific renderer. WASM renderers execute a plugin asynchronously
+  // and render the native fallback while pending or on failure; the existing
+  // `visited`-set cycle protection above still guards child recursion, and the
+  // WASM output is a leaf that never delegates child rendering back into a plugin.
+  const resolved = resolveRenderer(node, graph);
   const content =
-    dynamicContent === null
-      ? (() => {
-          switch (node.type) {
-            case SYSTEM_IDS.TYPE_TEXT_BLOCK: {
-              return <TextBlockRenderer node={node} />;
-            }
-            case SYSTEM_IDS.TYPE_CODE_BLOCK: {
-              return <CodeBlockRenderer node={node} />;
-            }
-            case SYSTEM_IDS.TYPE_MARKDOWN: {
-              return <MarkdownRenderer node={node} />;
-            }
-            default: {
-              return <div className="text-gray-400 italic">Unknown block type: {node.type}</div>;
-            }
-          }
-        })()
-      : dynamicContent;
+    resolved === null ? (
+      renderNativeFallback(node)
+    ) : resolved.kind === 'wasm' ? (
+      <WasmRenderedBlock
+        node={node}
+        graph={graph}
+        pluginNode={resolved.pluginNode}
+        fallback={renderNativeFallback(node)}
+      />
+    ) : (
+      resolved.content
+    );
 
   const hasChildren = children.length > 0;
 

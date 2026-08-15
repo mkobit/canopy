@@ -5,6 +5,12 @@
       "entrypoint": "src/plugin/mock/guest.ts",
       "world": "wizard-plugin",
       "outDir": "src/plugin/mock"
+    },
+    {
+      "name": "Canopy Markdown Renderer",
+      "entrypoint": "src/plugin/markdown/guest.ts",
+      "world": "render-plugin",
+      "outDir": "src/plugin/markdown"
     }
   ]
 }

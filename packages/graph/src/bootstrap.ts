@@ -25,6 +25,7 @@ import {
   systemViews,
   systemSettings,
   systemRenderers,
+  systemPlugins,
   defaultViews,
   rendererProperties,
   queryDefinitionProperties,
@@ -403,6 +404,28 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
                     entryPoint: text(definition.entryPoint),
                     permissions: definition.permissions,
                     namespace: text(definition.namespace),
+                  },
+                ),
+              ),
+        g,
+      ),
+    (g) =>
+      reduceResult(
+        systemPlugins,
+        (cg, definition) =>
+          cg.nodes.has(definition.id)
+            ? ok(cg)
+            : addNodeGraph(
+                cg,
+                createBootstrapNode(
+                  definition.id,
+                  SYSTEM_IDS.TYPE_PLUGIN,
+                  'Canopy Markdown Renderer',
+                  'First-party Tier-1 Markdown content renderer',
+                  {
+                    wasm_binary: text(definition.wasmBinary),
+                    manifest: text(definition.manifest),
+                    version: text(definition.version),
                   },
                 ),
               ),

@@ -556,6 +556,10 @@ export const systemSettings = [
   },
 ] as const;
 
+// The bundled first-party Markdown renderer's Plugin node id (slug of its
+// manifest name, matching the `codegen:wit` packaging).
+export const MARKDOWN_PLUGIN_NODE_ID = 'system:node:plugin-canopy-markdown-renderer';
+
 // System Renderers
 export const systemRenderers = [
   {
@@ -579,10 +583,35 @@ export const systemRenderers = [
   {
     id: asNodeId('system:renderer:markdown'),
     name: 'Markdown Renderer',
-    description: 'Renders markdown document',
-    rendererKind: 'system',
-    entryPoint: 'system:markdown' as const,
+    description: 'Renders markdown document via the first-party WASM plugin',
+    // Re-pointed from the native `system:markdown` component to the bundled
+    // Markdown WASM plugin. `entryPoint` is the plugin node id; the native
+    // component is retained only as the resolution/execution-failure fallback.
+    rendererKind: 'wasm',
+    entryPoint: MARKDOWN_PLUGIN_NODE_ID as string,
     permissions: [] as readonly string[],
+    namespace: 'system',
+  },
+] as const;
+
+// The bundled first-party Markdown renderer, registered as a system Plugin node.
+// Tier-1 executes the app-bundled transpiled component, so the stored
+// `wasm_binary` is an empty placeholder rather than the kernel embedding a
+// multi-megabyte web-app build artifact; a runtime component loader that runs
+// the stored bytes is deferred with Tier 2.
+export const systemPlugins = [
+  {
+    id: asNodeId(MARKDOWN_PLUGIN_NODE_ID),
+    manifest: JSON.stringify({
+      name: 'Canopy Markdown Renderer',
+      version: '1.0.0',
+      description: 'First-party Tier-1 Markdown content renderer',
+      capabilities: ['render:raw-html'],
+      menuItems: [],
+      commands: [],
+    }),
+    version: '1.0.0',
+    wasmBinary: '',
     namespace: 'system',
   },
 ] as const;
