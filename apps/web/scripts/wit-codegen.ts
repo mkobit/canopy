@@ -31,7 +31,7 @@ async function main(): Promise<void> {
       // multiple worlds, so `jco types` must be scoped with `-n <world>`.
       const worldSlug = plugin.world.split('/').pop() ?? plugin.world;
       await runCommand([
-        'bun',
+        'bunx',
         'jco',
         'types',
         './wit',
@@ -74,7 +74,7 @@ async function main(): Promise<void> {
 
       // 3. Compile the bundled JS into a WASM Component
       await runCommand([
-        'bun',
+        'bunx',
         'jco',
         'componentize',
         bundledJsPath,
@@ -88,7 +88,7 @@ async function main(): Promise<void> {
 
       // 4. Transpile the WASM Component using custom instantiation
       await runCommand([
-        'bun',
+        'bunx',
         'jco',
         'transpile',
         wasmPath,
