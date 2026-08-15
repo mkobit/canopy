@@ -45,5 +45,5 @@
 
 ## 7. Close-out
 
-- [ ] 7.1 Archive the change (`bunx openspec archive tier2-sandboxed-render-engine --yes`) and sync the 5 delta specs into `openspec/specs/`
-- [ ] 7.2 Close canopy-ay6 and canopy-7dj; update memory
+- [ ] 7.1 Archive the change (`bunx openspec archive tier2-sandboxed-render-engine --yes`) and sync the 5 delta specs into `openspec/specs/` — DEFERRED to post-review/merge (PR #468)
+- [ ] 7.2 Close canopy-ay6 and canopy-7dj; update memory — memory updated; bead-close DEFERRED to post-merge (canopy-ay6 progress-noted, kept open)
