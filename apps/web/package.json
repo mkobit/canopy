@@ -16,11 +16,14 @@
     "build-storybook": "STORYBOOK_DISABLE_TELEMETRY=1 storybook build -o .storybook-static"
   },
   "dependencies": {
+    "@bytecodealliance/preview2-shim": "0.19.0",
+    "@canopy/api-adapter": "workspace:*",
     "@canopy/graph": "workspace:*",
     "@canopy/queries": "workspace:*",
     "@canopy/settings": "workspace:*",
     "@canopy/storage": "workspace:*",
     "@canopy/storage-indexeddb": "workspace:*",
+    "dompurify": "^3.0.0",
     "@fontsource/inter": "^5.2.8",
     "@fontsource/jetbrains-mono": "^5.2.8",
     "@fontsource/space-grotesk": "^5.2.10",

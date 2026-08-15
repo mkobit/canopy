@@ -8,6 +8,11 @@ import type { CapabilityValidator } from './capabilities';
 import type { FuelMeter, MemoryChecker, ReentrancyGuard, WasmHostBindings } from './host-bindings';
 import { createWasmHostBindings } from './host-bindings';
 
+// UTF-8 byte length via TextEncoder so the executor runs in both Node and the
+// browser (the web render path). `Buffer` is Node-only and is not defined in a
+// browser bundle.
+const utf8ByteLength = (value: string): number => new TextEncoder().encode(value).length;
+
 // Default execution boundaries for WebAssembly guest plugins.
 export const DEFAULT_WASM_FUEL_LIMIT = 1_000_000n;
 export const DEFAULT_WASM_MAX_MEMORY_BYTES = 16 * 1024 * 1024;
@@ -95,7 +100,7 @@ export const executeSandboxedGuestPlugin = async (
   const timeoutMs = options.timeoutMs ?? DEFAULT_WASM_TIMEOUT_MS;
 
   const memoryChecker = createMemoryChecker(maxMemoryBytes);
-  const inputBytes = Buffer.byteLength(inputJson, 'utf8');
+  const inputBytes = utf8ByteLength(inputJson);
   const inputMemoryResult = memoryChecker.checkBytes(inputBytes);
   if (!inputMemoryResult.ok) {
     return err(inputMemoryResult.error);
@@ -134,7 +139,7 @@ export const executeSandboxedGuestPlugin = async (
     // eslint-disable-next-line functional/no-try-statements -- defensive exception guard for WASM guest plugin execution
     try {
       const outputJson = await plugin(hostBindings, inputJson);
-      const outputBytes = Buffer.byteLength(outputJson, 'utf8');
+      const outputBytes = utf8ByteLength(outputJson);
       const outputMemoryResult = memoryChecker.checkBytes(outputBytes);
       if (!outputMemoryResult.ok) {
         return err(outputMemoryResult.error);

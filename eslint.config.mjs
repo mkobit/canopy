@@ -27,6 +27,11 @@ export default tseslint.config(
       'packages/*/dist/**/*',
       'apps/*/dist/**/*',
       'apps/web/src/plugin/mock/**/*',
+      // Guest plugin source compiled to a WASM component (StarlingMonkey), not
+      // host code — an imperative Markdown parser, exempt like the mock guest.
+      'apps/web/src/plugin/markdown/guest.ts',
+      'apps/web/src/plugin/markdown/guest.js',
+      'apps/web/src/plugin/markdown/plugin-node.json',
       'apps/web/src/plugin/draft-session-shim.ts',
       'apps/extension/scripts/**/*',
       'apps/web/scripts/**/*',
@@ -251,6 +256,7 @@ export default tseslint.config(
             '^Preview$', // Storybook preview configuration type (@storybook/react)
             '^Meta$', // Storybook Meta type (@storybook/react)
             '^StoryObj$', // Storybook StoryObj type (@storybook/react)
+            '^DOMPurify', // DOMPurify instance type (mutable internals; dompurify)
           ],
         },
       ],

@@ -24,6 +24,10 @@ import { createApiAdapterError, toWitError } from '../result-errors';
 import type { CapabilityValidator, WasmCapability } from './capabilities';
 import { verifyCapability } from './capabilities';
 
+// UTF-8 byte length via TextEncoder so host bindings run in both Node and the
+// browser (the web render path); `Buffer` is Node-only.
+const utf8ByteLength = (value: string): number => new TextEncoder().encode(value).length;
+
 export type WitErrorPayload = Readonly<{
   code: WitErrorCode;
   message: string;
@@ -114,7 +118,7 @@ const invokeHostBinding = async <TInput, TOutput>(
     }
 
     if (options.memoryChecker) {
-      const inputBytes = Buffer.byteLength(payloadJson, 'utf8');
+      const inputBytes = utf8ByteLength(payloadJson);
       const memResult = options.memoryChecker.checkBytes(inputBytes);
       if (!memResult.ok) {
         return err(toWitError(memResult.error));
@@ -155,7 +159,7 @@ const invokeHostBinding = async <TInput, TOutput>(
     const outputJson = JSON.stringify(result.value);
 
     if (options.memoryChecker) {
-      const outputBytes = Buffer.byteLength(outputJson, 'utf8');
+      const outputBytes = utf8ByteLength(outputJson);
       const memResult = options.memoryChecker.checkBytes(outputBytes);
       if (!memResult.ok) {
         return err(toWitError(memResult.error));

@@ -155,9 +155,21 @@ describe('Meta-circular bootstrap', () => {
     expect(mdRenderer).toBeDefined();
     expect(mdRenderer?.type).toBe(SYSTEM_IDS.RENDERER);
     expect(mdRenderer?.properties.get('name')).toBe('Markdown Renderer');
-    expect(mdRenderer?.properties.get('rendererKind')).toBe('system');
-    expect(mdRenderer?.properties.get('entryPoint')).toBe('system:markdown');
+    // Re-pointed to the first-party Markdown WASM plugin (canopy-586).
+    expect(mdRenderer?.properties.get('rendererKind')).toBe('wasm');
+    expect(mdRenderer?.properties.get('entryPoint')).toBe(
+      'system:node:plugin-canopy-markdown-renderer',
+    );
     expect(mdRenderer?.properties.get('permissions')).toEqual([]);
+
+    // The Markdown WASM plugin node the renderer points at is seeded.
+    const mdPlugin = graph.nodes.get(asNodeId('system:node:plugin-canopy-markdown-renderer'));
+    expect(mdPlugin).toBeDefined();
+    expect(mdPlugin?.type).toBe(SYSTEM_IDS.TYPE_PLUGIN);
+    expect(mdPlugin?.properties.get('version')).toBe('1.0.0');
+    const seededManifest = mdPlugin?.properties.get('manifest');
+    expect(typeof seededManifest).toBe('string');
+    expect(JSON.parse(seededManifest as string).capabilities).toEqual(['render:raw-html']);
 
     // Check system ViewDefinitions
     const textView = graph.nodes.get(asNodeId('system:view:text-block'));

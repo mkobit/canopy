@@ -4,6 +4,7 @@
     "composite": false,
     "noEmit": true,
     "paths": {
+      "@canopy/api-adapter": ["../../packages/api-adapter/src/index.ts"],
       "@canopy/graph": ["../../packages/graph/src/index.ts"],
       "@canopy/queries": ["../../packages/queries/src/index.ts"],
       "@canopy/settings": ["../../packages/settings/src/index.ts"],

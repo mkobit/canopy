@@ -18,9 +18,6 @@ async function runCommand(cmd: readonly string[]): Promise<void> {
 
 async function main(): Promise<void> {
   try {
-    // 1. Generate types from WIT definitions once
-    await runCommand(['bunx', 'jco', 'types', './wit', '-o', './src/plugin/types']);
-
     const cwd = process.cwd();
     const configPath = resolve(cwd, 'plugins.config.json');
     console.log(`Reading plugins config from: ${configPath}`);
@@ -29,6 +26,21 @@ async function main(): Promise<void> {
 
     for (const plugin of config.plugins) {
       console.log(`\n--- Compiling Plugin: ${plugin.name} ---`);
+
+      // 1. Generate types for this plugin's world. The WIT package now holds
+      // multiple worlds, so `jco types` must be scoped with `-n <world>`.
+      const worldSlug = plugin.world.split('/').pop() ?? plugin.world;
+      await runCommand([
+        'bunx',
+        'jco',
+        'types',
+        './wit',
+        '-n',
+        plugin.world,
+        '-o',
+        `./src/plugin/types/${worldSlug}`,
+      ]);
+
       const entrypointPath = resolve(cwd, plugin.entrypoint);
       const outDir = resolve(cwd, plugin.outDir);
 

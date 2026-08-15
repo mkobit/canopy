@@ -13,7 +13,7 @@
       "project": ["src/**/*.ts"]
     },
     "apps/web": {
-      "entry": ["src/plugin/mock/guest.ts", "scripts/*.ts"],
+      "entry": ["src/plugin/mock/guest.ts", "src/plugin/markdown/guest.ts", "scripts/*.ts"],
       "project": ["src/**/*.{ts,tsx}", "scripts/**/*.ts"],
       "ignoreDependencies": ["happy-dom", "tailwindcss", "canopy", "@bytecodealliance/jco"]
     },
