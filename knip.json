@@ -3,25 +3,51 @@
   "ignoreExportsUsedInFile": true,
   "workspaces": {
     ".": {
-      "ignoreDependencies": ["@fission-ai/openspec"]
+      "ignoreDependencies": [],
+      "entry": [
+        ".claude/hooks/*.ts"
+      ]
     },
     "tools": {
-      "entry": ["*.ts", "hooks/*.ts"],
-      "project": ["**/*.ts"]
+      "entry": [
+        "*.ts",
+        "hooks/*.ts"
+      ],
+      "project": [
+        "**/*.ts"
+      ]
     },
     "packages/*": {
-      "project": ["src/**/*.ts"]
+      "project": [
+        "src/**/*.ts"
+      ]
     },
     "apps/web": {
-      "entry": ["src/plugin/mock/guest.ts", "src/plugin/markdown/guest.ts", "scripts/*.ts"],
-      "project": ["src/**/*.{ts,tsx}", "scripts/**/*.ts"],
-      "ignoreDependencies": ["happy-dom", "tailwindcss", "canopy", "@bytecodealliance/jco"]
+      "entry": [
+        "src/plugin/mock/guest.ts",
+        "src/plugin/markdown/guest.ts",
+        "scripts/*.ts"
+      ],
+      "project": [
+        "src/**/*.{ts,tsx}",
+        "scripts/**/*.ts"
+      ],
+      "ignoreDependencies": [
+        "happy-dom",
+        "tailwindcss",
+        "canopy",
+        "@bytecodealliance/jco"
+      ]
     },
     "apps/cli": {
-      "project": ["src/**/*.ts"]
+      "project": [
+        "src/**/*.ts"
+      ]
     },
     "apps/daemon": {
-      "project": ["src/**/*.ts"]
+      "project": [
+        "src/**/*.ts"
+      ]
     },
     "apps/extension": {
       "entry": [
@@ -29,7 +55,9 @@
         "src/content/content-script.ts",
         "src/popup/popup.ts"
       ],
-      "project": ["src/**/*.ts"]
+      "project": [
+        "src/**/*.ts"
+      ]
     }
   }
 }
