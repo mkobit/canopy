@@ -7,6 +7,32 @@ Each entry states the decision, why, and where the full reasoning lives.
 Full design proposals still live in `design/` (dated, one file per proposal).
 This log complements those files — it's where decisions made _during_ implementation of an approved design get recorded, so they don't only live in a PR description or an agent's private memory.
 
+## 2026-08-16 — Kernel stays Effect-free; plain-functional is the toolkit for the eslint-disable elimination (canopy-v9o.1.1)
+
+The `eslint-disable` elimination epic (`canopy-v9o.1`) has 22 per-package rewrite beads blocked on one question: which functional toolkit the kernel is rewritten against.
+`@canopy/graph` carries the largest disable mass (250 directives) yet is Effect-free by design — a dependency-light leaf with a hand-rolled `Result<T, E>` (`packages/graph/src/result.ts`).
+The fork was (A) adopt `effect` inside the kernel, replacing `Result`, vs (B) keep the kernel Effect-free with plain-functional patterns and confine `effect` to the app/adapter boundary where it already lives.
+
+Decision — **(B) the kernel stays Effect-free.**
+Kernel-tier packages (`@canopy/graph`, `@canopy/queries`, `@canopy/settings`, `@canopy/storage*`) are rewritten with `map`/`filter`/`reduce`/`fold`, the existing `Result<T, E>`, and `readonly` structural updates; `effect` is not added to any of them.
+`effect` remains permitted only in `@canopy/api-adapter` and the apps (`apps/{web,cli,daemon,clip-host}`), where measurement showed it is used as an outer runner (`Effect`/`Console` at the process/IPC edge), not woven through domain logic.
+
+Why B over A:
+(1) The leaf invariant (AGENTS.md #1) is load-bearing and being _tightened_ by the concurrent `canopy-jxw` work (its F2 removes the leaf's last internal dev-cycle dependency); adding a large runtime to the most-depended-on package contradicts that and ripples through `queries`/`settings`/`storage*`.
+(2) "Uniformity with the apps" is largely illusory — the apps do not use Effect's `Either` for domain errors, so adopting Effect in the kernel would make the kernel _more_ Effect-dependent than the code it unifies with, just relocating the `Result`↔`Effect` seam inward from the natural adapter boundary.
+(3) The disables don't need Effect: of the 250 in `@canopy/graph`, 155 are the two perf-critical hot files carved out to `canopy-v9o.1.2`; the remaining ~95 are ordinary `no-let`/`no-loop`/`immutable-data`/`no-try` that rewrite to language constructs with zero library.
+(4) Option A is a monorepo-wide `Result`→`Effect` breaking migration that buys nothing the plain-functional path doesn't.
+
+Supporting decisions:
+
+- **No bucket package.** No `@canopy/functional` grab-bag (the owner is strongly opposed to bucket packages). A pure helper that genuinely recurs across kernel-tier packages (a test `assertDefined`, a `Result`-aware fold/`traverse`, immutable `Map`/`Set` updates) is added as a named, domain-neutral export of `@canopy/graph` — already the universal leaf import — and only once a second caller exists; single-caller helpers stay inline.
+- **No `@canopy/graph` split is motivated by this work.** The disable mass is the two hot files plus ordinary projection/session/ops code, not a bounded-context seam; any split remains owned by `canopy-jxw`.
+
+Revisit triggers (reopen via a new design change, not ad hoc): kernel-tier code needing structured concurrency, cancellation, or typed dependency injection that plain-functional patterns cannot express cleanly; the hand-rolled `Result` demonstrably diverging from adapter Effect error handling in a way that causes real bugs; or a future `@canopy/graph` split changing which package is the leaf and reopening the dependency-weight calculus.
+
+Full reasoning and adversarial review: `openspec/changes/kernel-functional-toolkit/` (proposal, design, spec).
+The elimination playbook (`docs/research/2026-08-15-eliminating-eslint-disables-playbook.md`) is updated to make plain-functional the unconditional default, unblocking rewrite beads `canopy-v9o.1.5`–`.26`.
+
 ## 2026-08-03 — Identified root causes for package version drift and automated workspace dependency alignment (canopy-ckd)
 
 Analysis of 116 Dependabot PRs and cross-package `package.json` configurations identified three primary causes of dependency version drift:

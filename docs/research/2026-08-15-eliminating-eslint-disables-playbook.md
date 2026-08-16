@@ -13,7 +13,7 @@ The only acceptable remaining disable is one where an **external library's** typ
 
 ## Hard constraints
 
-- **Blocked on the toolkit decision.** Do not start a kernel-package rewrite (`@canopy/graph`, `@canopy/queries`, `@canopy/settings`, `@canopy/storage*`) until the kernel-toolkit design bead is closed. It decides Effect-in-kernel vs plain-functional + shared helpers; the recipes below assume the plain-functional default and must be adjusted if Effect is chosen. Apps/adapter (`api-adapter`, `web`, `cli`, `daemon`, `clip-host`, `extension`) already use Effect and may proceed.
+- **Toolkit decision: ratified (2026-08-16, `canopy-v9o.1.1`).** The kernel stays Effect-free. Kernel-tier packages (`@canopy/graph`, `@canopy/queries`, `@canopy/settings`, `@canopy/storage*`) are rewritten with the plain-functional recipes below — no `effect` import, no `effect` dependency; use the existing `Result<T, E>` and `readonly` structural updates. `effect` stays confined to the app/adapter boundary (`api-adapter`, `web`, `cli`, `daemon`, `clip-host`, `extension`), which may use Effect combinators and were never blocked. See the ADR in `docs/architecture/decisions.md` (2026-08-16). A pure helper that recurs across kernel-tier packages goes into `@canopy/graph` as a named export once a second caller exists — never a new `@canopy/functional` bucket package; single-caller helpers stay inline.
 - **Never touch `packages/graph/src/incremental-projection.ts` or `packages/graph/src/indexes.ts`.** They are perf-critical and owned by their own design bead.
 - **Never change behavior.** These are mechanical, behavior-preserving rewrites. If a rewrite would change semantics, stop and leave a note on the bead.
 - **Perf-based modules:** if the bead marks a file perf-based, its perf/load test must exist and stay green — do not land without it.
@@ -57,7 +57,7 @@ Convert to the project's `Result<T, E>` (`packages/graph/src/result.ts`):
 
 ### `functional/no-return-void` (callbacks, event/stream wiring)
 
-- Prefer returning data over registering void callbacks. For pub/sub (`event-bus.ts`), evaluate an `Effect` `Stream` (if Effect adopted) or a pure subscriber-list reducer.
+- Prefer returning data over registering void callbacks. For pub/sub (`event-bus.ts`) in kernel-tier code, use a pure subscriber-list reducer — not `effect`. (App/adapter code may use an `Effect` `Stream`.)
 - At a real framework boundary that demands a void handler (DOM listener, stream `on('data')`), keep it minimal and, if unavoidable, a single-line disable with a `-- <reason>`.
 
 ### `functional/no-classes` and `functional/no-this-expressions`
