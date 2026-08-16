@@ -26,20 +26,11 @@
       {
         "hooks": [
           {
-            "command": "bun \"$CLAUDE_PROJECT_DIR/.claude/hooks/openspec-validate.ts\"",
-            "type": "command"
-          }
-        ],
-        "matcher": "Write|Edit"
-      },
-      {
-        "hooks": [
-          {
-            "command": "bun tools/hooks/openspec-validate-hook.ts",
+            "command": "bun \"$CLAUDE_PROJECT_DIR/tools/hooks/openspec-validate-hook.ts\"",
             "type": "command"
           },
           {
-            "command": "bun tools/hooks/agent-format-lint-hook.ts",
+            "command": "bun \"$CLAUDE_PROJECT_DIR/tools/hooks/agent-format-lint-hook.ts\"",
             "type": "command"
           }
         ],
