@@ -90,24 +90,44 @@ The `AGENTS.md` escape-hatch invariant for `prefer-immutable-types` on third-par
 Top-level / function-scope `let` outside tests appears only in `packages/storage-file/src/file-event-log.ts` (segment/manifest streaming I/O), `apps/clip-host/src/{index,framing,host}.ts` (stdio frame accumulation), and lazy-singleton caches (`markdown-render-plugin.ts`, `sanitize-html.ts`) — each already behind a disable with (mostly) a reason.
 This is boundary I/O and encapsulated caches, not domain state leaking mutability; not a smell, recorded so it is not "fixed."
 
-## Codification (the durable guard)
+## Corrected direction (2026-08-15, owner)
 
-### C1 — enforce disable-description + kill stale disables in `eslint.config.mjs`
+The first cut of this review proposed _documenting_ the disables (add `-- reason`, block-scope the hot files) and enforcing that with `require-description`.
+The owner rejected that framing: **because we own nearly all of this code, an `eslint-disable` directive is a smell to remove, not to annotate.**
+The disable should be driven to zero — the imperative loop, `let`, mutation, or `try` behind it should be rewritten functionally (Effect, `Result<T, E>`, folds, readonly structural updates), and mutation should survive only where an external library forces it.
+A small shared functional-helpers package may be warranted where use cases recur.
+The findings above stand as the census; the remediation direction below replaces the original codification.
 
-Two config changes turn the prose rules F1/F3 into machine-checked ones:
+Decisions taken (see beads):
 
-1. Add `@eslint-community/eslint-plugin-eslint-comments` and enable `eslint-comments/require-description` for `eslint-disable` and `eslint-disable-next-line` — every escape hatch must carry `-- <reason>`. This is the AGENTS.md rule, enforced.
-2. Set `linterOptions.reportUnusedDisableDirectives: "error"` — a disable that suppresses nothing fails lint (catches F3).
+1. **Kernel toolkit is undecided and gets a design bead first.** `@canopy/graph` is Effect-free by design (dependency-light leaf, hand-rolled `Result`) yet holds the largest disable mass. Whether to adopt Effect in the kernel or stay Effect-free with plain functional patterns + a shared helper package is an architectural bet — decided in a design bead (OpenSpec + adversarial review) before any kernel rewrite. That design also weighs **splitting `@canopy/graph` into smaller packages** (ties `canopy-jxw`).
+2. **The two perf-critical hot files get a design-first carve-out.** `incremental-projection.ts` and `indexes.ts` used mutation as a deliberate O(delta) choice (persistent/HAMT maps deferred in `canopy-c54`). Their disables are removed via a design bead that picks the approach (persistent structures vs `Effect` `Ref` vs a sanctioned mutable-behind-a-pure-boundary pattern) and **stands up perf/load tests first** — never a mechanical rewrite, never handed to a remote agent.
+3. **Anything we deem perf-based must carry perf/load tests** (basic early on is fine, extended as the app fills in). Codified as an AGENTS.md rule plus an inventory of the modules that need benchmarks now.
+4. **Work is chunked per (package, rule-category)** so it can be parceled across sessions or to remote Jules agents. Because Jules agents need explicit, self-contained instructions, the mechanical recipe lives once in the playbook (`docs/research/2026-08-15-eliminating-eslint-disables-playbook.md`) and every rewrite bead references it plus its own file/rule/count list. All rewrite beads depend on decision 1.
 
-Both are `lint`-time, zero-runtime, and self-documenting.
-Per `feedback_measure_before_gating_ci_checks`, this is a CI-gating change and **must be dry-run against current `main` first**: it will report ~`347` missing-reason production violations plus the `27` test ones, so the remediation beads (F1/F2 — add reasons and convert the two hot files to file-level blocks; F4 — the test-file decision) must land before or in the same change that flips the rules to `error`.
-The cheapest sequencing is: remediate → dry-run reports clean → flip to `error` in one OpenSpec change.
-Real change → filed as a codification bead needing OpenSpec + adversarial review, not implemented in this review.
+## Codification (the durable guards)
+
+The guard is no longer "make disables self-documenting" but "**stop the count from ever rising and drive it down**":
+
+### C1 — kill stale disables + ratchet the count in `eslint.config.mjs`
+
+1. Set `linterOptions.reportUnusedDisableDirectives: "error"` — a disable that suppresses nothing fails lint (free win, land immediately).
+2. A count-ceiling check wired into `bun run lint`: the number of `eslint-disable` directives may only decrease from a committed baseline; a new disable fails CI unless the baseline is explicitly lowered. This makes elimination a ratchet — every rewrite bead tightens the ceiling, and no new escape hatch can slip in.
+
+Per `feedback_measure_before_gating_ci_checks`, dry-run the ceiling check against `main` first (baseline = current count) before gating.
+Real change → codification bead needing OpenSpec + adversarial review.
+
+### C2 — perf-test policy (decision 3)
+
+AGENTS.md rule: a module labeled perf-based must carry perf/load tests; a rewrite that touches a perf-based module may not land without them.
 
 ## Bead summary
 
-- Fix: F1/F2 — remediate reasonless disables; convert `incremental-projection.ts` + `indexes.ts` (150 bare) to file-level block disables with a single reason each, add reasons to the remaining bare production disables (`canopy-rtk.1`).
-- Fix: F4 — decide and write the test-file disable convention (is `!`/`any` allowed in tests, under what reason); add reasons to the 27 bare test disables (`canopy-rtk.2`).
-- Codify: C1 — enable `eslint-comments/require-description` + `reportUnusedDisableDirectives: "error"`; dry-run against `main` first; needs OpenSpec + adversarial review; sequenced after the remediation fixes (`canopy-rtk.3`).
-- Fix: F5 — standardize `apps/extension/src/popup/popup.ts` raw `querySelector` lookups behind a typed helper or documented convention (`canopy-rtk.4`).
-- Context: F6 (`ignoreTypePattern` disciplined) and F7 (module-level mutable state confined) left intentionally as-is.
+Filed under a dedicated elimination epic (origin: this review); all rewrite beads depend on the kernel-toolkit design.
+
+- Design: kernel functional toolkit (Effect-in-kernel vs plain-functional + shared helper package) + `@canopy/graph` split evaluation — gates every rewrite.
+- Design: perf-critical carve-out for `incremental-projection.ts` + `indexes.ts` (approach + benchmarks first).
+- Codify: C1 ratchet (`reportUnusedDisableDirectives: "error"` + decreasing count ceiling) and C2 perf-test policy.
+- Rewrite (per package × rule-category): `@canopy/graph` (immutable-data, no-loop, no-let, no-return-void, no-try/throw, no-classes/this, tests `!`, `any`), `@canopy/api-adapter`, `apps/web`, `@canopy/queries`, `@canopy/settings`, storage adapters, `apps/cli`, `apps/clip-host`, `apps/extension` — each references the playbook.
+- Fix: F5 — standardize `apps/extension/src/popup/popup.ts` raw `querySelector` lookups (`canopy-rtk.4`, retained).
+- Context: F6 (`ignoreTypePattern` disciplined) and F7 (module-level mutable state confined to boundary I/O) — re-examined case by case during rewrites, not assumed permanent.
