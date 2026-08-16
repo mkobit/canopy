@@ -44,14 +44,14 @@ Six packages:
 
 ## Development workflow
 
-| Task                 | Command                               |
-| :------------------- | :------------------------------------ |
-| Install dependencies | `bun install`                         |
-| Run tests            | `bun test`                            |
-| Build all packages   | `bun run build`                       |
-| Lint codebase        | `bun run lint`                        |
-| Type check           | `bun run typecheck`                   |
-| Validate OpenSpec    | `bun exec openspec validate --all`    |
+| Task                 | Command                            |
+| :------------------- | :--------------------------------- |
+| Install dependencies | `bun install`                      |
+| Run tests            | `bun test`                         |
+| Build all packages   | `bun run build`                    |
+| Lint codebase        | `bun run lint`                     |
+| Type check           | `bun run typecheck`                |
+| Validate OpenSpec    | `bun exec openspec validate --all` |
 
 Run `bun run build` before `bun run lint` on a fresh checkout.
 The `functional/prefer-immutable-types` rule resolves cross-package types through each package's `dist/index.d.ts`; without those the rule reports `actual: Unknown` and fails ~185 checks.
@@ -74,6 +74,26 @@ For genuinely unreplaceable single-line cases (e.g. React 18 `createRoot(documen
 Banned: `@ts-ignore` (use `@ts-expect-error <description>`), non-null assertions `!`, and the `.*` catch-all in `ignoreTypePattern`.
 Always add transpiled guest WASM shims, third-party code, and helper scripts (e.g., `**/transpiled/**/*`) to the global `ignores` list in `eslint.config.mjs`.
 This prevents functional and prettier validation checks from failing on generated code.
+
+Two guards keep escape hatches from accreting (`canopy-v9o.1`):
+
+- `reportUnusedDisableDirectives: 'error'` in `eslint.config.mjs` rejects any `eslint-disable` that suppresses nothing — a stale directive left after a refactor fails lint.
+- `tools/check-eslint-disable-ceiling.ts` (wired into `bun run lint`) ratchets the total directive count against `tools/eslint-disable-baseline.json`; adding a disable fails CI.
+  The ceiling only ratchets down: each rewrite that removes directives lowers it via `bun tools/check-eslint-disable-ceiling.ts --update`.
+  Raising it requires an explicit, reviewed one-line diff — the default answer to a lint failure is to eliminate the directive, not raise the ceiling.
+
+## Performance-based modules — perf/load tests required
+
+A module deemed performance-based must carry a perf/load test (even a basic one early, fleshed out as the app matures).
+A change touching a perf-based module must not land without that test present and green.
+This exists so perf-sensitive code (where mutation or an O(delta) algorithm was a deliberate choice) is never rewritten blind — measure, don't guess.
+
+Perf-based module inventory:
+
+| Module                                         | Benchmark                                           | Status                                                     |
+| :--------------------------------------------- | :-------------------------------------------------- | :--------------------------------------------------------- |
+| `packages/graph/src/indexes.ts`                | `packages/graph/scripts/bench-index-maintenance.ts` | Covered                                                    |
+| `packages/graph/src/incremental-projection.ts` | _(none yet)_                                        | Gap — benchmark tracked by `canopy-v9o.1.2` (prerequisite) |
 
 ## Landing the Plane (Session Completion)
 
