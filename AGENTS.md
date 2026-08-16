@@ -44,13 +44,14 @@ Six packages:
 
 ## Development workflow
 
-| Task                 | Command             |
-| :------------------- | :------------------ |
-| Install dependencies | `bun install`       |
-| Run tests            | `bun test`          |
-| Build all packages   | `bun run build`     |
-| Lint codebase        | `bun run lint`      |
-| Type check           | `bun run typecheck` |
+| Task                 | Command                               |
+| :------------------- | :------------------------------------ |
+| Install dependencies | `bun install`                         |
+| Run tests            | `bun test`                            |
+| Build all packages   | `bun run build`                       |
+| Lint codebase        | `bun run lint`                        |
+| Type check           | `bun run typecheck`                   |
+| Validate OpenSpec    | `bun exec openspec validate --all`    |
 
 Run `bun run build` before `bun run lint` on a fresh checkout.
 The `functional/prefer-immutable-types` rule resolves cross-package types through each package's `dist/index.d.ts`; without those the rule reports `actual: Unknown` and fails ~185 checks.
@@ -119,6 +120,7 @@ All git worktrees share one embedded bd database, so grab work only with `bd upd
 
 This project uses OpenSpec for spec-driven development.
 Run `bunx openspec list` to see current changes and their status.
+Note that `bun exec openspec validate --all` runs as a PR check on changes under `openspec/**`.
 Use `/opsx:propose`, `/opsx:apply`, `/opsx:archive` slash commands to work with specs.
 Specs live in `openspec/changes/` and follow the `proposal → design → tasks` artifact flow.
 All design proposals must undergo a mandatory adversarial review phase prior to staging implementation tasks.

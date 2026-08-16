@@ -15,6 +15,7 @@
     "check:api-compatibility": "bun tools/check-api-compatibility.ts",
     "check:versions": "bun tools/verify-versions.ts",
     "check:openspec-changes": "bun tools/check-openspec-changes.ts",
+    "openspec:validate": "openspec validate --all",
     "check:unused": "knip",
     "refactor:check": "bun tools/refactor-ts.ts --check",
     "refactor:fix": "bun tools/refactor-ts.ts --fix",
