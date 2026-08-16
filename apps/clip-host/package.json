@@ -15,7 +15,7 @@
   "dependencies": {
     "@canopy/api-adapter": "workspace:*",
     "@canopy/graph": "workspace:*",
-    "effect": "^3.22.0",
+    "effect": "^3.22.1",
     "temporal-polyfill": "^1.0.1"
   },
   "devDependencies": {
