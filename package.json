@@ -38,8 +38,8 @@
     "@fission-ai/openspec": "^1.6.0",
     "@stylistic/eslint-plugin": "^5.10.0",
     "@types/node": "^26.1.2",
-    "@types/react": "^19.2.17",
-    "@types/react-dom": "^19.2.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
     "bun-types": "^1.3.14",
     "eslint": "^10.8.0",
     "eslint-config-prettier": "^10.1.8",
@@ -61,7 +61,7 @@
     "uuid": "^14.0.0"
   },
   "dependencies": {
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7"
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
   }
 }
