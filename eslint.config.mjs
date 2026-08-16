@@ -40,6 +40,14 @@ export default tseslint.config(
       '**/apps/web/.storybook-static/**',
     ],
   },
+  // Reject eslint-disable directives that suppress nothing, everywhere.
+  // Config-level (not the CLI flag) so IDEs and any direct `eslint` run enforce it too.
+  // Pairs with tools/check-eslint-disable-ceiling.ts, which ratchets the total count down.
+  {
+    linterOptions: {
+      reportUnusedDisableDirectives: 'error',
+    },
+  },
   // Base configurations
   eslint.configs.recommended,
   ...tseslint.configs.strict,
