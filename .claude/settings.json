@@ -35,6 +35,15 @@
           }
         ],
         "matcher": "Edit|Write|MultiEdit"
+      },
+      {
+        "hooks": [
+          {
+            "command": "bun \"$CLAUDE_PROJECT_DIR/.claude/hooks/openspec-validate.ts\"",
+            "type": "command"
+          }
+        ],
+        "matcher": "Write|Edit"
       }
     ]
   },
