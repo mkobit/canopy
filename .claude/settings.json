@@ -26,6 +26,15 @@
       {
         "hooks": [
           {
+            "command": "bun \"$CLAUDE_PROJECT_DIR/.claude/hooks/openspec-validate.ts\"",
+            "type": "command"
+          }
+        ],
+        "matcher": "Write|Edit"
+      },
+      {
+        "hooks": [
+          {
             "command": "bun tools/hooks/openspec-validate-hook.ts",
             "type": "command"
           },

@@ -1,6 +1,5 @@
 {
   "lockfileVersion": 1,
-  "configVersion": 1,
   "workspaces": {
     "": {
       "name": "canopy-graph",
@@ -34,6 +33,7 @@
         "typescript-eslint": "^8.65.0",
         "typescript-native": "npm:typescript@7.0.2",
         "uuid": "^14.0.0",
+        "zod": "^4.4.1",
       },
     },
     "apps/cli": {

@@ -56,9 +56,10 @@
     "knip": "^6.29.0",
     "prettier": "^3.9.6",
     "typescript": "6.0.3",
-    "typescript-native": "npm:typescript@7.0.2",
     "typescript-eslint": "^8.65.0",
-    "uuid": "^14.0.0"
+    "typescript-native": "npm:typescript@7.0.2",
+    "uuid": "^14.0.0",
+    "zod": "^4.4.1"
   },
   "dependencies": {
     "react": "^19.2.8",
