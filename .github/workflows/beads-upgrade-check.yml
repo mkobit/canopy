@@ -1,0 +1,59 @@
+name: Beads Upgrade Check
+
+on:
+  pull_request:
+    paths:
+      - 'mise.toml'
+      - 'mise.lock'
+      - '.github/workflows/beads-upgrade-check.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check-upgrade:
+    name: Check Beads Upgrade
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+
+      - name: Check if beads was upgraded
+        id: beads_check
+        run: |
+          if git diff origin/${{ github.base_ref }} HEAD -- mise.toml | grep -q '^[+-].*"github:gastownhall/beads"'; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup mise
+        if: steps.beads_check.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
+        uses: jdx/mise-action@dad1bfd3df957f44999b559dd69dc1671cb4e9ea
+        with:
+          version: v2026.5.1
+          cache: 'true'
+
+      - name: Bootstrap Beads
+        if: steps.beads_check.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
+        # GH Actions runs in a checkout without .beads db loaded, so bootstrap
+        # it first in order for checks to run successfully. In CI, we need the
+        # HTTPS remote, otherwise dolt tries to auth via SSH and fails
+        run: |
+          # Temporarily switch origin to https for bootstrap
+          git remote set-url origin https://github.com/${{ github.repository }}.git
+          mise exec -- bd bootstrap
+          # Switch back to the original origin format (likely ssh or https with token)
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+
+      - name: Run bd doctor
+        if: steps.beads_check.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
+        run: mise exec -- bd doctor
+
+      - name: Run bd-check
+        if: steps.beads_check.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
+        run: mise run bd-check
