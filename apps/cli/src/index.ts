@@ -3,22 +3,19 @@ import { NodeContext, NodeRuntime } from '@effect/platform-node';
 import { Effect } from 'effect';
 import { edgeCommand } from './commands/edge';
 import { eventsCommand } from './commands/events';
-import { handshakeCommand } from './commands/handshake';
 import { nodeCommand } from './commands/node';
 import { queryCommand } from './commands/query';
-import { daemonCommand, statusCommand } from './commands/status';
+import { statusCommand } from './commands/status';
 import { typesCommand } from './commands/types';
 
 export const rootCommand = Command.make('canopy').pipe(
   Command.withSubcommands([
     statusCommand,
-    daemonCommand,
     nodeCommand,
     edgeCommand,
     typesCommand,
     queryCommand,
     eventsCommand,
-    handshakeCommand,
   ]),
 );
 

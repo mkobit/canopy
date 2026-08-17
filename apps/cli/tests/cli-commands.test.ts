@@ -53,10 +53,6 @@ describe('Canopy CLI commands execution', () => {
     }
   });
 
-  it('runs handshake command successfully', async () => {
-    await runCli(['handshake', '--socket-path', socketPath, '--json']);
-  });
-
   it('runs node create, get, list, update, and delete subcommands', async () => {
     // Node create
     await runCli([
@@ -160,13 +156,12 @@ describe('Canopy CLI commands execution', () => {
 
     // Invalid socket path fails with Effect error
     expect(
-      runCli(['handshake', '--socket-path', '/tmp/non_existent_canopy_socket.sock']),
+      runCli(['status', '--socket-path', '/tmp/non_existent_canopy_socket.sock']),
     ).rejects.toThrow();
   });
 
-  it('runs status and daemon commands successfully', async () => {
+  it('runs status command successfully', async () => {
     await runCli(['status', '--socket-path', socketPath, '--json']);
-    await runCli(['daemon', 'status', '--socket-path', socketPath, '--json']);
   });
 
   it('runs events tail command successfully', async () => {

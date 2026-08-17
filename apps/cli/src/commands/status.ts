@@ -86,8 +86,3 @@ export const statusCommand = Command.make(
   },
   ({ socketPath, json }) => statusEffect(socketPath, json),
 ).pipe(Command.withDescription('Check the status of the Canopy IPC daemon'));
-
-export const daemonCommand = Command.make('daemon').pipe(
-  Command.withDescription('Manage the Canopy IPC daemon'),
-  Command.withSubcommands([statusCommand]),
-);

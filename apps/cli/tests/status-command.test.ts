@@ -50,12 +50,6 @@ describe('Canopy CLI status commands', () => {
     );
   });
 
-  it('runs daemon status command when disconnected', async () => {
-    await expect(runCli(['daemon', 'status', '--socket-path', socketPath])).rejects.toThrow(
-      'Socket disconnected',
-    );
-  });
-
   it('runs status command when connected', async () => {
     const eventLogStore = createInMemoryEventStore();
     const graphId = asGraphId('graph_cli_cmd_test');
@@ -69,20 +63,5 @@ describe('Canopy CLI status commands', () => {
 
     await runCli(['status', '--socket-path', socketPath, '--json']);
     await runCli(['status', '--socket-path', socketPath]);
-  });
-
-  it('runs daemon status command when connected', async () => {
-    const eventLogStore = createInMemoryEventStore();
-    const graphId = asGraphId('graph_cli_cmd_test');
-    const deviceId = asDeviceId('dev_cli_cmd_test');
-    const session = createGraphSession(eventLogStore, graphId, deviceId);
-    const context = { graph: session.graph(), session, eventLogStore };
-
-    server = createIpcServer({ socketPath, context });
-    const listenResponse = await server.listen();
-    expect(listenResponse.ok).toBe(true);
-
-    await runCli(['daemon', 'status', '--socket-path', socketPath, '--json']);
-    await runCli(['daemon', 'status', '--socket-path', socketPath]);
   });
 });
