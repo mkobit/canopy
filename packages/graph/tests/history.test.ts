@@ -1,6 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
-import { createSQLiteEventLog } from '@canopy/storage-sqlite';
-import type { SQLiteEventLog } from '@canopy/storage-sqlite';
+import { describe, it, expect, beforeEach } from 'bun:test';
 import { getGraphAt } from '../src/history';
 import {
   asNodeId,
@@ -8,15 +6,55 @@ import {
   asInstant,
   asDeviceId,
   unwrap,
+  ok,
+  type EventLogStore,
+  type EventLogQueryOptions,
+  type GraphEvent,
   type NodeCreated,
   type NodePropertiesUpdated,
   type NodeDeleted,
   type Instant,
   type EventId,
+  type Result,
 } from '@canopy/graph';
 import { Temporal } from 'temporal-polyfill';
 
 const mockGraphId = 'test-graph-id';
+
+// In-memory EventLogStore stub -- history.test.ts only needs appendEvents +
+// getEvents({ before }), so a real backend (e.g. SQLite) would introduce a
+// dev-only cycle back into @canopy/graph, violating invariant #1 (graph is
+// the leaf). See packages/storage's createInMemoryEventStore for the
+// full-featured equivalent.
+function createInMemoryEventLogStore(): EventLogStore {
+  const eventsByGraph = new Map<string, readonly GraphEvent[]>();
+
+  return {
+    appendEvents: (
+      graphId: string,
+      events: readonly GraphEvent[],
+    ): Promise<Result<void, Error>> => {
+      const existing = eventsByGraph.get(graphId) ?? [];
+      eventsByGraph.set(
+        graphId,
+        [...existing, ...events].toSorted((a, b) => a.eventId.localeCompare(b.eventId)),
+      );
+      return Promise.resolve(ok(undefined));
+    },
+    getEvents: (
+      graphId: string,
+      options?: EventLogQueryOptions,
+    ): Promise<Result<readonly GraphEvent[], Error>> => {
+      const events = eventsByGraph.get(graphId) ?? [];
+      const filtered = events.filter(
+        (event) =>
+          (!options?.after || event.eventId > options.after) &&
+          (!options?.before || event.eventId < options.before),
+      );
+      return Promise.resolve(ok(options?.reverse ? filtered.toReversed() : filtered));
+    },
+  };
+}
 
 function createEventIdAt(timestamp: Instant, seq: number): EventId {
   const epochMs = Temporal.Instant.from(timestamp).epochMilliseconds;
@@ -32,15 +70,10 @@ function createEventIdAt(timestamp: Instant, seq: number): EventId {
 }
 
 describe('Time Travel API', () => {
-  let adapter: SQLiteEventLog;
+  let adapter: EventLogStore;
 
-  beforeEach(async () => {
-    adapter = createSQLiteEventLog();
-    await unwrap(await adapter.init());
-  });
-
-  afterEach(async () => {
-    await unwrap(await adapter.close());
+  beforeEach(() => {
+    adapter = createInMemoryEventLogStore();
   });
 
   it('should reconstruct graph at specific timestamps', async () => {

@@ -177,7 +177,6 @@
         "zod": "^4.4.1",
       },
       "devDependencies": {
-        "@canopy/storage-sqlite": "workspace:*",
         "fast-check": "^4.9.0",
         "typescript": "6.0.3",
       },
