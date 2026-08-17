@@ -1,0 +1,85 @@
+name: Beads upgrade check
+
+# Bumping the `beads` binary can migrate the shared `.beads` Dolt schema or ship
+# breaking changes. This smoke-tests a fresh bootstrap + basic bead operations
+# so an upgrade PR proves the repo's database still opens and reads before merge.
+
+on:
+  pull_request:
+    # Pre-filter: only PRs touching mise.toml (where the beads version lives) can
+    # trigger this at all — every other PR is a free no-op. The detect job below
+    # narrows further to an actual beads-version change.
+    paths:
+      - 'mise.toml'
+      - 'mise.lock'
+      - '.github/workflows/beads-upgrade-check.yml'
+  workflow_dispatch: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  detect:
+    name: detect beads version change
+    runs-on: ubuntu-24.04
+    outputs:
+      changed: ${{ steps.detect.outputs.changed }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+
+      - name: Detect beads version change
+        id: detect
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          # Manual runs always exercise the smoke test.
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # Merge-base diff (three-dot) shows only what this PR changed, so an
+          # unrelated mise.toml edit (bun bump, new task) does not trigger the
+          # smoke test — only a +/- on the beads tool line does.
+          if git diff "origin/${BASE_REF}...HEAD" -- mise.toml \
+            | grep -qE '^[+-].*github:gastownhall/beads'; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  smoke-test:
+    name: beads operations smoke test
+    needs: detect
+    if: needs.detect.outputs.changed == 'true'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Setup mise
+        uses: jdx/mise-action@7e36c90d9ab29c415a2384db3006f3ec8a8cc654
+        with:
+          version: v2026.5.1
+          cache: 'true'
+
+      - name: Bootstrap beads Dolt database
+        # A CI checkout has no Dolt data loaded, so bootstrap it from the git-hosted
+        # remote (refs/dolt/data). bd derives a `git+ssh://` remote from the origin
+        # URL, which fails without SSH auth; BD_SYNC_REMOTE forces the public HTTPS
+        # remote, which needs no credentials — no token inlined, no origin rewrite.
+        env:
+          BD_SYNC_REMOTE: git+https://github.com/${{ github.repository }}.git
+        run: bd bootstrap --yes
+
+      - name: Smoke-test beads operations
+        # `mise run bd-check` runs `bd ready && bd lint` (bd doctor is broken in this
+        # repo's direct-mode embedded Dolt DB — see mise.toml [tasks.bd-check]).
+        run: mise run bd-check
