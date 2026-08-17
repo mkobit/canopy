@@ -38,6 +38,7 @@ graph TD
   web --> settings
   web --> storage
   web --> storageIndexeddb
+  web --> apiAdapter
   cli --> graph
   cli --> storage
   cli --> apiAdapter
@@ -105,7 +106,7 @@ Implements `EventLogStore` over a REST API (`POST`/`GET /graphs/:id/events`) —
 
 The transport and protocol adapter layer over `@canopy/graph` and `@canopy/queries`.
 Hosts the Unix-socket JSON-RPC IPC server (`createIpcServer`) and the `canopy.v1.draft.*` family that wraps `DraftSession`, plus the WASM plugin host bindings.
-Consumed by `apps/cli`, `apps/daemon`, and `apps/clip-host`.
+Consumed by `apps/cli`, `apps/daemon`, `apps/clip-host`, and `apps/web` (the WASM plugin host bindings for content rendering).
 
 ## Cross-context ports
 
