@@ -1,1 +1,2 @@
 bun run check:versions
+bun run check:openspec-changes
