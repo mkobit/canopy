@@ -34,9 +34,6 @@
     "prepare": "husky",
     "preinstall": "node -e \"console.error('Error: use bun'); process.exit(1)\""
   },
-  "overrides": {
-    "@typescript-eslint/utils": "8.54.0"
-  },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@fission-ai/openspec": "^1.6.0",
