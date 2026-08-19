@@ -116,9 +116,18 @@ Consumed by `apps/cli`, `apps/daemon`, `apps/clip-host`, and `apps/web` (the WAS
 
 ## Allowed import rules
 
-A package may only import from the packages listed in its `package.json` `dependencies`.
-Cross-package shortcuts (deep imports into another package's `src/`) are forbidden.
-Within a package, prefer relative imports between sibling files; do not import the package's own public name.
+### Production source (`src/`)
+
+- A package's production code may only import from packages listed in its `package.json` `dependencies`.
+- Production code must never import from `devDependencies`.
+- Cross-package shortcuts (deep imports into another package's `src/` or unexported internals) are forbidden.
+- Within production code, use relative imports between sibling files; do not import the package's own public barrel or package name.
+
+### Test and benchmark files (`test/`, `scripts/`, `*.test.ts`)
+
+- Test and benchmark files may import from packages listed in either `dependencies` or `devDependencies`.
+- Test files may import the package's own public barrel (e.g. `import { ... } from '@canopy/graph'`) to test through its public API surface.
+- Test files must not deep-import unexported internals across package boundaries.
 
 ## Where to look next
 
