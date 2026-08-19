@@ -297,8 +297,8 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
             return ok(graph);
           }
           default: {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            return error(new Error(`Unknown event type: ${(event as any).type}`));
+            const unknownEvent = event as Readonly<{ type?: unknown }>;
+            return error(new Error(`Unknown event type: ${String(unknownEvent.type)}`));
           }
         }
       },

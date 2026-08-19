@@ -582,8 +582,7 @@ export function matchesCondition(
     return false;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const conditionRecord = condition as Record<string, any>;
+  const conditionRecord = condition as Readonly<Record<string, unknown>>;
   return Object.entries(conditionRecord).every(([key, value]) => payload[key] === value);
 }
 
