@@ -36,14 +36,8 @@ bun pm ls --all
 
 ## Development workflow
 
-| Task                 | Command                            |
-| :------------------- | :--------------------------------- |
-| Install dependencies | `bun install`                      |
-| Run tests            | `bun test`                         |
-| Build all packages   | `bun run build`                    |
-| Lint codebase        | `bun run lint`                     |
-| Type check           | `bun run typecheck`                |
-| Validate OpenSpec    | `bun exec openspec validate --all` |
+Refer to `mise.toml` for task definitions, dependencies, and execution entrypoints (`mise tasks` / `mise run <task>`).
+Run `mise run check` to execute the full quality gate pipeline in CI order.
 
 Run `bun run build` before `bun run lint` on a fresh checkout.
 The `functional/prefer-immutable-types` rule resolves cross-package types through each package's `dist/index.d.ts`; without those the rule reports `actual: Unknown` and fails ~185 checks.
