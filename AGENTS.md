@@ -16,16 +16,8 @@ bun pm ls --all
 
 ## Package layout
 
-See `docs/architecture/bounded-contexts.md` for the dependency graph and per-package scope.
-
-Six packages:
-
-- `@canopy/graph` — kernel (types, schemas, projection, ops, validation, bootstrap, history, event bus, `GraphSession`, `EventLogStore` port).
-- `@canopy/queries` — query DSL and executor.
-- `@canopy/settings` — settings cascade and `UserSetting` creation.
-- `@canopy/storage` — storage contract re-exports plus the dependency-free in-memory `EventLogStore`.
-- `@canopy/storage-indexeddb` — `EventLogStore` over IndexedDB (`idb`) plus the graph registry.
-- `@canopy/storage-sqlite` — `EventLogStore` over SQLite (`sql.js`).
+`docs/architecture/bounded-contexts.md` is the single source of truth for the package list, dependency graph, and per-package scope.
+`tools/check-dependency-graph.ts` mechanically enforces that its mermaid diagram matches `package.json`, so it can't drift — do not duplicate the package enumeration here.
 
 ## Architectural invariants
 
@@ -127,6 +119,7 @@ For testing paths that use Vite config aliases, duplicate the path mappings in b
 When running integration or unit tests for components that load transpiled WASM plugins, import the pure JavaScript plugin implementation (`guest.js`) instead of the transpiled WASM wrapper (`plugin.js`) to prevent Bun from throwing errors on unsupported Node.js bindings (such as `process.binding("tcp_wrap")`).
 Vite is currently used to build and serve the front-end React single-page application (`apps/web`), whereas Bun is used for packaging, running scripts, and executing tests.
 Because Bun has built-in module bundling and web-based testing capabilities, a future task is tracked under `canopy-kjg` to investigate consolidating build tools by replacing Vite with Bun's native bundler.
+Guest plugin code imports WIT component-model interfaces via the `canopy:` URI scheme (e.g. `from 'canopy:graph/plugin'`); knip parses the scheme prefix as a package name, so `apps/web`'s `knip.json` keeps `"canopy"` in `ignoreDependencies` to suppress that false positive — it is not a real npm package.
 
 ## Issue tracking
 
