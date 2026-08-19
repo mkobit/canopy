@@ -5,11 +5,15 @@ on:
     branches: ['main']
     paths:
       - 'openspec/**'
+      - 'package.json'
+      - 'bun.lock'
       - '.github/workflows/openspec.yml'
   pull_request:
     branches: ['**']
     paths:
       - 'openspec/**'
+      - 'package.json'
+      - 'bun.lock'
       - '.github/workflows/openspec.yml'
   workflow_dispatch: {}
 
