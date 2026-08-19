@@ -153,21 +153,19 @@ describe('time-travel', () => {
 
     it('returns a graph with nodes created up to a specific eventId', async () => {
       const store = createTestEventLog();
-      const events = [createEvent(1), createEvent(2), createEvent(3)];
-      await store.appendEvents(graphId, events);
+      const event1 = createEvent(1);
+      const event2 = createEvent(2);
+      const event3 = createEvent(3);
+      await store.appendEvents(graphId, [event1, event2, event3]);
 
       // Get graph at event 2
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const result = await getGraphAt(store, graphId, { eventId: events[1]!.eventId });
+      const result = await getGraphAt(store, graphId, { eventId: event2.eventId });
       const graph = unwrap(result);
 
       // Should contain nodes from event 1 and 2, but not 3
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      expect(graph.nodes.has(events[0]!.id)).toBe(true);
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      expect(graph.nodes.has(events[1]!.id)).toBe(true);
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      expect(graph.nodes.has(events[2]!.id)).toBe(false);
+      expect(graph.nodes.has(event1.id)).toBe(true);
+      expect(graph.nodes.has(event2.id)).toBe(true);
+      expect(graph.nodes.has(event3.id)).toBe(false);
 
       // 42 bootstrap + 2 new
       expect(graph.nodes.size).toBe(44);
@@ -175,21 +173,19 @@ describe('time-travel', () => {
 
     it('returns a graph with nodes created up to a specific timestamp', async () => {
       const store = createTestEventLog();
-      const events = [createEvent(1), createEvent(2), createEvent(3)];
-      await store.appendEvents(graphId, events);
+      const event1 = createEvent(1);
+      const event2 = createEvent(2);
+      const event3 = createEvent(3);
+      await store.appendEvents(graphId, [event1, event2, event3]);
 
       // Get graph at the timestamp of event 2
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const result = await getGraphAt(store, graphId, { timestamp: events[1]!.timestamp });
+      const result = await getGraphAt(store, graphId, { timestamp: event2.timestamp });
       const graph = unwrap(result);
 
       // Should contain nodes from event 1 and 2, but not 3
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      expect(graph.nodes.has(events[0]!.id)).toBe(true);
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      expect(graph.nodes.has(events[1]!.id)).toBe(true);
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      expect(graph.nodes.has(events[2]!.id)).toBe(false);
+      expect(graph.nodes.has(event1.id)).toBe(true);
+      expect(graph.nodes.has(event2.id)).toBe(true);
+      expect(graph.nodes.has(event3.id)).toBe(false);
 
       // 42 bootstrap + 2 new
       expect(graph.nodes.size).toBe(44);
@@ -197,21 +193,19 @@ describe('time-travel', () => {
 
     it('returns a graph with all nodes when given the last eventId', async () => {
       const store = createTestEventLog();
-      const events = [createEvent(1), createEvent(2), createEvent(3)];
-      await store.appendEvents(graphId, events);
+      const event1 = createEvent(1);
+      const event2 = createEvent(2);
+      const event3 = createEvent(3);
+      await store.appendEvents(graphId, [event1, event2, event3]);
 
       // Get graph at event 3
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const result = await getGraphAt(store, graphId, { eventId: events[2]!.eventId });
+      const result = await getGraphAt(store, graphId, { eventId: event3.eventId });
       const graph = unwrap(result);
 
       // Should contain all nodes
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      expect(graph.nodes.has(events[0]!.id)).toBe(true);
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      expect(graph.nodes.has(events[1]!.id)).toBe(true);
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      expect(graph.nodes.has(events[2]!.id)).toBe(true);
+      expect(graph.nodes.has(event1.id)).toBe(true);
+      expect(graph.nodes.has(event2.id)).toBe(true);
+      expect(graph.nodes.has(event3.id)).toBe(true);
 
       // 42 bootstrap + 3 new
       expect(graph.nodes.size).toBe(45);
