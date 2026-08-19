@@ -57,23 +57,27 @@ export function generateQueryBenchmarkFixture(
 
 To isolate `@canopy/queries` and `@canopy/graph` performance from filesystem or browser storage engine variances, load tests run against `MemoryEventLogStore` from `@canopy/storage`.
 
-### Decision 3: SLA & Budget Assertions
+### Decision 3: Budget targets are advisory, reported via a non-gating benchmark script
 
-The load test suite enforces latency budget assertions in Bun's test runner:
-- Initial 10k node projection: $< 250\text{ms}$
+**Revised by `canopy-8hw`** (see tasks.md): the suite does not enforce hard latency assertions in `bun test`.
+Wall-clock duration is not a deterministic correctness signal — a single sample is inherently sensitive to whatever else is competing for CPU on the machine running the suite, so asserting on it inside the CI/pre-merge test gate produces exactly the flaky failures this design's own adversarial review (§2, Risk 1) predicted.
+Budget targets below are reference points for a human reading benchmark output, not pass/fail thresholds:
+
+- Initial 10k node projection: reference ~$15$-$20\text{s}$ under contention, single-digit seconds idle (revised up from the original $250\text{ms}$ target, which proved unreachable for a full event-log fold over 10k `NodeCreated`/`EdgeCreated` events — that number was never re-validated against a real measurement before shipping)
 - 10k node-scan + property filter: $< 15\text{ms}$
 - 10k node 1-hop traversal (across 20k edges): $< 25\text{ms}$
-- Single property update commit + re-projection: $< 2\text{ms}$
+- Single property update commit + re-projection: $< 250\text{ms}$ (revised up from $2\text{ms}$/$5\text{ms}$ drafts for the same reason)
 
 ## Technical implementation details
 
-### Test File Location
+### Benchmark script location
 
-The benchmark test file lives at [`packages/queries/tests/query-session-projection.load.test.ts`](file:///home/mkobit/workspace/mkobit/canopy/packages/queries/tests/query-session-projection.load.test.ts).
+The benchmark lives at [`packages/queries/scripts/bench-query-projection.ts`](file:///home/mkobit/workspace/mkobit/canopy/packages/queries/scripts/bench-query-projection.ts), run manually via `bun run --filter @canopy/queries bench:query-projection`.
+It is excluded from `eslint` and from `bun test` (see `packages/queries/tests/`'s absence of a load-test file, and `eslint.config.mjs`'s `packages/queries/scripts/**/*` ignore), matching `packages/graph/scripts/bench-index-maintenance.ts`.
 
 ### Performance Measurement Standard
 
-Microsecond precision using `performance.now()` with warm-up runs (3 iterations) followed by measured runs (10 iterations) to report minimum, average, and 95th percentile ($p95$) latency figures.
+Microsecond precision using `performance.now()`, median and $p95$ over repeated samples per operation (7 reps for the expensive 10k-node initial-load case, 10-100 reps for cheaper operations — see the script's `*_REPETITIONS` constants), printed for a human to read.
 
 ## Adversarial review and mitigations
 
@@ -86,6 +90,7 @@ Microsecond precision using `performance.now()` with warm-up runs (3 iterations)
 
 - **Risk 1**: Flaky test failures in CI due to background CPU throttling or shared runner noise causing transient timing spikes above fixed millisecond thresholds.
 - **Mitigation**: Latency assertions compare median/$p95$ of 10 runs rather than single-run max latency, and use generous fallback bounds (2.5x buffer) in CI environments.
+- **Actual outcome (`canopy-8hw`)**: the shipped implementation did not follow this mitigation — it asserted on a single `performance.now()` sample inside `bun test`, with no median/$p95$ aggregation and no CI buffer, so this exact risk materialized (21-24s against a 20s threshold on an idle dev machine, 50s+ under load). Corrected by removing the hard assertion entirely: see Decision 3.
 - **Risk 2**: Deep traversal queries (e.g. multi-hop recursive or cycle-heavy graphs) causing call stack overflow or infinite loops during benchmark execution.
 - **Mitigation**: `generateQueryBenchmarkFixture` produces directed acyclic graphs (DAGs) by default, and query engine traversal steps enforce visit tracking (`Set<NodeId>`) to prevent cyclic infinite loops.
 

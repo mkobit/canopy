@@ -36,6 +36,7 @@ export default tseslint.config(
       'apps/extension/scripts/**/*',
       'apps/web/scripts/**/*',
       'packages/graph/scripts/**/*',
+      'packages/queries/scripts/**/*',
       '**/transpiled/**/*',
       '**/apps/web/.storybook-static/**',
     ],
