@@ -39,10 +39,11 @@ bun pm ls --all
 | Task                 | Command                            |
 | :------------------- | :--------------------------------- |
 | Install dependencies | `bun install`                      |
-| Run tests            | `bun test`                         |
+| Run quality gates    | `mise run check`                   |
 | Build all packages   | `bun run build`                    |
 | Lint codebase        | `bun run lint`                     |
 | Type check           | `bun run typecheck`                |
+| Run tests            | `bun test`                         |
 | Validate OpenSpec    | `bun exec openspec validate --all` |
 
 Run `bun run build` before `bun run lint` on a fresh checkout.
