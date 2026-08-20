@@ -70,26 +70,10 @@ export async function getGraphAt(
   target: TimeTravelTarget,
 ): Promise<Result<Graph, Error>> {
   return fromAsyncThrowable(async () => {
-    // eslint-disable-next-line functional/no-let
-    let beforeEventId: EventId;
-
-    // eslint-disable-next-line unicorn/prefer-ternary
-    if ('eventId' in target) {
-      // We want state *after* target.eventId.
-      // Store supports 'before' (exclusive).
-      // So we need 'before: target.eventId + 1'.
-      beforeEventId = incrementEventId(target.eventId);
-    } else {
-      // We want state at timestamp.
-      // Effectively all events with timestamp <= target.timestamp.
-      // So we use max possible UUID for that timestamp, which is >= any real event in that ms.
-      // But query is exclusive 'before'.
-      // So we need 'before: (max UUID for timestamp) + 1'?
-      // Or simply 'before: (max UUID for timestamp)' implies we exclude the theoretical max UUID?
-      // Since real events are random, they are strictly less than max UUID.
-      // So 'before: maxUUID' will include all real events in that ms.
-      beforeEventId = maxEventIdForTimestamp(target.timestamp);
-    }
+    const beforeEventId =
+      'eventId' in target
+        ? incrementEventId(target.eventId)
+        : maxEventIdForTimestamp(target.timestamp);
 
     // We fetch ALL events up to that point.
     const eventsResult = await store.getEvents(graphId, {

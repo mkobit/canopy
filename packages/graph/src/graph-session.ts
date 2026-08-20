@@ -133,18 +133,17 @@ export function createGraphSession(
   graphId: GraphId,
   deviceId: DeviceId,
 ): GraphSession {
-  // eslint-disable-next-line functional/no-let
-  let mergeState: MergeState = createMergeState();
-  // eslint-disable-next-line functional/no-let
-  let currentGraph: Graph = unwrap(createGraph(graphId, SESSION_GRAPH_NAME));
-  // eslint-disable-next-line functional/no-let
-  let subscribers: ReadonlySet<GraphChangeHandler> = new Set();
+  const mergeStateCell = { current: createMergeState() as MergeState };
+  const currentGraphCell = { current: unwrap(createGraph(graphId, SESSION_GRAPH_NAME)) as Graph };
+  const subscribersCell = {
+    current: new Set<GraphChangeHandler>() as ReadonlySet<GraphChangeHandler>,
+  };
 
   // eslint-disable-next-line functional/no-return-void
   const notify = (graph: Graph, applied: readonly GraphEvent[]): void => {
     if (applied.length === 0) return;
     const delta: GraphSessionDelta = { applied };
-    dispatchChangeHandlers([...subscribers], graph, delta);
+    dispatchChangeHandlers([...subscribersCell.current], graph, delta);
   };
 
   const load = async (): Promise<Result<Graph, Error>> => {
@@ -155,27 +154,27 @@ export function createGraphSession(
     if (!eventsResult.ok) return eventsResult;
 
     const merged = mergeEvents(createMergeState(), initial.value, eventsResult.value);
-    mergeState = merged.state;
-    currentGraph = merged.graph;
+    mergeStateCell.current = merged.state;
+    currentGraphCell.current = merged.graph;
     return ok(merged.graph);
   };
 
   const commit = async (events: readonly GraphEvent[]): Promise<Result<Graph, Error>> => {
     if (events.length === 0) {
-      return ok(currentGraph);
+      return ok(currentGraphCell.current);
     }
 
     const stamped = events.map((event) => ({ ...event, deviceId }) as GraphEvent);
 
-    const validation = validateCommit(currentGraph, stamped);
+    const validation = validateCommit(currentGraphCell.current, stamped);
     if (!validation.ok) return validation;
 
     const appendResult = await eventLog.appendEvents(graphId, stamped);
     if (!appendResult.ok) return appendResult;
 
-    const merged = mergeEvents(mergeState, currentGraph, stamped);
-    mergeState = merged.state;
-    currentGraph = merged.graph;
+    const merged = mergeEvents(mergeStateCell.current, currentGraphCell.current, stamped);
+    mergeStateCell.current = merged.state;
+    currentGraphCell.current = merged.graph;
     notify(merged.graph, merged.applied);
 
     return ok(merged.graph);
@@ -185,18 +184,20 @@ export function createGraphSession(
   const subscribe = (handler: GraphChangeHandler): (() => void) => {
     // eslint-disable-next-line functional/no-return-void, functional/prefer-tacit
     const wrapped: GraphChangeHandler = (graph, delta) => handler(graph, delta);
-    subscribers = new Set([...subscribers, wrapped]);
+    subscribersCell.current = new Set([...subscribersCell.current, wrapped]);
 
     // eslint-disable-next-line functional/no-return-void
     return () => {
-      subscribers = new Set([...subscribers].filter((handler_) => handler_ !== wrapped));
+      subscribersCell.current = new Set(
+        [...subscribersCell.current].filter((handler_) => handler_ !== wrapped),
+      );
     };
   };
 
   return {
     load,
     commit,
-    graph: () => currentGraph,
+    graph: () => currentGraphCell.current,
     subscribe,
   };
 }

@@ -58,8 +58,7 @@ function dispatchSubscribers(
 }
 
 export function createEventBus(): EventBus {
-  // eslint-disable-next-line functional/no-let
-  let subscribers: ReadonlySet<EventHandler> = new Set();
+  const subscribersCell = { current: new Set<EventHandler>() as ReadonlySet<EventHandler> };
 
   // eslint-disable-next-line functional/no-return-void
   const subscribe = (handler: EventHandler): (() => void) => {
@@ -68,21 +67,23 @@ export function createEventBus(): EventBus {
     const wrappedHandler: EventHandler = (events: readonly GraphEvent[]) => handler(events);
 
     // Create a new Set to maintain immutability of the reference
-    subscribers = new Set([...subscribers, wrappedHandler]);
+    subscribersCell.current = new Set([...subscribersCell.current, wrappedHandler]);
 
     // eslint-disable-next-line functional/no-return-void
     return () => {
       // Return a function that removes the handler by creating a new Set
-      subscribers = new Set([...subscribers].filter((handler_) => handler_ !== wrappedHandler));
+      subscribersCell.current = new Set(
+        [...subscribersCell.current].filter((handler_) => handler_ !== wrappedHandler),
+      );
     };
   };
 
   // eslint-disable-next-line functional/no-return-void
   const emit = (events: readonly GraphEvent[]): void => {
-    dispatchSubscribers([...subscribers], events);
+    dispatchSubscribers([...subscribersCell.current], events);
   };
 
-  const subscriberCount = (): number => subscribers.size;
+  const subscriberCount = (): number => subscribersCell.current.size;
 
   return {
     subscribe,
