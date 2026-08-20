@@ -43,51 +43,84 @@ const SESSION_GRAPH_NAME = 'graph';
  * validateNode/validateEdge against the entities the dry run produced.
  */
 function validateCommit(graph: Graph, events: readonly GraphEvent[]): Result<void, Error> {
-  // eslint-disable-next-line functional/no-loop-statements
-  for (const event of events) {
-    if (event.type === 'NodeDeleted' && isSystemNodeId(event.id)) {
-      return error(new Error(`Cannot delete system node: ${event.id}`));
-    }
+  const deletedSystemEvent = events.find(
+    (event) => event.type === 'NodeDeleted' && isSystemNodeId(event.id),
+  );
+  if (deletedSystemEvent && deletedSystemEvent.type === 'NodeDeleted') {
+    return error(new Error(`Cannot delete system node: ${deletedSystemEvent.id}`));
   }
 
   const dryRun = projectGraph(events, graph);
   if (!dryRun.ok) return dryRun;
   const dryRunGraph = dryRun.value;
 
-  const touchedNodeIds = new Set<NodeId>(
-    events.flatMap((event) =>
-      event.type === 'NodeCreated' || event.type === 'NodePropertiesUpdated' ? [event.id] : [],
+  const touchedNodeIds = [
+    ...new Set<NodeId>(
+      events.flatMap((event) =>
+        event.type === 'NodeCreated' || event.type === 'NodePropertiesUpdated' ? [event.id] : [],
+      ),
     ),
-  );
-  const touchedEdgeIds = new Set<EdgeId>(
-    events.flatMap((event) =>
-      event.type === 'EdgeCreated' || event.type === 'EdgePropertiesUpdated' ? [event.id] : [],
+  ];
+  const touchedEdgeIds = [
+    ...new Set<EdgeId>(
+      events.flatMap((event) =>
+        event.type === 'EdgeCreated' || event.type === 'EdgePropertiesUpdated' ? [event.id] : [],
+      ),
     ),
-  );
+  ];
 
-  // eslint-disable-next-line functional/no-loop-statements
-  for (const id of touchedNodeIds) {
-    const node = dryRunGraph.nodes.get(id);
-    if (!node) continue; // deleted later within the same commit
-    const result = validateNode(dryRunGraph, node);
-    if (!result.valid) {
-      const detail = result.errors.map((error_) => error_.message).join(', ');
-      return error(new Error(`Node ${id} failed validation: ${detail}`));
-    }
+  const invalidNodeError = touchedNodeIds
+    .map((id) => {
+      const node = dryRunGraph.nodes.get(id);
+      if (!node) return undefined;
+      const result = validateNode(dryRunGraph, node);
+      if (!result.valid) {
+        const detail = result.errors.map((error_) => error_.message).join(', ');
+        return new Error(`Node ${id} failed validation: ${detail}`);
+      }
+      return undefined;
+    })
+    .find((error_): error_ is Error => error_ !== undefined);
+
+  if (invalidNodeError) {
+    return error(invalidNodeError);
   }
 
-  // eslint-disable-next-line functional/no-loop-statements
-  for (const id of touchedEdgeIds) {
-    const edge = dryRunGraph.edges.get(id);
-    if (!edge) continue;
-    const result = validateEdge(dryRunGraph, edge);
-    if (!result.valid) {
-      const detail = result.errors.map((error_) => error_.message).join(', ');
-      return error(new Error(`Edge ${id} failed validation: ${detail}`));
-    }
+  const invalidEdgeError = touchedEdgeIds
+    .map((id) => {
+      const edge = dryRunGraph.edges.get(id);
+      if (!edge) return undefined;
+      const result = validateEdge(dryRunGraph, edge);
+      if (!result.valid) {
+        const detail = result.errors.map((error_) => error_.message).join(', ');
+        return new Error(`Edge ${id} failed validation: ${detail}`);
+      }
+      return undefined;
+    })
+    .find((error_): error_ is Error => error_ !== undefined);
+
+  if (invalidEdgeError) {
+    return error(invalidEdgeError);
   }
 
   return ok(undefined);
+}
+
+function dispatchChangeHandlers(
+  handlers: readonly GraphChangeHandler[],
+  graph: Graph,
+  delta: GraphSessionDelta,
+  index = 0,
+  // eslint-disable-next-line functional/no-return-void
+): void {
+  if (index >= handlers.length) {
+    return;
+  }
+  const handler = handlers[index];
+  if (handler !== undefined) {
+    handler(graph, delta);
+  }
+  dispatchChangeHandlers(handlers, graph, delta, index + 1);
 }
 
 /**
@@ -111,10 +144,7 @@ export function createGraphSession(
   const notify = (graph: Graph, applied: readonly GraphEvent[]): void => {
     if (applied.length === 0) return;
     const delta: GraphSessionDelta = { applied };
-    // eslint-disable-next-line functional/no-loop-statements
-    for (const handler of subscribers) {
-      handler(graph, delta);
-    }
+    dispatchChangeHandlers([...subscribers], graph, delta);
   };
 
   const load = async (): Promise<Result<Graph, Error>> => {

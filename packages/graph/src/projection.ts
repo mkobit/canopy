@@ -295,6 +295,25 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
   });
 }
 
+function applyEventsFold(
+  events: readonly GraphEvent[],
+  current: Graph,
+  index = 0,
+): Result<Graph, Error> {
+  if (index >= events.length) {
+    return ok(current);
+  }
+  const event = events[index];
+  if (event === undefined) {
+    return ok(current);
+  }
+  const result = applyEvent(current, event);
+  if (!result.ok) {
+    return result;
+  }
+  return applyEventsFold(events, result.value, index + 1);
+}
+
 /**
  * Reconstructs a graph from a stream of events.
  * Optionally accepts an initial graph state.
@@ -304,18 +323,5 @@ export function projectGraph(
   initialGraph: Graph,
 ): Result<Graph, Error> {
   const sortedEvents = [...events].toSorted((a, b) => a.eventId.localeCompare(b.eventId));
-
-  // eslint-disable-next-line functional/no-let
-  let currentGraph = initialGraph;
-
-  // eslint-disable-next-line functional/no-loop-statements
-  for (const event of sortedEvents) {
-    const result = applyEvent(currentGraph, event);
-    if (!result.ok) {
-      return result;
-    }
-    currentGraph = result.value;
-  }
-
-  return ok(currentGraph);
+  return applyEventsFold(sortedEvents, initialGraph);
 }
