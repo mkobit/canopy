@@ -203,15 +203,9 @@ export function updateNode(
     },
   };
 
-  const changes = new Map<string, PropertyValue>();
-  // eslint-disable-next-line functional/no-loop-statements
-  for (const [key, value] of finalNode.properties) {
-    const existing = existingNode.properties.get(key);
-    if (existing !== value) {
-      // eslint-disable-next-line functional/immutable-data
-      changes.set(key, value);
-    }
-  }
+  const changes = new Map<string, PropertyValue>(
+    [...finalNode.properties].filter(([key, value]) => existingNode.properties.get(key) !== value),
+  );
 
   const event: GraphEvent = {
     type: 'NodePropertiesUpdated',

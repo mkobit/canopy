@@ -62,13 +62,7 @@ function decodeBase64(base64: string): Uint8Array {
   }
 
   const binaryString = atob(base64);
-  const bytes = new Uint8Array(binaryString.length);
-  // eslint-disable-next-line functional/no-loop-statements -- standard loop to populate typed array
-  for (let index = 0; index < binaryString.length; index++) {
-    // eslint-disable-next-line functional/immutable-data -- standard code point assignment
-    bytes[index] = binaryString.codePointAt(index) || 0;
-  }
-  return bytes;
+  return Uint8Array.from(binaryString, (char) => char.codePointAt(0) ?? 0);
 }
 
 export function validateWasmBinaryProperty(

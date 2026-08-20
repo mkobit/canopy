@@ -54,18 +54,16 @@ function validateCommit(graph: Graph, events: readonly GraphEvent[]): Result<voi
   if (!dryRun.ok) return dryRun;
   const dryRunGraph = dryRun.value;
 
-  const touchedNodeIds = new Set<NodeId>();
-  const touchedEdgeIds = new Set<EdgeId>();
-  // eslint-disable-next-line functional/no-loop-statements
-  for (const event of events) {
-    if (event.type === 'NodeCreated' || event.type === 'NodePropertiesUpdated') {
-      // eslint-disable-next-line functional/immutable-data
-      touchedNodeIds.add(event.id);
-    } else if (event.type === 'EdgeCreated' || event.type === 'EdgePropertiesUpdated') {
-      // eslint-disable-next-line functional/immutable-data
-      touchedEdgeIds.add(event.id);
-    }
-  }
+  const touchedNodeIds = new Set<NodeId>(
+    events.flatMap((event) =>
+      event.type === 'NodeCreated' || event.type === 'NodePropertiesUpdated' ? [event.id] : [],
+    ),
+  );
+  const touchedEdgeIds = new Set<EdgeId>(
+    events.flatMap((event) =>
+      event.type === 'EdgeCreated' || event.type === 'EdgePropertiesUpdated' ? [event.id] : [],
+    ),
+  );
 
   // eslint-disable-next-line functional/no-loop-statements
   for (const id of touchedNodeIds) {
@@ -157,17 +155,11 @@ export function createGraphSession(
   const subscribe = (handler: GraphChangeHandler): (() => void) => {
     // eslint-disable-next-line functional/no-return-void, functional/prefer-tacit
     const wrapped: GraphChangeHandler = (graph, delta) => handler(graph, delta);
-    const next = new Set(subscribers);
-    // eslint-disable-next-line functional/immutable-data
-    next.add(wrapped);
-    subscribers = next;
+    subscribers = new Set([...subscribers, wrapped]);
 
     // eslint-disable-next-line functional/no-return-void
     return () => {
-      const remaining = new Set(subscribers);
-      // eslint-disable-next-line functional/immutable-data
-      remaining.delete(wrapped);
-      subscribers = remaining;
+      subscribers = new Set([...subscribers].filter((handler_) => handler_ !== wrapped));
     };
   };
 
