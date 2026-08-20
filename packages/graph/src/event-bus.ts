@@ -4,6 +4,24 @@ import type { TypeId } from './identifiers';
 // eslint-disable-next-line functional/no-return-void
 export type EventHandler = (events: readonly GraphEvent[]) => void;
 
+function dispatchNodeCreated(
+  events: readonly GraphEvent[],
+  typeId: TypeId,
+  // eslint-disable-next-line functional/no-return-void
+  callback: (event: NodeCreated) => void,
+  index = 0,
+  // eslint-disable-next-line functional/no-return-void
+): void {
+  if (index >= events.length) {
+    return;
+  }
+  const event = events[index];
+  if (event !== undefined && event.type === 'NodeCreated' && event.nodeType === typeId) {
+    callback(event);
+  }
+  dispatchNodeCreated(events, typeId, callback, index + 1);
+}
+
 export const onNodeCreated = (
   typeId: TypeId,
   // eslint-disable-next-line functional/no-return-void
@@ -11,12 +29,7 @@ export const onNodeCreated = (
 ): EventHandler => {
   // eslint-disable-next-line functional/no-return-void
   return (events: readonly GraphEvent[]) => {
-    // eslint-disable-next-line functional/no-loop-statements
-    for (const event of events) {
-      if (event.type === 'NodeCreated' && event.nodeType === typeId) {
-        callback(event);
-      }
-    }
+    dispatchNodeCreated(events, typeId, callback);
   };
 };
 
@@ -26,6 +39,22 @@ export interface EventBus {
   // eslint-disable-next-line functional/no-return-void
   readonly emit: (events: readonly GraphEvent[]) => void;
   readonly subscriberCount: () => number;
+}
+
+function dispatchSubscribers(
+  subscribers: readonly EventHandler[],
+  events: readonly GraphEvent[],
+  index = 0,
+  // eslint-disable-next-line functional/no-return-void
+): void {
+  if (index >= subscribers.length) {
+    return;
+  }
+  const subscriber = subscribers[index];
+  if (subscriber !== undefined) {
+    subscriber(events);
+  }
+  dispatchSubscribers(subscribers, events, index + 1);
 }
 
 export function createEventBus(): EventBus {
@@ -50,10 +79,7 @@ export function createEventBus(): EventBus {
 
   // eslint-disable-next-line functional/no-return-void
   const emit = (events: readonly GraphEvent[]): void => {
-    // eslint-disable-next-line functional/no-loop-statements
-    for (const handler of subscribers) {
-      handler(events);
-    }
+    dispatchSubscribers([...subscribers], events);
   };
 
   const subscriberCount = (): number => subscribers.size;
