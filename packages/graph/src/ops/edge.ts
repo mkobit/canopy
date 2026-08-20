@@ -231,15 +231,9 @@ export function updateEdge(
     },
   };
 
-  const changes = new Map<string, PropertyValue>();
-  // eslint-disable-next-line functional/no-loop-statements
-  for (const [key, value] of finalEdge.properties) {
-    const existing = existingEdge.properties.get(key);
-    if (existing !== value) {
-      // eslint-disable-next-line functional/immutable-data
-      changes.set(key, value);
-    }
-  }
+  const changes = new Map<string, PropertyValue>(
+    [...finalEdge.properties].filter(([key, value]) => existingEdge.properties.get(key) !== value),
+  );
 
   const event: GraphEvent = {
     type: 'EdgePropertiesUpdated',

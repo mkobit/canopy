@@ -36,26 +36,24 @@ export function maxEventIdForTimestamp(timestamp: Instant): EventId {
  * Used to transform an inclusive upper bound to an exclusive one.
  */
 export function incrementEventId(eventId: EventId): EventId {
-  const hexChars = eventId.toLowerCase().split('');
+  const chars = eventId.toLowerCase().split('');
+  const incrementIndex = chars.findLastIndex((char) => char !== '-' && char !== 'f');
 
-  // eslint-disable-next-line functional/no-loop-statements
-  for (let index = hexChars.length - 1; index >= 0; index--) {
-    const char = hexChars[index];
-    if (!char || char === '-') continue;
-
-    // eslint-disable-next-line unicorn/prefer-number-properties
-    const value = parseInt(char, 16);
-    if (value < 15) {
-      // eslint-disable-next-line functional/immutable-data
-      hexChars[index] = (value + 1).toString(16);
-      return hexChars.join('') as EventId;
-    }
-    // eslint-disable-next-line functional/immutable-data
-    hexChars[index] = '0';
+  if (incrementIndex === -1) {
+    // Overflow (should not happen for valid UUIDs in our lifetime)
+    return eventId;
   }
 
-  // Overflow (should not happen for valid UUIDs in our lifetime)
-  return eventId;
+  const incrementedChars = chars.map((char, index) => {
+    if (char === '-') return '-';
+    if (index < incrementIndex) return char;
+    if (index === incrementIndex) {
+      return (Number.parseInt(char, 16) + 1).toString(16);
+    }
+    return '0';
+  });
+
+  return incrementedChars.join('') as EventId;
 }
 
 /**

@@ -39,18 +39,12 @@ export function createEventBus(): EventBus {
     const wrappedHandler: EventHandler = (events: readonly GraphEvent[]) => handler(events);
 
     // Create a new Set to maintain immutability of the reference
-    const newSubscribers = new Set(subscribers);
-    // eslint-disable-next-line functional/immutable-data
-    newSubscribers.add(wrappedHandler);
-    subscribers = newSubscribers;
+    subscribers = new Set([...subscribers, wrappedHandler]);
 
     // eslint-disable-next-line functional/no-return-void
     return () => {
       // Return a function that removes the handler by creating a new Set
-      const updatedSubscribers = new Set(subscribers);
-      // eslint-disable-next-line functional/immutable-data
-      updatedSubscribers.delete(wrappedHandler);
-      subscribers = updatedSubscribers;
+      subscribers = new Set([...subscribers].filter((handler_) => handler_ !== wrappedHandler));
     };
   };
 

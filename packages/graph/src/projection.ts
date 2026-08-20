@@ -53,9 +53,7 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
               },
             };
 
-            const newNodes = new Map(graph.nodes);
-            // eslint-disable-next-line functional/immutable-data
-            newNodes.set(node.id, node);
+            const newNodes = new Map([...graph.nodes, [node.id, node]]);
 
             return ok({
               ...graph,
@@ -91,12 +89,7 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
               return ok(graph);
             }
 
-            const updatedProperties = new Map(node.properties);
-            // eslint-disable-next-line functional/no-loop-statements
-            for (const [key, value] of event.changes) {
-              // eslint-disable-next-line functional/immutable-data
-              updatedProperties.set(key, value);
-            }
+            const updatedProperties = new Map([...node.properties, ...event.changes]);
 
             const updatedNode: Node = {
               ...node,
@@ -108,9 +101,7 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
               },
             };
 
-            const newNodes = new Map(graph.nodes);
-            // eslint-disable-next-line functional/immutable-data
-            newNodes.set(node.id, updatedNode);
+            const newNodes = new Map([...graph.nodes, [node.id, updatedNode]]);
 
             return ok({
               ...graph,
@@ -135,9 +126,7 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
               return ok(graph);
             }
 
-            const newNodes = new Map(graph.nodes);
-            // eslint-disable-next-line functional/immutable-data
-            newNodes.delete(event.id);
+            const newNodes = new Map([...graph.nodes].filter(([id]) => id !== event.id));
 
             const newEdges = new Map(
               [...graph.edges].filter(
@@ -188,9 +177,7 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
               },
             };
 
-            const newEdges = new Map(graph.edges);
-            // eslint-disable-next-line functional/immutable-data
-            newEdges.set(edge.id, edge);
+            const newEdges = new Map([...graph.edges, [edge.id, edge]]);
 
             return ok({
               ...graph,
@@ -226,12 +213,7 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
               return ok(graph);
             }
 
-            const updatedProperties = new Map(edge.properties);
-            // eslint-disable-next-line functional/no-loop-statements
-            for (const [key, value] of event.changes) {
-              // eslint-disable-next-line functional/immutable-data
-              updatedProperties.set(key, value);
-            }
+            const updatedProperties = new Map([...edge.properties, ...event.changes]);
 
             const updatedEdge: Edge = {
               ...edge,
@@ -243,9 +225,7 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
               },
             };
 
-            const newEdges = new Map(graph.edges);
-            // eslint-disable-next-line functional/immutable-data
-            newEdges.set(edge.id, updatedEdge);
+            const newEdges = new Map([...graph.edges, [edge.id, updatedEdge]]);
 
             return ok({
               ...graph,
@@ -270,9 +250,7 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
               return ok(graph);
             }
 
-            const newEdges = new Map(graph.edges);
-            // eslint-disable-next-line functional/immutable-data
-            newEdges.delete(event.id);
+            const newEdges = new Map([...graph.edges].filter(([id]) => id !== event.id));
 
             return ok({
               ...graph,
