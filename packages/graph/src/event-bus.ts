@@ -14,10 +14,9 @@ export const onNodeCreated = (
   return (events: readonly GraphEvent[]) =>
     events
       .filter(
-        (event): event is NodeCreated =>
-          event.type === 'NodeCreated' && event.nodeType === typeId,
+        (event): event is NodeCreated => event.type === 'NodeCreated' && event.nodeType === typeId,
       )
-      .map((event) => callback(event));
+      .map((event, _index) => callback(event));
 };
 
 export interface EventBus {
