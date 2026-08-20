@@ -41,12 +41,11 @@ export interface DraftSession {
  * Creates a new draft session overlaying a parent graph session.
  */
 export function createDraftSession(parentSession: GraphSession): DraftSession {
-  // eslint-disable-next-line functional/no-let
-  let stagedEvents: readonly GraphEvent[] = [];
+  const stagedEventsCell = { current: [] as readonly GraphEvent[] };
 
   const graph = (): Graph => {
     const parentGraph = parentSession.graph();
-    const result = projectDraftOverlay(parentGraph, stagedEvents);
+    const result = projectDraftOverlay(parentGraph, stagedEventsCell.current);
     if (result.ok) {
       return result.value;
     }
@@ -55,11 +54,11 @@ export function createDraftSession(parentSession: GraphSession): DraftSession {
 
   const applyEvents = (events: readonly GraphEvent[]): Result<void, DraftError> => {
     const parentGraph = parentSession.graph();
-    const result = applyDraftEvents(parentGraph, stagedEvents, events);
+    const result = applyDraftEvents(parentGraph, stagedEventsCell.current, events);
     if (!result.ok) {
       return error({ type: 'validation-failure', message: result.error.message });
     }
-    stagedEvents = result.value;
+    stagedEventsCell.current = result.value;
     return ok(undefined);
   };
 
@@ -70,17 +69,17 @@ export function createDraftSession(parentSession: GraphSession): DraftSession {
       return error({ type: 'concurrent-modification' });
     }
 
-    const commitResult = await parentSession.commit(stagedEvents);
+    const commitResult = await parentSession.commit(stagedEventsCell.current);
     if (!commitResult.ok) {
       return error({ type: 'storage-error', message: commitResult.error.message });
     }
 
-    stagedEvents = [];
+    stagedEventsCell.current = [];
     return ok(undefined);
   };
 
   const discard = (): Result<void, DraftError> => {
-    stagedEvents = [];
+    stagedEventsCell.current = [];
     return ok(undefined);
   };
 
