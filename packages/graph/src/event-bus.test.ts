@@ -31,6 +31,17 @@ describe('createEventBus', () => {
     expect(handler).toHaveBeenCalledWith([mockEvent]);
   });
 
+  test('emit returns subscriber results in subscription order', () => {
+    const bus = createEventBus();
+    const first = mock(() => 'first');
+    const second = mock(() => 'second');
+
+    bus.subscribe(first);
+    bus.subscribe(second);
+
+    expect(bus.emit([mockEvent])).toEqual(['first', 'second']);
+  });
+
   test('unsubscribing stops future notifications', () => {
     const bus = createEventBus();
     const handler = mock();
@@ -39,7 +50,8 @@ describe('createEventBus', () => {
     bus.emit([mockEvent]);
     expect(handler).toHaveBeenCalledTimes(1);
 
-    unsubscribe();
+    expect(unsubscribe()).toBe(true);
+    expect(unsubscribe()).toBe(false);
     bus.emit([mockEvent]);
     expect(handler).toHaveBeenCalledTimes(1); // Still 1, didn't increase
   });

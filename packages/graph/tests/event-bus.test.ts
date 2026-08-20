@@ -6,7 +6,7 @@ import type { NodeCreated, NodeDeleted, PropertyValue } from '@canopy/graph';
 describe('EventBus Helpers', () => {
   describe('onNodeCreated', () => {
     test('invokes callback for NodeCreated event with matching typeId', () => {
-      const callback = mock();
+      const callback = mock(() => 'matched');
       const targetTypeId = asTypeId('type-A');
       const handler = onNodeCreated(targetTypeId, callback);
 
@@ -20,10 +20,11 @@ describe('EventBus Helpers', () => {
         deviceId: asDeviceId('d-1'),
       };
 
-      handler([matchingEvent]);
+      const output = handler([matchingEvent]);
 
       expect(callback).toHaveBeenCalledTimes(1);
       expect(callback).toHaveBeenCalledWith(matchingEvent);
+      expect(output).toEqual(['matched']);
     });
 
     test('ignores NodeCreated events with non-matching typeId', () => {
