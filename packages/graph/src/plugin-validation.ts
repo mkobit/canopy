@@ -1,5 +1,6 @@
 import type { ValidationError } from './validation-types';
 import type { PropertyValue } from './properties';
+import { fromThrowable } from './result';
 
 // Recognized WASM plugin capability vocabulary. Kept in sync with
 // `KNOWN_WASM_CAPABILITIES` in `@canopy/api-adapter`; duplicated here because
@@ -27,8 +28,7 @@ export const RECOGNIZED_WASM_CAPABILITIES: ReadonlySet<string> = new Set([
 ]);
 
 const brotliDecompressSync = (() => {
-  // eslint-disable-next-line functional/no-try-statements
-  try {
+  const result = fromThrowable(() => {
     const hasImportMeta = import.meta !== undefined;
     const request =
       hasImportMeta && 'require' in import.meta
@@ -45,23 +45,24 @@ const brotliDecompressSync = (() => {
         return zlib.brotliDecompressSync as (buffer: Uint8Array) => Uint8Array;
       }
     }
-  } catch {
-    // Ignore errors in browser or environments without require
-  }
-  return null;
+    return null;
+  });
+  return result.ok ? result.value : null;
 })();
 
 function decodeBase64(base64: string): Uint8Array {
-  // eslint-disable-next-line functional/no-try-statements
-  try {
+  const bufferResult = fromThrowable(() => {
     if (typeof Buffer !== 'undefined') {
       return Buffer.from(base64, 'base64');
     }
-  } catch {
-    // ignore and fall back to browser atob
+    return undefined;
+  });
+  if (bufferResult.ok && bufferResult.value !== undefined) {
+    return bufferResult.value;
   }
 
-  const binaryString = atob(base64);
+  const binaryResult = fromThrowable(() => atob(base64));
+  const binaryString = binaryResult.ok ? binaryResult.value : '';
   return Uint8Array.from(binaryString, (char) => char.codePointAt(0) ?? 0);
 }
 
@@ -93,8 +94,7 @@ export function validateWasmBinaryProperty(
     ];
   }
 
-  // eslint-disable-next-line functional/no-try-statements
-  try {
+  const validationResult = fromThrowable(() => {
     const raw = atob(cleaned.slice(0, 32));
     const isWasmMagic =
       raw.codePointAt(0) === 0x00 &&
@@ -126,7 +126,10 @@ export function validateWasmBinaryProperty(
         ];
       }
     }
-  } catch {
+    return [];
+  });
+
+  if (!validationResult.ok) {
     return [
       {
         path: [propertyName],
@@ -137,7 +140,7 @@ export function validateWasmBinaryProperty(
     ];
   }
 
-  return [];
+  return validationResult.value;
 }
 
 // eslint-disable-next-line max-lines-per-function
@@ -156,206 +159,8 @@ export function validatePluginManifestProperty(
     ];
   }
 
-  // eslint-disable-next-line functional/no-try-statements
-  try {
-    const parsed = JSON.parse(value) as unknown;
-    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-      return [
-        {
-          path: [propertyName],
-          message: `Property '${propertyName}' must parse to a JSON object`,
-          expected: 'JSON object',
-          actual: typeof parsed,
-        },
-      ];
-    }
-
-    const manifest = parsed as Record<string, unknown>;
-
-    const nameError =
-      typeof manifest.name !== 'string' || manifest.name.trim() === ''
-        ? [
-            {
-              path: [propertyName, 'name'],
-              message: "Manifest property 'name' must be a non-empty string",
-              expected: 'non-empty string',
-              actual: typeof manifest.name === 'string' ? manifest.name : typeof manifest.name,
-            },
-          ]
-        : [];
-
-    const versionError =
-      typeof manifest.version !== 'string' || manifest.version.trim() === ''
-        ? [
-            {
-              path: [propertyName, 'version'],
-              message: "Manifest property 'version' must be a non-empty string",
-              expected: 'non-empty string',
-              actual:
-                typeof manifest.version === 'string' ? manifest.version : typeof manifest.version,
-            },
-          ]
-        : [];
-
-    const capabilitiesError = Array.isArray(manifest.capabilities)
-      ? manifest.capabilities
-          .map((cap: unknown, index): ValidationError | null => {
-            if (typeof cap !== 'string' || cap.trim() === '') {
-              return {
-                path: [propertyName, 'capabilities', String(index)],
-                message: `Manifest property 'capabilities' element at index ${index} must be a non-empty string`,
-                expected: 'non-empty string',
-                actual: typeof cap === 'string' ? cap : typeof cap,
-              };
-            }
-            if (!RECOGNIZED_WASM_CAPABILITIES.has(cap)) {
-              return {
-                path: [propertyName, 'capabilities', String(index)],
-                message: `Manifest property 'capabilities' element at index ${index} ('${cap}') is not a recognized capability`,
-                expected: 'recognized WasmCapability string',
-                actual: cap,
-              };
-            }
-            return null;
-          })
-          .filter((error): error is ValidationError => error !== null)
-      : [
-          {
-            path: [propertyName, 'capabilities'],
-            message: "Manifest property 'capabilities' must be an array of strings",
-            expected: 'array of strings',
-            actual: typeof manifest.capabilities,
-          },
-        ];
-
-    const menuItemsError =
-      manifest.menuItems === undefined
-        ? []
-        : Array.isArray(manifest.menuItems)
-          ? manifest.menuItems.flatMap((item: unknown, index): readonly ValidationError[] => {
-              if (typeof item !== 'object' || item === null || Array.isArray(item)) {
-                return [
-                  {
-                    path: [propertyName, 'menuItems', String(index)],
-                    message: `Manifest property 'menuItems' element at index ${index} must be an object`,
-                    expected: 'object',
-                    actual: typeof item,
-                  },
-                ];
-              }
-              const itemRec = item as Record<string, unknown>;
-              const itemLabelError =
-                typeof itemRec.label !== 'string' || itemRec.label.trim() === ''
-                  ? [
-                      {
-                        path: [propertyName, 'menuItems', String(index), 'label'],
-                        message: "Menu item 'label' must be a non-empty string",
-                        expected: 'non-empty string',
-                        actual: typeof itemRec.label,
-                      },
-                    ]
-                  : [];
-              const itemCommandError =
-                typeof itemRec.command !== 'string' || itemRec.command.trim() === ''
-                  ? [
-                      {
-                        path: [propertyName, 'menuItems', String(index), 'command'],
-                        message: "Menu item 'command' must be a non-empty string",
-                        expected: 'non-empty string',
-                        actual: typeof itemRec.command,
-                      },
-                    ]
-                  : [];
-              const itemShortcutError =
-                itemRec.shortcut !== undefined && typeof itemRec.shortcut !== 'string'
-                  ? [
-                      {
-                        path: [propertyName, 'menuItems', String(index), 'shortcut'],
-                        message: "Menu item 'shortcut' must be a string if defined",
-                        expected: 'string',
-                        actual: typeof itemRec.shortcut,
-                      },
-                    ]
-                  : [];
-              return [...itemLabelError, ...itemCommandError, ...itemShortcutError];
-            })
-          : [
-              {
-                path: [propertyName, 'menuItems'],
-                message: "Manifest property 'menuItems' must be an array of objects",
-                expected: 'array of objects',
-                actual: typeof manifest.menuItems,
-              },
-            ];
-
-    const commandsError =
-      manifest.commands === undefined
-        ? []
-        : Array.isArray(manifest.commands)
-          ? manifest.commands.flatMap((command: unknown, index): readonly ValidationError[] => {
-              if (typeof command !== 'object' || command === null || Array.isArray(command)) {
-                return [
-                  {
-                    path: [propertyName, 'commands', String(index)],
-                    message: `Manifest property 'commands' element at index ${index} must be an object`,
-                    expected: 'object',
-                    actual: typeof command,
-                  },
-                ];
-              }
-              const commandRec = command as Record<string, unknown>;
-              const commandIdError =
-                typeof commandRec.id !== 'string' || commandRec.id.trim() === ''
-                  ? [
-                      {
-                        path: [propertyName, 'commands', String(index), 'id'],
-                        message: "Command 'id' must be a non-empty string",
-                        expected: 'non-empty string',
-                        actual: typeof commandRec.id,
-                      },
-                    ]
-                  : [];
-              const commandTitleError =
-                typeof commandRec.title !== 'string' || commandRec.title.trim() === ''
-                  ? [
-                      {
-                        path: [propertyName, 'commands', String(index), 'title'],
-                        message: "Command 'title' must be a non-empty string",
-                        expected: 'non-empty string',
-                        actual: typeof commandRec.title,
-                      },
-                    ]
-                  : [];
-              const commandCategoryError =
-                commandRec.category !== undefined && typeof commandRec.category !== 'string'
-                  ? [
-                      {
-                        path: [propertyName, 'commands', String(index), 'category'],
-                        message: "Command 'category' must be a string if defined",
-                        expected: 'string',
-                        actual: typeof commandRec.category,
-                      },
-                    ]
-                  : [];
-              return [...commandIdError, ...commandTitleError, ...commandCategoryError];
-            })
-          : [
-              {
-                path: [propertyName, 'commands'],
-                message: "Manifest property 'commands' must be an array of objects",
-                expected: 'array of objects',
-                actual: typeof manifest.commands,
-              },
-            ];
-
-    return [
-      ...nameError,
-      ...versionError,
-      ...capabilitiesError,
-      ...menuItemsError,
-      ...commandsError,
-    ];
-  } catch {
+  const parsedResult = fromThrowable(() => JSON.parse(value) as unknown);
+  if (!parsedResult.ok) {
     return [
       {
         path: [propertyName],
@@ -365,4 +170,196 @@ export function validatePluginManifestProperty(
       },
     ];
   }
+
+  const parsed = parsedResult.value;
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+    return [
+      {
+        path: [propertyName],
+        message: `Property '${propertyName}' must parse to a JSON object`,
+        expected: 'JSON object',
+        actual: typeof parsed,
+      },
+    ];
+  }
+
+  const manifest = parsed as Record<string, unknown>;
+
+  const nameError =
+    typeof manifest.name !== 'string' || manifest.name.trim() === ''
+      ? [
+          {
+            path: [propertyName, 'name'],
+            message: "Manifest property 'name' must be a non-empty string",
+            expected: 'non-empty string',
+            actual: typeof manifest.name === 'string' ? manifest.name : typeof manifest.name,
+          },
+        ]
+      : [];
+
+  const versionError =
+    typeof manifest.version !== 'string' || manifest.version.trim() === ''
+      ? [
+          {
+            path: [propertyName, 'version'],
+            message: "Manifest property 'version' must be a non-empty string",
+            expected: 'non-empty string',
+            actual:
+              typeof manifest.version === 'string' ? manifest.version : typeof manifest.version,
+          },
+        ]
+      : [];
+
+  const capabilitiesError = Array.isArray(manifest.capabilities)
+    ? manifest.capabilities
+        .map((cap: unknown, index): ValidationError | null => {
+          if (typeof cap !== 'string' || cap.trim() === '') {
+            return {
+              path: [propertyName, 'capabilities', String(index)],
+              message: `Manifest property 'capabilities' element at index ${index} must be a non-empty string`,
+              expected: 'non-empty string',
+              actual: typeof cap === 'string' ? cap : typeof cap,
+            };
+          }
+          if (!RECOGNIZED_WASM_CAPABILITIES.has(cap)) {
+            return {
+              path: [propertyName, 'capabilities', String(index)],
+              message: `Manifest property 'capabilities' element at index ${index} ('${cap}') is not a recognized capability`,
+              expected: 'recognized WasmCapability string',
+              actual: cap,
+            };
+          }
+          return null;
+        })
+        .filter((error): error is ValidationError => error !== null)
+    : [
+        {
+          path: [propertyName, 'capabilities'],
+          message: "Manifest property 'capabilities' must be an array of strings",
+          expected: 'array of strings',
+          actual: typeof manifest.capabilities,
+        },
+      ];
+
+  const menuItemsError =
+    manifest.menuItems === undefined
+      ? []
+      : Array.isArray(manifest.menuItems)
+        ? manifest.menuItems.flatMap((item: unknown, index): readonly ValidationError[] => {
+            if (typeof item !== 'object' || item === null || Array.isArray(item)) {
+              return [
+                {
+                  path: [propertyName, 'menuItems', String(index)],
+                  message: `Manifest property 'menuItems' element at index ${index} must be an object`,
+                  expected: 'object',
+                  actual: typeof item,
+                },
+              ];
+            }
+            const itemRec = item as Record<string, unknown>;
+            const itemLabelError =
+              typeof itemRec.label !== 'string' || itemRec.label.trim() === ''
+                ? [
+                    {
+                      path: [propertyName, 'menuItems', String(index), 'label'],
+                      message: "Menu item 'label' must be a non-empty string",
+                      expected: 'non-empty string',
+                      actual: typeof itemRec.label,
+                    },
+                  ]
+                : [];
+            const itemCommandError =
+              typeof itemRec.command !== 'string' || itemRec.command.trim() === ''
+                ? [
+                    {
+                      path: [propertyName, 'menuItems', String(index), 'command'],
+                      message: "Menu item 'command' must be a non-empty string",
+                      expected: 'non-empty string',
+                      actual: typeof itemRec.command,
+                    },
+                  ]
+                : [];
+            const itemShortcutError =
+              itemRec.shortcut !== undefined && typeof itemRec.shortcut !== 'string'
+                ? [
+                    {
+                      path: [propertyName, 'menuItems', String(index), 'shortcut'],
+                      message: "Menu item 'shortcut' must be a string if defined",
+                      expected: 'string',
+                      actual: typeof itemRec.shortcut,
+                    },
+                  ]
+                : [];
+            return [...itemLabelError, ...itemCommandError, ...itemShortcutError];
+          })
+        : [
+            {
+              path: [propertyName, 'menuItems'],
+              message: "Manifest property 'menuItems' must be an array of objects",
+              expected: 'array of objects',
+              actual: typeof manifest.menuItems,
+            },
+          ];
+
+  const commandsError =
+    manifest.commands === undefined
+      ? []
+      : Array.isArray(manifest.commands)
+        ? manifest.commands.flatMap((command: unknown, index): readonly ValidationError[] => {
+            if (typeof command !== 'object' || command === null || Array.isArray(command)) {
+              return [
+                {
+                  path: [propertyName, 'commands', String(index)],
+                  message: `Manifest property 'commands' element at index ${index} must be an object`,
+                  expected: 'object',
+                  actual: typeof command,
+                },
+              ];
+            }
+            const commandRec = command as Record<string, unknown>;
+            const commandIdError =
+              typeof commandRec.id !== 'string' || commandRec.id.trim() === ''
+                ? [
+                    {
+                      path: [propertyName, 'commands', String(index), 'id'],
+                      message: "Command 'id' must be a non-empty string",
+                      expected: 'non-empty string',
+                      actual: typeof commandRec.id,
+                    },
+                  ]
+                : [];
+            const commandTitleError =
+              typeof commandRec.title !== 'string' || commandRec.title.trim() === ''
+                ? [
+                    {
+                      path: [propertyName, 'commands', String(index), 'title'],
+                      message: "Command 'title' must be a non-empty string",
+                      expected: 'non-empty string',
+                      actual: typeof commandRec.title,
+                    },
+                  ]
+                : [];
+            const commandCategoryError =
+              commandRec.category !== undefined && typeof commandRec.category !== 'string'
+                ? [
+                    {
+                      path: [propertyName, 'commands', String(index), 'category'],
+                      message: "Command 'category' must be a string if defined",
+                      expected: 'string',
+                      actual: typeof commandRec.category,
+                    },
+                  ]
+                : [];
+            return [...commandIdError, ...commandTitleError, ...commandCategoryError];
+          })
+        : [
+            {
+              path: [propertyName, 'commands'],
+              message: "Manifest property 'commands' must be an array of objects",
+              expected: 'array of objects',
+              actual: typeof manifest.commands,
+            },
+          ];
+
+  return [...nameError, ...versionError, ...capabilitiesError, ...menuItemsError, ...commandsError];
 }

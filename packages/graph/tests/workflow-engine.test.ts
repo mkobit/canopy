@@ -48,6 +48,91 @@ describe('WorkflowTriggerRegistry', () => {
     expect(triggers.length).toBe(1);
     expect(triggers[0]).toBe(node);
   });
+
+  it('should return false when condition property is missing or not a string', () => {
+    const registry = new WorkflowTriggerRegistry();
+
+    const missingConditionNode: Node = {
+      id: createNodeId(),
+      type: asTypeId('trigger'),
+      metadata: {
+        created: createInstant(),
+        modified: createInstant(),
+        modifiedBy: asDeviceId('test-device'),
+      },
+      properties: new Map(),
+    };
+    expect(registry.addTrigger(missingConditionNode)).toBe(false);
+
+    const nonStringConditionNode: Node = {
+      id: createNodeId(),
+      type: asTypeId('trigger'),
+      metadata: {
+        created: createInstant(),
+        modified: createInstant(),
+        modifiedBy: asDeviceId('test-device'),
+      },
+      properties: new Map([['condition', 123]]),
+    };
+    expect(registry.addTrigger(nonStringConditionNode)).toBe(false);
+  });
+
+  it('should return false when condition contains malformed JSON', () => {
+    const registry = new WorkflowTriggerRegistry();
+
+    const malformedNode: Node = {
+      id: createNodeId(),
+      type: asTypeId('trigger'),
+      metadata: {
+        created: createInstant(),
+        modified: createInstant(),
+        modifiedBy: asDeviceId('test-device'),
+      },
+      properties: new Map([['condition', '{ invalid json }']]),
+    };
+
+    expect(registry.addTrigger(malformedNode)).toBe(false);
+  });
+
+  it('should return false when condition JSON is not an object with typeId', () => {
+    const registry = new WorkflowTriggerRegistry();
+
+    const missingTypeIdNode: Node = {
+      id: createNodeId(),
+      type: asTypeId('trigger'),
+      metadata: {
+        created: createInstant(),
+        modified: createInstant(),
+        modifiedBy: asDeviceId('test-device'),
+      },
+      properties: new Map([['condition', JSON.stringify({ otherProperty: 'value' })]]),
+    };
+    expect(registry.addTrigger(missingTypeIdNode)).toBe(false);
+
+    const nullJsonNode: Node = {
+      id: createNodeId(),
+      type: asTypeId('trigger'),
+      metadata: {
+        created: createInstant(),
+        modified: createInstant(),
+        modifiedBy: asDeviceId('test-device'),
+      },
+      properties: new Map([['condition', JSON.stringify(null)]]),
+    };
+    expect(registry.addTrigger(nullJsonNode)).toBe(false);
+
+    const primitiveJsonNode: Node = {
+      id: createNodeId(),
+      type: asTypeId('trigger'),
+      metadata: {
+        created: createInstant(),
+        modified: createInstant(),
+        modifiedBy: asDeviceId('test-device'),
+      },
+      properties: new Map([['condition', JSON.stringify('plain-string')]]),
+    };
+    expect(registry.addTrigger(primitiveJsonNode)).toBe(false);
+  });
 });
 
 describe('WorkflowEngine', () => {
