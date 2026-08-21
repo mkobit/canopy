@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'bun:test';
-import { WorkflowTriggerRegistry, WorkflowEngine } from '../src/workflow-engine';
+import {
+  createWorkflowTriggerRegistry,
+  createWorkflowEngine,
+  executeWorkflowAction,
+} from '../src/workflow-engine';
 import {
   Node,
   NodeCreated,
@@ -17,7 +21,7 @@ import {
 
 describe('WorkflowTriggerRegistry', () => {
   it('should register and match a trigger for NodeCreated event', () => {
-    const registry = new WorkflowTriggerRegistry();
+    const registry = createWorkflowTriggerRegistry();
     const typeId = asTypeId('test-type-id');
 
     const node: Node = {
@@ -50,7 +54,7 @@ describe('WorkflowTriggerRegistry', () => {
   });
 
   it('should return false when condition property is missing or not a string', () => {
-    const registry = new WorkflowTriggerRegistry();
+    const registry = createWorkflowTriggerRegistry();
 
     const missingConditionNode: Node = {
       id: createNodeId(),
@@ -78,7 +82,7 @@ describe('WorkflowTriggerRegistry', () => {
   });
 
   it('should return false when condition contains malformed JSON', () => {
-    const registry = new WorkflowTriggerRegistry();
+    const registry = createWorkflowTriggerRegistry();
 
     const malformedNode: Node = {
       id: createNodeId(),
@@ -95,7 +99,7 @@ describe('WorkflowTriggerRegistry', () => {
   });
 
   it('should return false when condition JSON is not an object with typeId', () => {
-    const registry = new WorkflowTriggerRegistry();
+    const registry = createWorkflowTriggerRegistry();
 
     const missingTypeIdNode: Node = {
       id: createNodeId(),
@@ -150,7 +154,7 @@ describe('WorkflowEngine', () => {
   };
 
   it('should create an edge when create-edge action is executed', () => {
-    const engine = new WorkflowEngine();
+    const engine = createWorkflowEngine();
 
     // Add nodes to the graph first
     const sourceId = asNodeId('source-node');
@@ -206,8 +210,46 @@ describe('WorkflowEngine', () => {
     }
   });
 
+  it('should support executeWorkflowAction as a standalone function', () => {
+    const sourceId = asNodeId('source-node');
+    const targetId = asNodeId('target-node');
+    const typeId = asTypeId('edge-type');
+
+    const graphWithNodes: Graph = {
+      ...mockGraph,
+      nodes: new Map([
+        [
+          sourceId,
+          {
+            id: sourceId,
+            type: asTypeId('node-type'),
+            properties: new Map(),
+            metadata: mockGraph.metadata,
+          },
+        ],
+        [
+          targetId,
+          {
+            id: targetId,
+            type: asTypeId('node-type'),
+            properties: new Map(),
+            metadata: mockGraph.metadata,
+          },
+        ],
+      ]),
+    };
+
+    const result = executeWorkflowAction(graphWithNodes, 'create-edge', {
+      type: typeId,
+      source: sourceId,
+      target: targetId,
+    });
+
+    expect(result.ok).toBe(true);
+  });
+
   it('should return error for unknown actions', () => {
-    const engine = new WorkflowEngine();
+    const engine = createWorkflowEngine();
 
     const result = engine.executeAction(mockGraph, 'unknown-action', {});
 
@@ -218,7 +260,7 @@ describe('WorkflowEngine', () => {
   });
 
   it('should return error for create-edge action missing required params', () => {
-    const engine = new WorkflowEngine();
+    const engine = createWorkflowEngine();
 
     const result = engine.executeAction(mockGraph, 'create-edge', {
       type: asTypeId('edge-type'),
@@ -232,7 +274,7 @@ describe('WorkflowEngine', () => {
   });
 
   it('should update node property when set-property action is executed', () => {
-    const engine = new WorkflowEngine();
+    const engine = createWorkflowEngine();
     const nodeId = asNodeId('test-node');
 
     const graphWithNode: Graph = {
@@ -266,7 +308,7 @@ describe('WorkflowEngine', () => {
   });
 
   it('should return error for set-property action missing required params', () => {
-    const engine = new WorkflowEngine();
+    const engine = createWorkflowEngine();
     const nodeId = asNodeId('test-node');
 
     const result = engine.executeAction(mockGraph, 'set-property', {
@@ -282,7 +324,7 @@ describe('WorkflowEngine', () => {
   });
 
   it('should return error when attempting to set property on non-existent node', () => {
-    const engine = new WorkflowEngine();
+    const engine = createWorkflowEngine();
     const nodeId = asNodeId('missing-node');
 
     const result = engine.executeAction(mockGraph, 'set-property', {
