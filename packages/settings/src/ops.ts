@@ -4,8 +4,7 @@ import type { ScopeType } from './cascade';
 
 export type AddUserSettingParameters = Readonly<{
   schemaId: NodeId;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  value: any;
+  value: unknown;
   scopeType: ScopeType;
   scopeTarget?: string;
 }>;
@@ -18,16 +17,18 @@ export function addUserSetting(
   parameters: AddUserSettingParameters,
   options: NodeOperationOptions,
 ): Result<GraphResult<Graph>, Error> {
-  const properties = new Map<string, string>([
+  const baseEntries: readonly (readonly [string, string])[] = [
     ['schemaId', parameters.schemaId],
     ['value', JSON.stringify(parameters.value)],
     ['scopeType', parameters.scopeType],
-  ]);
+  ];
 
-  if (parameters.scopeTarget !== undefined) {
-    // eslint-disable-next-line functional/immutable-data
-    properties.set('scopeTarget', parameters.scopeTarget);
-  }
+  const entries: readonly (readonly [string, string])[] =
+    parameters.scopeTarget === undefined
+      ? baseEntries
+      : [...baseEntries, ['scopeTarget', parameters.scopeTarget]];
+
+  const properties = new Map<string, string>(entries);
 
   const node: Node = {
     id: createNodeId(),
