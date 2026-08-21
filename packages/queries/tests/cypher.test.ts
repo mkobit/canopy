@@ -16,7 +16,7 @@ import {
   asDeviceId,
   zeroRevision,
 } from '@canopy/graph';
-import { CypherQueryEngine } from '../src/cypher';
+import { createCypherQueryEngine, type QueryEngine } from '../src/cypher';
 import { map, sort } from 'remeda';
 
 // Helper to create a simple mock graph
@@ -91,11 +91,11 @@ function createMockGraph(): Graph {
 
 describe('CypherQueryEngine', () => {
   let graph: Graph;
-  let engine: CypherQueryEngine;
+  let engine: QueryEngine;
 
   beforeEach(() => {
     graph = createMockGraph();
-    engine = new CypherQueryEngine();
+    engine = createCypherQueryEngine();
   });
 
   it('queries all nodes when no type is specified', () => {

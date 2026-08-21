@@ -1,5 +1,3 @@
-/* eslint-disable functional/no-classes */
-/* eslint-disable functional/no-this-expressions */
 import type { Graph, QueryResult, Result, ValidationResult } from '@canopy/graph';
 import { err } from '@canopy/graph';
 import type { QueryNode } from './query-node';
@@ -16,40 +14,45 @@ export interface QueryEngine {
   readonly validate: (query: string | QueryNode) => ValidationResult;
 }
 
-export class CypherQueryEngine implements QueryEngine {
-  private extractQueryString(query: QueryNode): string {
-    const q = query.properties.get('query');
-    if (typeof q === 'string') {
-      return q;
-    }
-    return '';
+function extractQueryString(query: QueryNode): string {
+  const q = query.properties.get('query');
+  if (typeof q === 'string') {
+    return q;
+  }
+  return '';
+}
+
+export function executeCypherQuery(
+  graph: Graph,
+  query: string | QueryNode,
+  _parameters: Readonly<Record<string, unknown>> = {},
+): Result<QueryResult, Error> {
+  const queryString = typeof query === 'string' ? query : extractQueryString(query);
+
+  // Basic parser for MATCH (n:Type) or MATCH (n)
+  const matchRegex =
+    /^\s*MATCH\s+\(\s*(?:[a-zA-Z0-9_]+)?\s*(?::\s*([a-zA-Z0-9_]+))?\s*\)\s*(?:RETURN\s+[a-zA-Z0-9_]+\s*)?$/i;
+  const match = matchRegex.exec(queryString);
+
+  if (match) {
+    const type = match[1];
+    const pipelineQuery = pipe(createQuery(), nodes(type));
+    return executeQuery(graph, pipelineQuery);
   }
 
-  execute(
-    graph: Graph,
-    query: string | QueryNode,
-    _parameters: Record<string, unknown> = {},
-  ): Result<QueryResult, Error> {
-    const queryString = typeof query === 'string' ? query : this.extractQueryString(query);
+  // Stub implementation for unsupported queries
+  // In the future, this will parse Cypher more completely and execute it against the graph
+  return err(new Error(`Cypher query execution is not yet implemented. Query: ${queryString}`));
+}
 
-    // Basic parser for MATCH (n:Type) or MATCH (n)
-    const matchRegex =
-      /^\s*MATCH\s+\(\s*(?:[a-zA-Z0-9_]+)?\s*(?::\s*([a-zA-Z0-9_]+))?\s*\)\s*(?:RETURN\s+[a-zA-Z0-9_]+\s*)?$/i;
-    const match = matchRegex.exec(queryString);
+export function validateCypherQuery(_query: string | QueryNode): ValidationResult {
+  // Stub implementation
+  return { valid: true, errors: [] };
+}
 
-    if (match) {
-      const type = match[1];
-      const pipelineQuery = pipe(createQuery(), nodes(type));
-      return executeQuery(graph, pipelineQuery);
-    }
-
-    // Stub implementation for unsupported queries
-    // In the future, this will parse Cypher more completely and execute it against the graph
-    return err(new Error(`Cypher query execution is not yet implemented. Query: ${queryString}`));
-  }
-
-  validate(_query: string | QueryNode): ValidationResult {
-    // Stub implementation
-    return { valid: true, errors: [] };
-  }
+export function createCypherQueryEngine(): QueryEngine {
+  return {
+    execute: executeCypherQuery,
+    validate: validateCypherQuery,
+  };
 }

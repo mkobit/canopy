@@ -126,30 +126,31 @@ export function listQueryDefinitions(graph: Graph): readonly Node[] {
 }
 
 // Helper to substitute parameters in the query structure
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function substituteParameters(object: any, parameters: Readonly<Record<string, unknown>>): any {
-  if (Array.isArray(object)) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return object.map((item: any) => substituteParameters(item, parameters));
+function substituteParameters(
+  value: unknown,
+  parameters: Readonly<Record<string, unknown>>,
+): unknown {
+  if (Array.isArray(value)) {
+    return value.map((item: unknown) => substituteParameters(item, parameters));
   }
-  if (isPlainObject(object)) {
-    return mapValues(object, (value) => {
-      if (isString(value) && value.startsWith('$')) {
-        const parameterName = value.slice(1);
+  if (isPlainObject(value)) {
+    return mapValues(value, (propertyValue: unknown) => {
+      if (isString(propertyValue) && propertyValue.startsWith('$')) {
+        const parameterName = propertyValue.slice(1);
         if (Object.hasOwn(parameters, parameterName)) {
           return parameters[parameterName];
         }
       }
-      return substituteParameters(value, parameters);
+      return substituteParameters(propertyValue, parameters);
     });
   }
-  return object;
+  return value;
 }
 
 export function executeStoredQuery(
   graph: Graph,
   queryNodeId: NodeId,
-  parameters: Record<string, unknown> = {},
+  parameters: Readonly<Record<string, unknown>> = {},
 ): Result<QueryResult, Error> {
   const queryResult = getQueryDefinition(graph, queryNodeId);
   if (!queryResult.ok) return err(queryResult.error);

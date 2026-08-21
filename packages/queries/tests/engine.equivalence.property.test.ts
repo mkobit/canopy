@@ -100,16 +100,14 @@ const graphArb: fc.Arbitrary<Graph> = fc
     const edgeList =
       nodeList.length === 0
         ? []
-        : edgeSpecs.map((spec, index) =>
-            makeEdge(
-              index,
-              spec.type,
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- modulo against a known-nonempty array
-              nodeList[spec.sourceIndex % nodeList.length]!.id,
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- modulo against a known-nonempty array
-              nodeList[spec.targetIndex % nodeList.length]!.id,
-            ),
-          );
+        : edgeSpecs.flatMap((spec, index) => {
+            const source = nodeList[spec.sourceIndex % nodeList.length];
+            const target = nodeList[spec.targetIndex % nodeList.length];
+            if (source === undefined || target === undefined) {
+              return [];
+            }
+            return [makeEdge(index, spec.type, source.id, target.id)];
+          });
     const edges = new Map(edgeList.map((edge) => [edge.id, edge]));
 
     return {
