@@ -26,12 +26,11 @@ export function resolveSetting(
     { scopeType: 'global' },
   ];
 
-  // eslint-disable-next-line functional/no-loop-statements
-  for (const scope of scopes) {
-    const setting = findUserSetting(graph, schema.id, scope.scopeType, scope.scopeTarget);
-    if (setting !== undefined) {
-      return setting;
-    }
+  const resolvedScopeSetting = scopes
+    .map((scope) => findUserSetting(graph, schema.id, scope.scopeType, scope.scopeTarget))
+    .find((setting) => setting !== undefined);
+  if (resolvedScopeSetting !== undefined) {
+    return resolvedScopeSetting;
   }
 
   // 5. System default from SettingsSchema
