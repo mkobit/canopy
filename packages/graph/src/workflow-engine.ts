@@ -75,16 +75,15 @@ export class WorkflowEngine {
 export class WorkflowTriggerRegistry {
   private readonly triggers = new Map<TypeId, readonly Node[]>();
 
-  // eslint-disable-next-line functional/no-return-void
-  public addTrigger(node: Node): void {
+  public addTrigger(node: Node): boolean {
     const conditionString = node.properties.get('condition');
     if (typeof conditionString !== 'string') {
-      return;
+      return false;
     }
 
     const parsedResult = fromThrowable(() => JSON.parse(conditionString));
     if (!parsedResult.ok) {
-      return;
+      return false;
     }
 
     const condition = parsedResult.value;
@@ -94,7 +93,10 @@ export class WorkflowTriggerRegistry {
       const current = this.triggers.get(typeId) ?? [];
       // eslint-disable-next-line functional/no-this-expressions
       this.triggers.set(typeId, [...current, node]);
+      return true;
     }
+
+    return false;
   }
 
   public getTriggersForEvent(event: GraphEvent): readonly Node[] {

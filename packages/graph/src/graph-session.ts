@@ -14,8 +14,11 @@ export interface GraphSessionDelta {
   readonly applied: readonly GraphEvent[];
 }
 
-// eslint-disable-next-line functional/no-return-void
-export type GraphChangeHandler = (graph: Graph, delta: GraphSessionDelta) => void;
+export type GraphChangeHandler = (graph: Graph, delta: GraphSessionDelta) => unknown;
+
+interface GraphChangeSubscription {
+  readonly handler: GraphChangeHandler;
+}
 
 export interface GraphSession {
   /** Reads the full event log and (re)projects it as the session's current graph. */
@@ -29,8 +32,7 @@ export interface GraphSession {
   readonly commit: (events: readonly GraphEvent[]) => Promise<Result<Graph, Error>>;
   /** The session's current projected graph (bootstrap-only if load() hasn't run yet). */
   readonly graph: () => Graph;
-  // eslint-disable-next-line functional/no-return-void
-  readonly subscribe: (handler: GraphChangeHandler) => () => void;
+  readonly subscribe: (handler: GraphChangeHandler) => () => boolean;
 }
 
 const SESSION_GRAPH_NAME = 'graph';
@@ -107,20 +109,11 @@ function validateCommit(graph: Graph, events: readonly GraphEvent[]): Result<voi
 }
 
 function dispatchChangeHandlers(
-  handlers: readonly GraphChangeHandler[],
+  handlers: readonly GraphChangeSubscription[],
   graph: Graph,
   delta: GraphSessionDelta,
-  index = 0,
-  // eslint-disable-next-line functional/no-return-void
-): void {
-  if (index >= handlers.length) {
-    return;
-  }
-  const handler = handlers[index];
-  if (handler !== undefined) {
-    handler(graph, delta);
-  }
-  dispatchChangeHandlers(handlers, graph, delta, index + 1);
+): readonly unknown[] {
+  return handlers.map((subscription) => subscription.handler(graph, delta));
 }
 
 /**
@@ -136,14 +129,13 @@ export function createGraphSession(
   const mergeStateCell = { current: createMergeState() as MergeState };
   const currentGraphCell = { current: unwrap(createGraph(graphId, SESSION_GRAPH_NAME)) as Graph };
   const subscribersCell = {
-    current: new Set<GraphChangeHandler>() as ReadonlySet<GraphChangeHandler>,
+    current: new Set<GraphChangeSubscription>() as ReadonlySet<GraphChangeSubscription>,
   };
 
-  // eslint-disable-next-line functional/no-return-void
-  const notify = (graph: Graph, applied: readonly GraphEvent[]): void => {
-    if (applied.length === 0) return;
+  const notify = (graph: Graph, applied: readonly GraphEvent[]): readonly unknown[] => {
+    if (applied.length === 0) return [];
     const delta: GraphSessionDelta = { applied };
-    dispatchChangeHandlers([...subscribersCell.current], graph, delta);
+    return dispatchChangeHandlers([...subscribersCell.current], graph, delta);
   };
 
   const load = async (): Promise<Result<Graph, Error>> => {
@@ -180,17 +172,16 @@ export function createGraphSession(
     return ok(merged.graph);
   };
 
-  // eslint-disable-next-line functional/no-return-void
-  const subscribe = (handler: GraphChangeHandler): (() => void) => {
-    // eslint-disable-next-line functional/no-return-void, functional/prefer-tacit
-    const wrapped: GraphChangeHandler = (graph, delta) => handler(graph, delta);
-    subscribersCell.current = new Set([...subscribersCell.current, wrapped]);
+  const subscribe = (handler: GraphChangeHandler): (() => boolean) => {
+    const subscription: GraphChangeSubscription = { handler };
+    subscribersCell.current = new Set([...subscribersCell.current, subscription]);
 
-    // eslint-disable-next-line functional/no-return-void
     return () => {
+      const previousSize = subscribersCell.current.size;
       subscribersCell.current = new Set(
-        [...subscribersCell.current].filter((handler_) => handler_ !== wrapped),
+        [...subscribersCell.current].filter((subscription_) => subscription_ !== subscription),
       );
+      return subscribersCell.current.size < previousSize;
     };
   };
 

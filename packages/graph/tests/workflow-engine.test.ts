@@ -31,7 +31,8 @@ describe('WorkflowTriggerRegistry', () => {
       properties: new Map([['condition', JSON.stringify({ typeId })]]),
     };
 
-    registry.addTrigger(node);
+    const added = registry.addTrigger(node);
+    expect(added).toBe(true);
 
     const event: NodeCreated = {
       type: 'NodeCreated',

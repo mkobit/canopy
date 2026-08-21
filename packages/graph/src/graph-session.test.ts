@@ -262,9 +262,10 @@ describe('GraphSession', () => {
     });
 
     await session.commit([nodeCreatedEvent()]);
-    unsubscribe();
+    expect(unsubscribe()).toBe(true);
     await session.commit([nodeCreatedEvent()]);
 
+    expect(unsubscribe()).toBe(false);
     expect(callCount).toBe(1);
   });
 
