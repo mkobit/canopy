@@ -31,7 +31,7 @@ export function fromThrowable<T>(
   function_: () => T,
   errorHandler?: (error: unknown) => Error,
 ): Result<T, Error> {
-  // eslint-disable-next-line functional/no-try-statements
+  // eslint-disable-next-line functional/no-try-statements -- boundary helper catching throwing external calls
   try {
     return ok(function_());
   } catch (error_) {
@@ -47,7 +47,7 @@ export function fromThrowable<T>(
 export async function fromAsyncThrowable<T>(
   function_: () => Promise<T>,
 ): Promise<Result<T, Error>> {
-  // eslint-disable-next-line functional/no-try-statements
+  // eslint-disable-next-line functional/no-try-statements -- boundary helper catching throwing external async calls
   try {
     return ok(await function_());
   } catch (error) {

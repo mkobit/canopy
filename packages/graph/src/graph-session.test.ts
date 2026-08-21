@@ -269,6 +269,36 @@ describe('GraphSession', () => {
     expect(callCount).toBe(1);
   });
 
+  it('allows duplicate callback subscriptions to unsubscribe independently', async () => {
+    const eventLog = createTestEventLog();
+    const graphId = createGraphId();
+    const session = createGraphSession(eventLog, graphId, sessionDeviceId);
+    await session.load();
+
+    let callCount = 0;
+    const handler = (): void => {
+      callCount += 1;
+    };
+
+    const unsubscribe1 = session.subscribe(handler);
+    const unsubscribe2 = session.subscribe(handler);
+
+    await session.commit([nodeCreatedEvent()]);
+    expect(callCount).toBe(2);
+
+    expect(unsubscribe1()).toBe(true);
+    expect(unsubscribe1()).toBe(false);
+
+    await session.commit([nodeCreatedEvent()]);
+    expect(callCount).toBe(3);
+
+    expect(unsubscribe2()).toBe(true);
+    expect(unsubscribe2()).toBe(false);
+
+    await session.commit([nodeCreatedEvent()]);
+    expect(callCount).toBe(3);
+  });
+
   it('rejects commits containing NodeDeleted events for system nodes', async () => {
     const eventLog = createTestEventLog();
     const graphId = createGraphId();
