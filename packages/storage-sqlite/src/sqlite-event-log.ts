@@ -1,7 +1,13 @@
-import type { Database, SqlJsStatic } from 'sql.js';
+import type { Database, SqlJsStatic, Statement } from 'sql.js';
 import initSqlJs from 'sql.js';
-import type { Result, GraphEvent, EventLogStore, EventLogQueryOptions } from '@canopy/graph';
-import { ok, err, fromAsyncThrowable } from '@canopy/graph';
+import type {
+  Result,
+  GraphEvent,
+  EventLogStore,
+  EventLogQueryOptions,
+  PropertyValue,
+} from '@canopy/graph';
+import { ok, err, fromAsyncThrowable, fromThrowable } from '@canopy/graph';
 
 export interface SQLitePersistence {
   readonly read: () => Promise<Uint8Array | null>;
@@ -40,55 +46,160 @@ const serializeEvent = (event: GraphEvent): unknown => {
   }
 };
 
-const deserializeEvent = (storable: unknown): GraphEvent => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const s = storable as any;
-  switch (s.type) {
+const isObject = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const deserializeEvent = (storable: unknown): Result<GraphEvent, Error> => {
+  if (!isObject(storable) || typeof storable.type !== 'string') {
+    return err(new Error('Invalid storable event'));
+  }
+
+  switch (storable.type) {
     case 'NodeCreated':
     case 'EdgeCreated': {
-      return {
-        ...s,
-        properties: new Map(Object.entries(s.properties)),
-      } as GraphEvent;
+      const properties = isObject(storable.properties)
+        ? new Map(Object.entries(storable.properties as Record<string, PropertyValue>))
+        : new Map();
+      return ok({
+        ...storable,
+        properties,
+      } as unknown as GraphEvent);
     }
     case 'NodePropertiesUpdated':
     case 'EdgePropertiesUpdated': {
-      return {
-        ...s,
-        changes: new Map(Object.entries(s.changes)),
-      } as GraphEvent;
+      const changes = isObject(storable.changes)
+        ? new Map(Object.entries(storable.changes as Record<string, PropertyValue>))
+        : new Map();
+      return ok({
+        ...storable,
+        changes,
+      } as unknown as GraphEvent);
     }
     case 'NodeDeleted':
-    case 'EdgeDeleted': {
-      return s as GraphEvent;
+    case 'EdgeDeleted':
+    case 'WorkflowStarted':
+    case 'WorkflowCompleted': {
+      return ok(storable as unknown as GraphEvent);
     }
     default: {
-      // eslint-disable-next-line functional/no-throw-statements
-      throw new Error(`Unknown event type: ${s.type}`);
+      return err(new Error(`Unknown event type: ${storable.type}`));
     }
   }
 };
 
-// eslint-disable-next-line max-lines-per-function
+interface QueryPlan {
+  readonly query: string;
+  readonly parameters: readonly (string | number | null)[];
+}
+
+const buildSelectQuery = (graphId: string, options: EventLogQueryOptions): QueryPlan => {
+  const afterClause = options.after ? ' AND event_id > ?' : '';
+  const beforeClause = options.before ? ' AND event_id < ?' : '';
+  const orderClause = options.reverse ? ' ORDER BY event_id DESC' : ' ORDER BY event_id ASC';
+  const limitClause = options.limit ? ' LIMIT ?' : '';
+
+  const query = `SELECT payload FROM events WHERE graph_id = ?${afterClause}${beforeClause}${orderClause}${limitClause}`;
+
+  const parameters = [
+    graphId,
+    ...(options.after ? [options.after] : []),
+    ...(options.before ? [options.before] : []),
+    ...(options.limit ? [options.limit] : []),
+  ];
+
+  return { query, parameters };
+};
+
+const initSchema = (database: Database): void => {
+  database.run(`
+    CREATE TABLE IF NOT EXISTS events (
+      graph_id TEXT NOT NULL,
+      event_id TEXT NOT NULL,
+      timestamp TEXT NOT NULL,
+      type TEXT NOT NULL,
+      payload TEXT NOT NULL,
+      PRIMARY KEY (graph_id, event_id)
+    );
+  `);
+};
+
+const insertBatch = (
+  statement: Statement,
+  graphId: string,
+  events: readonly GraphEvent[],
+): readonly undefined[] =>
+  events.map((event) => {
+    const storable = serializeEvent(event);
+    const payload = JSON.stringify(storable);
+    statement.run([graphId, event.eventId, event.timestamp, event.type, payload]);
+    return undefined;
+  });
+
+const executeAppendEvents = async (
+  databaseInstance: Database,
+  persist: () => Promise<void>,
+  graphId: string,
+  events: readonly GraphEvent[],
+): Promise<Result<void, Error>> => {
+  const result = await fromAsyncThrowable(async () => {
+    databaseInstance.run('BEGIN TRANSACTION');
+    const statement = databaseInstance.prepare(`
+      INSERT OR IGNORE INTO events (graph_id, event_id, timestamp, type, payload)
+      VALUES (?, ?, ?, ?, ?)
+    `);
+
+    insertBatch(statement, graphId, events);
+    statement.free();
+
+    databaseInstance.run('COMMIT');
+    await persist();
+    return;
+  });
+
+  if (!result.ok) {
+    databaseInstance.run('ROLLBACK');
+  }
+  return result;
+};
+
+const executeGetEvents = (
+  databaseInstance: Database,
+  graphId: string,
+  options: EventLogQueryOptions,
+): Result<readonly GraphEvent[], Error> => {
+  const rawResult = fromThrowable(() => {
+    const { query, parameters } = buildSelectQuery(graphId, options);
+    return databaseInstance.exec(query, parameters as (string | number | null)[]);
+  });
+
+  if (!rawResult.ok) {
+    return rawResult;
+  }
+
+  const firstResult = rawResult.value[0];
+  if (!firstResult) {
+    return ok([]);
+  }
+
+  const eventResults = firstResult.values.map(([payload]) => {
+    const jsonResult = fromThrowable(() => JSON.parse(payload as string) as unknown);
+    if (!jsonResult.ok) {
+      return jsonResult;
+    }
+    return deserializeEvent(jsonResult.value);
+  });
+
+  const firstError = eventResults.find((r) => !r.ok);
+  if (firstError && !firstError.ok) {
+    return firstError;
+  }
+
+  return ok(eventResults.map((r) => (r as { ok: true; value: GraphEvent }).value));
+};
+
 export const createSQLiteEventLog = (persistence?: SQLitePersistence): SQLiteEventLog => {
   let database = null as Database | null;
-
   let SQL = null as SqlJsStatic | null;
-
-  const initSchema = () => {
-    if (!database) return; // Should not happen if called from init
-    database.run(`
-      CREATE TABLE IF NOT EXISTS events (
-        graph_id TEXT NOT NULL,
-        event_id TEXT NOT NULL,
-        timestamp TEXT NOT NULL,
-        type TEXT NOT NULL,
-        payload TEXT NOT NULL,
-        PRIMARY KEY (graph_id, event_id)
-      );
-    `);
-    return;
-  };
 
   const persist = async (): Promise<void> => {
     if (!persistence || !database) {
@@ -104,14 +215,13 @@ export const createSQLiteEventLog = (persistence?: SQLitePersistence): SQLiteEve
 
       return fromAsyncThrowable(async () => {
         SQL = await initSqlJs();
-
         const data = persistence ? await persistence.read() : null;
 
         if (data) {
           database = new SQL.Database(data);
         } else {
           database = new SQL.Database();
-          initSchema();
+          initSchema(database);
         }
         return;
       });
@@ -132,32 +242,7 @@ export const createSQLiteEventLog = (persistence?: SQLitePersistence): SQLiteEve
       events: readonly GraphEvent[],
     ): Promise<Result<void, Error>> => {
       if (!database) return err(new Error('Database not initialized'));
-
-      const databaseInstance = database;
-      const result = await fromAsyncThrowable(async () => {
-        databaseInstance.run('BEGIN TRANSACTION');
-        const statement = databaseInstance.prepare(`
-          INSERT OR IGNORE INTO events (graph_id, event_id, timestamp, type, payload)
-          VALUES (?, ?, ?, ?, ?)
-        `);
-
-        // eslint-disable-next-line functional/no-loop-statements
-        for (const event of events) {
-          const storable = serializeEvent(event);
-          const payload = JSON.stringify(storable);
-          statement.run([graphId, event.eventId, event.timestamp, event.type, payload]);
-        }
-        statement.free();
-
-        databaseInstance.run('COMMIT');
-        await persist();
-        return;
-      });
-
-      if (!result.ok) {
-        databaseInstance.run('ROLLBACK');
-      }
-      return result;
+      return executeAppendEvents(database, persist, graphId, events);
     },
 
     getEvents: async (
@@ -165,52 +250,7 @@ export const createSQLiteEventLog = (persistence?: SQLitePersistence): SQLiteEve
       options: EventLogQueryOptions = {},
     ): Promise<Result<readonly GraphEvent[], Error>> => {
       if (!database) return err(new Error('Database not initialized'));
-      const databaseInstance = database;
-
-      return fromAsyncThrowable(async () => {
-        let query = 'SELECT payload FROM events WHERE graph_id = ?';
-        const parameters = [graphId] as (string | number | null)[];
-
-        if (options.after) {
-          query += ' AND event_id > ?';
-
-          parameters.push(options.after);
-        }
-
-        if (options.before) {
-          query += ' AND event_id < ?';
-
-          parameters.push(options.before);
-        }
-
-        // eslint-disable-next-line unicorn/prefer-ternary
-        if (options.reverse) {
-          query += ' ORDER BY event_id DESC';
-        } else {
-          query += ' ORDER BY event_id ASC';
-        }
-
-        if (options.limit) {
-          query += ' LIMIT ?';
-
-          parameters.push(options.limit);
-        }
-
-        const statement = databaseInstance.prepare(query);
-        statement.bind(parameters);
-
-        const events = [] as GraphEvent[];
-
-        // eslint-disable-next-line functional/no-loop-statements
-        while (statement.step()) {
-          const row = statement.getAsObject();
-          const storable = JSON.parse(row.payload as string);
-
-          events.push(deserializeEvent(storable));
-        }
-        statement.free();
-        return events;
-      });
+      return executeGetEvents(database, graphId, options);
     },
   };
 };

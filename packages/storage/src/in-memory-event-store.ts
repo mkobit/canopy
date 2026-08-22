@@ -14,21 +14,20 @@ export const createInMemoryEventStore = (): EventLogStore => {
     ): Promise<Result<void, Error>> => {
       const existingEvents = graphs.get(graphId) ?? [];
       const existingIds = new Set(existingEvents.map((event_) => event_.eventId));
-      const newEvents = [...existingEvents];
 
-      // eslint-disable-next-line functional/no-loop-statements
-      for (const event of events) {
-        if (existingIds.has(event.eventId)) {
-          continue;
+      const seenIds = new Set<string>();
+      const uniqueNewEvents = events.filter((event_) => {
+        if (existingIds.has(event_.eventId) || seenIds.has(event_.eventId)) {
+          return false;
         }
+        seenIds.add(event_.eventId);
+        return true;
+      });
 
-        newEvents.push(event);
-
-        existingIds.add(event.eventId);
-      }
+      const combined = [...existingEvents, ...uniqueNewEvents];
 
       // Sort the events by eventId ascending
-      const sortedEvents = newEvents.toSorted((a, b) => a.eventId.localeCompare(b.eventId));
+      const sortedEvents = combined.toSorted((a, b) => a.eventId.localeCompare(b.eventId));
 
       graphs.set(graphId, sortedEvents);
 
@@ -41,28 +40,20 @@ export const createInMemoryEventStore = (): EventLogStore => {
     ): Promise<Result<readonly GraphEvent[], Error>> => {
       const events = graphs.get(graphId) ?? [];
 
-      let filteredEvents = [...events];
-
-      if (options) {
-        const { after, before } = options;
-        if (after) {
-          filteredEvents = filteredEvents.filter((event_) => event_.eventId > after);
-        }
-
-        if (before) {
-          filteredEvents = filteredEvents.filter((event_) => event_.eventId < before);
-        }
-
-        if (options.reverse) {
-          filteredEvents.reverse();
-        }
-
-        if (options.limit !== undefined && options.limit >= 0) {
-          filteredEvents = filteredEvents.slice(0, options.limit);
-        }
+      if (!options) {
+        return Promise.resolve(ok(events));
       }
 
-      return Promise.resolve(ok(filteredEvents));
+      const { after, before, reverse, limit } = options;
+      const afterFiltered = after ? events.filter((event_) => event_.eventId > after) : events;
+      const beforeFiltered = before
+        ? afterFiltered.filter((event_) => event_.eventId < before)
+        : afterFiltered;
+      const reverseOrdered = reverse ? beforeFiltered.toReversed() : beforeFiltered;
+      const limited =
+        limit !== undefined && limit >= 0 ? reverseOrdered.slice(0, limit) : reverseOrdered;
+
+      return Promise.resolve(ok(limited));
     },
   };
 };
