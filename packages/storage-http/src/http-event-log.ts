@@ -1,5 +1,11 @@
-import type { Result, GraphEvent, EventLogStore, EventLogQueryOptions } from '@canopy/graph';
-import { fromAsyncThrowable } from '@canopy/graph';
+import type {
+  Result,
+  GraphEvent,
+  EventLogStore,
+  EventLogQueryOptions,
+  PropertyValue,
+} from '@canopy/graph';
+import { ok, err, fromAsyncThrowable } from '@canopy/graph';
 
 export interface HTTPOptions {
   readonly headers?: Record<string, string>;
@@ -35,33 +41,43 @@ const serializeEvent = (event: GraphEvent): unknown => {
   }
 };
 
-const deserializeEvent = (storable: unknown): GraphEvent => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const s = storable as any;
-  switch (s.type) {
+const isObject = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const deserializeEvent = (storable: unknown): Result<GraphEvent, Error> => {
+  if (!isObject(storable) || typeof storable.type !== 'string') {
+    return err(new Error('Invalid storable event'));
+  }
+
+  switch (storable.type) {
     case 'NodeCreated':
     case 'EdgeCreated': {
-      return {
-        ...s,
-        properties: new Map(Object.entries(s.properties)),
-      } as GraphEvent;
+      const properties = isObject(storable.properties)
+        ? new Map(Object.entries(storable.properties as Record<string, PropertyValue>))
+        : new Map();
+      return ok({
+        ...storable,
+        properties,
+      } as unknown as GraphEvent);
     }
     case 'NodePropertiesUpdated':
     case 'EdgePropertiesUpdated': {
-      return {
-        ...s,
-        changes: new Map(Object.entries(s.changes)),
-      } as GraphEvent;
+      const changes = isObject(storable.changes)
+        ? new Map(Object.entries(storable.changes as Record<string, PropertyValue>))
+        : new Map();
+      return ok({
+        ...storable,
+        changes,
+      } as unknown as GraphEvent);
     }
     case 'NodeDeleted':
     case 'EdgeDeleted':
     case 'WorkflowStarted':
     case 'WorkflowCompleted': {
-      return s as GraphEvent;
+      return ok(storable as unknown as GraphEvent);
     }
     default: {
-      // eslint-disable-next-line functional/no-throw-statements
-      throw new Error(`Unknown event type: ${s.type}`);
+      return err(new Error(`Unknown event type: ${storable.type}`));
     }
   }
 };
@@ -104,7 +120,7 @@ export const createHTTPEventLog = (baseUrl: string, options?: HTTPOptions): HTTP
       graphId: string,
       queryOptions: EventLogQueryOptions = {},
     ): Promise<Result<readonly GraphEvent[], Error>> => {
-      return fromAsyncThrowable(async () => {
+      const fetchResult = await fromAsyncThrowable(async () => {
         const parameters = new URLSearchParams();
         if (queryOptions.after) {
           parameters.set('after', queryOptions.after);
@@ -139,16 +155,28 @@ export const createHTTPEventLog = (baseUrl: string, options?: HTTPOptions): HTTP
           );
         }
 
-        const data = (await response.json()) as unknown;
-        const rawEvents =
-          data && typeof data === 'object' && 'events' in data && Array.isArray(data.events)
-            ? data.events
-            : Array.isArray(data)
-              ? data
-              : [];
-
-        return rawEvents.map(deserializeEvent);
+        return response.json() as Promise<unknown>;
       });
+
+      if (!fetchResult.ok) {
+        return fetchResult;
+      }
+
+      const data = fetchResult.value;
+      const rawEvents =
+        data && typeof data === 'object' && 'events' in data && Array.isArray(data.events)
+          ? data.events
+          : Array.isArray(data)
+            ? data
+            : [];
+
+      const eventResults = rawEvents.map(deserializeEvent);
+      const firstError = eventResults.find((r) => !r.ok);
+      if (firstError && !firstError.ok) {
+        return firstError;
+      }
+
+      return ok(eventResults.map((r) => (r as { ok: true; value: GraphEvent }).value));
     },
   };
 };
