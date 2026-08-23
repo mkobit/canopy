@@ -8,7 +8,6 @@ import type {
   TypeId,
 } from '@canopy/graph';
 import type { Filter, Sort } from '@canopy/queries';
-import { Temporal } from 'temporal-polyfill';
 import type { ApiAdapterContext } from './api-context';
 import type { ApiAdapterError } from './result-errors';
 

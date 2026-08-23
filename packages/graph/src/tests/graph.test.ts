@@ -24,7 +24,6 @@ import {
   asNodeId,
 } from '@canopy/graph';
 import type { Node, Edge } from '@canopy/graph';
-import { Temporal } from 'temporal-polyfill';
 
 describe('Core Graph Engine', () => {
   const graphId = createGraphId();

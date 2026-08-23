@@ -12,7 +12,6 @@ import {
   type NodeCreated,
   type NodePropertiesUpdated,
 } from '@canopy/graph';
-import { Temporal } from 'temporal-polyfill';
 
 describe('projection / LWW sync', () => {
   const deviceA = asDeviceId('00000000-0000-0000-0000-00000000000A');

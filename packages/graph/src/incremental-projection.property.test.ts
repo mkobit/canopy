@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'bun:test';
 import fc from 'fast-check';
-import { Temporal } from 'temporal-polyfill';
 import { mergeEvents, createMergeState } from './incremental-projection';
 import { projectGraph } from './projection';
 import { createGraph } from './create-graph';

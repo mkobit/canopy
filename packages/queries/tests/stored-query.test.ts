@@ -17,7 +17,6 @@ import {
   asDeviceId,
 } from '@canopy/graph';
 import { pipe } from 'remeda';
-import { Temporal } from 'temporal-polyfill';
 import { query, nodes, where } from '../src/pipeline';
 
 describe('Stored Queries', () => {

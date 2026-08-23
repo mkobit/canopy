@@ -3,7 +3,6 @@ import { createSQLiteEventLog } from './sqlite-event-log';
 import type { SQLiteEventLog } from './sqlite-event-log';
 import { unwrap, asNodeId, asTypeId, asEventId, asInstant, asDeviceId } from '@canopy/graph';
 import type { NodeCreated, GraphEvent } from '@canopy/graph';
-import { Temporal } from 'temporal-polyfill';
 
 const mockGraphId = 'test-graph-id';
 

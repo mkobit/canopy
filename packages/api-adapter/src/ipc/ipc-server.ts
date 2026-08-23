@@ -4,7 +4,6 @@ import * as net from 'node:net';
 import * as path from 'node:path';
 import type { Result } from '@canopy/graph';
 import { err, ok } from '@canopy/graph';
-import { Temporal } from 'temporal-polyfill';
 import type { ApiAdapterContext } from '../api-context';
 import type { DraftRegistryEntry } from './ipc-handlers';
 import { handleIpcRequestLine } from './ipc-handlers';

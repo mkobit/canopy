@@ -4,7 +4,6 @@ import type { EventLogStore } from '@canopy/storage';
 import type { GraphRegistry } from '@canopy/storage-indexeddb';
 import type { GenerateVaultOptions } from './generators/graph-generators';
 import { generateGraphVault, graphToEvents } from './generators/graph-generators';
-import { Temporal } from 'temporal-polyfill';
 
 export type SeedVaultOptions = Partial<GenerateVaultOptions> &
   Readonly<{

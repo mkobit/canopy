@@ -1,7 +1,6 @@
 /* eslint-disable max-lines-per-function, functional/prefer-immutable-types */
 import type { DraftError, DraftSession, Graph, PropertyValue, Result } from '@canopy/graph';
 import { asEdgeId, asNodeId, asTypeId, createDraftSession, ok } from '@canopy/graph';
-import { Temporal } from 'temporal-polyfill';
 import type { ApiAdapterContext } from '../api-context';
 import { createApiRequest } from '../api-payloads';
 import type { EventStreamSubscription } from '../event-stream-handlers';

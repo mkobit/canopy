@@ -1,5 +1,3 @@
-import { Temporal } from 'temporal-polyfill';
-
 export type RateLimiter = Readonly<{
   /** Records one request attempt at `now` and reports whether it is within the configured rate. */
   tryAcquire: (now?: number) => boolean;
