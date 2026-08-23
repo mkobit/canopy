@@ -3,7 +3,6 @@ import { createHTTPEventLog } from './http-event-log';
 import type { HTTPEventLog } from './http-event-log';
 import { unwrap, asNodeId, asTypeId, asEventId, asInstant, asDeviceId } from '@canopy/graph';
 import type { NodeCreated, GraphEvent } from '@canopy/graph';
-import { Temporal } from 'temporal-polyfill';
 
 const mockGraphId = 'test-graph-id';
 

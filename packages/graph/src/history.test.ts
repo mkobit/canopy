@@ -1,5 +1,4 @@
 import { describe, it, expect } from 'bun:test';
-import { Temporal } from 'temporal-polyfill';
 import { maxEventIdForTimestamp, incrementEventId, getGraphAt } from './history';
 import type { EventLogStore, EventLogQueryOptions } from './event-log';
 import type { GraphEvent } from './events';

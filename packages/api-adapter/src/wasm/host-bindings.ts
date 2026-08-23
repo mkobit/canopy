@@ -1,7 +1,6 @@
 /* eslint-disable functional/no-return-void */
 import type { Result } from '@canopy/graph';
 import { err, ok } from '@canopy/graph';
-import { Temporal } from 'temporal-polyfill';
 import type { ApiAdapterContext } from '../api-context';
 import type { ApiRequest, ApiResponse, ReplayRequestPayload } from '../api-payloads';
 import { createApiRequest } from '../api-payloads';

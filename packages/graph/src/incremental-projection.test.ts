@@ -1,5 +1,4 @@
 import { describe, it, expect, setSystemTime } from 'bun:test';
-import { Temporal } from 'temporal-polyfill';
 import {
   mergeEvents,
   createMergeState,

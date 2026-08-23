@@ -5,7 +5,6 @@ import { useNavigate } from 'react-router-dom';
 import { createGraphId } from '@canopy/graph';
 import { Plus, Trash2, FolderOpen } from 'lucide-react';
 import type { GraphRegistryEntry } from '@canopy/storage-indexeddb';
-import { Temporal } from 'temporal-polyfill';
 
 // eslint-disable-next-line max-lines-per-function
 export const HomePage = () => {

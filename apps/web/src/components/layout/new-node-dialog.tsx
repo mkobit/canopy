@@ -10,7 +10,6 @@ import {
   type ScalarValue,
   type TypeId,
 } from '@canopy/graph';
-import { Temporal } from 'temporal-polyfill';
 import { PropertyInput } from '../properties/property-input';
 import type { NodeTypeOption } from '../../utils/node-types';
 

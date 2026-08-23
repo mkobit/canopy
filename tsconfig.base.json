@@ -17,6 +17,13 @@
     "sourceMap": true,
     "resolveJsonModule": true,
     "forceConsistentCasingInFileNames": true,
-    "types": ["bun-types", "node", "react", "react-dom", "uuid"]
+    "types": [
+      "bun-types",
+      "node",
+      "react",
+      "react-dom",
+      "uuid",
+      "temporal-polyfill/types/global"
+    ]
   }
 }

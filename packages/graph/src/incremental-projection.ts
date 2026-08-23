@@ -4,7 +4,6 @@ import type { Node } from './node';
 import type { Edge } from './edge';
 import type { NodeId, EdgeId, EventId } from './identifiers';
 import type { Instant } from './temporal';
-import { Temporal } from 'temporal-polyfill';
 import { lwwWins, projectGraph } from './projection';
 import type { Result } from './result';
 import { ok, err as error } from './result';

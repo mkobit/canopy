@@ -10,7 +10,6 @@
   },
   "devDependencies": {
     "@types/chrome": "^0.0.287",
-    "temporal-polyfill": "^1.0.1",
     "typescript": "6.0.3"
   }
 }

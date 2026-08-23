@@ -13,7 +13,6 @@ import {
   unwrap,
 } from '@canopy/graph';
 import { createInMemoryEventStore } from '@canopy/storage';
-import { Temporal } from 'temporal-polyfill';
 import { createApiAdapterContext } from '../src/api-context';
 import { IPC_METHODS, createIpcServer } from '../src/ipc';
 import type { IpcServer } from '../src/ipc';
