@@ -7,6 +7,16 @@ Each entry states the decision, why, and where the full reasoning lives.
 Full design proposals still live in `design/` (dated, one file per proposal).
 This log complements those files — it's where decisions made _during_ implementation of an approved design get recorded, so they don't only live in a PR description or an agent's private memory.
 
+## 2026-08-22 — Consolidated dual TypeScript compilers to single typescript@6.0.3 across all entrypoints (canopy-08x.3)
+
+The dual-compiler setup from `canopy-1qb` (`typescript@6.0.3` for `typescript-eslint` and direct invocations; `typescript-native@npm:typescript@7.0.2` via root `PATH` overrides for `build` and `typecheck`) resulted in split compiler authorities across root vs per-workspace scripts and between `packages/*` and `apps/*`.
+With TypeScript 7.1 in development (~95% milestone completion, targeting stable programmatic compiler API support needed by `typescript-eslint`), maintaining the dual-compiler alias and shell `PATH` overrides before 7.1's release introduced build drift without a unified compiler authority.
+
+Decision — **Consolidate to a single `typescript@6.0.3` compiler across all entrypoints.**
+`typescript-native` is removed from `devDependencies` and the `PATH` overrides are stripped from `build` and `typecheck` scripts in `package.json`.
+A single compiler version (`6.0.3`, the latest 6.x release) now uniformly governs all builds, typechecks, ESLint type services, and direct per-package runs.
+Future upgrade to TypeScript 7.1 will occur as a single unified migration once TypeScript 7.1 and `typescript-eslint` declare compatibility (tracked by deferred bead `canopy-x1j`).
+
 ## 2026-08-16 — Kernel stays Effect-free; plain-functional is the toolkit for the eslint-disable elimination (canopy-v9o.1.1)
 
 The `eslint-disable` elimination epic (`canopy-v9o.1`) has 22 per-package rewrite beads blocked on one question: which functional toolkit the kernel is rewritten against.
