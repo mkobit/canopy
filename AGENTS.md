@@ -127,7 +127,7 @@ All git worktrees share one embedded bd database, so grab work only with `bd upd
 
 This project uses OpenSpec for spec-driven development.
 Run `bunx openspec list` to see current changes and their status.
-Note that `bun exec openspec validate --all` runs as a PR check on changes under `openspec/**`.
+Note that `bunx openspec validate --all` runs as a PR check on changes under `openspec/**`.
 Use `/opsx:propose`, `/opsx:apply`, `/opsx:archive` slash commands to work with specs.
 Specs live in `openspec/changes/` and follow the `proposal → design → tasks` artifact flow.
 All design proposals must undergo a mandatory adversarial review phase prior to staging implementation tasks.
