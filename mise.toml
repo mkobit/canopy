@@ -6,10 +6,7 @@ bun = "1.4.0"
 locked = true
 http_retries = 15
 
-[tasks.check-unused]
-run = "bun run check:unused"
-description = "Check for unused files, exports, and dependencies with Knip"
-
+# Code Quality & Build Tasks
 # Quality gate tasks with structured dependencies for local developers and agents.
 # `build` produces package dist/ output required by lint, typecheck, and test.
 
@@ -25,12 +22,18 @@ description = "Lint the codebase"
 [tasks.typecheck]
 depends = ["lint"]
 run = "bun run typecheck"
-description = "Type check"
+description = "Type check the codebase"
 
 [tasks.test]
 depends = ["typecheck"]
 run = "bun test"
-description = "Run all tests"
+description = "Run all unit and integration tests"
+
+[tasks.check-unused]
+run = "bun run check:unused"
+description = "Check for unused files, exports, and dependencies with Knip"
+
+# OpenSpec Tools
 
 [tasks.spec-list]
 run = "bunx openspec list"
@@ -45,6 +48,8 @@ description = "Validate OpenSpec changes strictly (openspec stays bunx; no mise 
 depends = ["spec-validate"]
 description = "Run quality gates in CI order (build -> lint -> typecheck -> test -> spec-validate)"
 
+# Beads Issue Tracker Integration
+
 [tasks.bd-push]
 run = "bd dolt push"
 description = "Push the beads Dolt database to its remote"
@@ -56,4 +61,3 @@ description = "Session-completion sync: rebase, push beads, push git, show statu
 [tasks.bd-check]
 run = "bd ready && bd lint"
 description = "Show unblocked work and validate the beads database (bd doctor is broken in this repo's direct-mode DB)"
-
