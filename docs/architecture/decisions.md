@@ -7,6 +7,22 @@ Each entry states the decision, why, and where the full reasoning lives.
 Full design proposals still live in `design/` (dated, one file per proposal).
 This log complements those files — it's where decisions made _during_ implementation of an approved design get recorded, so they don't only live in a PR description or an agent's private memory.
 
+## 2026-08-30 — Performance-critical carve-out for incremental-projection.ts and indexes.ts (canopy-v9o.1.2)
+
+`packages/graph/src/incremental-projection.ts` (78 directives) and `packages/graph/src/indexes.ts` (77 directives) held 155 of the remaining `eslint-disable` directives, mostly `functional/immutable-data` and `functional/no-loop-statements`.
+Internal mutation in these two modules was an intentional $O(\delta)$ performance architecture choice (canopy-c54) to avoid full copy overheads on every event or index bucket update.
+ADR 2026-08-16 (canopy-v9o.1.1) ratified that `@canopy/graph` remains strictly Effect-free, eliminating Effect `Ref` or `HashMap` in the kernel.
+Persistent/HAMT collections were evaluated and rejected due to Invariant #1 (leaf must stay dependency-light), native V8 `Map`/`Set` performance advantages at client PKM graph scales ($n \le 50,000$), and allocation overhead of JS trie structures.
+
+Decision — **Sanctioned mutable-behind-a-pure-boundary pattern (encapsulated builder with strictly immutable public signatures).**
+(1) Public contracts of `@canopy/graph` remain 100% pure and immutable (`Graph`, `GraphIndexes`, `MergeState`, `ReadonlyMap`, `ReadonlySet`).
+(2) Internal execution frames allocate transient working maps/sets, perform local mutations during the call, and return newly constructed immutable records.
+(3) Non-gating empirical benchmarks (`packages/graph/scripts/bench-index-maintenance.ts` and `packages/graph/scripts/bench-incremental-projection.ts`) provide regression baselines tracked in `AGENTS.md`.
+(4) `eslint.config.mjs` configures a scoped override for `packages/graph/src/{indexes,incremental-projection}.ts` turning off internal mutation rules (`functional/immutable-data`, `functional/no-loop-statements`, `functional/no-let`) while strictly preserving `functional/prefer-immutable-types` and `functional/type-declaration-immutability`.
+(5) The 155 inline directives are eliminated and the directive ceiling ratchets down from 435 to 280.
+
+Full reasoning and adversarial review: `openspec/changes/perf-critical-projection-indexes-carve-out/` (proposal, design, spec).
+
 ## 2026-08-22 — Consolidated dual TypeScript compilers to single typescript@6.0.3 across all entrypoints (canopy-08x.3)
 
 The dual-compiler setup from `canopy-1qb` (`typescript@6.0.3` for `typescript-eslint` and direct invocations; `typescript-native@npm:typescript@7.0.2` via root `PATH` overrides for `build` and `typecheck`) resulted in split compiler authorities across root vs per-workspace scripts and between `packages/*` and `apps/*`.

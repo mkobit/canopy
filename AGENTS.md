@@ -78,8 +78,8 @@ Perf-based module inventory:
 
 | Module                                         | Benchmark                                           | Status                                                     |
 | :--------------------------------------------- | :-------------------------------------------------- | :--------------------------------------------------------- |
-| `packages/graph/src/indexes.ts`                | `packages/graph/scripts/bench-index-maintenance.ts` | Covered                                                    |
-| `packages/graph/src/incremental-projection.ts` | _(none yet)_                                        | Gap — benchmark tracked by `canopy-v9o.1.2` (prerequisite) |
+| `packages/graph/src/indexes.ts`                | `packages/graph/scripts/bench-index-maintenance.ts`     | Covered |
+| `packages/graph/src/incremental-projection.ts` | `packages/graph/scripts/bench-incremental-projection.ts` | Covered |
 
 ## Landing the Plane (Session Completion)
 

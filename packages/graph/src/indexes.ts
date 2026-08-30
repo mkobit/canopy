@@ -73,11 +73,11 @@ function indexNodeProperty(
   const valueKey = serializeScalarForIndex(value);
   const byProperty = propertyEquality.get(property) ?? new Map<string, Set<NodeId>>();
   const byValue = byProperty.get(valueKey) ?? new Set<NodeId>();
-  // eslint-disable-next-line functional/immutable-data
+
   byValue.add(nodeId);
-  // eslint-disable-next-line functional/immutable-data
+
   byProperty.set(valueKey, byValue);
-  // eslint-disable-next-line functional/immutable-data
+
   propertyEquality.set(property, byProperty);
 }
 
@@ -96,11 +96,11 @@ function addNeighbour(
 ): void {
   const byEdgeType = adjacency.get(nodeId) ?? new Map<TypeId, Map<NodeId, number>>();
   const bucket = byEdgeType.get(edgeType) ?? new Map<NodeId, number>();
-  // eslint-disable-next-line functional/immutable-data
+
   bucket.set(neighbourId, (bucket.get(neighbourId) ?? 0) + 1);
-  // eslint-disable-next-line functional/immutable-data
+
   byEdgeType.set(edgeType, bucket);
-  // eslint-disable-next-line functional/immutable-data
+
   adjacency.set(nodeId, byEdgeType);
 }
 
@@ -111,10 +111,10 @@ function addToSet<K>(
   value: NodeId,
 ): ReadonlyMap<K, ReadonlySet<NodeId>> {
   const bucket = new Set(map.get(key));
-  // eslint-disable-next-line functional/immutable-data
+
   bucket.add(value);
   const nextMap = new Map(map);
-  // eslint-disable-next-line functional/immutable-data
+
   nextMap.set(key, bucket);
   return nextMap;
 }
@@ -128,14 +128,12 @@ function removeFromSet<K>(
   const bucket = map.get(key);
   if (!bucket || !bucket.has(value)) return map;
   const nextBucket = new Set(bucket);
-  // eslint-disable-next-line functional/immutable-data
+
   nextBucket.delete(value);
   const nextMap = new Map(map);
   if (nextBucket.size === 0) {
-    // eslint-disable-next-line functional/immutable-data
     nextMap.delete(key);
   } else {
-    // eslint-disable-next-line functional/immutable-data
     nextMap.set(key, nextBucket);
   }
   return nextMap;
@@ -151,7 +149,7 @@ function addToNestedSet<K1, K2>(
   const inner = map.get(key1) ?? new Map<K2, ReadonlySet<NodeId>>();
   const nextInner = addToSet(inner, key2, value);
   const nextMap = new Map(map);
-  // eslint-disable-next-line functional/immutable-data
+
   nextMap.set(key1, nextInner);
   return nextMap;
 }
@@ -171,10 +169,8 @@ function removeFromNestedSet<K1, K2>(
   if (nextInner === inner) return map;
   const nextMap = new Map(map);
   if (nextInner.size === 0) {
-    // eslint-disable-next-line functional/immutable-data
     nextMap.delete(key1);
   } else {
-    // eslint-disable-next-line functional/immutable-data
     nextMap.set(key1, nextInner);
   }
   return nextMap;
@@ -194,13 +190,13 @@ function incrementNestedCount<K1, K2>(
   const inner = map.get(key1) ?? new Map<K2, ReadonlyMap<NodeId, number>>();
   const bucket = inner.get(key2) ?? new Map<NodeId, number>();
   const nextBucket = new Map(bucket);
-  // eslint-disable-next-line functional/immutable-data
+
   nextBucket.set(neighbour, (nextBucket.get(neighbour) ?? 0) + 1);
   const nextInner = new Map(inner);
-  // eslint-disable-next-line functional/immutable-data
+
   nextInner.set(key2, nextBucket);
   const nextMap = new Map(map);
-  // eslint-disable-next-line functional/immutable-data
+
   nextMap.set(key1, nextInner);
   return nextMap;
 }
@@ -223,26 +219,20 @@ function decrementNestedCount<K1, K2>(
   if (!inner || !bucket || count === undefined) return map;
   const nextBucket = new Map(bucket);
   if (count <= 1) {
-    // eslint-disable-next-line functional/immutable-data
     nextBucket.delete(neighbour);
   } else {
-    // eslint-disable-next-line functional/immutable-data
     nextBucket.set(neighbour, count - 1);
   }
   const nextInner = new Map(inner);
   if (nextBucket.size === 0) {
-    // eslint-disable-next-line functional/immutable-data
     nextInner.delete(key2);
   } else {
-    // eslint-disable-next-line functional/immutable-data
     nextInner.set(key2, nextBucket);
   }
   const nextMap = new Map(map);
   if (nextInner.size === 0) {
-    // eslint-disable-next-line functional/immutable-data
     nextMap.delete(key1);
   } else {
-    // eslint-disable-next-line functional/immutable-data
     nextMap.set(key1, nextInner);
   }
   return nextMap;
@@ -263,22 +253,18 @@ function removeAllFromNestedCount<K1, K2>(
   const bucket = inner?.get(key2);
   if (!inner || !bucket || !bucket.has(neighbour)) return map;
   const nextBucket = new Map(bucket);
-  // eslint-disable-next-line functional/immutable-data
+
   nextBucket.delete(neighbour);
   const nextInner = new Map(inner);
   if (nextBucket.size === 0) {
-    // eslint-disable-next-line functional/immutable-data
     nextInner.delete(key2);
   } else {
-    // eslint-disable-next-line functional/immutable-data
     nextInner.set(key2, nextBucket);
   }
   const nextMap = new Map(map);
   if (nextInner.size === 0) {
-    // eslint-disable-next-line functional/immutable-data
     nextMap.delete(key1);
   } else {
-    // eslint-disable-next-line functional/immutable-data
     nextMap.set(key1, nextInner);
   }
   return nextMap;
@@ -291,7 +277,7 @@ function deepFreeze<T>(object: T): T {
   if (object === null || typeof object !== 'object') {
     return object;
   }
-  // eslint-disable-next-line functional/no-loop-statements
+
   for (const value of Object.values(object)) {
     deepFreeze(value);
   }
@@ -310,12 +296,11 @@ export function buildGraphIndexes(graph: Graph): GraphIndexes {
 
   // 1. Scan nodes for SettingsSchema and UserSetting, and populate the type/property-equality
   //    read-model indexes (every node, not just settings-related ones).
-  // eslint-disable-next-line functional/no-loop-statements
+
   for (const node of graph.nodes.values()) {
     if (node.type === SYSTEM_IDS.SETTINGS_SCHEMA) {
       const key = node.properties.get('key');
       if (typeof key === 'string') {
-        // eslint-disable-next-line functional/immutable-data
         settingsSchemas.set(key, node);
       }
     } else if (node.type === SYSTEM_IDS.USER_SETTING) {
@@ -329,7 +314,6 @@ export function buildGraphIndexes(graph: Graph): GraphIndexes {
         if (typeof valueRaw === 'string') {
           const result = fromThrowable(() => JSON.parse(valueRaw) as PropertyValue);
           if (result.ok) {
-            // eslint-disable-next-line functional/immutable-data
             userSettings.set(key, deepFreeze(result.value));
           }
         }
@@ -337,12 +321,11 @@ export function buildGraphIndexes(graph: Graph): GraphIndexes {
     }
 
     const typeBucket = typeIndex.get(node.type) ?? new Set<NodeId>();
-    // eslint-disable-next-line functional/immutable-data
+
     typeBucket.add(node.id);
-    // eslint-disable-next-line functional/immutable-data
+
     typeIndex.set(node.type, typeBucket);
 
-    // eslint-disable-next-line functional/no-loop-statements
     for (const [property, value] of node.properties) {
       indexNodeProperty(propertyEquality, node.id, property, value);
     }
@@ -357,13 +340,10 @@ export function buildGraphIndexes(graph: Graph): GraphIndexes {
   const adjacencyOut = new Map<NodeId, Map<TypeId, Map<NodeId, number>>>();
   const adjacencyIn = new Map<NodeId, Map<TypeId, Map<NodeId, number>>>();
 
-  // eslint-disable-next-line functional/no-loop-statements
   for (const edge of graph.edges.values()) {
     if (edge.type === SYSTEM_EDGE_TYPES.VIEW_OVERRIDE) {
-      // eslint-disable-next-line functional/immutable-data
       overrideEdges.push(edge);
     } else if (edge.type === SYSTEM_EDGE_TYPES.DEFAULT_VIEW) {
-      // eslint-disable-next-line functional/immutable-data
       defaultEdges.push(edge);
     }
 
@@ -373,19 +353,18 @@ export function buildGraphIndexes(graph: Graph): GraphIndexes {
 
   // 3. Group and resolve view override edges deterministically
   const overridesBySource = new Map<NodeId, Edge[]>();
-  // eslint-disable-next-line functional/no-loop-statements
+
   for (const edge of overrideEdges) {
     const list = overridesBySource.get(edge.source) ?? [];
-    // eslint-disable-next-line functional/immutable-data
+
     list.push(edge);
-    // eslint-disable-next-line functional/immutable-data
+
     overridesBySource.set(edge.source, list);
   }
 
   const viewOverrides = new Map<NodeId, Node>();
-  // eslint-disable-next-line functional/no-loop-statements
+
   for (const [source, list] of overridesBySource) {
-    // eslint-disable-next-line functional/immutable-data
     list.sort((a, b) => {
       if (a.metadata.created > b.metadata.created) return -1;
       if (a.metadata.created < b.metadata.created) return 1;
@@ -399,7 +378,6 @@ export function buildGraphIndexes(graph: Graph): GraphIndexes {
     if (matchingEdge) {
       const targetNode = graph.nodes.get(matchingEdge.target);
       if (targetNode) {
-        // eslint-disable-next-line functional/immutable-data
         viewOverrides.set(source, targetNode);
       }
     }
@@ -407,19 +385,18 @@ export function buildGraphIndexes(graph: Graph): GraphIndexes {
 
   // 4. Group and resolve default view edges deterministically
   const defaultsBySource = new Map<TypeId, Edge[]>();
-  // eslint-disable-next-line functional/no-loop-statements
+
   for (const edge of defaultEdges) {
     const list = defaultsBySource.get(asTypeId(edge.source)) ?? [];
-    // eslint-disable-next-line functional/immutable-data
+
     list.push(edge);
-    // eslint-disable-next-line functional/immutable-data
+
     defaultsBySource.set(asTypeId(edge.source), list);
   }
 
   const defaultViews = new Map<TypeId, Node>();
-  // eslint-disable-next-line functional/no-loop-statements
+
   for (const [source, list] of defaultsBySource) {
-    // eslint-disable-next-line functional/immutable-data
     list.sort((a, b) => {
       if (a.metadata.created > b.metadata.created) return -1;
       if (a.metadata.created < b.metadata.created) return 1;
@@ -433,7 +410,6 @@ export function buildGraphIndexes(graph: Graph): GraphIndexes {
     if (matchingEdge) {
       const targetNode = graph.nodes.get(matchingEdge.target);
       if (targetNode) {
-        // eslint-disable-next-line functional/immutable-data
         defaultViews.set(source, targetNode);
       }
     }
@@ -474,7 +450,7 @@ export function getGraphIndexes(graph: Graph): GraphIndexes {
   }
   const indexes = buildGraphIndexes(graph);
   graphCache.set(graph, indexes);
-  // eslint-disable-next-line functional/immutable-data
+
   (graph as { _indexes?: GraphIndexes | undefined })._indexes = indexes;
   return indexes;
 }
@@ -521,9 +497,9 @@ function isConfigEvent(event: GraphEvent, graph: Graph): boolean {
 /** Adds a newly-created node's type and scalar properties to the read-model indexes. */
 function addNodeToReadModelIndexes(indexes: GraphIndexes, node: Node): GraphIndexes {
   const typeIndex = addToSet(indexes.typeIndex, node.type, node.id);
-  // eslint-disable-next-line functional/no-let -- accumulates copy-on-write updates across a small, bounded property loop
+
   let propertyEquality = indexes.propertyEquality;
-  // eslint-disable-next-line functional/no-loop-statements
+
   for (const [property, value] of node.properties) {
     if (isScalarValue(value)) {
       propertyEquality = addToNestedSet(
@@ -544,9 +520,9 @@ function addNodeToReadModelIndexes(indexes: GraphIndexes, node: Node): GraphInde
  */
 function removeNodeFromReadModelIndexes(indexes: GraphIndexes, node: Node): GraphIndexes {
   const typeIndex = removeFromSet(indexes.typeIndex, node.type, node.id);
-  // eslint-disable-next-line functional/no-let -- accumulates copy-on-write updates across a small, bounded property loop
+
   let propertyEquality = indexes.propertyEquality;
-  // eslint-disable-next-line functional/no-loop-statements
+
   for (const [property, value] of node.properties) {
     if (isScalarValue(value)) {
       propertyEquality = removeFromNestedSet(
@@ -558,33 +534,30 @@ function removeNodeFromReadModelIndexes(indexes: GraphIndexes, node: Node): Grap
     }
   }
 
-  // eslint-disable-next-line functional/no-let -- accumulates copy-on-write updates across this node's (bounded) degree
   let adjacencyOut = indexes.adjacencyOut;
-  // eslint-disable-next-line functional/no-let
+
   let adjacencyIn = indexes.adjacencyIn;
   const outBuckets =
     indexes.adjacencyOut.get(node.id) ?? new Map<TypeId, ReadonlyMap<NodeId, number>>();
-  // eslint-disable-next-line functional/no-loop-statements
+
   for (const [edgeType, targets] of outBuckets) {
-    // eslint-disable-next-line functional/no-loop-statements
     for (const target of targets.keys()) {
       adjacencyIn = removeAllFromNestedCount(adjacencyIn, target, edgeType, node.id);
     }
   }
   const inBuckets =
     indexes.adjacencyIn.get(node.id) ?? new Map<TypeId, ReadonlyMap<NodeId, number>>();
-  // eslint-disable-next-line functional/no-loop-statements
+
   for (const [edgeType, sources] of inBuckets) {
-    // eslint-disable-next-line functional/no-loop-statements
     for (const source of sources.keys()) {
       adjacencyOut = removeAllFromNestedCount(adjacencyOut, source, edgeType, node.id);
     }
   }
   const finalAdjacencyOut = new Map(adjacencyOut);
-  // eslint-disable-next-line functional/immutable-data
+
   finalAdjacencyOut.delete(node.id);
   const finalAdjacencyIn = new Map(adjacencyIn);
-  // eslint-disable-next-line functional/immutable-data
+
   finalAdjacencyIn.delete(node.id);
 
   return {
@@ -629,9 +602,8 @@ function updateNodePropertiesInReadModelIndexes(
   previousNode: Node,
   nextNode: Node,
 ): GraphIndexes {
-  // eslint-disable-next-line functional/no-let -- accumulates copy-on-write updates across a small, bounded set of changed keys
   let propertyEquality = indexes.propertyEquality;
-  // eslint-disable-next-line functional/no-loop-statements
+
   for (const property of changes.keys()) {
     const oldValue = previousNode.properties.get(property);
     const newValue = nextNode.properties.get(property);
@@ -731,11 +703,9 @@ function collectNeighbours(
   if (edgeType !== undefined) return new Set(byEdgeType.get(edgeType)?.keys());
 
   const combined = new Set<NodeId>();
-  // eslint-disable-next-line functional/no-loop-statements
+
   for (const bucket of byEdgeType.values()) {
-    // eslint-disable-next-line functional/no-loop-statements
     for (const id of bucket.keys()) {
-      // eslint-disable-next-line functional/immutable-data
       combined.add(id);
     }
   }

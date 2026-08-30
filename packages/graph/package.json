@@ -8,7 +8,8 @@
     "build": "tsc -b tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.check.json",
     "test": "bun test ./src ./tests",
-    "bench:index-maintenance": "bun run scripts/bench-index-maintenance.ts"
+    "bench:index-maintenance": "bun run scripts/bench-index-maintenance.ts",
+    "bench:incremental-projection": "bun run scripts/bench-incremental-projection.ts"
   },
   "dependencies": {
     "remeda": "^2.39.0",

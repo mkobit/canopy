@@ -193,9 +193,8 @@ function applyOneEventInternal(
       }
 
       const propertyWriters = new Map<string, EventId>();
-      // eslint-disable-next-line functional/no-loop-statements
+
       for (const key of event.properties.keys()) {
-        // eslint-disable-next-line functional/immutable-data
         propertyWriters.set(key, event.eventId);
       }
 
@@ -211,10 +210,10 @@ function applyOneEventInternal(
       };
 
       const newNodes = new Map(graph.nodes);
-      // eslint-disable-next-line functional/immutable-data
+
       newNodes.set(node.id, node);
       const newNodeMeta = new Map(nodeMeta);
-      // eslint-disable-next-line functional/immutable-data
+
       newNodeMeta.set(event.id, { exists: true, tombstoned: false, propertyWriters });
 
       return {
@@ -237,13 +236,12 @@ function applyOneEventInternal(
 
       const propertyWriters = new Map(meta.propertyWriters);
       const properties = new Map(node.properties);
-      // eslint-disable-next-line functional/no-loop-statements
+
       for (const [key, value] of event.changes) {
         const writer = propertyWriters.get(key);
         if (writer === undefined || event.eventId > writer) {
-          // eslint-disable-next-line functional/immutable-data
           properties.set(key, value);
-          // eslint-disable-next-line functional/immutable-data
+
           propertyWriters.set(key, event.eventId);
         }
       }
@@ -264,10 +262,10 @@ function applyOneEventInternal(
       };
 
       const newNodes = new Map(graph.nodes);
-      // eslint-disable-next-line functional/immutable-data
+
       newNodes.set(event.id, updatedNode);
       const newNodeMeta = new Map(nodeMeta);
-      // eslint-disable-next-line functional/immutable-data
+
       newNodeMeta.set(event.id, { ...meta, propertyWriters });
 
       return {
@@ -288,10 +286,10 @@ function applyOneEventInternal(
       }
 
       const newNodes = new Map(graph.nodes);
-      // eslint-disable-next-line functional/immutable-data
+
       newNodes.delete(event.id);
       const newNodeMeta = new Map(nodeMeta);
-      // eslint-disable-next-line functional/immutable-data
+
       newNodeMeta.set(event.id, { ...meta, tombstoned: true });
 
       // Cascade: remove and tombstone every edge touching this node.
@@ -300,12 +298,11 @@ function applyOneEventInternal(
       );
       const newEdges = new Map(graph.edges);
       const newEdgeMeta = new Map(edgeMeta);
-      // eslint-disable-next-line functional/no-loop-statements
+
       for (const edge of touchingEdges) {
-        // eslint-disable-next-line functional/immutable-data
         newEdges.delete(edge.id);
         const existingEdgeMeta = newEdgeMeta.get(edge.id) ?? emptyMeta();
-        // eslint-disable-next-line functional/immutable-data
+
         newEdgeMeta.set(edge.id, { ...existingEdgeMeta, tombstoned: true });
       }
 
@@ -335,9 +332,8 @@ function applyOneEventInternal(
       }
 
       const propertyWriters = new Map<string, EventId>();
-      // eslint-disable-next-line functional/no-loop-statements
+
       for (const key of event.properties.keys()) {
-        // eslint-disable-next-line functional/immutable-data
         propertyWriters.set(key, event.eventId);
       }
 
@@ -355,10 +351,10 @@ function applyOneEventInternal(
       };
 
       const newEdges = new Map(graph.edges);
-      // eslint-disable-next-line functional/immutable-data
+
       newEdges.set(edge.id, edge);
       const newEdgeMeta = new Map(edgeMeta);
-      // eslint-disable-next-line functional/immutable-data
+
       newEdgeMeta.set(event.id, { exists: true, tombstoned: false, propertyWriters });
 
       return {
@@ -381,13 +377,12 @@ function applyOneEventInternal(
 
       const propertyWriters = new Map(meta.propertyWriters);
       const properties = new Map(edge.properties);
-      // eslint-disable-next-line functional/no-loop-statements
+
       for (const [key, value] of event.changes) {
         const writer = propertyWriters.get(key);
         if (writer === undefined || event.eventId > writer) {
-          // eslint-disable-next-line functional/immutable-data
           properties.set(key, value);
-          // eslint-disable-next-line functional/immutable-data
+
           propertyWriters.set(key, event.eventId);
         }
       }
@@ -408,10 +403,10 @@ function applyOneEventInternal(
       };
 
       const newEdges = new Map(graph.edges);
-      // eslint-disable-next-line functional/immutable-data
+
       newEdges.set(event.id, updatedEdge);
       const newEdgeMeta = new Map(edgeMeta);
-      // eslint-disable-next-line functional/immutable-data
+
       newEdgeMeta.set(event.id, { ...meta, propertyWriters });
 
       return {
@@ -432,10 +427,10 @@ function applyOneEventInternal(
       }
 
       const newEdges = new Map(graph.edges);
-      // eslint-disable-next-line functional/immutable-data
+
       newEdges.delete(event.id);
       const newEdgeMeta = new Map(edgeMeta);
-      // eslint-disable-next-line functional/immutable-data
+
       newEdgeMeta.set(event.id, { ...meta, tombstoned: true });
 
       return {
@@ -464,7 +459,7 @@ function unmetDependencyKeysForEvent(
 ): readonly string[] {
   // eslint-disable-next-line functional/prefer-immutable-types
   const unmet: string[] = [];
-  // eslint-disable-next-line functional/no-loop-statements
+
   for (const key of dependencyKeysFor(event)) {
     if (createdInGroup.has(key)) {
       continue;
@@ -478,7 +473,6 @@ function unmetDependencyKeysForEvent(
         ? (nodeMeta.get(id as NodeId)?.exists ?? graph.nodes.has(id as NodeId))
         : (edgeMeta.get(id as EdgeId)?.exists ?? graph.edges.has(id as EdgeId));
     if (!isSatisfied) {
-      // eslint-disable-next-line functional/immutable-data
       unmet.push(key);
     }
   }
@@ -493,9 +487,8 @@ function dependenciesSatisfied(
   createdInGroup: ReadonlySet<string>,
 ): readonly string[] {
   const unmet = new Set<string>();
-  // eslint-disable-next-line functional/no-loop-statements
+
   for (const event of events) {
-    // eslint-disable-next-line functional/no-loop-statements
     for (const key of unmetDependencyKeysForEvent(
       event,
       graph,
@@ -503,7 +496,6 @@ function dependenciesSatisfied(
       edgeMeta,
       createdInGroup,
     )) {
-      // eslint-disable-next-line functional/immutable-data
       unmet.add(key);
     }
   }
@@ -512,19 +504,17 @@ function dependenciesSatisfied(
 
 function groupEvents(events: readonly GraphEvent[]): readonly (readonly GraphEvent[])[] {
   const byKey = new Map<string, GraphEvent[]>();
-  // eslint-disable-next-line functional/no-let
+
   let singletonCounter = 0;
-  // eslint-disable-next-line functional/no-loop-statements
+
   for (const event of events) {
     singletonCounter += 1;
     const key =
       event.batchId === undefined ? `single:${singletonCounter}` : `batch:${event.batchId}`;
     const existing = byKey.get(key);
     if (existing) {
-      // eslint-disable-next-line functional/immutable-data
       existing.push(event);
     } else {
-      // eslint-disable-next-line functional/immutable-data
       byKey.set(key, [event]);
     }
   }
@@ -554,13 +544,11 @@ function attemptGroup(
   const sorted = [...events].toSorted((a, b) => a.eventId.localeCompare(b.eventId));
 
   const createdInGroup = new Set<string>();
-  // eslint-disable-next-line functional/no-loop-statements
+
   for (const event of sorted) {
     if (event.type === 'NodeCreated') {
-      // eslint-disable-next-line functional/immutable-data
       createdInGroup.add(`node:${event.id}`);
     } else if (event.type === 'EdgeCreated') {
-      // eslint-disable-next-line functional/immutable-data
       createdInGroup.add(`edge:${event.id}`);
     }
   }
@@ -570,13 +558,12 @@ function attemptGroup(
     return { applied: false, graph, nodeMeta, edgeMeta, unmet };
   }
 
-  // eslint-disable-next-line functional/no-let
   let workingGraph = graph;
-  // eslint-disable-next-line functional/no-let
+
   let workingNodeMeta = nodeMeta;
-  // eslint-disable-next-line functional/no-let
+
   let workingEdgeMeta = edgeMeta;
-  // eslint-disable-next-line functional/no-loop-statements
+
   for (const event of sorted) {
     const result = applyOneEvent(workingGraph, workingNodeMeta, workingEdgeMeta, event);
     workingGraph = result.graph;
@@ -599,16 +586,16 @@ function registerPending(
   keys: readonly string[],
 ): MergeState {
   const pendingGroups = new Map(state.pendingGroups);
-  // eslint-disable-next-line functional/immutable-data
+
   pendingGroups.set(group.id, group);
 
   const pendingByDependency = new Map(state.pendingByDependency);
-  // eslint-disable-next-line functional/no-loop-statements
+
   for (const key of keys) {
     const existing = new Set(pendingByDependency.get(key));
-    // eslint-disable-next-line functional/immutable-data
+
     existing.add(group.id);
-    // eslint-disable-next-line functional/immutable-data
+
     pendingByDependency.set(key, existing);
   }
 
@@ -617,15 +604,14 @@ function registerPending(
 
 function removePendingGroup(state: MergeState, groupId: number): MergeState {
   const pendingGroups = new Map(state.pendingGroups);
-  // eslint-disable-next-line functional/immutable-data
+
   pendingGroups.delete(groupId);
 
   const pendingByDependency = new Map<string, ReadonlySet<number>>();
-  // eslint-disable-next-line functional/no-loop-statements
+
   for (const [key, ids] of state.pendingByDependency) {
     const filtered = new Set([...ids].filter((id) => id !== groupId));
     if (filtered.size > 0) {
-      // eslint-disable-next-line functional/immutable-data
       pendingByDependency.set(key, filtered);
     }
   }
@@ -652,9 +638,8 @@ export function mergeEvents(
 ): MergeResult {
   const groups = groupEvents(events);
 
-  // eslint-disable-next-line functional/no-let
   let workingState = state;
-  // eslint-disable-next-line functional/no-let
+
   let workingGraph = graph;
   // eslint-disable-next-line functional/prefer-immutable-types
   const applied: GraphEvent[] = [];
@@ -679,15 +664,12 @@ export function mergeEvents(
       if (pendingGroupId !== undefined) {
         workingState = removePendingGroup(workingState, pendingGroupId);
       }
-      // eslint-disable-next-line functional/no-loop-statements
+
       for (const event of candidateEvents) {
-        // eslint-disable-next-line functional/immutable-data
         applied.push(event);
         if (event.type === 'NodeCreated') {
-          // eslint-disable-next-line functional/immutable-data
           readyQueue.push(`node:${event.id}`);
         } else if (event.type === 'EdgeCreated') {
-          // eslint-disable-next-line functional/immutable-data
           readyQueue.push(`edge:${event.id}`);
         }
       }
@@ -696,9 +678,9 @@ export function mergeEvents(
 
     const firstEvent = candidateEvents[0];
     if (firstEvent === undefined) return;
-    // eslint-disable-next-line functional/no-let
+
     let firstSeenEventId = firstEvent.eventId;
-    // eslint-disable-next-line functional/no-loop-statements
+
     for (const event_ of candidateEvents) {
       if (event_.eventId < firstSeenEventId) {
         firstSeenEventId = event_.eventId;
@@ -715,20 +697,18 @@ export function mergeEvents(
     );
   };
 
-  // eslint-disable-next-line functional/no-loop-statements
   for (const group of groups) {
     tryApply(group);
   }
 
   // Drain: newly-ready dependency keys may unblock previously-pending groups
   // (including ones parked before this call).
-  // eslint-disable-next-line functional/no-loop-statements
+
   while (readyQueue.length > 0) {
-    // eslint-disable-next-line functional/immutable-data
     const key = readyQueue.shift();
     if (key === undefined) break;
     const groupIds = [...(workingState.pendingByDependency.get(key) ?? [])];
-    // eslint-disable-next-line functional/no-loop-statements
+
     for (const groupId of groupIds) {
       const group = workingState.pendingGroups.get(groupId);
       if (group) {
@@ -741,16 +721,13 @@ export function mergeEvents(
 
   const nowMs = Temporal.Instant.from(now).epochMilliseconds;
   const dependencyKeysByGroup = new Map<number, string[]>();
-  // eslint-disable-next-line functional/no-loop-statements
+
   for (const [key, ids] of workingState.pendingByDependency) {
-    // eslint-disable-next-line functional/no-loop-statements
     for (const id of ids) {
       const keys = dependencyKeysByGroup.get(id);
       if (keys) {
-        // eslint-disable-next-line functional/immutable-data
         keys.push(key);
       } else {
-        // eslint-disable-next-line functional/immutable-data
         dependencyKeysByGroup.set(id, [key]);
       }
     }
@@ -758,13 +735,12 @@ export function mergeEvents(
 
   // eslint-disable-next-line functional/prefer-immutable-types
   const stale: StalePendingWarning[] = [];
-  // eslint-disable-next-line functional/no-loop-statements
+
   for (const [groupId, keys] of dependencyKeysByGroup) {
     const group = workingState.pendingGroups.get(groupId);
     if (!group) continue;
     const ageMs = nowMs - epochMsFromEventId(group.firstSeenEventId);
     if (ageMs >= DEFAULT_STALE_THRESHOLD_MS) {
-      // eslint-disable-next-line functional/immutable-data
       stale.push({
         dependencyKey: keys.join(','),
         eventIds: group.events.map((event_) => event_.eventId),
@@ -784,18 +760,14 @@ function validateDraftEvents(graph: Graph, events: readonly GraphEvent[]): Resul
   const touchedNodeIds = new Set<NodeId>();
   const touchedEdgeIds = new Set<EdgeId>();
 
-  // eslint-disable-next-line functional/no-loop-statements
   for (const event of events) {
     if (event.type === 'NodeCreated' || event.type === 'NodePropertiesUpdated') {
-      // eslint-disable-next-line functional/immutable-data
       touchedNodeIds.add(event.id);
     } else if (event.type === 'EdgeCreated' || event.type === 'EdgePropertiesUpdated') {
-      // eslint-disable-next-line functional/immutable-data
       touchedEdgeIds.add(event.id);
     }
   }
 
-  // eslint-disable-next-line functional/no-loop-statements
   for (const id of touchedNodeIds) {
     const node = dryRunGraph.nodes.get(id);
     if (!node) continue;
@@ -806,7 +778,6 @@ function validateDraftEvents(graph: Graph, events: readonly GraphEvent[]): Resul
     }
   }
 
-  // eslint-disable-next-line functional/no-loop-statements
   for (const id of touchedEdgeIds) {
     const edge = dryRunGraph.edges.get(id);
     if (!edge) continue;
