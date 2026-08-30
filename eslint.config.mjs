@@ -500,4 +500,16 @@ export default tseslint.config(
       'functional/readonly-type': 'off',
     },
   },
+  // Exceptions for performance-critical modules in @canopy/graph (canopy-v9o.1.2).
+  // These modules encapsulate internal Map/Set mutation and loops behind pure, immutable boundaries.
+  // Note: prefer-immutable-types and type-declaration-immutability remain strictly ON — public signatures
+  // and domain types remain 100% readonly and immutable.
+  {
+    files: ['packages/graph/src/indexes.ts', 'packages/graph/src/incremental-projection.ts'],
+    rules: {
+      'functional/immutable-data': 'off',
+      'functional/no-loop-statements': 'off',
+      'functional/no-let': 'off',
+    },
+  },
 );
