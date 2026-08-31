@@ -97,12 +97,18 @@ const probeSocketPath = (socketPath: string): Promise<Result<boolean, IpcSocketI
 
 export const createIpcServer = (options: IpcServerOptions): IpcServer => {
   const { socketPath, context } = options;
-  const activeSockets = new Set<net.Socket>();
-  const activeSubscriptions = new Map<net.Socket, Map<string, () => void>>();
+  // eslint-disable-next-line functional/no-let
+  let activeSockets: ReadonlySet<net.Socket> = new Set();
+  // eslint-disable-next-line functional/no-let
+  let activeSubscriptions: ReadonlyMap<net.Socket, ReadonlyMap<string, () => void>> = new Map();
   // Per-connection draft registries. Ephemeral and connection-scoped by design (design.md "No new
   // persistence for draft state") -- never written to the event log or any store, and cleared
   // whenever the owning socket closes (task 5.7 / "Cleanup on disconnect").
-  const activeDraftRegistries = new Map<net.Socket, Map<string, DraftRegistryEntry>>();
+  // eslint-disable-next-line functional/no-let
+  let activeDraftRegistries: ReadonlyMap<
+    net.Socket,
+    ReadonlyMap<string, DraftRegistryEntry>
+  > = new Map();
 
   // eslint-disable-next-line functional/no-let
   let netServer: net.Server | undefined;
@@ -116,10 +122,7 @@ export const createIpcServer = (options: IpcServerOptions): IpcServer => {
       for (const unbind of subs.values()) {
         unbind();
       }
-      // eslint-disable-next-line functional/immutable-data
-      subs.clear();
-      // eslint-disable-next-line functional/immutable-data
-      activeSubscriptions.delete(socket);
+      activeSubscriptions = new Map([...activeSubscriptions].filter(([s]) => s !== socket));
     }
   };
 
@@ -130,10 +133,7 @@ export const createIpcServer = (options: IpcServerOptions): IpcServer => {
       for (const entry of drafts.values()) {
         entry.session.discard();
       }
-      // eslint-disable-next-line functional/immutable-data
-      drafts.clear();
-      // eslint-disable-next-line functional/immutable-data
-      activeDraftRegistries.delete(socket);
+      activeDraftRegistries = new Map([...activeDraftRegistries].filter(([s]) => s !== socket));
     }
   };
 
@@ -143,12 +143,9 @@ export const createIpcServer = (options: IpcServerOptions): IpcServer => {
     activeDraftRegistries.values().reduce((sum, drafts) => sum + drafts.size, 0);
 
   const handleConnection = (socket: net.Socket): void => {
-    // eslint-disable-next-line functional/immutable-data
-    activeSockets.add(socket);
-    // eslint-disable-next-line functional/immutable-data
-    activeSubscriptions.set(socket, new Map<string, () => void>());
-    // eslint-disable-next-line functional/immutable-data
-    activeDraftRegistries.set(socket, new Map<string, DraftRegistryEntry>());
+    activeSockets = new Set([...activeSockets, socket]);
+    activeSubscriptions = new Map([...activeSubscriptions, [socket, new Map()]]);
+    activeDraftRegistries = new Map([...activeDraftRegistries, [socket, new Map()]]);
 
     // eslint-disable-next-line functional/no-let
     let buffer = '';
@@ -211,11 +208,17 @@ export const createIpcServer = (options: IpcServerOptions): IpcServer => {
                     }),
                   );
                 });
-                // eslint-disable-next-line functional/immutable-data
-                subsMap.set(subscriptionId, () => {
-                  unbindListener();
-                  subscriber.close();
-                });
+                const nextSubsMap = new Map([
+                  ...subsMap,
+                  [
+                    subscriptionId,
+                    () => {
+                      unbindListener();
+                      subscriber.close();
+                    },
+                  ],
+                ]);
+                activeSubscriptions = new Map([...activeSubscriptions, [socket, nextSubsMap]]);
               }
             }
 
@@ -225,8 +228,8 @@ export const createIpcServer = (options: IpcServerOptions): IpcServer => {
                 const closeFunction = subsMap.get(unsubscribeId);
                 if (closeFunction) {
                   closeFunction();
-                  // eslint-disable-next-line functional/immutable-data
-                  subsMap.delete(unsubscribeId);
+                  const nextSubsMap = new Map([...subsMap].filter(([id]) => id !== unsubscribeId));
+                  activeSubscriptions = new Map([...activeSubscriptions, [socket, nextSubsMap]]);
                 }
               }
             }
@@ -235,29 +238,40 @@ export const createIpcServer = (options: IpcServerOptions): IpcServer => {
             // owner/writer of this socket's draft map, mirroring the subscription pattern above.
             const socketDrafts = activeDraftRegistries.get(socket);
             if (socketDrafts) {
+              // eslint-disable-next-line functional/no-let
+              let updatedDrafts = socketDrafts;
               if (newDraft) {
-                // eslint-disable-next-line functional/immutable-data
-                socketDrafts.set(newDraft.draftId, newDraft.entry);
+                updatedDrafts = new Map([...updatedDrafts, [newDraft.draftId, newDraft.entry]]);
               }
               if (touchDraft) {
-                const existing = socketDrafts.get(touchDraft.draftId);
+                const existing = updatedDrafts.get(touchDraft.draftId);
                 if (existing) {
-                  // eslint-disable-next-line functional/immutable-data
-                  socketDrafts.set(touchDraft.draftId, {
-                    ...existing,
-                    lastTouchedAt: Temporal.Now.instant().epochMilliseconds,
-                    ...(touchDraft.stagedEventCount !== undefined && {
-                      stagedEventCount: touchDraft.stagedEventCount,
-                    }),
-                  });
+                  updatedDrafts = new Map([
+                    ...updatedDrafts,
+                    [
+                      touchDraft.draftId,
+                      {
+                        ...existing,
+                        lastTouchedAt: Temporal.Now.instant().epochMilliseconds,
+                        ...(touchDraft.stagedEventCount !== undefined && {
+                          stagedEventCount: touchDraft.stagedEventCount,
+                        }),
+                      },
+                    ],
+                  ]);
                 }
               }
               if (dropDraftIds) {
-                // eslint-disable-next-line functional/no-loop-statements
-                for (const draftId of dropDraftIds) {
-                  // eslint-disable-next-line functional/immutable-data
-                  socketDrafts.delete(draftId);
-                }
+                const dropSet = new Set(dropDraftIds);
+                updatedDrafts = new Map(
+                  [...updatedDrafts].filter(([draftId]) => !dropSet.has(draftId)),
+                );
+              }
+              if (updatedDrafts !== socketDrafts) {
+                activeDraftRegistries = new Map([
+                  ...activeDraftRegistries,
+                  [socket, updatedDrafts],
+                ]);
               }
             }
             return undefined;
@@ -271,8 +285,7 @@ export const createIpcServer = (options: IpcServerOptions): IpcServer => {
     const onCloseOrError = (): void => {
       cleanupSocketSubscriptions(socket);
       cleanupSocketDrafts(socket);
-      // eslint-disable-next-line functional/immutable-data
-      activeSockets.delete(socket);
+      activeSockets = new Set([...activeSockets].filter((s) => s !== socket));
     };
 
     socket.on('close', onCloseOrError);
@@ -359,12 +372,9 @@ export const createIpcServer = (options: IpcServerOptions): IpcServer => {
       cleanupSocketDrafts(socket);
       socket.destroy();
     }
-    // eslint-disable-next-line functional/immutable-data
-    activeSockets.clear();
-    // eslint-disable-next-line functional/immutable-data
-    activeSubscriptions.clear();
-    // eslint-disable-next-line functional/immutable-data
-    activeDraftRegistries.clear();
+    activeSockets = new Set();
+    activeSubscriptions = new Map();
+    activeDraftRegistries = new Map();
 
     return new Promise((resolve) => {
       if (netServer) {

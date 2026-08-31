@@ -210,6 +210,106 @@ interface QueueItem {
   readonly depth: number;
 }
 
+interface TraversalState {
+  readonly visitedNodes: ReadonlySet<string>;
+  readonly visitedEdges: ReadonlySet<string>;
+  readonly nodePayloads: readonly ApiNodePayload[];
+  readonly edgePayloads: readonly ApiEdgePayload[];
+  readonly queue: readonly QueueItem[];
+}
+
+interface TraversalContext {
+  readonly nodes: ReadonlyMap<string, Node>;
+  readonly direction: 'in' | 'out' | 'both';
+  readonly edgeType: TypeId | undefined;
+  readonly tenantId: string | undefined;
+  readonly effectiveMaxCost: number;
+}
+
+interface EdgeTraversalAccumulator {
+  readonly visitedNodes: ReadonlySet<string>;
+  readonly visitedEdges: ReadonlySet<string>;
+  readonly nodePayloads: readonly ApiNodePayload[];
+  readonly edgePayloads: readonly ApiEdgePayload[];
+  readonly newQueueItems: readonly QueueItem[];
+}
+
+const stepSingleEdge = (
+  current: QueueItem,
+  edge: Readonly<Edge>,
+  context: TraversalContext,
+  accumulator: EdgeTraversalAccumulator,
+): ApiResponse<EdgeTraversalAccumulator> => {
+  const nextNodeId = resolveNextNodeId(edge, current.nodeId, context.direction, context.edgeType);
+  if (!nextNodeId) {
+    return ok(accumulator);
+  }
+
+  const nextNode = context.nodes.get(nextNodeId as never);
+  const isTenantMatch =
+    !context.tenantId || nextNode?.properties.get('tenantId') === context.tenantId;
+
+  if (!nextNode || !isTenantMatch) {
+    return ok(accumulator);
+  }
+
+  const edgeAlreadyVisited = accumulator.visitedEdges.has(edge.id);
+  const nextVisitedEdges = edgeAlreadyVisited
+    ? accumulator.visitedEdges
+    : new Set([...accumulator.visitedEdges, edge.id]);
+  const nextEdgePayloads = edgeAlreadyVisited
+    ? accumulator.edgePayloads
+    : [...accumulator.edgePayloads, mapEdgeToPayload(edge)];
+
+  if (accumulator.visitedNodes.has(nextNodeId)) {
+    return ok({
+      ...accumulator,
+      visitedEdges: nextVisitedEdges,
+      edgePayloads: nextEdgePayloads,
+    });
+  }
+
+  if (accumulator.visitedNodes.size >= context.effectiveMaxCost) {
+    return err(
+      createApiAdapterError(
+        'RESOURCE_EXHAUSTED',
+        `Traversal cost exceeded maximum limit of ${context.effectiveMaxCost}`,
+      ),
+    );
+  }
+
+  return ok({
+    visitedNodes: new Set([...accumulator.visitedNodes, nextNodeId]),
+    visitedEdges: nextVisitedEdges,
+    nodePayloads: [...accumulator.nodePayloads, mapNodeToPayload(nextNode)],
+    edgePayloads: nextEdgePayloads,
+    newQueueItems: [...accumulator.newQueueItems, { nodeId: nextNodeId, depth: current.depth + 1 }],
+  });
+};
+
+const stepEdgesRecursively = (
+  current: QueueItem,
+  remainingEdges: readonly Edge[],
+  context: TraversalContext,
+  accumulator: EdgeTraversalAccumulator,
+): ApiResponse<EdgeTraversalAccumulator> => {
+  if (remainingEdges.length === 0) {
+    return ok(accumulator);
+  }
+
+  const [edge, ...restEdges] = remainingEdges;
+  if (!edge) {
+    return ok(accumulator);
+  }
+
+  const stepResult = stepSingleEdge(current, edge, context, accumulator);
+  if (!stepResult.ok) {
+    return stepResult;
+  }
+
+  return stepEdgesRecursively(current, restEdges, context, stepResult.value);
+};
+
 // Executes a graph traversal query with BFS cycle safety and depth/cost constraints.
 export const executeGraphTraversal = (
   request: ApiRequest<TraversalQueryPayload>,
@@ -231,80 +331,77 @@ export const executeGraphTraversal = (
     limits?.maxQueryCost ?? 1000,
   );
 
-  const visitedNodes = new Set<string>();
-  const visitedEdges = new Set<string>();
-  // eslint-disable-next-line functional/prefer-immutable-types -- local accumulator
-  const nodePayloads: ApiNodePayload[] = [];
-  // eslint-disable-next-line functional/prefer-immutable-types -- local accumulator
-  const edgePayloads: ApiEdgePayload[] = [];
-  // eslint-disable-next-line functional/prefer-immutable-types -- local BFS queue
-  const queue: QueueItem[] = [];
-
-  // eslint-disable-next-line functional/no-loop-statements -- BFS graph traversal start nodes
-  for (const id of startNodeIds) {
+  const initialValidNodes = startNodeIds.flatMap((id) => {
     const node = graph.nodes.get(id);
-    if (node) {
-      if (authContext?.tenantId && node.properties.get('tenantId') !== authContext.tenantId) {
-        continue;
-      }
-      // eslint-disable-next-line functional/immutable-data -- track visited nodes
-      visitedNodes.add(id);
-      // eslint-disable-next-line functional/immutable-data -- accumulate node payloads
-      nodePayloads.push(mapNodeToPayload(node));
-      // eslint-disable-next-line functional/immutable-data -- enqueue start node
-      queue.push({ nodeId: id, depth: 0 });
+    if (!node) return [];
+    if (authContext?.tenantId && node.properties.get('tenantId') !== authContext.tenantId) {
+      return [];
     }
-  }
-
-  // eslint-disable-next-line functional/no-loop-statements -- BFS graph traversal loop
-  while (queue.length > 0) {
-    // eslint-disable-next-line functional/immutable-data -- dequeue current node from BFS queue
-    const current = queue.shift();
-    if (current && current.depth < effectiveMaxDepth) {
-      // eslint-disable-next-line functional/no-loop-statements -- scan outgoing edges for current node
-      for (const edge of graph.edges.values()) {
-        const nextNodeId = resolveNextNodeId(edge, current.nodeId, direction, edgeType);
-
-        if (nextNodeId) {
-          const nextNode = graph.nodes.get(nextNodeId as never);
-          const isTenantMatch =
-            !authContext?.tenantId || nextNode?.properties.get('tenantId') === authContext.tenantId;
-
-          if (nextNode && isTenantMatch) {
-            if (!visitedEdges.has(edge.id)) {
-              // eslint-disable-next-line functional/immutable-data -- track visited edges
-              visitedEdges.add(edge.id);
-              // eslint-disable-next-line functional/immutable-data -- accumulate edge payloads
-              edgePayloads.push(mapEdgeToPayload(edge));
-            }
-
-            if (!visitedNodes.has(nextNodeId)) {
-              if (visitedNodes.size >= effectiveMaxCost) {
-                return err(
-                  createApiAdapterError(
-                    'RESOURCE_EXHAUSTED',
-                    `Traversal cost exceeded maximum limit of ${effectiveMaxCost}`,
-                  ),
-                );
-              }
-
-              // eslint-disable-next-line functional/immutable-data -- track visited nodes
-              visitedNodes.add(nextNodeId);
-              // eslint-disable-next-line functional/immutable-data -- accumulate node payloads
-              nodePayloads.push(mapNodeToPayload(nextNode));
-              // eslint-disable-next-line functional/immutable-data -- enqueue next node for BFS
-              queue.push({ nodeId: nextNodeId, depth: current.depth + 1 });
-            }
-          }
-        }
-      }
-    }
-  }
-
-  return ok({
-    nodes: nodePayloads,
-    edges: edgePayloads,
+    return [{ id, node }];
   });
+
+  const initialState: TraversalState = {
+    visitedNodes: new Set(initialValidNodes.map((n) => n.id)),
+    visitedEdges: new Set(),
+    nodePayloads: initialValidNodes.map((n) => mapNodeToPayload(n.node)),
+    edgePayloads: [],
+    queue: initialValidNodes.map((n) => ({ nodeId: n.id, depth: 0 })),
+  };
+
+  const edgeList = [...graph.edges.values()];
+  const traversalContext: TraversalContext = {
+    nodes: graph.nodes,
+    direction,
+    edgeType,
+    tenantId: authContext?.tenantId,
+    effectiveMaxCost,
+  };
+
+  const runTraversal = (state: TraversalState): ApiResponse<ApiTraversalPayload> => {
+    if (state.queue.length === 0) {
+      return ok({
+        nodes: state.nodePayloads,
+        edges: state.edgePayloads,
+      });
+    }
+
+    const [current, ...restQueue] = state.queue;
+    if (!current || current.depth >= effectiveMaxDepth) {
+      return runTraversal({
+        ...state,
+        queue: restQueue,
+      });
+    }
+
+    const initialAccumulator: EdgeTraversalAccumulator = {
+      visitedNodes: state.visitedNodes,
+      visitedEdges: state.visitedEdges,
+      nodePayloads: state.nodePayloads,
+      edgePayloads: state.edgePayloads,
+      newQueueItems: [],
+    };
+
+    const stepResult = stepEdgesRecursively(
+      current,
+      edgeList,
+      traversalContext,
+      initialAccumulator,
+    );
+
+    if (!stepResult.ok) {
+      return stepResult;
+    }
+
+    return runTraversal({
+      visitedNodes: stepResult.value.visitedNodes,
+      visitedEdges: stepResult.value.visitedEdges,
+      nodePayloads: stepResult.value.nodePayloads,
+      edgePayloads: stepResult.value.edgePayloads,
+      queue: [...restQueue, ...stepResult.value.newQueueItems],
+    });
+  };
+
+  return runTraversal(initialState);
 };
 
 export const executeQuery = {

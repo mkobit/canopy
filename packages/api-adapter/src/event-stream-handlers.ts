@@ -22,7 +22,8 @@ export function createEventStreamSubscriber(
   options: EventStreamOptions = {},
 ): EventStreamSubscription {
   const bufferCapacity = options.bufferCapacity ?? 100;
-  const listeners = new Set<(message: EventStreamMessage) => void>();
+  // eslint-disable-next-line functional/no-let -- encapsulated stream listener set
+  let listeners: ReadonlySet<(message: EventStreamMessage) => void> = new Set();
   // eslint-disable-next-line functional/no-let -- encapsulated stream buffer
   let buffer: readonly EventStreamMessage[] = [];
   // eslint-disable-next-line functional/no-let -- encapsulated stream lifecycle state
@@ -40,8 +41,7 @@ export function createEventStreamSubscriber(
     closed = true;
     unsubscribeSession();
     notifyListeners({ kind: 'end' });
-    // eslint-disable-next-line functional/immutable-data -- clear subscriber set on close
-    listeners.clear();
+    listeners = new Set();
     buffer = [];
   };
 
@@ -87,11 +87,9 @@ export function createEventStreamSubscriber(
 
   return {
     subscribe: (listener) => {
-      // eslint-disable-next-line functional/immutable-data -- add subscriber to active set
-      listeners.add(listener);
+      listeners = new Set([...listeners, listener]);
       return () => {
-        // eslint-disable-next-line functional/immutable-data -- remove subscriber from active set
-        listeners.delete(listener);
+        listeners = new Set([...listeners].filter((l) => l !== listener));
       };
     },
     getBufferCount: () => buffer.length,
