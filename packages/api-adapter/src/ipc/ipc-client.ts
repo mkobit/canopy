@@ -100,11 +100,13 @@ export const makeIpcClient = (socketPath: string): Effect.Effect<IpcClient, IpcC
   return Effect.async<IpcClient, IpcClientError>((resume) => {
     // eslint-disable-next-line functional/no-let
     let requestCounter = 0;
-    const pendingRequests = new Map<
+    // eslint-disable-next-line functional/no-let
+    let pendingRequests: ReadonlyMap<
       JsonRpcId,
       { resolve: (response: JsonRpcResponse) => void; reject: (error: IpcClientError) => void }
-    >();
-    const subscriptionCallbacks = new Map<string, (event: unknown) => void>();
+    > = new Map();
+    // eslint-disable-next-line functional/no-let
+    let subscriptionCallbacks: ReadonlyMap<string, (event: unknown) => void> = new Map();
 
     // eslint-disable-next-line functional/no-let
     let buffer = '';
@@ -140,23 +142,28 @@ export const makeIpcClient = (socketPath: string): Effect.Effect<IpcClient, IpcC
           requestCounter += 1;
           const id = requestCounter;
 
-          // eslint-disable-next-line functional/immutable-data
-          pendingRequests.set(id, {
-            resolve: (response: JsonRpcResponse) => {
-              if (response.error) {
-                reject(
-                  createIpcClientError({
-                    code: response.error.code,
-                    message: response.error.message,
-                    details: response.error.data,
-                  }),
-                );
-              } else {
-                resolve(response.result as T);
-              }
-            },
-            reject: (error: IpcClientError) => reject(error),
-          });
+          pendingRequests = new Map([
+            ...pendingRequests,
+            [
+              id,
+              {
+                resolve: (response: JsonRpcResponse) => {
+                  if (response.error) {
+                    reject(
+                      createIpcClientError({
+                        code: response.error.code,
+                        message: response.error.message,
+                        details: response.error.data,
+                      }),
+                    );
+                  } else {
+                    resolve(response.result as T);
+                  }
+                },
+                reject: (error: IpcClientError) => reject(error),
+              },
+            ],
+          ]);
 
           const payload = JSON.stringify({
             jsonrpc: '2.0',
@@ -367,8 +374,10 @@ export const makeIpcClient = (socketPath: string): Effect.Effect<IpcClient, IpcC
                 parameters ?? {},
               );
               if (onEvent && response.subscriptionId) {
-                // eslint-disable-next-line functional/immutable-data
-                subscriptionCallbacks.set(response.subscriptionId, onEvent);
+                subscriptionCallbacks = new Map([
+                  ...subscriptionCallbacks,
+                  [response.subscriptionId, onEvent],
+                ]);
               }
               return response;
             },
@@ -391,8 +400,9 @@ export const makeIpcClient = (socketPath: string): Effect.Effect<IpcClient, IpcC
                 IPC_METHODS.EVENT_STREAM_UNSUBSCRIBE,
                 { subscriptionId },
               );
-              // eslint-disable-next-line functional/immutable-data
-              subscriptionCallbacks.delete(subscriptionId);
+              subscriptionCallbacks = new Map(
+                [...subscriptionCallbacks].filter(([id]) => id !== subscriptionId),
+              );
               return response;
             },
             catch: (error) =>
@@ -486,10 +496,8 @@ export const makeIpcClient = (socketPath: string): Effect.Effect<IpcClient, IpcC
 
         close: () =>
           Effect.sync(() => {
-            // eslint-disable-next-line functional/immutable-data
-            subscriptionCallbacks.clear();
-            // eslint-disable-next-line functional/immutable-data
-            pendingRequests.clear();
+            subscriptionCallbacks = new Map();
+            pendingRequests = new Map();
             socket.destroy();
           }),
       };
@@ -525,8 +533,9 @@ export const makeIpcClient = (socketPath: string): Effect.Effect<IpcClient, IpcC
             } else if (rawObject.id !== undefined && rawObject.id !== null) {
               const pending = pendingRequests.get(rawObject.id);
               if (pending) {
-                // eslint-disable-next-line functional/immutable-data
-                pendingRequests.delete(rawObject.id);
+                pendingRequests = new Map(
+                  [...pendingRequests].filter(([id]) => id !== rawObject.id),
+                );
                 pending.resolve(rawObject as JsonRpcResponse);
               }
             }
@@ -550,8 +559,7 @@ export const makeIpcClient = (socketPath: string): Effect.Effect<IpcClient, IpcC
       for (const pending of pendingRequests.values()) {
         pending.reject(clientError);
       }
-      // eslint-disable-next-line functional/immutable-data
-      pendingRequests.clear();
+      pendingRequests = new Map();
 
       resume(Effect.fail(clientError));
     });

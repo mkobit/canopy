@@ -244,17 +244,19 @@ const handleExecuteTraversalQuery = async (
       (edge) => edge.source === current && !visitedDepths.has(edge.target),
     );
 
-    const newDepths = new Map(visitedDepths);
-    const newEdgeMap = new Map(visitedEdges);
-    const nextQueue: readonly string[] = matchingEdges
-      .filter((edge) => !newDepths.has(edge.target))
-      .map((edge) => {
-        // eslint-disable-next-line functional/immutable-data -- local Map accumulator
-        newDepths.set(edge.target, currentDepth + 1);
-        // eslint-disable-next-line functional/immutable-data -- local Map accumulator
-        newEdgeMap.set(edge.target, edge.id);
-        return edge.target;
-      });
+    const uniqueMatchingEdges = matchingEdges.filter(
+      (edge, index, self) =>
+        self.findIndex((candidate) => candidate.target === edge.target) === index,
+    );
+    const newDepths = new Map([
+      ...visitedDepths,
+      ...uniqueMatchingEdges.map((edge) => [edge.target, currentDepth + 1] as const),
+    ]);
+    const newEdgeMap = new Map([
+      ...visitedEdges,
+      ...uniqueMatchingEdges.map((edge) => [edge.target, edge.id] as const),
+    ]);
+    const nextQueue = uniqueMatchingEdges.map((edge) => edge.target);
 
     return buildStepMaps([...rest, ...nextQueue], newDepths, newEdgeMap);
   };
