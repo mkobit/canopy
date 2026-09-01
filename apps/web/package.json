@@ -40,7 +40,7 @@
   },
   "devDependencies": {
     "@bytecodealliance/jco": "^1.24.6",
-    "@happy-dom/global-registrator": "^20.11.1",
+    "@happy-dom/global-registrator": "^20.11.2",
     "@playwright/test": "^1.62.0",
     "@storybook/react": "^10.5.4",
     "@storybook/react-vite": "^10.5.4",
