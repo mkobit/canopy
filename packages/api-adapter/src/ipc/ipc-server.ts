@@ -55,6 +55,70 @@ const sendToSocket = (
   return canWrite;
 };
 
+const safeUnlinkSync = (targetPath: string): void => {
+  // eslint-disable-next-line functional/no-try-statements -- fs.unlinkSync boundary
+  try {
+    if (fs.existsSync(targetPath)) {
+      fs.unlinkSync(targetPath);
+    }
+  } catch {
+    // Ignore stale socket unlink failures
+  }
+};
+
+const safeMkdirSync = (directoryPath: string): Result<void, IpcProtocolError> => {
+  // eslint-disable-next-line functional/no-try-statements -- fs.mkdirSync boundary
+  try {
+    if (!fs.existsSync(directoryPath)) {
+      fs.mkdirSync(directoryPath, { recursive: true, mode: 0o700 });
+    }
+    return ok(undefined);
+  } catch (error) {
+    return err(
+      createIpcProtocolError(
+        JSON_RPC_ERROR_CODES.INTERNAL_ERROR,
+        `Failed to create IPC runtime directory: ${error instanceof Error ? error.message : String(error)}`,
+      ),
+    );
+  }
+};
+
+const startNetServer = (
+  server: net.Server,
+  socketPath: string,
+): Promise<Result<void, IpcProtocolError>> =>
+  new Promise((resolve) => {
+    const oldUmask = process.umask(0o177);
+    // eslint-disable-next-line functional/no-try-statements -- net.Server.listen sync throw guard
+    try {
+      server.listen(socketPath, () => {
+        resolve(ok(undefined));
+      });
+    } catch (error) {
+      resolve(
+        err(
+          createIpcProtocolError(
+            JSON_RPC_ERROR_CODES.INTERNAL_ERROR,
+            `Failed to start IPC net server: ${error instanceof Error ? error.message : String(error)}`,
+          ),
+        ),
+      );
+    } finally {
+      process.umask(oldUmask);
+    }
+
+    server.on('error', (error: Error) => {
+      resolve(
+        err(
+          createIpcProtocolError(
+            JSON_RPC_ERROR_CODES.INTERNAL_ERROR,
+            `Server listen error: ${error.message}`,
+          ),
+        ),
+      );
+    });
+  });
+
 // Probes target socket path to detect active listener vs stale socket file.
 const probeSocketPath = (socketPath: string): Promise<Result<boolean, IpcSocketInUseError>> => {
   return new Promise((resolve) => {
@@ -72,14 +136,7 @@ const probeSocketPath = (socketPath: string): Promise<Result<boolean, IpcSocketI
 
     client.on('error', () => {
       client.destroy();
-      // eslint-disable-next-line functional/no-try-statements
-      try {
-        if (fs.existsSync(socketPath)) {
-          fs.unlinkSync(socketPath);
-        }
-      } catch {
-        // Ignore stale socket unlink failures
-      }
+      safeUnlinkSync(socketPath);
       resolve(ok(true));
     });
   });
@@ -303,60 +360,21 @@ export const createIpcServer = (options: IpcServerOptions): IpcServer => {
     }
 
     const parentDirectory = path.dirname(socketPath);
-    // eslint-disable-next-line functional/no-try-statements
-    try {
-      if (!fs.existsSync(parentDirectory)) {
-        fs.mkdirSync(parentDirectory, { recursive: true, mode: 0o700 });
-      }
-    } catch (error) {
-      return err(
-        createIpcProtocolError(
-          JSON_RPC_ERROR_CODES.INTERNAL_ERROR,
-          `Failed to create IPC runtime directory: ${error instanceof Error ? error.message : String(error)}`,
-        ),
-      );
+    const mkdirResult = safeMkdirSync(parentDirectory);
+    if (!mkdirResult.ok) {
+      return err(mkdirResult.error);
     }
 
-    return new Promise((resolve) => {
-      // eslint-disable-next-line functional/no-try-statements
-      try {
-        const server = net.createServer(handleConnection);
-        netServer.current = server;
+    const server = net.createServer(handleConnection);
+    netServer.current = server;
 
-        const oldUmask = process.umask(0o177);
-        // eslint-disable-next-line functional/no-try-statements
-        try {
-          server.listen(socketPath, () => {
-            isListening.current = true;
-            resolve(ok(undefined));
-          });
-        } finally {
-          process.umask(oldUmask);
-        }
+    const startResult = await startNetServer(server, socketPath);
+    if (!startResult.ok) {
+      return err(startResult.error);
+    }
 
-        server.on('error', (error: Error) => {
-          if (!isListening.current) {
-            resolve(
-              err(
-                createIpcProtocolError(
-                  JSON_RPC_ERROR_CODES.INTERNAL_ERROR,
-                  `Server listen error: ${error.message}`,
-                ),
-              ),
-            );
-          }
-        });
-      } catch (error) {
-        resolve(
-          err(
-            createIpcProtocolError(
-              JSON_RPC_ERROR_CODES.INTERNAL_ERROR,
-              `Failed to create IPC net server: ${error instanceof Error ? error.message : String(error)}`,
-            ),
-          ),
-        );
-      }
-    });
+    isListening.current = true;
+    return ok(undefined);
   };
 
   const close = async (): Promise<void> => {
@@ -380,25 +398,11 @@ export const createIpcServer = (options: IpcServerOptions): IpcServer => {
       if (netServer.current) {
         netServer.current.close(() => {
           netServer.current = undefined;
-          if (fs.existsSync(socketPath)) {
-            // eslint-disable-next-line functional/no-try-statements
-            try {
-              fs.unlinkSync(socketPath);
-            } catch {
-              // Ignore unlink errors during shutdown
-            }
-          }
+          safeUnlinkSync(socketPath);
           resolve();
         });
       } else {
-        if (fs.existsSync(socketPath)) {
-          // eslint-disable-next-line functional/no-try-statements
-          try {
-            fs.unlinkSync(socketPath);
-          } catch {
-            // Ignore
-          }
-        }
+        safeUnlinkSync(socketPath);
         resolve();
       }
     });
