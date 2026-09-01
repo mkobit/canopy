@@ -1,5 +1,6 @@
 /* eslint-disable functional/no-return-void, functional/prefer-tacit, max-lines-per-function */
 import * as net from 'node:net';
+import { err, ok } from '@canopy/graph';
 import type { ApiEdgePayload, ApiNodePayload } from '../api-payloads';
 import type {
   CreateEdgeParams as CreateEdgeParameters,
@@ -98,18 +99,17 @@ export interface IpcClient {
 
 export const makeIpcClient = (socketPath: string): Effect.Effect<IpcClient, IpcClientError> => {
   return Effect.async<IpcClient, IpcClientError>((resume) => {
-    // eslint-disable-next-line functional/no-let
-    let requestCounter = 0;
-    // eslint-disable-next-line functional/no-let
-    let pendingRequests: ReadonlyMap<
-      JsonRpcId,
-      { resolve: (response: JsonRpcResponse) => void; reject: (error: IpcClientError) => void }
-    > = new Map();
-    // eslint-disable-next-line functional/no-let
-    let subscriptionCallbacks: ReadonlyMap<string, (event: unknown) => void> = new Map();
-
-    // eslint-disable-next-line functional/no-let
-    let buffer = '';
+    const requestCounter = { current: 0 };
+    const pendingRequests = {
+      current: new Map<
+        JsonRpcId,
+        { resolve: (response: JsonRpcResponse) => void; reject: (error: IpcClientError) => void }
+      >(),
+    };
+    const subscriptionCallbacks = {
+      current: new Map<string, (event: unknown) => void>(),
+    };
+    const streamBuffer = { current: '' };
 
     // net.connect() can throw synchronously for some immediately-knowable
     // failures (e.g. ENOENT on a Unix domain socket path with no listener --
@@ -118,32 +118,35 @@ export const makeIpcClient = (socketPath: string): Effect.Effect<IpcClient, IpcC
     // via the 'error' event below. Catching it here keeps both paths
     // reporting through the same resume(Effect.fail(...)) channel instead of
     // letting a sync throw escape Effect.async's registration uncaught.
-    // eslint-disable-next-line functional/no-let, functional/prefer-immutable-types -- net.Socket is an inherently mutable third-party EventEmitter
-    let socket: net.Socket;
-    // eslint-disable-next-line functional/no-try-statements
-    try {
-      socket = net.connect(socketPath);
-    } catch (error) {
-      resume(
-        Effect.fail(
+    const connectResult = (() => {
+      // eslint-disable-next-line functional/no-try-statements -- net.connect sync throw guard
+      try {
+        return ok(net.connect(socketPath));
+      } catch (error) {
+        return err(
           createIpcClientError({
             code: JSON_RPC_ERROR_CODES.INTERNAL_ERROR,
             message: `Socket error: ${error instanceof Error ? error.message : String(error)}`,
           }),
-        ),
-      );
+        );
+      }
+    })();
+
+    if (!connectResult.ok) {
+      resume(Effect.fail(connectResult.error));
       return;
     }
+    const socket = connectResult.value;
 
     socket.on('connect', () => {
       // eslint-disable-next-line unicorn/consistent-function-scoping
       const sendRpcRequest = <T>(method: string, parameters?: unknown): Promise<T> => {
         return new Promise<T>((resolve, reject) => {
-          requestCounter += 1;
-          const id = requestCounter;
+          requestCounter.current += 1;
+          const id = requestCounter.current;
 
-          pendingRequests = new Map([
-            ...pendingRequests,
+          pendingRequests.current = new Map([
+            ...pendingRequests.current,
             [
               id,
               {
@@ -374,8 +377,8 @@ export const makeIpcClient = (socketPath: string): Effect.Effect<IpcClient, IpcC
                 parameters ?? {},
               );
               if (onEvent && response.subscriptionId) {
-                subscriptionCallbacks = new Map([
-                  ...subscriptionCallbacks,
+                subscriptionCallbacks.current = new Map([
+                  ...subscriptionCallbacks.current,
                   [response.subscriptionId, onEvent],
                 ]);
               }
@@ -400,8 +403,8 @@ export const makeIpcClient = (socketPath: string): Effect.Effect<IpcClient, IpcC
                 IPC_METHODS.EVENT_STREAM_UNSUBSCRIBE,
                 { subscriptionId },
               );
-              subscriptionCallbacks = new Map(
-                [...subscriptionCallbacks].filter(([id]) => id !== subscriptionId),
+              subscriptionCallbacks.current = new Map(
+                [...subscriptionCallbacks.current].filter(([id]) => id !== subscriptionId),
               );
               return response;
             },
@@ -496,8 +499,8 @@ export const makeIpcClient = (socketPath: string): Effect.Effect<IpcClient, IpcC
 
         close: () =>
           Effect.sync(() => {
-            subscriptionCallbacks = new Map();
-            pendingRequests = new Map();
+            subscriptionCallbacks.current = new Map();
+            pendingRequests.current = new Map();
             socket.destroy();
           }),
       };
@@ -506,15 +509,19 @@ export const makeIpcClient = (socketPath: string): Effect.Effect<IpcClient, IpcC
     });
 
     socket.on('data', (chunk: Buffer) => {
-      buffer += chunk.toString('utf8');
+      const combined = streamBuffer.current + chunk.toString('utf8');
+      const lastNewline = combined.lastIndexOf('\n');
+      if (lastNewline === -1) {
+        streamBuffer.current = combined;
+        return;
+      }
 
-      // eslint-disable-next-line functional/no-let
-      let newlineIndex = buffer.indexOf('\n');
+      const completeLines = combined.slice(0, lastNewline).split('\n');
+      streamBuffer.current = combined.slice(lastNewline + 1);
+
       // eslint-disable-next-line functional/no-loop-statements
-      while (newlineIndex !== -1) {
-        const line = buffer.slice(0, newlineIndex).trim();
-        buffer = buffer.slice(newlineIndex + 1);
-
+      for (const rawLine of completeLines) {
+        const line = rawLine.trim();
         if (line.length > 0) {
           // eslint-disable-next-line functional/no-try-statements
           try {
@@ -527,14 +534,14 @@ export const makeIpcClient = (socketPath: string): Effect.Effect<IpcClient, IpcC
             if (rawObject.method === IPC_METHODS.EVENT_STREAM_EVENT && rawObject.params) {
               const { subscriptionId, event } = rawObject.params;
               if (subscriptionId) {
-                const callback = subscriptionCallbacks.get(subscriptionId);
+                const callback = subscriptionCallbacks.current.get(subscriptionId);
                 callback?.(event);
               }
             } else if (rawObject.id !== undefined && rawObject.id !== null) {
-              const pending = pendingRequests.get(rawObject.id);
+              const pending = pendingRequests.current.get(rawObject.id);
               if (pending) {
-                pendingRequests = new Map(
-                  [...pendingRequests].filter(([id]) => id !== rawObject.id),
+                pendingRequests.current = new Map(
+                  [...pendingRequests.current].filter(([id]) => id !== rawObject.id),
                 );
                 pending.resolve(rawObject as JsonRpcResponse);
               }
@@ -543,8 +550,6 @@ export const makeIpcClient = (socketPath: string): Effect.Effect<IpcClient, IpcC
             // Ignore parse errors on response socket
           }
         }
-
-        newlineIndex = buffer.indexOf('\n');
       }
     });
 
@@ -556,10 +561,10 @@ export const makeIpcClient = (socketPath: string): Effect.Effect<IpcClient, IpcC
 
       // Reject all pending requests
       // eslint-disable-next-line functional/no-loop-statements
-      for (const pending of pendingRequests.values()) {
+      for (const pending of pendingRequests.current.values()) {
         pending.reject(clientError);
       }
-      pendingRequests = new Map();
+      pendingRequests.current = new Map();
 
       resume(Effect.fail(clientError));
     });

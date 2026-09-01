@@ -262,15 +262,13 @@ export const handleIpcRequestLine = async (
   drafts: ReadonlyMap<string, DraftRegistryEntry> = new Map(),
   globalDraftCount = 0,
 ): Promise<Result<IpcHandlerResponse, IpcProtocolError>> => {
-  // eslint-disable-next-line functional/no-let
-  let currentId: JsonRpcId | undefined;
-
   // eslint-disable-next-line functional/no-try-statements
   try {
     const rawObject: unknown = JSON.parse(line);
-    if (typeof rawObject === 'object' && rawObject !== null && 'id' in rawObject) {
-      currentId = (rawObject as Readonly<{ id?: JsonRpcId }>).id;
-    }
+    const currentId =
+      typeof rawObject === 'object' && rawObject !== null && 'id' in rawObject
+        ? (rawObject as Readonly<{ id?: JsonRpcId }>).id
+        : undefined;
 
     const parseResult = JsonRpcRequestSchema.safeParse(rawObject);
     if (!parseResult.success) {
@@ -286,7 +284,6 @@ export const handleIpcRequestLine = async (
 
     const request: JsonRpcRequest = parseResult.data;
     const requestId = request.id ?? null;
-    currentId = requestId;
 
     switch (request.method) {
       case IPC_METHODS.HANDSHAKE: {
@@ -981,7 +978,7 @@ export const handleIpcRequestLine = async (
   } catch (error) {
     return ok({
       response: makeErrorResponse(
-        currentId,
+        undefined,
         JSON_RPC_ERROR_CODES.PARSE_ERROR,
         `Parse error: ${error instanceof Error ? error.message : String(error)}`,
       ),

@@ -27,6 +27,15 @@ import { verifyCapability } from './capabilities';
 // browser (the web render path); `Buffer` is Node-only.
 const utf8ByteLength = (value: string): number => new TextEncoder().encode(value).length;
 
+const safeParseJson = <T>(json: string): Result<T, ApiAdapterError> => {
+  // eslint-disable-next-line functional/no-try-statements -- JSON.parse boundary
+  try {
+    return ok(JSON.parse(json) as T);
+  } catch {
+    return err(createApiAdapterError('VALIDATION_ERROR', 'Invalid JSON payload format'));
+  }
+};
+
 export type WitErrorPayload = Readonly<{
   code: WitErrorCode;
   message: string;
@@ -157,16 +166,11 @@ const invokeHostBinding = async <TInput, TOutput>(
       return options.remoteDispatch(requiredCapability, effectiveToken, payloadJson);
     }
 
-    // eslint-disable-next-line functional/no-let -- parse input payload
-    let parsedPayload: TInput;
-    // eslint-disable-next-line functional/no-try-statements -- JSON parse guard
-    try {
-      parsedPayload = JSON.parse(payloadJson) as TInput;
-    } catch {
-      return err(
-        toWitError(createApiAdapterError('VALIDATION_ERROR', 'Invalid JSON payload format')),
-      );
+    const parsedPayloadResult = safeParseJson<TInput>(payloadJson);
+    if (!parsedPayloadResult.ok) {
+      return err(toWitError(parsedPayloadResult.error));
     }
+    const parsedPayload = parsedPayloadResult.value;
 
     const requestId = `wit-${requiredCapability}-${Temporal.Now.instant().epochMilliseconds}`;
     const request = createApiRequest(requestId, context, parsedPayload);

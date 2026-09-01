@@ -44,42 +44,40 @@ export type SandboxedExecutionOptions = Readonly<{
 
 // Creates a stateful fuel meter to bound host and guest operations.
 export const createFuelMeter = (initialLimit: bigint): FuelMeter => {
-  // eslint-disable-next-line functional/no-let -- encapsulated fuel state
-  let remainingUnits = initialLimit;
+  const remainingUnits = { current: initialLimit };
 
   return {
     consume: (units: bigint): Result<void, ApiAdapterError> => {
       if (units <= 0n) {
         return ok(undefined);
       }
-      if (remainingUnits < units) {
-        remainingUnits = 0n;
+      if (remainingUnits.current < units) {
+        remainingUnits.current = 0n;
         return err(
           createApiAdapterError('RESOURCE_EXHAUSTED', 'WASM execution fuel limit exceeded'),
         );
       }
-      remainingUnits -= units;
+      remainingUnits.current -= units;
       return ok(undefined);
     },
-    remaining: (): bigint => remainingUnits,
+    remaining: (): bigint => remainingUnits.current,
   };
 };
 
 // Creates a reentrancy guard preventing nested host imports during execution.
 export const createReentrancyGuard = (): ReentrancyGuard => {
-  // eslint-disable-next-line functional/no-let -- encapsulated execution flag
-  let inFlight = false;
+  const inFlight = { current: false };
 
   return {
     enter: (): Result<void, ApiAdapterError> => {
-      if (inFlight) {
+      if (inFlight.current) {
         return err(createApiAdapterError('FORBIDDEN', 'Reentrant host import call is prohibited'));
       }
-      inFlight = true;
+      inFlight.current = true;
       return ok(undefined);
     },
     exit: (): void => {
-      inFlight = false;
+      inFlight.current = false;
     },
   };
 };
