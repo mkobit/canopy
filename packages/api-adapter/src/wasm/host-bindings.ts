@@ -130,8 +130,7 @@ const invokeHostBinding = async <TInput, TOutput>(
     }
   }
 
-  // eslint-disable-next-line functional/no-try-statements -- defensive exception boundary for WASM host import execution
-  try {
+  const runBinding = async (): Promise<Result<string, WitErrorPayload>> => {
     if (options.fuelMeter) {
       const fuelResult = options.fuelMeter.consume(fuelPerCall);
       if (!fuelResult.ok) {
@@ -191,20 +190,24 @@ const invokeHostBinding = async <TInput, TOutput>(
     }
 
     return ok(outputJson);
-  } catch (error) {
-    return err(
-      toWitError(
-        createApiAdapterError(
-          'INTERNAL_ERROR',
-          `Uncaught exception during host binding execution: ${error instanceof Error ? error.message : String(error)}`,
+  };
+
+  return runBinding()
+    .catch((error: unknown) =>
+      err(
+        toWitError(
+          createApiAdapterError(
+            'INTERNAL_ERROR',
+            `Uncaught exception during host binding execution: ${error instanceof Error ? error.message : String(error)}`,
+          ),
         ),
       ),
-    );
-  } finally {
-    if (options.reentrancyGuard) {
-      options.reentrancyGuard.exit();
-    }
-  }
+    )
+    .finally(() => {
+      if (options.reentrancyGuard) {
+        options.reentrancyGuard.exit();
+      }
+    });
 };
 
 // Creates host import bindings for WebAssembly Interface Types (WIT).

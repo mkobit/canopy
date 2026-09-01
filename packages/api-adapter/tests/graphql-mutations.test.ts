@@ -24,15 +24,21 @@ describe('GraphQL mutation resolvers & actor delegation', () => {
       const context = await setupTestContext();
 
       const defaultActor = validateActorDelegation(context, undefined);
-      expect(defaultActor).toEqual({
-        principalId: 'user:default',
-        actingId: 'user:default',
-        actorType: 'USER',
-        approvalState: 'DIRECT_USER',
-      });
+      expect(defaultActor.ok).toBe(true);
+      if (defaultActor.ok) {
+        expect(defaultActor.value).toEqual({
+          principalId: 'user:default',
+          actingId: 'user:default',
+          actorType: 'USER',
+          approvalState: 'DIRECT_USER',
+        });
+      }
 
       const userActor = validateActorDelegation(context, { actorType: 'USER' });
-      expect(userActor.approvalState).toBe('DIRECT_USER');
+      expect(userActor.ok).toBe(true);
+      if (userActor.ok) {
+        expect(userActor.value.approvalState).toBe('DIRECT_USER');
+      }
     });
 
     it('returns APPROVED when AGENT or PLUGIN provides valid delegation token', async () => {
@@ -44,45 +50,65 @@ describe('GraphQL mutation resolvers & actor delegation', () => {
         delegationToken: 'valid-token',
       });
 
-      expect(agentActor).toEqual({
-        principalId: 'user:default',
-        actingId: 'agent:123',
-        actorType: 'AGENT',
-        delegationId: 'delegation:valid-token',
-        approvalState: 'APPROVED',
-      });
+      expect(agentActor.ok).toBe(true);
+      if (agentActor.ok) {
+        expect(agentActor.value).toEqual({
+          principalId: 'user:default',
+          actingId: 'agent:123',
+          actorType: 'AGENT',
+          delegationId: 'delegation:valid-token',
+          approvalState: 'APPROVED',
+        });
+      }
 
       const pluginActor = validateActorDelegation(context, {
         actorType: 'PLUGIN',
         delegationToken: 'token-456',
       });
 
-      expect(pluginActor.actingId).toBe('agent:authenticated');
-      expect(pluginActor.approvalState).toBe('APPROVED');
+      expect(pluginActor.ok).toBe(true);
+      if (pluginActor.ok) {
+        expect(pluginActor.value.actingId).toBe('agent:authenticated');
+        expect(pluginActor.value.approvalState).toBe('APPROVED');
+      }
     });
 
-    it('throws AGENT_APPROVAL_REQUIRED when delegation token is missing or invalid', async () => {
+    it('returns error when delegation token is missing or invalid', async () => {
       const context = await setupTestContext();
 
-      expect(() => {
-        validateActorDelegation(context, { actorType: 'AGENT' });
-      }).toThrow('Agent execution requires a valid delegation token');
+      const missingTokenResult = validateActorDelegation(context, { actorType: 'AGENT' });
+      expect(missingTokenResult.ok).toBe(false);
+      if (!missingTokenResult.ok) {
+        expect(missingTokenResult.error.message).toBe(
+          'Agent execution requires a valid delegation token',
+        );
+      }
 
-      expect(() => {
-        validateActorDelegation(context, { actorType: 'PLUGIN', delegationToken: 'invalid' });
-      }).toThrow('Agent execution requires a valid delegation token');
+      const invalidTokenResult = validateActorDelegation(context, {
+        actorType: 'PLUGIN',
+        delegationToken: 'invalid',
+      });
+      expect(invalidTokenResult.ok).toBe(false);
+      if (!invalidTokenResult.ok) {
+        expect(invalidTokenResult.error.message).toBe(
+          'Agent execution requires a valid delegation token',
+        );
+      }
     });
 
     it('returns SYSTEM_PERMITTED for SYSTEM or WORKFLOW actor types', async () => {
       const context = await setupTestContext();
 
       const systemActor = validateActorDelegation(context, { actorType: 'SYSTEM' });
-      expect(systemActor).toEqual({
-        principalId: 'user:default',
-        actingId: 'system:kernel',
-        actorType: 'SYSTEM',
-        approvalState: 'SYSTEM_PERMITTED',
-      });
+      expect(systemActor.ok).toBe(true);
+      if (systemActor.ok) {
+        expect(systemActor.value).toEqual({
+          principalId: 'user:default',
+          actingId: 'system:kernel',
+          actorType: 'SYSTEM',
+          approvalState: 'SYSTEM_PERMITTED',
+        });
+      }
     });
   });
 

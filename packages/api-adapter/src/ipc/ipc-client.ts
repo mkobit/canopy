@@ -97,6 +97,15 @@ export interface IpcClient {
   readonly close: () => Effect.Effect<void, never>;
 }
 
+const tryParseJson = <T>(json: string): T | undefined => {
+  // eslint-disable-next-line functional/no-try-statements -- JSON.parse boundary
+  try {
+    return JSON.parse(json) as T;
+  } catch {
+    return undefined;
+  }
+};
+
 export const makeIpcClient = (socketPath: string): Effect.Effect<IpcClient, IpcClientError> => {
   return Effect.async<IpcClient, IpcClientError>((resume) => {
     const requestCounter = { current: 0 };
@@ -523,14 +532,15 @@ export const makeIpcClient = (socketPath: string): Effect.Effect<IpcClient, IpcC
       for (const rawLine of completeLines) {
         const line = rawLine.trim();
         if (line.length > 0) {
-          // eslint-disable-next-line functional/no-try-statements
-          try {
-            const rawObject = JSON.parse(line) as Readonly<{
+          const rawObject = tryParseJson<
+            Readonly<{
               id?: JsonRpcId;
               method?: string;
               params?: Readonly<{ subscriptionId?: string; event?: unknown }>;
-            }>;
+            }>
+          >(line);
 
+          if (rawObject) {
             if (rawObject.method === IPC_METHODS.EVENT_STREAM_EVENT && rawObject.params) {
               const { subscriptionId, event } = rawObject.params;
               if (subscriptionId) {
@@ -546,8 +556,6 @@ export const makeIpcClient = (socketPath: string): Effect.Effect<IpcClient, IpcC
                 pending.resolve(rawObject as JsonRpcResponse);
               }
             }
-          } catch {
-            // Ignore parse errors on response socket
           }
         }
       }

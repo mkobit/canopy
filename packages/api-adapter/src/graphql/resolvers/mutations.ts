@@ -1,7 +1,17 @@
-import { type PropertyValue, asEdgeId, asNodeId, asTypeId } from '@canopy/graph';
+import {
+  type PropertyValue,
+  type Result,
+  asEdgeId,
+  asNodeId,
+  asTypeId,
+  err,
+  ok,
+} from '@canopy/graph';
 import { GraphQLError } from 'graphql';
 import type { ApiAdapterContext } from '../../api-context';
 import { executeMutation } from '../../mutation-handlers';
+import type { ApiAdapterError } from '../../result-errors';
+import { createApiAdapterError } from '../../result-errors';
 
 export interface ActorContextInput {
   readonly actingId?: string | undefined;
@@ -9,48 +19,55 @@ export interface ActorContextInput {
   readonly delegationToken?: string | undefined;
 }
 
+export type ValidatedActorContext = Readonly<{
+  principalId: string;
+  actingId: string;
+  actorType: 'USER' | 'AGENT' | 'PLUGIN' | 'WORKFLOW' | 'SYSTEM';
+  approvalState: 'DIRECT_USER' | 'APPROVED' | 'SYSTEM_PERMITTED';
+  delegationId?: string;
+}>;
+
 export const validateActorDelegation = (
   context: ApiAdapterContext,
   actorInput?: ActorContextInput,
-) => {
+): Result<ValidatedActorContext, ApiAdapterError> => {
   const principalId = context.authContext?.userId ?? 'user:default';
 
   if (!actorInput || !actorInput.actorType || actorInput.actorType === 'USER') {
-    return {
+    return ok({
       principalId,
       actingId: principalId,
-      actorType: 'USER' as const,
-      approvalState: 'DIRECT_USER' as const,
-    };
+      actorType: 'USER',
+      approvalState: 'DIRECT_USER',
+    });
   }
 
   if (actorInput.actorType === 'AGENT' || actorInput.actorType === 'PLUGIN') {
     if (!actorInput.delegationToken || actorInput.delegationToken === 'invalid') {
-      // eslint-disable-next-line functional/no-throw-statements -- GraphQL resolvers throw GraphQLError on authorization failure
-      throw new GraphQLError('Agent execution requires a valid delegation token', {
-        extensions: {
+      return err(
+        createApiAdapterError('UNAUTHORIZED', 'Agent execution requires a valid delegation token', {
           code: 'AGENT_APPROVAL_REQUIRED',
           actorType: actorInput.actorType,
           actingId: actorInput.actingId ?? 'agent:unknown',
-        },
-      });
+        }),
+      );
     }
 
-    return {
+    return ok({
       principalId,
       actingId: actorInput.actingId ?? 'agent:authenticated',
       actorType: actorInput.actorType,
       delegationId: `delegation:${actorInput.delegationToken}`,
-      approvalState: 'APPROVED' as const,
-    };
+      approvalState: 'APPROVED',
+    });
   }
 
-  return {
+  return ok({
     principalId,
     actingId: actorInput.actingId ?? 'system:kernel',
     actorType: actorInput.actorType,
-    approvalState: 'SYSTEM_PERMITTED' as const,
-  };
+    approvalState: 'SYSTEM_PERMITTED',
+  });
 };
 
 const resolveCreateNode = async (
@@ -65,7 +82,18 @@ const resolveCreateNode = async (
     actor?: ActorContextInput | undefined;
   }>,
 ) => {
-  const actorContext = validateActorDelegation(context, arguments_.actor);
+  const actorResult = validateActorDelegation(context, arguments_.actor);
+  if (!actorResult.ok) {
+    throw new GraphQLError(actorResult.error.message, {
+      extensions: {
+        code: 'AGENT_APPROVAL_REQUIRED',
+        ...(typeof actorResult.error.details === 'object' &&
+          actorResult.error.details !== null &&
+          actorResult.error.details),
+      },
+    });
+  }
+  const actorContext = actorResult.value;
   const result = await executeMutation.createNode(context, {
     ...(typeof arguments_.input.id === 'string' && { id: asNodeId(arguments_.input.id) }),
     type: asTypeId(arguments_.input.type),
@@ -100,7 +128,18 @@ const resolveUpdateNodeProperties = async (
     actor?: ActorContextInput | undefined;
   }>,
 ) => {
-  const actorContext = validateActorDelegation(context, arguments_.actor);
+  const actorResult = validateActorDelegation(context, arguments_.actor);
+  if (!actorResult.ok) {
+    throw new GraphQLError(actorResult.error.message, {
+      extensions: {
+        code: 'AGENT_APPROVAL_REQUIRED',
+        ...(typeof actorResult.error.details === 'object' &&
+          actorResult.error.details !== null &&
+          actorResult.error.details),
+      },
+    });
+  }
+  const actorContext = actorResult.value;
   const result = await executeMutation.updateNodeProperties(context, {
     id: asNodeId(arguments_.input.id),
     properties: arguments_.input.properties,
@@ -133,7 +172,18 @@ const resolveDeleteNode = async (
     actor?: ActorContextInput | undefined;
   }>,
 ) => {
-  const actorContext = validateActorDelegation(context, arguments_.actor);
+  const actorResult = validateActorDelegation(context, arguments_.actor);
+  if (!actorResult.ok) {
+    throw new GraphQLError(actorResult.error.message, {
+      extensions: {
+        code: 'AGENT_APPROVAL_REQUIRED',
+        ...(typeof actorResult.error.details === 'object' &&
+          actorResult.error.details !== null &&
+          actorResult.error.details),
+      },
+    });
+  }
+  const actorContext = actorResult.value;
   const result = await executeMutation.deleteNode(context, {
     id: asNodeId(arguments_.input.id),
     ...(typeof arguments_.input.expectedSequence === 'number' && {
@@ -169,7 +219,18 @@ const resolveCreateEdge = async (
     actor?: ActorContextInput | undefined;
   }>,
 ) => {
-  const actorContext = validateActorDelegation(context, arguments_.actor);
+  const actorResult = validateActorDelegation(context, arguments_.actor);
+  if (!actorResult.ok) {
+    throw new GraphQLError(actorResult.error.message, {
+      extensions: {
+        code: 'AGENT_APPROVAL_REQUIRED',
+        ...(typeof actorResult.error.details === 'object' &&
+          actorResult.error.details !== null &&
+          actorResult.error.details),
+      },
+    });
+  }
+  const actorContext = actorResult.value;
   const result = await executeMutation.createEdge(context, {
     ...(typeof arguments_.input.id === 'string' && { id: asEdgeId(arguments_.input.id) }),
     type: asTypeId(arguments_.input.type),
@@ -205,7 +266,18 @@ const resolveDeleteEdge = async (
     actor?: ActorContextInput | undefined;
   }>,
 ) => {
-  const actorContext = validateActorDelegation(context, arguments_.actor);
+  const actorResult = validateActorDelegation(context, arguments_.actor);
+  if (!actorResult.ok) {
+    throw new GraphQLError(actorResult.error.message, {
+      extensions: {
+        code: 'AGENT_APPROVAL_REQUIRED',
+        ...(typeof actorResult.error.details === 'object' &&
+          actorResult.error.details !== null &&
+          actorResult.error.details),
+      },
+    });
+  }
+  const actorContext = actorResult.value;
   const result = await executeMutation.deleteEdge(context, {
     id: asEdgeId(arguments_.input.id),
     ...(typeof arguments_.input.expectedSequence === 'number' && {

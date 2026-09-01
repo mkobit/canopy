@@ -149,25 +149,23 @@ export const executeSandboxedGuestPlugin = async (
     }
   });
 
-  const executionPromise = (async (): Promise<Result<string, ApiAdapterError>> => {
-    // eslint-disable-next-line functional/no-try-statements -- defensive exception guard for WASM guest plugin execution
-    try {
-      const outputJson = await plugin(hostBindings, inputJson);
+  const executionPromise = (async () => plugin(hostBindings, inputJson))()
+    .then((outputJson: string) => {
       const outputBytes = utf8ByteLength(outputJson);
       const outputMemoryResult = memoryChecker.checkBytes(outputBytes);
       if (!outputMemoryResult.ok) {
         return err(outputMemoryResult.error);
       }
       return ok(outputJson);
-    } catch (error) {
-      return err(
+    })
+    .catch((error: unknown) =>
+      err(
         createApiAdapterError(
           'INTERNAL_ERROR',
           `WASM guest plugin execution failed: ${error instanceof Error ? error.message : String(error)}`,
         ),
-      );
-    }
-  })();
+      ),
+    );
 
   return Promise.race([executionPromise, timeoutPromise]);
 };
