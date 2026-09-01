@@ -102,21 +102,18 @@ const createSubscribeGenerator = async function* (
     bufferCapacity: options?.bufferCapacity ?? context.limits?.maxStreamBuffer ?? 100,
   });
 
-  // eslint-disable-next-line functional/no-let -- queue state
-  let queue: readonly ConnectEventStreamItem[] = [];
-  // eslint-disable-next-line functional/no-let -- resolver callback
-  let resolveNext: ((item: ConnectEventStreamItem | null) => void) | null = null;
-  // eslint-disable-next-line functional/no-let -- stream closed state
-  let closed = false;
+  const queue = { current: [] as readonly ConnectEventStreamItem[] };
+  const resolveNext = { current: null as ((item: ConnectEventStreamItem | null) => void) | null };
+  const closed = { current: false };
 
   const unsubscribe = subscriber.subscribe((message: EventStreamMessage) => {
-    if (closed) return;
+    if (closed.current) return;
 
     if (message.kind === 'end') {
-      closed = true;
-      if (resolveNext) {
-        const resolve = resolveNext;
-        resolveNext = null;
+      closed.current = true;
+      if (resolveNext.current) {
+        const resolve = resolveNext.current;
+        resolveNext.current = null;
         resolve(null);
       }
       return;
@@ -124,32 +121,32 @@ const createSubscribeGenerator = async function* (
 
     const item = formatMessageToConnectItem(message);
 
-    if (resolveNext) {
-      const resolve = resolveNext;
-      resolveNext = null;
+    if (resolveNext.current) {
+      const resolve = resolveNext.current;
+      resolveNext.current = null;
       resolve(item);
     } else {
-      queue = [...queue, item];
+      queue.current = [...queue.current, item];
     }
 
     if (message.kind === 'overflow_disconnect') {
-      closed = true;
+      closed.current = true;
     }
   });
 
   // eslint-disable-next-line functional/no-try-statements -- stream cleanup on completion
   try {
     // eslint-disable-next-line functional/no-loop-statements -- async generator stream consumption
-    while (!closed || queue.length > 0) {
-      if (queue.length > 0) {
-        const head = queue[0];
-        queue = queue.slice(1);
+    while (!closed.current || queue.current.length > 0) {
+      if (queue.current.length > 0) {
+        const head = queue.current[0];
+        queue.current = queue.current.slice(1);
         if (head !== undefined) {
           yield head;
         }
       } else {
         const { promise, resolve } = Promise.withResolvers<ConnectEventStreamItem | null>();
-        resolveNext = resolve;
+        resolveNext.current = resolve;
         const nextItem = await promise;
         if (nextItem === null) {
           break;
@@ -158,7 +155,7 @@ const createSubscribeGenerator = async function* (
       }
     }
   } finally {
-    closed = true;
+    closed.current = true;
     unsubscribe();
     subscriber.close();
   }

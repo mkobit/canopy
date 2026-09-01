@@ -22,34 +22,31 @@ export function createEventStreamSubscriber(
   options: EventStreamOptions = {},
 ): EventStreamSubscription {
   const bufferCapacity = options.bufferCapacity ?? 100;
-  // eslint-disable-next-line functional/no-let -- encapsulated stream listener set
-  let listeners: ReadonlySet<(message: EventStreamMessage) => void> = new Set();
-  // eslint-disable-next-line functional/no-let -- encapsulated stream buffer
-  let buffer: readonly EventStreamMessage[] = [];
-  // eslint-disable-next-line functional/no-let -- encapsulated stream lifecycle state
-  let closed = false;
+  const listeners = { current: new Set<(message: EventStreamMessage) => void>() };
+  const buffer = { current: [] as readonly EventStreamMessage[] };
+  const closed = { current: false };
 
   const notifyListeners = (message: EventStreamMessage): void => {
     // eslint-disable-next-line functional/no-loop-statements -- notify listener set
-    for (const listener of listeners) {
+    for (const listener of listeners.current) {
       listener(message);
     }
   };
 
   const close = (): void => {
-    if (closed) return;
-    closed = true;
+    if (closed.current) return;
+    closed.current = true;
     unsubscribeSession();
     notifyListeners({ kind: 'end' });
-    listeners = new Set();
-    buffer = [];
+    listeners.current = new Set();
+    buffer.current = [];
   };
 
   const handleGraphEvents = (
     _graph: unknown,
     delta: readonly GraphEvent[] | Readonly<{ applied?: readonly GraphEvent[] }>,
   ): void => {
-    if (closed) return;
+    if (closed.current) return;
 
     const events = Array.isArray(delta)
       ? delta
@@ -59,10 +56,10 @@ export function createEventStreamSubscriber(
 
     // eslint-disable-next-line functional/no-loop-statements -- process applied events
     for (const event of events) {
-      if (buffer.length >= bufferCapacity) {
+      if (buffer.current.length >= bufferCapacity) {
         const overflowMessage: EventStreamMessage = {
           kind: 'overflow_disconnect',
-          gapCount: buffer.length + 1,
+          gapCount: buffer.current.length + 1,
           reason: `Subscriber buffer capacity of ${bufferCapacity} exceeded`,
         };
         notifyListeners(overflowMessage);
@@ -74,7 +71,7 @@ export function createEventStreamSubscriber(
         kind: 'event',
         event,
       };
-      buffer = [...buffer, message];
+      buffer.current = [...buffer.current, message];
       notifyListeners(message);
     }
   };
@@ -87,13 +84,13 @@ export function createEventStreamSubscriber(
 
   return {
     subscribe: (listener) => {
-      listeners = new Set([...listeners, listener]);
+      listeners.current = new Set([...listeners.current, listener]);
       return () => {
-        listeners = new Set([...listeners].filter((l) => l !== listener));
+        listeners.current = new Set([...listeners.current].filter((l) => l !== listener));
       };
     },
-    getBufferCount: () => buffer.length,
-    isClosed: () => closed,
+    getBufferCount: () => buffer.current.length,
+    isClosed: () => closed.current,
     close,
   };
 }

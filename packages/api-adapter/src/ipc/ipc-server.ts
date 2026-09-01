@@ -39,23 +39,13 @@ const sendToSocket = (
 
   const canWrite = socket.write(`${payload}\n`);
   if (!canWrite) {
-    // eslint-disable-next-line functional/no-let
-    let drainTimer: ReturnType<typeof setTimeout> | undefined;
-
-    const cleanup = (): void => {
-      if (drainTimer !== undefined) {
-        clearTimeout(drainTimer);
-        drainTimer = undefined;
-      }
+    const onDrain = (): void => {
+      clearTimeout(drainTimer);
       socket.removeListener('drain', onDrain);
     };
 
-    const onDrain = (): void => {
-      cleanup();
-    };
-
-    drainTimer = setTimeout(() => {
-      cleanup();
+    const drainTimer = setTimeout(() => {
+      socket.removeListener('drain', onDrain);
       onDrainTimeout?.();
       socket.destroy();
     }, 15_000);
@@ -97,79 +87,86 @@ const probeSocketPath = (socketPath: string): Promise<Result<boolean, IpcSocketI
 
 export const createIpcServer = (options: IpcServerOptions): IpcServer => {
   const { socketPath, context } = options;
-  // eslint-disable-next-line functional/no-let
-  let activeSockets: ReadonlySet<net.Socket> = new Set();
-  // eslint-disable-next-line functional/no-let
-  let activeSubscriptions: ReadonlyMap<net.Socket, ReadonlyMap<string, () => void>> = new Map();
+  const activeSockets = { current: new Set<net.Socket>() };
+  const activeSubscriptions = {
+    current: new Map<net.Socket, ReadonlyMap<string, () => void>>(),
+  };
   // Per-connection draft registries. Ephemeral and connection-scoped by design (design.md "No new
   // persistence for draft state") -- never written to the event log or any store, and cleared
   // whenever the owning socket closes (task 5.7 / "Cleanup on disconnect").
-  // eslint-disable-next-line functional/no-let
-  let activeDraftRegistries: ReadonlyMap<
-    net.Socket,
-    ReadonlyMap<string, DraftRegistryEntry>
-  > = new Map();
+  const activeDraftRegistries = {
+    current: new Map<net.Socket, ReadonlyMap<string, DraftRegistryEntry>>(),
+  };
 
-  // eslint-disable-next-line functional/no-let
-  let netServer: net.Server | undefined;
-  // eslint-disable-next-line functional/no-let
-  let isListening = false;
+  const netServer = { current: undefined as net.Server | undefined };
+  const isListening = { current: false };
 
   const cleanupSocketSubscriptions = (socket: net.Socket): void => {
-    const subs = activeSubscriptions.get(socket);
+    const subs = activeSubscriptions.current.get(socket);
     if (subs) {
       // eslint-disable-next-line functional/no-loop-statements
       for (const unbind of subs.values()) {
         unbind();
       }
-      activeSubscriptions = new Map([...activeSubscriptions].filter(([s]) => s !== socket));
+      activeSubscriptions.current = new Map(
+        [...activeSubscriptions.current].filter(([s]) => s !== socket),
+      );
     }
   };
 
   const cleanupSocketDrafts = (socket: net.Socket): void => {
-    const drafts = activeDraftRegistries.get(socket);
+    const drafts = activeDraftRegistries.current.get(socket);
     if (drafts) {
       // eslint-disable-next-line functional/no-loop-statements
       for (const entry of drafts.values()) {
         entry.session.discard();
       }
-      activeDraftRegistries = new Map([...activeDraftRegistries].filter(([s]) => s !== socket));
+      activeDraftRegistries.current = new Map(
+        [...activeDraftRegistries.current].filter(([s]) => s !== socket),
+      );
     }
   };
 
   // Sum of live draft counts across every connection, used to enforce the global concurrent-draft
   // cap in ipc-handlers.ts's draft.create case.
   const totalDraftCount = (): number =>
-    activeDraftRegistries.values().reduce((sum, drafts) => sum + drafts.size, 0);
+    activeDraftRegistries.current.values().reduce((sum, drafts) => sum + drafts.size, 0);
 
   const handleConnection = (socket: net.Socket): void => {
-    activeSockets = new Set([...activeSockets, socket]);
-    activeSubscriptions = new Map([...activeSubscriptions, [socket, new Map()]]);
-    activeDraftRegistries = new Map([...activeDraftRegistries, [socket, new Map()]]);
+    activeSockets.current = new Set([...activeSockets.current, socket]);
+    activeSubscriptions.current = new Map([...activeSubscriptions.current, [socket, new Map()]]);
+    activeDraftRegistries.current = new Map([
+      ...activeDraftRegistries.current,
+      [socket, new Map()],
+    ]);
 
-    // eslint-disable-next-line functional/no-let
-    let buffer = '';
+    const streamBuffer = { current: '' };
 
     socket.on('data', (chunk: Buffer) => {
-      buffer += chunk.toString('utf8');
+      const combined = streamBuffer.current + chunk.toString('utf8');
 
-      if (buffer.length > MAX_LINE_BYTES && !buffer.includes('\n')) {
+      if (combined.length > MAX_LINE_BYTES && !combined.includes('\n')) {
         // Oversized line without newline delimiter - destroy socket for memory safety
         socket.destroy();
         return;
       }
 
-      // eslint-disable-next-line functional/no-let
-      let newlineIndex = buffer.indexOf('\n');
-      // eslint-disable-next-line functional/no-loop-statements
-      while (newlineIndex !== -1) {
-        const line = buffer.slice(0, newlineIndex).trim();
-        buffer = buffer.slice(newlineIndex + 1);
+      const lastNewline = combined.lastIndexOf('\n');
+      if (lastNewline === -1) {
+        streamBuffer.current = combined;
+        return;
+      }
 
+      const completeLines = combined.slice(0, lastNewline).split('\n');
+      streamBuffer.current = combined.slice(lastNewline + 1);
+
+      // eslint-disable-next-line functional/no-loop-statements
+      for (const rawLine of completeLines) {
+        const line = rawLine.trim();
         if (line.length > 0) {
           // Process message asynchronously
           const draftsMap =
-            activeDraftRegistries.get(socket) ?? new Map<string, DraftRegistryEntry>();
+            activeDraftRegistries.current.get(socket) ?? new Map<string, DraftRegistryEntry>();
           void handleIpcRequestLine(line, context, draftsMap, totalDraftCount()).then((result) => {
             if (!result.ok) {
               const errorResp = {
@@ -192,7 +189,7 @@ export const createIpcServer = (options: IpcServerOptions): IpcServer => {
             }
 
             if (newSubscription) {
-              const subsMap = activeSubscriptions.get(socket);
+              const subsMap = activeSubscriptions.current.get(socket);
               if (subsMap) {
                 const { subscriptionId, subscriber } = newSubscription;
                 const unbindListener = subscriber.subscribe((message) => {
@@ -218,58 +215,63 @@ export const createIpcServer = (options: IpcServerOptions): IpcServer => {
                     },
                   ],
                 ]);
-                activeSubscriptions = new Map([...activeSubscriptions, [socket, nextSubsMap]]);
+                activeSubscriptions.current = new Map([
+                  ...activeSubscriptions.current,
+                  [socket, nextSubsMap],
+                ]);
               }
             }
 
             if (unsubscribeId) {
-              const subsMap = activeSubscriptions.get(socket);
+              const subsMap = activeSubscriptions.current.get(socket);
               if (subsMap) {
                 const closeFunction = subsMap.get(unsubscribeId);
                 if (closeFunction) {
                   closeFunction();
                   const nextSubsMap = new Map([...subsMap].filter(([id]) => id !== unsubscribeId));
-                  activeSubscriptions = new Map([...activeSubscriptions, [socket, nextSubsMap]]);
+                  activeSubscriptions.current = new Map([
+                    ...activeSubscriptions.current,
+                    [socket, nextSubsMap],
+                  ]);
                 }
               }
             }
 
             // Apply draft registry mutations reported by ipc-handlers.ts. ipc-server.ts is the sole
             // owner/writer of this socket's draft map, mirroring the subscription pattern above.
-            const socketDrafts = activeDraftRegistries.get(socket);
+            const socketDrafts = activeDraftRegistries.current.get(socket);
             if (socketDrafts) {
-              // eslint-disable-next-line functional/no-let
-              let updatedDrafts = socketDrafts;
-              if (newDraft) {
-                updatedDrafts = new Map([...updatedDrafts, [newDraft.draftId, newDraft.entry]]);
-              }
-              if (touchDraft) {
-                const existing = updatedDrafts.get(touchDraft.draftId);
-                if (existing) {
-                  updatedDrafts = new Map([
-                    ...updatedDrafts,
-                    [
-                      touchDraft.draftId,
-                      {
-                        ...existing,
-                        lastTouchedAt: Temporal.Now.instant().epochMilliseconds,
-                        ...(touchDraft.stagedEventCount !== undefined && {
-                          stagedEventCount: touchDraft.stagedEventCount,
-                        }),
-                      },
-                    ],
-                  ]);
-                }
-              }
-              if (dropDraftIds) {
-                const dropSet = new Set(dropDraftIds);
-                updatedDrafts = new Map(
-                  [...updatedDrafts].filter(([draftId]) => !dropSet.has(draftId)),
-                );
-              }
+              const withNewDraft = newDraft
+                ? new Map([...socketDrafts, [newDraft.draftId, newDraft.entry]])
+                : socketDrafts;
+              const withTouchDraft = touchDraft
+                ? (() => {
+                    const existing = withNewDraft.get(touchDraft.draftId);
+                    return existing
+                      ? new Map([
+                          ...withNewDraft,
+                          [
+                            touchDraft.draftId,
+                            {
+                              ...existing,
+                              lastTouchedAt: Temporal.Now.instant().epochMilliseconds,
+                              ...(touchDraft.stagedEventCount !== undefined && {
+                                stagedEventCount: touchDraft.stagedEventCount,
+                              }),
+                            },
+                          ],
+                        ])
+                      : withNewDraft;
+                  })()
+                : withNewDraft;
+              const updatedDrafts = dropDraftIds
+                ? new Map(
+                    [...withTouchDraft].filter(([draftId]) => !new Set(dropDraftIds).has(draftId)),
+                  )
+                : withTouchDraft;
               if (updatedDrafts !== socketDrafts) {
-                activeDraftRegistries = new Map([
-                  ...activeDraftRegistries,
+                activeDraftRegistries.current = new Map([
+                  ...activeDraftRegistries.current,
                   [socket, updatedDrafts],
                 ]);
               }
@@ -277,15 +279,13 @@ export const createIpcServer = (options: IpcServerOptions): IpcServer => {
             return undefined;
           });
         }
-
-        newlineIndex = buffer.indexOf('\n');
       }
     });
 
     const onCloseOrError = (): void => {
       cleanupSocketSubscriptions(socket);
       cleanupSocketDrafts(socket);
-      activeSockets = new Set([...activeSockets].filter((s) => s !== socket));
+      activeSockets.current = new Set([...activeSockets.current].filter((s) => s !== socket));
     };
 
     socket.on('close', onCloseOrError);
@@ -293,7 +293,7 @@ export const createIpcServer = (options: IpcServerOptions): IpcServer => {
   };
 
   const listen = async (): Promise<Result<void, IpcSocketInUseError | IpcProtocolError>> => {
-    if (isListening) {
+    if (isListening.current) {
       return ok(undefined);
     }
 
@@ -321,13 +321,13 @@ export const createIpcServer = (options: IpcServerOptions): IpcServer => {
       // eslint-disable-next-line functional/no-try-statements
       try {
         const server = net.createServer(handleConnection);
-        netServer = server;
+        netServer.current = server;
 
         const oldUmask = process.umask(0o177);
         // eslint-disable-next-line functional/no-try-statements
         try {
           server.listen(socketPath, () => {
-            isListening = true;
+            isListening.current = true;
             resolve(ok(undefined));
           });
         } finally {
@@ -335,7 +335,7 @@ export const createIpcServer = (options: IpcServerOptions): IpcServer => {
         }
 
         server.on('error', (error: Error) => {
-          if (!isListening) {
+          if (!isListening.current) {
             resolve(
               err(
                 createIpcProtocolError(
@@ -360,26 +360,26 @@ export const createIpcServer = (options: IpcServerOptions): IpcServer => {
   };
 
   const close = async (): Promise<void> => {
-    if (!isListening && !netServer) {
+    if (!isListening.current && !netServer.current) {
       return;
     }
 
-    isListening = false;
+    isListening.current = false;
 
     // eslint-disable-next-line functional/no-loop-statements
-    for (const socket of activeSockets) {
+    for (const socket of activeSockets.current) {
       cleanupSocketSubscriptions(socket);
       cleanupSocketDrafts(socket);
       socket.destroy();
     }
-    activeSockets = new Set();
-    activeSubscriptions = new Map();
-    activeDraftRegistries = new Map();
+    activeSockets.current = new Set();
+    activeSubscriptions.current = new Map();
+    activeDraftRegistries.current = new Map();
 
     return new Promise((resolve) => {
-      if (netServer) {
-        netServer.close(() => {
-          netServer = undefined;
+      if (netServer.current) {
+        netServer.current.close(() => {
+          netServer.current = undefined;
           if (fs.existsSync(socketPath)) {
             // eslint-disable-next-line functional/no-try-statements
             try {
@@ -408,6 +408,6 @@ export const createIpcServer = (options: IpcServerOptions): IpcServer => {
     listen,
     close,
     getSocketPath: () => socketPath,
-    getActiveConnectionCount: () => activeSockets.size,
+    getActiveConnectionCount: () => activeSockets.current.size,
   };
 };

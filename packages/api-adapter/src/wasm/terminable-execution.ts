@@ -49,21 +49,13 @@ export type TerminableGuestRunner = Readonly<{
   terminate: () => void;
 }>;
 
-// Races a terminable guest run against a wall-clock deadline the host owns. On
-// deadline the runner is `terminate()`d and a bounded `RESOURCE_EXHAUSTED` error
-// resolves — never a hang — so the caller renders a fallback rather than mounting
-// partial output (spec: terminable-plugin-execution → host-enforced wall-clock
-// termination). The timer runs on the caller's thread, so it fires regardless of
-// whether the guest ever yields.
-export const executeTerminableGuest = async (
+const createDeadline = (
   runner: TerminableGuestRunner,
-  timeoutMs: number = DEFAULT_UNTRUSTED_RENDER_TIMEOUT_MS,
-): Promise<Result<string, ApiAdapterError>> => {
-  // eslint-disable-next-line functional/no-let -- timer handle captured for cleanup
-  let timer: ReturnType<typeof setTimeout> | undefined;
-
-  const deadline = new Promise<Result<string, ApiAdapterError>>((resolve) => {
-    timer = setTimeout(() => {
+  timeoutMs: number,
+): Readonly<{ promise: Promise<Result<string, ApiAdapterError>>; cancel: () => void }> => {
+  const cancelController = new AbortController();
+  const promise = new Promise<Result<string, ApiAdapterError>>((resolve) => {
+    const timer = setTimeout(() => {
       runner.terminate();
       resolve(
         err(
@@ -78,7 +70,35 @@ export const executeTerminableGuest = async (
     if (typeof timer === 'object' && 'unref' in timer && typeof timer.unref === 'function') {
       timer.unref();
     }
+
+    cancelController.signal.addEventListener(
+      'abort',
+      () => {
+        clearTimeout(timer);
+      },
+      { once: true },
+    );
   });
+
+  return {
+    promise,
+    cancel: () => {
+      cancelController.abort();
+    },
+  };
+};
+
+// Races a terminable guest run against a wall-clock deadline the host owns. On
+// deadline the runner is `terminate()`d and a bounded `RESOURCE_EXHAUSTED` error
+// resolves — never a hang — so the caller renders a fallback rather than mounting
+// partial output (spec: terminable-plugin-execution → host-enforced wall-clock
+// termination). The timer runs on the caller's thread, so it fires regardless of
+// whether the guest ever yields.
+export const executeTerminableGuest = async (
+  runner: TerminableGuestRunner,
+  timeoutMs: number = DEFAULT_UNTRUSTED_RENDER_TIMEOUT_MS,
+): Promise<Result<string, ApiAdapterError>> => {
+  const deadline = createDeadline(runner, timeoutMs);
 
   const run = runner
     .execute()
@@ -91,9 +111,7 @@ export const executeTerminableGuest = async (
       ),
     );
 
-  const outcome = await Promise.race([run, deadline]);
-  if (timer !== undefined) {
-    clearTimeout(timer);
-  }
+  const outcome = await Promise.race([run, deadline.promise]);
+  deadline.cancel();
   return outcome;
 };
