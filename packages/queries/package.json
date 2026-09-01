@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@canopy/graph": "workspace:*",
-    "remeda": "^2.39.0"
+    "remeda": "^2.42.0"
   },
   "devDependencies": {
     "@canopy/storage": "workspace:*",

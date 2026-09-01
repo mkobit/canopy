@@ -121,7 +121,7 @@
         "react-dom": "^19.2.8",
         "react-markdown": "^10.1.0",
         "react-router-dom": "^7.18.2",
-        "remeda": "^2.39.0",
+        "remeda": "^2.42.0",
         "tailwind-merge": "^3.6.0",
         "zod": "^4.4.1",
       },
@@ -166,7 +166,7 @@
       "name": "@canopy/graph",
       "version": "0.0.0",
       "dependencies": {
-        "remeda": "^2.39.0",
+        "remeda": "^2.42.0",
         "uuid": "^14.0.0",
         "zod": "^4.4.1",
       },
@@ -180,7 +180,7 @@
       "version": "0.0.0",
       "dependencies": {
         "@canopy/graph": "workspace:*",
-        "remeda": "^2.39.0",
+        "remeda": "^2.42.0",
       },
       "devDependencies": {
         "@canopy/storage": "workspace:*",
@@ -1763,7 +1763,7 @@
 
     "remark-rehype": ["remark-rehype@11.1.2", "", { "dependencies": { "@types/hast": "^3.0.0", "@types/mdast": "^4.0.0", "mdast-util-to-hast": "^13.0.0", "unified": "^11.0.0", "vfile": "^6.0.0" } }, "sha512-Dh7l57ianaEoIpzbp0PC9UKAdCSVklD8E5Rpw7ETfbTl3FqcOOgq5q2LVDhgGCkaBv7p24JXikPdvhhmHvKMsw=="],
 
-    "remeda": ["remeda@2.39.0", "", {}, "sha512-3Ki8dU1o3OVu4dwIQ2Pj+yiuP7OnEbmWAGmJ3yDRqopily5jsj8NWzPvbS89H85d6UdONKEcUnrfuHY6jN9vyw=="],
+    "remeda": ["remeda@2.42.0", "", {}, "sha512-wDnRk66DV3uXCvJ8yGVtgOtiaOJsyYlucaKWJKY9EAONW86I1OiYqtMbmVaUjv7M0qp4XiMBjJRamibvE8yA1Q=="],
 
     "reserved-identifiers": ["reserved-identifiers@1.2.0", "", {}, "sha512-yE7KUfFvaBFzGPs5H3Ops1RevfUEsDc5Iz65rOwWg4lE8HJSYtle77uul3+573457oHvBKuHYDl/xqUkKpEEdw=="],
 
