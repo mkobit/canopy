@@ -8,7 +8,7 @@
     "tools"
   ],
   "engines": {
-    "bun": "1.4.0"
+    "bun": "1.4.2"
   },
   "scripts": {
     "build": "tsc -b && bun --filter './apps/*' build",
@@ -41,7 +41,7 @@
     "@types/node": "^26.1.2",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
-    "bun-types": "^1.4.0",
+    "bun-types": "^1.4.2",
     "eslint": "^10.8.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-check-file": "^3.3.1",
