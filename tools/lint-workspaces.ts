@@ -47,7 +47,10 @@ const workspaceGroups: readonly LintGroup[] = [
 
 const groups: readonly LintGroup[] = [
   ...workspaceGroups,
-  { label: 'tools + eslint.config.mjs', targets: ['tools', 'eslint.config.mjs'] },
+  {
+    label: 'tools + scripts + eslint.config.mjs',
+    targets: ['tools', 'scripts', 'eslint.config.mjs'],
+  },
 ];
 
 interface GroupResult {

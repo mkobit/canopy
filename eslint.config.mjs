@@ -411,9 +411,15 @@ export default tseslint.config(
 
   // Specific file overrides
   {
-    files: ['tools/**/*.ts'],
+    files: ['tools/**/*.ts', 'scripts/**/*.ts'],
     rules: {
       'unicorn/no-process-exit': 'off',
+    },
+  },
+  {
+    files: ['scripts/**/*.ts'],
+    rules: {
+      'unicorn/name-replacements': 'off',
     },
   },
   {

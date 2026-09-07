@@ -33,6 +33,10 @@ description = "Run all unit and integration tests"
 run = "bun run check:unused"
 description = "Check for unused files, exports, and dependencies with Knip"
 
+[tasks.validate-sbx]
+run = "bun run check:sbx-env"
+description = "Validate Docker Sandbox environment files"
+
 # OpenSpec Tools
 
 [tasks.spec-list]

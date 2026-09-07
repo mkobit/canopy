@@ -66,6 +66,10 @@ jobs:
         # to avoid OOM-crashing on GitHub's macos-14 runners (canopy-9ec).
         run: bun run lint
 
+      - name: Validate Docker Sandbox environments
+        if: "!cancelled() && steps.install.outcome == 'success'"
+        run: bun run check:sbx-env
+
       - name: Typecheck
         if: "!cancelled() && steps.install.outcome == 'success'"
         run: bun run typecheck
