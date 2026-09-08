@@ -1,8 +1,11 @@
 {
   "$schema": "https://unpkg.com/knip@5/schemas/jsonconfig.json",
   "ignoreExportsUsedInFile": true,
+  "ignoreBinaries": ["sbx"],
   "workspaces": {
     ".": {
+      "entry": ["scripts/sbx-schemas.ts"],
+      "project": ["scripts/**/*.ts"],
       "ignoreDependencies": []
     },
     "tools": {
