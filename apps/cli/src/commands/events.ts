@@ -15,10 +15,8 @@ const fromSequenceOption = Options.optional(Options.integer('from-sequence')).pi
 const eventsTailEffect = (
   socketPath: string,
   json: boolean,
-  // eslint-disable-next-line functional/prefer-immutable-types -- Effect Option is immutable
-  graphId: Option.Option<string>,
-  // eslint-disable-next-line functional/prefer-immutable-types -- Effect Option is immutable
-  fromSequence: Option.Option<number>,
+  graphId: Readonly<Option.Option<string>>,
+  fromSequence: Readonly<Option.Option<number>>,
 ) =>
   Effect.gen(function* () {
     const clientResult = yield* Effect.either(makeIpcClient(socketPath));
@@ -50,11 +48,9 @@ const eventsTailEffect = (
     const subscribeResult = yield* Effect.either(
       client.subscribe(parameters, (event) => {
         if (json) {
-          // eslint-disable-next-line no-console
-          console.log(JSON.stringify(event));
+          Effect.runSync(Console.log(JSON.stringify(event)));
         } else {
-          // eslint-disable-next-line no-console
-          console.log(`[event] ${JSON.stringify(event)}`);
+          Effect.runSync(Console.log(`[event] ${JSON.stringify(event)}`));
         }
         return undefined;
       }),
