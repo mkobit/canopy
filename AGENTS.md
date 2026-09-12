@@ -51,6 +51,32 @@ We use `mise` to align local tool versions (Node.js) with CI.
 - Activate shell: `eval "$(mise activate bash)"`
 - Trust config: `mise trust`
 
+### Docker Sandbox Setup (Optional)
+
+To run checks within a Docker Sandbox environment, execute:
+
+```sh
+sbx env exec .sbx/sbxenv.yaml -- mise run check
+```
+
+Users may append a personal overlay configuration (e.g., `~/.local/share/sbx/personal/personal.sbxenv.yaml`):
+
+```sh
+sbx env exec .sbx/sbxenv.yaml ~/.local/share/sbx/personal/personal.sbxenv.yaml -- mise run check
+```
+
+The overlay is an optional host configuration and must not be referenced by tracked env files.
+
+For AGY substitute `.sbx/sbxenv.agy.yaml`; preserve its extra pinned agent-kit reference.
+Pass the same ordered environment files for plan/create/run/exec/rm, with `-- COMMAND` after both paths for exec.
+Explicit paths skip the automatic home `~/.sbxenv.yaml`; lists concatenate, and existing sandboxes need recreation to receive changed kits.
+Project-only usage remains the default. Valid usage examples include:
+
+```sh
+sbx env run .sbx/sbxenv.yaml
+sbx env run .sbx/sbxenv.yaml ~/.local/share/sbx/personal/personal.sbxenv.yaml
+```
+
 ## Linting rules — escape hatches
 
 `eslint-plugin-functional` is on by default for every package and `apps/web`.
