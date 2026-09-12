@@ -1,4 +1,3 @@
-/* eslint-disable functional/no-return-void */
 import { asEventId, err, ok } from '@canopy/graph';
 import type { GraphEvent } from '@canopy/graph';
 import type { ApiAdapterContext } from './api-context';
@@ -10,11 +9,17 @@ import type {
 } from './api-payloads';
 import { createApiAdapterError } from './result-errors';
 
+export type EventStreamListener = (message: EventStreamMessage) => unknown;
+
+interface EventStreamListenerSubscription {
+  readonly listener: EventStreamListener;
+}
+
 export interface EventStreamSubscription {
-  readonly subscribe: (listener: (message: EventStreamMessage) => void) => () => void;
+  readonly subscribe: (listener: EventStreamListener) => () => boolean;
   readonly getBufferCount: () => number;
   readonly isClosed: () => boolean;
-  readonly close: () => void;
+  readonly close: () => boolean;
 }
 
 export function createEventStreamSubscriber(
@@ -22,31 +27,56 @@ export function createEventStreamSubscriber(
   options: EventStreamOptions = {},
 ): EventStreamSubscription {
   const bufferCapacity = options.bufferCapacity ?? 100;
-  const listeners = { current: new Set<(message: EventStreamMessage) => void>() };
+  const listeners = {
+    current:
+      new Set<EventStreamListenerSubscription>() as ReadonlySet<EventStreamListenerSubscription>,
+  };
   const buffer = { current: [] as readonly EventStreamMessage[] };
   const closed = { current: false };
 
-  const notifyListeners = (message: EventStreamMessage): void => {
-    // eslint-disable-next-line functional/no-loop-statements -- notify listener set
-    for (const listener of listeners.current) {
-      listener(message);
-    }
-  };
+  const notifyListeners = (message: EventStreamMessage): readonly unknown[] =>
+    [...listeners.current].map((subscription) => subscription.listener(message));
 
-  const close = (): void => {
-    if (closed.current) return;
+  const close = (): boolean => {
+    if (closed.current) return false;
     closed.current = true;
     unsubscribeSession();
     notifyListeners({ kind: 'end' });
     listeners.current = new Set();
     buffer.current = [];
+    return true;
+  };
+
+  const processEvents = (eventsToProcess: readonly GraphEvent[], index = 0): boolean => {
+    if (index >= eventsToProcess.length) return true;
+    const event = eventsToProcess[index];
+    if (event === undefined) return true;
+
+    if (buffer.current.length >= bufferCapacity) {
+      const overflowMessage: EventStreamMessage = {
+        kind: 'overflow_disconnect',
+        gapCount: buffer.current.length + 1,
+        reason: `Subscriber buffer capacity of ${bufferCapacity} exceeded`,
+      };
+      notifyListeners(overflowMessage);
+      close();
+      return false;
+    }
+
+    const message: EventStreamMessage = {
+      kind: 'event',
+      event,
+    };
+    buffer.current = [...buffer.current, message];
+    notifyListeners(message);
+    return processEvents(eventsToProcess, index + 1);
   };
 
   const handleGraphEvents = (
     _graph: unknown,
     delta: readonly GraphEvent[] | Readonly<{ applied?: readonly GraphEvent[] }>,
-  ): void => {
-    if (closed.current) return;
+  ): boolean => {
+    if (closed.current) return false;
 
     const events = Array.isArray(delta)
       ? delta
@@ -54,39 +84,23 @@ export function createEventStreamSubscriber(
         ? delta.applied
         : [];
 
-    // eslint-disable-next-line functional/no-loop-statements -- process applied events
-    for (const event of events) {
-      if (buffer.current.length >= bufferCapacity) {
-        const overflowMessage: EventStreamMessage = {
-          kind: 'overflow_disconnect',
-          gapCount: buffer.current.length + 1,
-          reason: `Subscriber buffer capacity of ${bufferCapacity} exceeded`,
-        };
-        notifyListeners(overflowMessage);
-        close();
-        return;
-      }
-
-      const message: EventStreamMessage = {
-        kind: 'event',
-        event,
-      };
-      buffer.current = [...buffer.current, message];
-      notifyListeners(message);
-    }
+    return processEvents(events);
   };
 
   const unsubscribeSession = context.session
     ? context.session.subscribe(handleGraphEvents)
-    : (): void => {
-        // no-op fallback when session is not provided
-      };
+    : (): boolean => false;
 
   return {
     subscribe: (listener) => {
-      listeners.current = new Set([...listeners.current, listener]);
+      const subscription: EventStreamListenerSubscription = { listener };
+      listeners.current = new Set([...listeners.current, subscription]);
       return () => {
-        listeners.current = new Set([...listeners.current].filter((l) => l !== listener));
+        const previousSize = listeners.current.size;
+        listeners.current = new Set(
+          [...listeners.current].filter((current) => current !== subscription),
+        );
+        return listeners.current.size < previousSize;
       };
     },
     getBufferCount: () => buffer.current.length,

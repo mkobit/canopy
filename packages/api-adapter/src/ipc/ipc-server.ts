@@ -1,4 +1,4 @@
-/* eslint-disable functional/no-return-void, max-lines-per-function, functional/prefer-immutable-types */
+/* eslint-disable max-lines-per-function */
 import * as fs from 'node:fs';
 import * as net from 'node:net';
 import * as path from 'node:path';
@@ -22,7 +22,7 @@ export type IpcServerOptions = Readonly<{
 
 export interface IpcServer {
   readonly listen: () => Promise<Result<void, IpcSocketInUseError | IpcProtocolError>>;
-  readonly close: () => Promise<void>;
+  readonly close: () => Promise<boolean>;
   readonly getSocketPath: () => string;
   readonly getActiveConnectionCount: () => number;
 }
@@ -31,23 +31,25 @@ const MAX_LINE_BYTES = 10 * 1024 * 1024; // 10MB limit
 
 // Sends NDJSON line over a socket with 15-second slow-consumer backpressure drain timeout.
 const sendToSocket = (
-  socket: net.Socket,
+  socket: Readonly<net.Socket>,
   payload: string,
-  onDrainTimeout?: (() => void) | undefined,
+  onDrainTimeout?: (() => unknown) | undefined,
 ): boolean => {
   if (socket.destroyed || !socket.writable) return false;
 
   const canWrite = socket.write(`${payload}\n`);
   if (!canWrite) {
-    const onDrain = (): void => {
+    const onDrain = (): boolean => {
       clearTimeout(drainTimer);
       socket.removeListener('drain', onDrain);
+      return false;
     };
 
     const drainTimer = setTimeout(() => {
       socket.removeListener('drain', onDrain);
       onDrainTimeout?.();
       socket.destroy();
+      return undefined;
     }, 15_000);
 
     socket.once('drain', onDrain);
@@ -55,7 +57,7 @@ const sendToSocket = (
   return canWrite;
 };
 
-const safeUnlinkSync = (targetPath: string): void => {
+const safeUnlinkSync = (targetPath: string): boolean => {
   // eslint-disable-next-line functional/no-try-statements -- fs.unlinkSync boundary
   try {
     if (fs.existsSync(targetPath)) {
@@ -64,6 +66,7 @@ const safeUnlinkSync = (targetPath: string): void => {
   } catch {
     // Ignore stale socket unlink failures
   }
+  return true;
 };
 
 const safeMkdirSync = (directoryPath: string): Result<void, IpcProtocolError> => {
@@ -84,7 +87,7 @@ const safeMkdirSync = (directoryPath: string): Result<void, IpcProtocolError> =>
 };
 
 const startNetServer = (
-  server: net.Server,
+  server: Readonly<net.Server>,
   socketPath: string,
 ): Promise<Result<void, IpcProtocolError>> =>
   new Promise((resolve) => {
@@ -93,6 +96,7 @@ const startNetServer = (
     try {
       server.listen(socketPath, () => {
         resolve(ok(undefined));
+        return undefined;
       });
     } catch (error) {
       resolve(
@@ -116,7 +120,9 @@ const startNetServer = (
           ),
         ),
       );
+      return undefined;
     });
+    return undefined;
   });
 
 // Probes target socket path to detect active listener vs stale socket file.
@@ -124,7 +130,7 @@ const probeSocketPath = (socketPath: string): Promise<Result<boolean, IpcSocketI
   return new Promise((resolve) => {
     if (!fs.existsSync(socketPath)) {
       resolve(ok(true));
-      return;
+      return undefined;
     }
 
     const client = net.connect(socketPath);
@@ -132,56 +138,64 @@ const probeSocketPath = (socketPath: string): Promise<Result<boolean, IpcSocketI
     client.on('connect', () => {
       client.destroy();
       resolve(err(createIpcSocketInUseError(socketPath)));
+      return undefined;
     });
 
     client.on('error', () => {
       client.destroy();
       safeUnlinkSync(socketPath);
       resolve(ok(true));
+      return undefined;
     });
+    return undefined;
   });
+};
+
+const runAll = (actions: readonly (() => unknown)[], index = 0): boolean => {
+  if (index >= actions.length) return true;
+  const action = actions[index];
+  if (action !== undefined) {
+    action();
+  }
+  return runAll(actions, index + 1);
 };
 
 export const createIpcServer = (options: IpcServerOptions): IpcServer => {
   const { socketPath, context } = options;
-  const activeSockets = { current: new Set<net.Socket>() };
+  const activeSockets = { current: new Set<Readonly<net.Socket>>() };
   const activeSubscriptions = {
-    current: new Map<net.Socket, ReadonlyMap<string, () => void>>(),
+    current: new Map<Readonly<net.Socket>, ReadonlyMap<string, () => unknown>>(),
   };
   // Per-connection draft registries. Ephemeral and connection-scoped by design (design.md "No new
   // persistence for draft state") -- never written to the event log or any store, and cleared
   // whenever the owning socket closes (task 5.7 / "Cleanup on disconnect").
   const activeDraftRegistries = {
-    current: new Map<net.Socket, ReadonlyMap<string, DraftRegistryEntry>>(),
+    current: new Map<Readonly<net.Socket>, ReadonlyMap<string, DraftRegistryEntry>>(),
   };
 
   const netServer = { current: undefined as net.Server | undefined };
   const isListening = { current: false };
 
-  const cleanupSocketSubscriptions = (socket: net.Socket): void => {
+  const cleanupSocketSubscriptions = (socket: Readonly<net.Socket>): boolean => {
     const subs = activeSubscriptions.current.get(socket);
     if (subs) {
-      // eslint-disable-next-line functional/no-loop-statements
-      for (const unbind of subs.values()) {
-        unbind();
-      }
+      runAll([...subs.values()]);
       activeSubscriptions.current = new Map(
         [...activeSubscriptions.current].filter(([s]) => s !== socket),
       );
     }
+    return true;
   };
 
-  const cleanupSocketDrafts = (socket: net.Socket): void => {
+  const cleanupSocketDrafts = (socket: Readonly<net.Socket>): boolean => {
     const drafts = activeDraftRegistries.current.get(socket);
     if (drafts) {
-      // eslint-disable-next-line functional/no-loop-statements
-      for (const entry of drafts.values()) {
-        entry.session.discard();
-      }
+      runAll([...drafts.values()].map((entry) => () => entry.session.discard()));
       activeDraftRegistries.current = new Map(
         [...activeDraftRegistries.current].filter(([s]) => s !== socket),
       );
     }
+    return true;
   };
 
   // Sum of live draft counts across every connection, used to enforce the global concurrent-draft
@@ -189,7 +203,7 @@ export const createIpcServer = (options: IpcServerOptions): IpcServer => {
   const totalDraftCount = (): number =>
     activeDraftRegistries.current.values().reduce((sum, drafts) => sum + drafts.size, 0);
 
-  const handleConnection = (socket: net.Socket): void => {
+  const handleConnection = (socket: Readonly<net.Socket>): boolean => {
     activeSockets.current = new Set([...activeSockets.current, socket]);
     activeSubscriptions.current = new Map([...activeSubscriptions.current, [socket, new Map()]]);
     activeDraftRegistries.current = new Map([
@@ -199,28 +213,32 @@ export const createIpcServer = (options: IpcServerOptions): IpcServer => {
 
     const streamBuffer = { current: '' };
 
-    socket.on('data', (chunk: Buffer) => {
+    socket.on('data', (chunk: Buffer): boolean => {
       const combined = streamBuffer.current + chunk.toString('utf8');
 
       if (combined.length > MAX_LINE_BYTES && !combined.includes('\n')) {
         // Oversized line without newline delimiter - destroy socket for memory safety
         socket.destroy();
-        return;
+        return false;
       }
 
       const lastNewline = combined.lastIndexOf('\n');
       if (lastNewline === -1) {
         streamBuffer.current = combined;
-        return;
+        return true;
       }
 
       const completeLines = combined.slice(0, lastNewline).split('\n');
       streamBuffer.current = combined.slice(lastNewline + 1);
 
-      // eslint-disable-next-line functional/no-loop-statements
-      for (const rawLine of completeLines) {
-        const line = rawLine.trim();
-        if (line.length > 0) {
+      const linesToProcess = completeLines
+        .map((rawLine) => rawLine.trim())
+        .filter((line) => line.length > 0);
+
+      const processLines = (lines: readonly string[], index = 0): boolean => {
+        if (index >= lines.length) return true;
+        const line = lines[index];
+        if (line !== undefined) {
           // Process message asynchronously
           const draftsMap =
             activeDraftRegistries.current.get(socket) ?? new Map<string, DraftRegistryEntry>();
@@ -251,7 +269,7 @@ export const createIpcServer = (options: IpcServerOptions): IpcServer => {
                 const { subscriptionId, subscriber } = newSubscription;
                 const unbindListener = subscriber.subscribe((message) => {
                   if (message.kind !== 'event' || !message.event) {
-                    return;
+                    return false;
                   }
                   sendToSocket(
                     socket,
@@ -261,6 +279,7 @@ export const createIpcServer = (options: IpcServerOptions): IpcServer => {
                       params: { subscriptionId, event: message.event },
                     }),
                   );
+                  return true;
                 });
                 const nextSubsMap = new Map([
                   ...subsMap,
@@ -269,6 +288,7 @@ export const createIpcServer = (options: IpcServerOptions): IpcServer => {
                     () => {
                       unbindListener();
                       subscriber.close();
+                      return true;
                     },
                   ],
                 ]);
@@ -336,17 +356,23 @@ export const createIpcServer = (options: IpcServerOptions): IpcServer => {
             return undefined;
           });
         }
-      }
+        return processLines(lines, index + 1);
+      };
+
+      processLines(linesToProcess);
+      return true;
     });
 
-    const onCloseOrError = (): void => {
+    const onCloseOrError = (): boolean => {
       cleanupSocketSubscriptions(socket);
       cleanupSocketDrafts(socket);
       activeSockets.current = new Set([...activeSockets.current].filter((s) => s !== socket));
+      return true;
     };
 
     socket.on('close', onCloseOrError);
     socket.on('error', onCloseOrError);
+    return true;
   };
 
   const listen = async (): Promise<Result<void, IpcSocketInUseError | IpcProtocolError>> => {
@@ -365,7 +391,10 @@ export const createIpcServer = (options: IpcServerOptions): IpcServer => {
       return err(mkdirResult.error);
     }
 
-    const server = net.createServer(handleConnection);
+    const server = net.createServer((s) => {
+      handleConnection(s);
+      return undefined;
+    });
     netServer.current = server;
 
     const startResult = await startNetServer(server, socketPath);
@@ -377,19 +406,25 @@ export const createIpcServer = (options: IpcServerOptions): IpcServer => {
     return ok(undefined);
   };
 
-  const close = async (): Promise<void> => {
+  const close = async (): Promise<boolean> => {
     if (!isListening.current && !netServer.current) {
-      return;
+      return false;
     }
 
     isListening.current = false;
 
-    // eslint-disable-next-line functional/no-loop-statements
-    for (const socket of activeSockets.current) {
-      cleanupSocketSubscriptions(socket);
-      cleanupSocketDrafts(socket);
-      socket.destroy();
-    }
+    const destroySockets = (sockets: readonly Readonly<net.Socket>[], index = 0): boolean => {
+      if (index >= sockets.length) return true;
+      const socket = sockets[index];
+      if (socket !== undefined) {
+        cleanupSocketSubscriptions(socket);
+        cleanupSocketDrafts(socket);
+        socket.destroy();
+      }
+      return destroySockets(sockets, index + 1);
+    };
+
+    destroySockets([...activeSockets.current]);
     activeSockets.current = new Set();
     activeSubscriptions.current = new Map();
     activeDraftRegistries.current = new Map();
@@ -399,12 +434,14 @@ export const createIpcServer = (options: IpcServerOptions): IpcServer => {
         netServer.current.close(() => {
           netServer.current = undefined;
           safeUnlinkSync(socketPath);
-          resolve();
+          resolve(true);
+          return undefined;
         });
       } else {
         safeUnlinkSync(socketPath);
-        resolve();
+        resolve(true);
       }
+      return undefined;
     });
   };
 

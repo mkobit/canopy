@@ -1,4 +1,3 @@
-/* eslint-disable functional/no-return-void */
 import type { EventBus } from '@canopy/graph';
 import type { ApiAdapterContext } from '../../api-context';
 import type { EventStreamMessage } from '../../api-payloads';
@@ -23,7 +22,7 @@ export const createSubscriptionResolvers = (context: ApiAdapterContext, _eventBu
 
       type SubscriptionResolver = (
         result: Readonly<IteratorResult<EventStreamSubscriptionValue>>,
-      ) => void;
+      ) => unknown;
       const messageQueue = { current: [] as readonly EventStreamMessage[] };
       const pendingResolve = {
         current: null as SubscriptionResolver | null,
@@ -31,7 +30,7 @@ export const createSubscriptionResolvers = (context: ApiAdapterContext, _eventBu
       const isDone = { current: false };
 
       const unsubscribe = subscriber.subscribe((message: EventStreamMessage) => {
-        if (isDone.current) return;
+        if (isDone.current) return false;
 
         const result: Readonly<IteratorResult<EventStreamSubscriptionValue>> = {
           value: { eventStream: message },
@@ -45,6 +44,7 @@ export const createSubscriptionResolvers = (context: ApiAdapterContext, _eventBu
         } else {
           messageQueue.current = [...messageQueue.current, message];
         }
+        return true;
       });
 
       return {
