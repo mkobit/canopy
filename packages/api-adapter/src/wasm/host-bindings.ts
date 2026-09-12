@@ -1,4 +1,3 @@
-/* eslint-disable functional/no-return-void */
 import type { Result } from '@canopy/graph';
 import { err, ok } from '@canopy/graph';
 import type { ApiAdapterContext } from '../api-context';
@@ -48,7 +47,7 @@ export type FuelMeter = Readonly<{
 
 export type ReentrancyGuard = Readonly<{
   enter: () => Result<void, ApiAdapterError>;
-  exit: () => void;
+  exit: () => boolean;
 }>;
 
 export type MemoryChecker = Readonly<{
@@ -192,22 +191,20 @@ const invokeHostBinding = async <TInput, TOutput>(
     return ok(outputJson);
   };
 
-  return runBinding()
-    .catch((error: unknown) =>
-      err(
-        toWitError(
-          createApiAdapterError(
-            'INTERNAL_ERROR',
-            `Uncaught exception during host binding execution: ${error instanceof Error ? error.message : String(error)}`,
-          ),
+  const outcome = await runBinding().catch((error: unknown) =>
+    err(
+      toWitError(
+        createApiAdapterError(
+          'INTERNAL_ERROR',
+          `Uncaught exception during host binding execution: ${error instanceof Error ? error.message : String(error)}`,
         ),
       ),
-    )
-    .finally(() => {
-      if (options.reentrancyGuard) {
-        options.reentrancyGuard.exit();
-      }
-    });
+    ),
+  );
+  if (options.reentrancyGuard) {
+    options.reentrancyGuard.exit();
+  }
+  return outcome;
 };
 
 // Creates host import bindings for WebAssembly Interface Types (WIT).

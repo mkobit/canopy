@@ -1,4 +1,4 @@
-/* eslint-disable functional/no-return-void, functional/prefer-tacit, max-lines-per-function */
+/* eslint-disable max-lines-per-function */
 import * as net from 'node:net';
 import { err, ok } from '@canopy/graph';
 import type { ApiEdgePayload, ApiNodePayload } from '../api-payloads';
@@ -76,7 +76,7 @@ export interface IpcClient {
   ) => Effect.Effect<Readonly<{ id: string }>, IpcClientError>;
   readonly subscribe: (
     parameters?: Readonly<SubscribeParameters>,
-    onEvent?: (event: unknown) => void,
+    onEvent?: (event: unknown) => unknown,
   ) => Effect.Effect<SubscribeResult, IpcClientError>;
   readonly unsubscribe: (
     subscriptionId: string,
@@ -112,11 +112,14 @@ export const makeIpcClient = (socketPath: string): Effect.Effect<IpcClient, IpcC
     const pendingRequests = {
       current: new Map<
         JsonRpcId,
-        { resolve: (response: JsonRpcResponse) => void; reject: (error: IpcClientError) => void }
+        {
+          resolve: (response: JsonRpcResponse) => unknown;
+          reject: (error: IpcClientError) => unknown;
+        }
       >(),
     };
     const subscriptionCallbacks = {
-      current: new Map<string, (event: unknown) => void>(),
+      current: new Map<string, (event: unknown) => unknown>(),
     };
     const streamBuffer = { current: '' };
 
@@ -143,11 +146,11 @@ export const makeIpcClient = (socketPath: string): Effect.Effect<IpcClient, IpcC
 
     if (!connectResult.ok) {
       resume(Effect.fail(connectResult.error));
-      return;
+      return undefined;
     }
     const socket = connectResult.value;
 
-    socket.on('connect', () => {
+    socket.on('connect', (): boolean => {
       // eslint-disable-next-line unicorn/consistent-function-scoping
       const sendRpcRequest = <T>(method: string, parameters?: unknown): Promise<T> => {
         return new Promise<T>((resolve, reject) => {
@@ -159,7 +162,7 @@ export const makeIpcClient = (socketPath: string): Effect.Effect<IpcClient, IpcC
             [
               id,
               {
-                resolve: (response: JsonRpcResponse) => {
+                resolve: (response: JsonRpcResponse): unknown => {
                   if (response.error) {
                     reject(
                       createIpcClientError({
@@ -168,11 +171,15 @@ export const makeIpcClient = (socketPath: string): Effect.Effect<IpcClient, IpcC
                         details: response.error.data,
                       }),
                     );
-                  } else {
-                    resolve(response.result as T);
+                    return undefined;
                   }
+                  resolve(response.result as T);
+                  return undefined;
                 },
-                reject: (error: IpcClientError) => reject(error),
+                reject: (error: IpcClientError): unknown => {
+                  reject(error);
+                  return undefined;
+                },
               },
             ],
           ]);
@@ -185,6 +192,7 @@ export const makeIpcClient = (socketPath: string): Effect.Effect<IpcClient, IpcC
           });
 
           socket.write(`${payload}\n`);
+          return undefined;
         });
       };
 
@@ -511,27 +519,33 @@ export const makeIpcClient = (socketPath: string): Effect.Effect<IpcClient, IpcC
             subscriptionCallbacks.current = new Map();
             pendingRequests.current = new Map();
             socket.destroy();
+            return undefined;
           }),
       };
 
       resume(Effect.succeed(client));
+      return true;
     });
 
-    socket.on('data', (chunk: Buffer) => {
+    socket.on('data', (chunk: Buffer): boolean => {
       const combined = streamBuffer.current + chunk.toString('utf8');
       const lastNewline = combined.lastIndexOf('\n');
       if (lastNewline === -1) {
         streamBuffer.current = combined;
-        return;
+        return true;
       }
 
       const completeLines = combined.slice(0, lastNewline).split('\n');
       streamBuffer.current = combined.slice(lastNewline + 1);
 
-      // eslint-disable-next-line functional/no-loop-statements
-      for (const rawLine of completeLines) {
-        const line = rawLine.trim();
-        if (line.length > 0) {
+      const linesToProcess = completeLines
+        .map((rawLine) => rawLine.trim())
+        .filter((line) => line.length > 0);
+
+      const processLines = (lines: readonly string[], index = 0): boolean => {
+        if (index >= lines.length) return true;
+        const line = lines[index];
+        if (line !== undefined) {
           const rawObject = tryParseJson<
             Readonly<{
               id?: JsonRpcId;
@@ -558,23 +572,40 @@ export const makeIpcClient = (socketPath: string): Effect.Effect<IpcClient, IpcC
             }
           }
         }
-      }
+        return processLines(lines, index + 1);
+      };
+
+      processLines(linesToProcess);
+      return true;
     });
 
-    socket.on('error', (error: Error) => {
+    socket.on('error', (error: Error): boolean => {
       const clientError = createIpcClientError({
         code: JSON_RPC_ERROR_CODES.INTERNAL_ERROR,
         message: `Socket error: ${error.message}`,
       });
 
-      // Reject all pending requests
-      // eslint-disable-next-line functional/no-loop-statements
-      for (const pending of pendingRequests.current.values()) {
-        pending.reject(clientError);
-      }
+      const rejectAll = (
+        requests: readonly Readonly<{
+          reject: (error: IpcClientError) => unknown;
+        }>[],
+        index = 0,
+      ): boolean => {
+        if (index >= requests.length) return true;
+        const pending = requests[index];
+        if (pending !== undefined) {
+          pending.reject(clientError);
+        }
+        return rejectAll(requests, index + 1);
+      };
+
+      rejectAll([...pendingRequests.current.values()]);
       pendingRequests.current = new Map();
 
       resume(Effect.fail(clientError));
+      return true;
     });
+
+    return undefined;
   });
 };

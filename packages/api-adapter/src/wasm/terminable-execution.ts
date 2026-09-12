@@ -1,4 +1,3 @@
-/* eslint-disable functional/no-return-void */
 import type { Result } from '@canopy/graph';
 import { err } from '@canopy/graph';
 import type { ApiAdapterError } from '../result-errors';
@@ -46,13 +45,13 @@ export const hardenGuestWorkerScope = (scope: object): boolean => {
 // resolves `execute` is still stopped when the wall-clock deadline fires.
 export type TerminableGuestRunner = Readonly<{
   execute: () => Promise<Result<string, ApiAdapterError>>;
-  terminate: () => void;
+  terminate: () => unknown;
 }>;
 
 const createDeadline = (
   runner: TerminableGuestRunner,
   timeoutMs: number,
-): Readonly<{ promise: Promise<Result<string, ApiAdapterError>>; cancel: () => void }> => {
+): Readonly<{ promise: Promise<Result<string, ApiAdapterError>>; cancel: () => boolean }> => {
   const cancelController = new AbortController();
   const promise = new Promise<Result<string, ApiAdapterError>>((resolve) => {
     const timer = setTimeout(() => {
@@ -65,6 +64,7 @@ const createDeadline = (
           ),
         ),
       );
+      return undefined;
     }, timeoutMs);
 
     if (typeof timer === 'object' && 'unref' in timer && typeof timer.unref === 'function') {
@@ -75,15 +75,18 @@ const createDeadline = (
       'abort',
       () => {
         clearTimeout(timer);
+        return undefined;
       },
       { once: true },
     );
+    return undefined;
   });
 
   return {
     promise,
-    cancel: () => {
+    cancel: (): boolean => {
       cancelController.abort();
+      return true;
     },
   };
 };

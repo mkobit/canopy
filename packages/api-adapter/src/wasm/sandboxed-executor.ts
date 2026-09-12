@@ -1,4 +1,3 @@
-/* eslint-disable functional/no-return-void */
 import type { Result } from '@canopy/graph';
 import { err, ok } from '@canopy/graph';
 import type { ApiAdapterContext } from '../api-context';
@@ -76,8 +75,9 @@ export const createReentrancyGuard = (): ReentrancyGuard => {
       inFlight.current = true;
       return ok(undefined);
     },
-    exit: (): void => {
+    exit: (): boolean => {
       inFlight.current = false;
+      return false;
     },
   };
 };
@@ -142,11 +142,13 @@ export const executeSandboxedGuestPlugin = async (
           ),
         ),
       );
+      return undefined;
     }, timeoutMs);
 
     if (typeof timer === 'object' && 'unref' in timer && typeof timer.unref === 'function') {
       timer.unref();
     }
+    return undefined;
   });
 
   const executionPromise = (async () => plugin(hostBindings, inputJson))()

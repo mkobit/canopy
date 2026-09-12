@@ -1,4 +1,3 @@
-/* eslint-disable functional/no-return-void */
 import type { EventBus } from '@canopy/graph';
 import { createInstant } from '@canopy/graph';
 import type { ApiAdapterContext } from '../../api-context';
@@ -103,11 +102,13 @@ const createSubscribeGenerator = async function* (
   });
 
   const queue = { current: [] as readonly ConnectEventStreamItem[] };
-  const resolveNext = { current: null as ((item: ConnectEventStreamItem | null) => void) | null };
+  const resolveNext = {
+    current: null as ((item: ConnectEventStreamItem | null) => unknown) | null,
+  };
   const closed = { current: false };
 
   const unsubscribe = subscriber.subscribe((message: EventStreamMessage) => {
-    if (closed.current) return;
+    if (closed.current) return false;
 
     if (message.kind === 'end') {
       closed.current = true;
@@ -116,7 +117,7 @@ const createSubscribeGenerator = async function* (
         resolveNext.current = null;
         resolve(null);
       }
-      return;
+      return true;
     }
 
     const item = formatMessageToConnectItem(message);
@@ -132,28 +133,42 @@ const createSubscribeGenerator = async function* (
     if (message.kind === 'overflow_disconnect') {
       closed.current = true;
     }
+    return true;
   });
+
+  const drainQueueAndStream = async function* (): AsyncGenerator<
+    ConnectEventStreamItem,
+    void,
+    unknown
+  > {
+    if (closed.current && queue.current.length === 0) {
+      return;
+    }
+
+    if (queue.current.length > 0) {
+      const head = queue.current[0];
+      queue.current = queue.current.slice(1);
+      if (head !== undefined) {
+        yield head;
+      }
+      yield* drainQueueAndStream();
+      return;
+    }
+
+    const { promise, resolve } = Promise.withResolvers<ConnectEventStreamItem | null>();
+    resolveNext.current = resolve;
+    const nextItem = await promise;
+    if (nextItem === null) {
+      return;
+    }
+    yield nextItem;
+    yield* drainQueueAndStream();
+    return;
+  };
 
   // eslint-disable-next-line functional/no-try-statements -- stream cleanup on completion
   try {
-    // eslint-disable-next-line functional/no-loop-statements -- async generator stream consumption
-    while (!closed.current || queue.current.length > 0) {
-      if (queue.current.length > 0) {
-        const head = queue.current[0];
-        queue.current = queue.current.slice(1);
-        if (head !== undefined) {
-          yield head;
-        }
-      } else {
-        const { promise, resolve } = Promise.withResolvers<ConnectEventStreamItem | null>();
-        resolveNext.current = resolve;
-        const nextItem = await promise;
-        if (nextItem === null) {
-          break;
-        }
-        yield nextItem;
-      }
-    }
+    yield* drainQueueAndStream();
   } finally {
     closed.current = true;
     unsubscribe();
@@ -193,10 +208,21 @@ const createReplayGenerator = async function* (
     return;
   }
 
-  // eslint-disable-next-line functional/no-loop-statements -- yield replayed items
-  for (const message of replayResult.value) {
-    yield formatMessageToConnectItem(message);
-  }
+  const yieldMessages = async function* (
+    messages: readonly EventStreamMessage[],
+    index = 0,
+  ): AsyncGenerator<ConnectEventStreamItem, void, unknown> {
+    if (index >= messages.length) {
+      return;
+    }
+    const message = messages[index];
+    if (message !== undefined) {
+      yield formatMessageToConnectItem(message);
+    }
+    yield* yieldMessages(messages, index + 1);
+  };
+
+  yield* yieldMessages(replayResult.value);
 };
 
 export const createConnectEventStreamHandlers = (
