@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { asDeviceId, asGraphId, createGraphSession } from '@canopy/graph';
+import { asDeviceId, asGraphId, asNodeId, createGraphSession, ok } from '@canopy/graph';
 import { createInMemoryEventStore } from '@canopy/storage';
 import { createApiAdapterContext } from '../src/api-context';
 import type { WasmHostBindings } from '../src/wasm/host-bindings';
@@ -53,6 +53,22 @@ const panicPlugin = (): string => {
   throw new Error('Guest panicking');
 };
 
+const guestSuppliedWildcardMutationPlugin = async (
+  hostBindings: WasmHostBindings,
+): Promise<string> => {
+  const result = await hostBindings.mutations.createNode(
+    '*',
+    JSON.stringify({ id: 'wildcard-node', type: 'note', properties: {} }),
+  );
+  return JSON.stringify(result);
+};
+
+const guestSuppliedWildcardReadPlugin = async (hostBindings: WasmHostBindings): Promise<string> =>
+  JSON.stringify(await hostBindings.queries.queryNodes('*', JSON.stringify({})));
+
+const guestSuppliedEmptyReadPlugin = async (hostBindings: WasmHostBindings): Promise<string> =>
+  JSON.stringify(await hostBindings.queries.queryNodes('', JSON.stringify({})));
+
 describe('WASM Sandboxed Execution Boundary', () => {
   it('executes guest plugin successfully within sandbox', async () => {
     const context = await setupTestContext();
@@ -70,6 +86,114 @@ describe('WASM Sandboxed Execution Boundary', () => {
       expect(output.status).toBe('created');
       expect(output.nodeId).toBe('sb-1');
     }
+  });
+
+  it('enforces the executor token when a guest supplies a wildcard mutation token', async () => {
+    const context = await setupTestContext();
+    const initialEventsResult = await context.eventLogStore?.getEvents(graphId);
+    const initialEventCount = initialEventsResult?.ok ? initialEventsResult.value.length : 0;
+
+    const result = await executeSandboxedGuestPlugin(
+      context,
+      'read:nodes',
+      '{}',
+      guestSuppliedWildcardMutationPlugin,
+    );
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const hostResult = JSON.parse(result.value) as { ok: boolean; error?: { code: string } };
+      expect(hostResult.ok).toBe(false);
+      expect(hostResult.error?.code).toBe('PermissionDenied');
+    }
+    const eventsResult = await context.eventLogStore?.getEvents(graphId);
+    expect(eventsResult?.ok).toBe(true);
+    if (eventsResult?.ok) {
+      expect(eventsResult.value).toHaveLength(initialEventCount);
+    }
+    expect(context.session?.graph().nodes.has(asNodeId('wildcard-node'))).toBe(false);
+  });
+
+  it('allows a host-authorized write even when the guest supplies a wildcard token', async () => {
+    const context = await setupTestContext();
+
+    const result = await executeSandboxedGuestPlugin(
+      context,
+      'write:create-node',
+      '{}',
+      guestSuppliedWildcardMutationPlugin,
+    );
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect((JSON.parse(result.value) as { ok: boolean }).ok).toBe(true);
+    }
+  });
+
+  it('allows an empty guest token for a read under an executor read grant', async () => {
+    const context = await setupTestContext();
+
+    const result = await executeSandboxedGuestPlugin(
+      context,
+      'read:nodes',
+      '{}',
+      guestSuppliedEmptyReadPlugin,
+    );
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const hostResult = JSON.parse(result.value) as { ok: boolean; value?: string };
+      expect(hostResult.ok).toBe(true);
+      expect(Array.isArray(JSON.parse(hostResult.value ?? ''))).toBe(true);
+    }
+  });
+
+  it('does not dispatch remotely when the executor token denies a guest mutation', async () => {
+    const context = await setupTestContext();
+    let dispatchCount = 0;
+
+    const result = await executeSandboxedGuestPlugin(
+      context,
+      'read:nodes',
+      '{}',
+      guestSuppliedWildcardMutationPlugin,
+      {
+        remoteDispatch: async () => {
+          dispatchCount += 1;
+          return ok('{}');
+        },
+      },
+    );
+
+    expect(result.ok).toBe(true);
+    expect(dispatchCount).toBe(0);
+  });
+
+  it('dispatches remotely with the executor token and gives it to custom validation', async () => {
+    const context = await setupTestContext();
+    let dispatchedToken = '';
+    let validatedToken = '';
+
+    const result = await executeSandboxedGuestPlugin(
+      context,
+      'read:nodes',
+      '{}',
+      guestSuppliedWildcardReadPlugin,
+      {
+        validateCapability: (token) => {
+          validatedToken = token;
+          return token === 'read:nodes';
+        },
+        remoteDispatch: async (_capability, token) => {
+          dispatchedToken = token;
+          return ok('[]');
+        },
+      },
+    );
+
+    expect(result.ok).toBe(true);
+    expect(validatedToken).toBe('read:nodes');
+    expect(dispatchedToken).toBe('read:nodes');
   });
 
   it('rejects input payload exceeding memory byte quota', async () => {

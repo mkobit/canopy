@@ -64,4 +64,23 @@ describe('WASM WIT Protocol Adapter', () => {
       expect(nodes[0]?.properties.text).toBe('hello');
     }
   });
+
+  it('binds the execution token through the adapter facade', async () => {
+    const context = await setupTestContext();
+    const adapter = createWasmAdapter(context);
+
+    const result = await adapter.executeGuestPlugin('read:nodes', '{}', async (hostBindings) =>
+      JSON.stringify(
+        await hostBindings.mutations.createNode(
+          '*',
+          JSON.stringify({ id: 'facade-blocked', type: 'msg', properties: {} }),
+        ),
+      ),
+    );
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect((JSON.parse(result.value) as { ok: boolean }).ok).toBe(false);
+    }
+  });
 });
