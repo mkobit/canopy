@@ -130,6 +130,7 @@ export const executeSandboxedGuestPlugin = async (
       validateCapability: options.validateCapability,
     }),
     ...(options.remoteDispatch !== undefined && { remoteDispatch: options.remoteDispatch }),
+    boundToken: token,
   });
 
   const timeoutPromise = new Promise<Result<string, ApiAdapterError>>((resolve) => {
