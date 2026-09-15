@@ -2,6 +2,15 @@
 
 Jules is a scheduled autonomous agent for maintenance tasks.
 
+## Product context
+
+Read [Core tenets](../docs/architecture/core-tenets.md) before interpreting designs or editing issue descriptions.
+Canopy targets a product suite sharing a graph domain: PKMS, remote memory, graph knowledge database access, and secure plugins.
+Rendering is resolved through graph definitions and supported application or WASM components.
+CLI, MCP, and agent features consume the core model.
+Preserve the distinction between current contracts, intended capabilities, and unresolved decisions when enriching, pruning, or archiving work.
+This context does not expand the session's authorized scope.
+
 ## How Jules sessions work
 
 Recurring maintenance sessions are triggered manually on a schedule by the maintainer typing a prompt in the Jules UI, instructing Jules to read a specific file from `.jules/prompts/` and execute it.

@@ -1,1 +1,17 @@
 schema: spec-driven
+context: |
+  Read docs/architecture/core-tenets.md before drafting or reviewing designs.
+  Canopy's core graph domain supports PKMS, remote memory, and graph database uses.
+  The goal is a full product suite with a secure plugin ecosystem, not only the current web application.
+  Types, queries, views, and renderer definitions are graph entities.
+  Rendering applications resolve graph definitions to supported WASM or native components.
+  Agents, CLI, MCP, and other APIs are features built on that domain, not its foundation.
+  Preserve event sourcing, separated command/query paths, time-travel intent, and host enforcement.
+  Use docs/design/2026-02-06-core-data-model.md for primitives and docs/architecture/bounded-contexts.md for current package ownership.
+  Distinguish implemented contracts, proposed behavior, and unresolved product questions.
+rules:
+  design:
+    - Explain the user-visible outcome and relevant core domain concepts in plain language.
+    - Identify whether behavior belongs to core semantics, a projection, a plugin, an application, or a protocol adapter; explain unresolved placement.
+    - Link authoritative specifications and explain relevant event write/read paths, time travel, concurrency, and capability boundaries.
+    - Include adversarial review and actionable mitigations before implementation tasks are staged.
