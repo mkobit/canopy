@@ -1,8 +1,12 @@
 # content-rendering-plugin Specification
 
 ## Purpose
-TBD - created by archiving change wasm-content-rendering. Update Purpose after archive.
+
+Define execution and isolation for WASM content renderers selected through graph-resident definitions and Plugin nodes.
+Rendering plugins extend the core graph model through the host's supported capabilities, as described in [Core tenets](../../../docs/architecture/core-tenets.md).
+
 ## Requirements
+
 ### Requirement: WASM renderer execution
 
 The system SHALL execute a `RendererDefinition` whose `rendererKind` is `wasm` as a sandboxed WASM guest plugin via `executeSandboxedGuestPlugin`, passing the target content node's properties as input JSON and receiving the plugin's render output as JSON.
@@ -109,4 +113,3 @@ The system SHALL execute an untrusted `wasm` renderer through the terminable wor
 
 - **WHEN** the host executes the first-party Markdown renderer
 - **THEN** its existing Tier-1 sanitized-inline behavior SHALL be preserved
-

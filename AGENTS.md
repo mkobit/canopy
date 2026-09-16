@@ -2,9 +2,17 @@
 
 Canopy is a graph-based personal knowledge management system.
 
-## Design Documentation
+## Design documentation
 
-The canonical design document is located at `docs/design/2025-01-21-canopy-design-v0.1.md`.
+Read [Core tenets](docs/architecture/core-tenets.md) for product intent and design interpretation.
+The canonical core data model is [Core data model and type system](docs/design/2026-02-06-core-data-model.md).
+The [original design](docs/design/2025-01-21-canopy-design-v0.1.md) provides historical context; later domain designs and accepted specifications supersede conflicting details.
+
+Canopy is intended to become a suite of products for PKMS, remote memory, graph knowledge database access, and a secure plugin ecosystem, sharing one core domain model.
+Graph-defined types, queries, views, and renderers are foundational; rendering applications resolve these definitions to supported native or WASM components.
+Agents, CLI, MCP, and other API surfaces build on that domain.
+Before changing a design or enriching a bead, read the core tenets and distinguish current contracts, product intent, and open decisions.
+Do not narrow the product to the current web UI or promote an unresolved feature into a kernel invariant.
 
 ## Package dependency graph
 
@@ -76,9 +84,9 @@ This exists so perf-sensitive code (where mutation or an O(delta) algorithm was 
 
 Perf-based module inventory:
 
-| Module                                         | Benchmark                                           | Status                                                     |
-| :--------------------------------------------- | :-------------------------------------------------- | :--------------------------------------------------------- |
-| `packages/graph/src/indexes.ts`                | `packages/graph/scripts/bench-index-maintenance.ts`     | Covered |
+| Module                                         | Benchmark                                                | Status  |
+| :--------------------------------------------- | :------------------------------------------------------- | :------ |
+| `packages/graph/src/indexes.ts`                | `packages/graph/scripts/bench-index-maintenance.ts`      | Covered |
 | `packages/graph/src/incremental-projection.ts` | `packages/graph/scripts/bench-incremental-projection.ts` | Covered |
 
 ## Landing the Plane (Session Completion)

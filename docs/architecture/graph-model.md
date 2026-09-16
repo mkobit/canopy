@@ -1,5 +1,6 @@
 # Graph model
 
+Product and architectural intent: [Core tenets](core-tenets.md).
 Canonical reference: `docs/design/2026-02-06-core-data-model.md`.
 Package layout: `docs/architecture/bounded-contexts.md`.
 

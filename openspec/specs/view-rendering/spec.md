@@ -1,8 +1,12 @@
 # view-rendering Specification
 
 ## Purpose
-TBD - created by archiving change default-view-rendering. Update Purpose after archive.
+
+Define how rendering applications resolve graph-resident view and renderer definitions to construct presentations of graph content.
+This implements the graph-defined presentation model described in [Core tenets](../../../docs/architecture/core-tenets.md), through registered native components and supported sandboxed WASM renderers.
+
 ## Requirements
+
 ### Requirement: Bootstrapped view and renderer definitions
 
 The system SHALL seed default Renderer nodes, default ViewDefinition nodes, and setting schemas for view preferences during the bootstrap process.
@@ -75,4 +79,3 @@ The system SHALL expose a reusable rendering delegation component (such as `Bloc
 
 - **WHEN** a node is encountered in the rendering tree that has already been visited
 - **THEN** the system SHALL stop recursion and render a cycle warning instead of invoking the renderer
-
