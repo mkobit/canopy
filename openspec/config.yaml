@@ -1,3 +1,8 @@
+# Keep the stock default: unpinned existing changes must not migrate implicitly.
+# canopy-bounded-delivery is opt-in per change through its integration owner and a current packet.
+# Delivery adoption selects it only for agent-delivery-boundaries; no bulk or archive migration.
+# Project context/rules reach artifact instructions, not apply; the opt-in schema owns ready apply guidance.
+# Stock schemas, blocked/all_done, explore, and archive still require manual AGENTS.md checks.
 schema: spec-driven
 context: |
   Read docs/architecture/core-tenets.md before drafting or reviewing designs.
@@ -8,10 +13,25 @@ context: |
   Agents, CLI, MCP, and other APIs are features built on that domain, not its foundation.
   Preserve event sourcing, separated command/query paths, time-travel intent, and host enforcement.
   Use docs/design/2026-02-06-core-data-model.md for primitives and docs/architecture/bounded-contexts.md for current package ownership.
-  Distinguish implemented contracts, proposed behavior, and unresolved product questions.
+  Distinguish implemented contracts, approved but unimplemented behavior, product intent, and unresolved product questions.
+  Read AGENTS.md and the approved bounded delivery design, specification, and handoff-template.md in openspec/changes/agent-delivery-boundaries/ (https://github.com/mkobit/canopy/pull/542, revision c19969800553819a91bbee1e297450de2832e26e).
+  Manually verify the relevant merged design approval and approved adversarial mitigations before creating tasks.md or implementation Beads tasks, and again before dispatch.
+  Artifact presence, OpenSpec readiness/validation, and bd ready do not establish approval; brainstorming epics and unresolved domain choices remain design work.
+  Before implementation, require a complete Beads packet with outcome, requirements/scenarios, contract/base revisions, prerequisites, provided/consumed contracts, owned/reserved files, isolation, integration/review owners, verified checks, and action-by-action authority.
+  Return incomplete packets to preparation; local workers claim approved tasks atomically with bd update <id> --claim, while remote workers receive dispatcher-claimed packets and never claim/update copied databases.
+  Preserve others' edits and non-overlapping scopes; shared generated files/manifests have one writer.
+  Stop dependent work on contract contradictions or outside-scope needs and return them to the integration owner; do not invent semantics or weaken checks.
+  Re-check packet and pinned revisions at handoff; material contract or baseline changes require renewed affected checks and independent review.
+  Return revision identity, changed files, scenario evidence, exact check outcomes, and concerns; integration owns combined verification and acceptance.
+  Issue updates, commits, pushes, PRs, merges, and closure require explicit assigned authority; worker success or artifact/task completeness grants none.
+  Approval remains manual for every workflow; unsupported customization or new automation returns to design, and pilot execution is not authorized by this guidance.
 rules:
   design:
     - Explain the user-visible outcome and relevant core domain concepts in plain language.
     - Identify whether behavior belongs to core semantics, a projection, a plugin, an application, or a protocol adapter; explain unresolved placement.
     - Link authoritative specifications and explain relevant event write/read paths, time travel, concurrency, and capability boundaries.
     - Include adversarial review and actionable mitigations before implementation tasks are staged.
+  tasks:
+    - Do not create tasks.md or implementation Beads tasks until the corresponding design has completed adversarial review and its mitigations have approval evidenced by the merged design PR.
+    - Verify approval manually even when tasks are structurally ready; if evidence is missing, withhold staging and return to design preparation.
+    - Link exact approved requirements and scenarios, resolve prerequisites and ownership, and prepare the current bounded packet before dispatch; task checkboxes alone are not a packet.

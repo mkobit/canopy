@@ -32,3 +32,10 @@ Scope: read and report only. Do not create issues, modify prompts, or touch sour
 - Do not run `bd dolt push`.
 - The report file is the only output artifact.
 - One session only.
+
+## Delivery boundary
+
+Read [Jules guidance](../AGENTS.md) and audit whether project-owned guidance and generated instruction consumers preserve its approval, packet, remote-claim, evidence-renewal, and action-authority boundaries.
+Report structural readiness separately from manually verified approval and integrated acceptance.
+Report unsupported customization or new automation needs for design review; do not patch generated instructions or introduce enforcement or orchestration.
+The report remains the only output artifact.

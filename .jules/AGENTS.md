@@ -17,6 +17,26 @@ Recurring maintenance sessions are triggered manually on a schedule by the maint
 One-off sessions (e.g. a single mechanical fix) can also be dispatched programmatically via the `jules` CLI (`jules session create --prompt ... --source mkobit/canopy`) from a Claude Code session — these pass their task inline via `--prompt` rather than through a `.jules/prompts/` file.
 Either way, Jules must not take actions outside the scope defined in its prompt for the session.
 
+## Bounded implementation assignments
+
+Read the [repository delivery guidance](../AGENTS.md#bounded-agent-delivery) and use the [handoff template](../openspec/changes/agent-delivery-boundaries/handoff-template.md) for implementation assignments.
+The dispatcher manually verifies merged design approval and approved adversarial mitigations before staging tasks or dispatching implementation.
+Artifact presence, `bd ready`, structural validation, and generated recommendations do not establish approval or integrated acceptance.
+A complete packet pins the base and approved contract revisions, provided and consumed contracts, prerequisites, editable scope, reserved files, isolation, integration owner, independent reviewer, and scenario evidence with verified checks.
+Return incomplete packets to preparation rather than infer missing authority or domain semantics.
+
+For remote implementation without authoritative Beads access, the local dispatcher atomically claims the approved task with `bd update <id> --claim` and supplies the complete packet.
+Do not claim or update a copied database for implementation ownership; the dispatcher reconciles the result with the authoritative issue after review.
+These implementation rules do not remove existing prompt-authorized recurring maintenance operations such as enrichment, pruning, dependency updates, or archival, and those operations do not authorize implementation dispatch.
+The packet assigns authority separately for issue updates, commits, pushes, PR creation, merge, and closure, subject to this file's constraints.
+The PR flow is a publication route, not blanket permission to publish; return evidence when an action is unassigned.
+
+You are not alone in the codebase; preserve other contributors' edits and stay within the assigned scope.
+Stop dependent work and report missing or contradictory contracts to the integration owner; do not invent semantics, weaken checks, or expand permissions.
+Return base and commit identity, changed files, scenario evidence, check outcomes, and unresolved concerns for independent review and integration-owner acceptance.
+Re-check task instructions and pinned revisions before handoff; material contract or baseline changes require renewed affected checks and independent review.
+Worker success alone does not authorize publication, integration, or issue closure.
+
 ## Environment setup
 
 Run `.jules/env_setup.sh` at the start of each session to install and verify all tools.

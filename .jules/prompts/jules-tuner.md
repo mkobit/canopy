@@ -35,3 +35,12 @@ Scope: read and write prompt files in `.jules/prompts/` only. Do not modify sour
 - Do not create beads issues or openspec changes.
 - Do not run `bd dolt push`.
 - One session only.
+
+## Delivery boundary
+
+Read [Jules guidance](../AGENTS.md) before editing or adding prompts.
+Preserve existing maintenance permissions and the distinction between maintenance operations and bounded implementation ownership.
+Prompt edits and new maintenance prompts must preserve manual approval checks, complete packets, dispatcher claims for remote implementation, renewed affected evidence, and explicit action authority.
+Tuning does not grant additional maintenance, implementation, or publication authority.
+Report unresolved authority conflicts, unsupported customization, or new automation and orchestration requirements to the integration owner for design review.
+Do not patch generated instruction copies independently or dispatch product implementation.

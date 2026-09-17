@@ -21,3 +21,9 @@ Scope: enrich existing issues only. Do not create or close issues. Do not touch 
 - Do not modify source code, openspec files, or beads config.
 - Do not run `bd dolt push`.
 - One session only.
+
+## Delivery boundary
+
+Read [Jules guidance](../AGENTS.md) before enriching issues.
+Ground descriptions in linked contracts and preserve the distinction between current behavior, approved work, and unresolved design questions.
+Metadata enrichment does not approve a brainstorming epic, stage implementation tasks, or establish dispatch readiness.

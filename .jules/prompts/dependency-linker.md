@@ -29,3 +29,11 @@ Scope: link existing issues only. Do not create, close, or modify issue content.
 - Do not modify issue titles or descriptions.
 - Do not run `bd dolt push`.
 - One session only.
+
+## Delivery boundary
+
+Read [Jules guidance](../AGENTS.md) before linking issues.
+Link only evidenced relationships; dependency readiness does not establish design approval or permission to stage or dispatch implementation.
+Step 2's duplicate resolution conflicts with this prompt's prohibition on closing issues.
+Report candidate duplicates and that conflict to the integration owner; withhold the conflicting action until the owner resolves its authority.
+Continue non-conflicting relationship work within the existing scope.
