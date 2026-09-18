@@ -28,3 +28,10 @@ Scope: read and close/defer existing issues only. Do not create new issues. Do n
 - Do not modify any files outside `.beads/`.
 - Do not run `bd dolt push` — leave that for the maintainer.
 - One session only: stop after completing the steps above.
+
+## Delivery boundary
+
+Read [Jules guidance](../AGENTS.md) before pruning issues.
+Evaluate relevance against linked contracts and product intent; an unresolved design question is not obsolete merely because it is not ready for implementation.
+`bd ready` reports dependency readiness, not design approval or permission to dispatch implementation.
+Pruning retains the maintenance authority above and grants no implementation authority.

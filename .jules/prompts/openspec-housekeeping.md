@@ -9,7 +9,7 @@ Scope: read and archive/validate existing openspec changes only. Do not propose 
 
 2. For each change marked as complete or where all tasks are done:
    Run `bunx openspec status --change <name>` to confirm.
-   If fully complete, archive it:
+   If fully complete and the manual delivery boundary checks below pass, archive it:
    `bunx openspec archive <name>`
 
 3. For each change still in progress:
@@ -25,3 +25,11 @@ Scope: read and archive/validate existing openspec changes only. Do not propose 
 - Do not modify source code files.
 - Do not close or create beads issues.
 - One session only: stop after completing the steps above.
+
+## Delivery boundary
+
+Read [Jules guidance](../AGENTS.md) before evaluating changes.
+Task completion, artifact status, structural validation, and generated `all_done` archive recommendations do not establish design approval or integrated acceptance.
+For implementation changes, manually verify merged design approval, independent review, and integration-owner acceptance backed by applicable checks before archival.
+If evidence is missing or the baseline or contract materially changed, report the gap and withhold archival until the owner supplies renewed affected evidence and review.
+This gate preserves the existing archive scope and does not authorize implementation, issue closure, or unassigned publication.
