@@ -206,3 +206,10 @@ One writer regenerates all 24 Claude, Gemini, and OpenCode skills and command co
 Do not patch or format generated copies independently, alter installed templates, or add workflows to compensate for stock references.
 Schema upgrades require an explicit comparison with the installed stock schema/templates and renewed instruction/scenario evidence; regeneration does not upgrade the project-owned fork.
 Unsupported customization, new approval engines, or orchestration requirements return to design.
+
+## Docker Sandbox execution
+
+To run checks via the Docker Sandbox environment, execute:
+```bash
+sbx env exec .sbx/sbxenv.yaml -- mise run check
+```

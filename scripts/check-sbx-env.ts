@@ -10,7 +10,7 @@ const FORBIDDEN_KEYS = [
 ] as const;
 
 const REQUIRED_PORTS = [5173, 6006] as const;
-const filesToCheck = ['.sbx/.sbxenv.yaml', '.sbx/.sbxenv.agy.yaml'] as const;
+const filesToCheck = ['.sbx/sbxenv.yaml', '.sbx/sbxenv.agy.yaml'] as const;
 const kitSpecFile = '.sbx/kit/spec.yaml';
 const kitDirectory = '.sbx/kit';
 
