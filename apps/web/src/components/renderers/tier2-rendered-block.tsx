@@ -1,7 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { Graph, Node } from '@canopy/graph';
 import { createApiAdapterContext } from '@canopy/api-adapter';
-import { executeSandboxedGuestPluginInWorker } from './execute-wasm-render-worker';
+import {
+  executeSandboxedGuestPluginInWorker,
+  isRenderWorkerUnavailable,
+} from './execute-wasm-render-worker';
 import { getCachedRender, hashContent, renderCacheKey, setCachedRender } from './render-cache';
 import {
   buildTier2FrameDocument,
@@ -30,7 +33,8 @@ const FRAME_MOUNT_DEADLINE_MS = 3000;
 type RenderState =
   | Readonly<{ status: 'pending' }>
   | Readonly<{ status: 'ready'; html: string }>
-  | Readonly<{ status: 'error' }>;
+  | Readonly<{ status: 'error' }>
+  | Readonly<{ status: 'unavailable' }>;
 
 // Data minimization (design decision 4a / finding 1): only the single content
 // node's own properties enter the frame, never broad graph or query data.
@@ -119,6 +123,8 @@ const useTier2Output = (
       if (result.ok) {
         setCachedRender(cacheKey, result.value);
         setState({ status: 'ready', html: result.value });
+      } else if (isRenderWorkerUnavailable(result.error)) {
+        setState({ status: 'unavailable' });
       } else {
         logFailureOnce(cacheKey, result.error.message);
         setState({ status: 'error' });
@@ -152,6 +158,7 @@ const Tier2Inner: React.FC<Tier2RenderedBlockProperties & Readonly<{ cacheKey: s
 
   const html = state.status === 'ready' ? state.html : undefined;
   const live = html !== undefined && hasSlot && !gaveUp;
+  const unavailable = state.status === 'unavailable';
 
   // Acquire a live-frame budget slot only when output is ready, in-viewport, and
   // not given up; release on unmount, scroll-out, or give-up.
@@ -215,7 +222,13 @@ const Tier2Inner: React.FC<Tier2RenderedBlockProperties & Readonly<{ cacheKey: s
           style={{ width: '100%', border: 'none', display: 'block' }}
         />
       ) : null}
-      {live && frameReady ? null : <div data-testid="tier2-static-preview">{fallback}</div>}
+      {unavailable ? (
+        <div data-testid="renderer-unavailable" role="status">
+          Interactive renderer unavailable
+        </div>
+      ) : live && frameReady ? null : (
+        <div data-testid="tier2-static-preview">{fallback}</div>
+      )}
     </div>
   );
 };

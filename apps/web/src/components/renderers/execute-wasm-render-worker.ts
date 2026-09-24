@@ -1,5 +1,5 @@
 /* eslint-disable functional/immutable-data -- encapsulated warm-worker pool + request-sequence state */
-import type { Result } from '@canopy/graph';
+import { z } from 'zod';
 import {
   createApiAdapterError,
   createWasmHostBindings,
@@ -15,6 +15,7 @@ import {
   type WasmHostBindings,
   type WitErrorPayload,
 } from '@canopy/api-adapter';
+import { err, fromThrowable, ok, type Result } from '@canopy/graph';
 import {
   hostCallSchema,
   executeResultSchema,
@@ -32,6 +33,7 @@ import {
 // instantiation is far heavier than a main-thread call — adversarial review).
 const MAX_POOL_SIZE = 4;
 const idleWorkers: Worker[] = [];
+const renderOutputSchema = z.object({ html: z.string().min(1) });
 
 const createRenderWorker = (): Worker =>
   new Worker(new URL('../../plugin/runtime/render-worker.ts', import.meta.url), {
@@ -43,7 +45,60 @@ const createRenderWorker = (): Worker =>
 // terminated worker leaves no reusable poisoned state).
 const terminatedWorkers = new WeakSet<Worker>();
 
-const acquireWorker = (): Worker => idleWorkers.pop() ?? createRenderWorker();
+export type RenderWorkerUnavailableReason =
+  'missing-guest' | 'unknown-guest' | 'worker-construction' | 'worker-script-load';
+
+export type RenderWorkerUnavailableError = Readonly<{
+  code: 'RENDERER_UNAVAILABLE';
+  category: 'RENDERER_UNAVAILABLE';
+  reason: RenderWorkerUnavailableReason;
+  message: string;
+}>;
+
+export type SandboxedGuestRenderResult = Result<
+  string,
+  ApiAdapterError | RenderWorkerUnavailableError
+>;
+
+export const isRenderWorkerUnavailable = (
+  error: ApiAdapterError | RenderWorkerUnavailableError,
+): error is RenderWorkerUnavailableError => error.code === 'RENDERER_UNAVAILABLE';
+
+const unavailable = (
+  reason: RenderWorkerUnavailableReason,
+  message: string,
+): RenderWorkerUnavailableError => ({
+  code: 'RENDERER_UNAVAILABLE',
+  category: 'RENDERER_UNAVAILABLE',
+  reason,
+  message,
+});
+
+const isUnavailableResult = (
+  value: SerializedResult | RenderWorkerUnavailableError,
+): value is RenderWorkerUnavailableError =>
+  'code' in value && value.code === 'RENDERER_UNAVAILABLE';
+
+type RenderWorkerFactory = () => Worker;
+
+const acquireWorker = (
+  createWorker: RenderWorkerFactory,
+): Result<Worker, RenderWorkerUnavailableError> => {
+  if (typeof Worker === 'undefined') {
+    return err(unavailable('worker-construction', 'The renderer worker is unavailable'));
+  }
+  // eslint-disable-next-line functional/no-try-statements -- Worker construction is an unavailable-renderer boundary
+  try {
+    return ok(idleWorkers.pop() ?? createWorker());
+  } catch (error) {
+    return err(
+      unavailable(
+        'worker-construction',
+        `The renderer worker could not be constructed: ${error instanceof Error ? error.message : String(error)}`,
+      ),
+    );
+  }
+};
 
 const releaseWorker = (worker: Worker): void => {
   if (idleWorkers.length < MAX_POOL_SIZE) idleWorkers.push(worker);
@@ -85,32 +140,56 @@ const serializeHostResult = (result: Result<string, WitErrorPayload>): Serialize
 // Monotonic request-id source held on an object (no reassigned top-level binding).
 const requestSequence = { next: 0 };
 
-export const executeSandboxedGuestPluginInWorker = async (
-  context: ApiAdapterContext,
-  token: string,
-  inputJson: string,
-  guestId: string,
-  timeoutMs: number = DEFAULT_UNTRUSTED_RENDER_TIMEOUT_MS,
+const runWorkerRequest = async (
+  worker: Worker,
+  request: Readonly<{
+    requestId: string;
+    guestId: string;
+    token: string;
+    inputJson: string;
+    timeoutMs: number;
+  }>,
+  resultReady: Promise<SerializedResult | RenderWorkerUnavailableError>,
+  onUnavailable: (error: RenderWorkerUnavailableError) => void,
 ): Promise<Result<string, ApiAdapterError>> => {
-  requestSequence.next += 1;
-  const requestId = `render-${requestSequence.next}`;
-  const worker = acquireWorker();
+  worker.postMessage({ kind: 'execute', ...request });
+  const serialized = await resultReady;
+  if (isUnavailableResult(serialized)) {
+    onUnavailable(serialized);
+    return err(createApiAdapterError('INTERNAL_ERROR', serialized.message));
+  }
+  if (
+    !serialized.ok &&
+    serialized.error.category === 'NOT_FOUND' &&
+    serialized.error.message.startsWith('unknown guest ')
+  ) {
+    onUnavailable(unavailable('unknown-guest', serialized.error.message));
+    return err(createApiAdapterError('INTERNAL_ERROR', serialized.error.message));
+  }
+  if (!serialized.ok) {
+    return { ok: false, error: createApiAdapterError('INTERNAL_ERROR', serialized.error.message) };
+  }
+  const decoded = fromThrowable<unknown>(() => JSON.parse(serialized.value));
+  const parsed = decoded.ok ? renderOutputSchema.safeParse(decoded.value) : undefined;
+  return parsed?.success === true
+    ? { ok: true, value: parsed.data.html }
+    : {
+        ok: false,
+        error: createApiAdapterError('INTERNAL_ERROR', 'plugin returned invalid render output'),
+      };
+};
 
-  // Real main-side host bindings: bound token + the same guards the local path
-  // uses (not redefined/weakened — spec). The worker's guards ran first; these
-  // re-enforce the capability against the real graph.
-  const bindings = createWasmHostBindings(context, {
-    boundToken: token,
-    fuelMeter: createFuelMeter(DEFAULT_WASM_FUEL_LIMIT),
-    reentrancyGuard: createReentrancyGuard(),
-    memoryChecker: createMemoryChecker(DEFAULT_WASM_MAX_MEMORY_BYTES),
-  });
-  const dispatch = buildDispatchTable(bindings);
-
-  const { promise: resultReady, resolve: resolveResult } =
-    Promise.withResolvers<SerializedResult>();
-
-  const onMessage = (event: MessageEvent<unknown>): void => {
+const createWorkerMessageHandler =
+  (
+    worker: Worker,
+    requestId: string,
+    dispatch: ReadonlyMap<
+      string,
+      (token: string, payload: string) => Promise<Result<string, WitErrorPayload>>
+    >,
+    resolveResult: (result: SerializedResult) => void,
+  ): ((event: MessageEvent<unknown>) => void) =>
+  (event): void => {
     const callParsed = hostCallSchema.safeParse(event.data);
     if (callParsed.success) {
       const call: HostCall = callParsed.data;
@@ -142,17 +221,73 @@ export const executeSandboxedGuestPluginInWorker = async (
     }
   };
 
+export const executeSandboxedGuestPluginInWorker = async (
+  context: ApiAdapterContext,
+  token: string,
+  inputJson: string,
+  guestId: string,
+  timeoutMs: number = DEFAULT_UNTRUSTED_RENDER_TIMEOUT_MS,
+  createWorker: RenderWorkerFactory = createRenderWorker,
+): Promise<SandboxedGuestRenderResult> => {
+  if (guestId.trim().length === 0) {
+    return err(unavailable('missing-guest', 'The interactive renderer has no worker guest'));
+  }
+
+  requestSequence.next += 1;
+  const requestId = `render-${requestSequence.next}`;
+  const workerResult = acquireWorker(createWorker);
+  if (!workerResult.ok) {
+    return workerResult;
+  }
+  const worker = workerResult.value;
+
+  // Real main-side host bindings: bound token + the same guards the local path
+  // uses (not redefined/weakened — spec). The worker's guards ran first; these
+  // re-enforce the capability against the real graph.
+  const bindings = createWasmHostBindings(context, {
+    boundToken: token,
+    fuelMeter: createFuelMeter(DEFAULT_WASM_FUEL_LIMIT),
+    reentrancyGuard: createReentrancyGuard(),
+    memoryChecker: createMemoryChecker(DEFAULT_WASM_MAX_MEMORY_BYTES),
+  });
+  const dispatch = buildDispatchTable(bindings);
+
+  const { promise: resultReady, resolve: resolveResult } = Promise.withResolvers<
+    SerializedResult | RenderWorkerUnavailableError
+  >();
+  // eslint-disable-next-line functional/prefer-immutable-types -- mutable result side channel for unavailable worker boundaries
+  const unavailableFailure: { value?: RenderWorkerUnavailableError } = {};
+
+  const onUnavailable = (error: RenderWorkerUnavailableError): void => {
+    unavailableFailure.value = error;
+  };
+
+  const onWorkerFailure = (event: Readonly<Event>): void => {
+    event.preventDefault();
+    if (terminatedWorkers.has(worker)) return;
+    onUnavailable(
+      unavailable('worker-script-load', 'The interactive renderer worker could not load'),
+    );
+    terminatedWorkers.add(worker);
+    discardWorker(worker);
+    resolveResult(unavailableFailure.value);
+  };
+
+  const onMessage = createWorkerMessageHandler(worker, requestId, dispatch, resolveResult);
+
   worker.addEventListener('message', onMessage);
+  worker.addEventListener('error', onWorkerFailure);
+  worker.addEventListener('messageerror', onWorkerFailure);
 
   const outcome = await executeTerminableGuest(
     {
-      execute: async (): Promise<Result<string, ApiAdapterError>> => {
-        worker.postMessage({ kind: 'execute', requestId, guestId, token, inputJson, timeoutMs });
-        const serialized = await resultReady;
-        return serialized.ok
-          ? { ok: true, value: serialized.value }
-          : { ok: false, error: createApiAdapterError('INTERNAL_ERROR', serialized.error.message) };
-      },
+      execute: (): Promise<Result<string, ApiAdapterError>> =>
+        runWorkerRequest(
+          worker,
+          { requestId, guestId, token, inputJson, timeoutMs },
+          resultReady,
+          onUnavailable,
+        ),
       terminate: (): void => {
         terminatedWorkers.add(worker);
         worker.removeEventListener('message', onMessage);
@@ -164,10 +299,12 @@ export const executeSandboxedGuestPluginInWorker = async (
 
   // A terminated worker was already discarded; only a cleanly-completed worker is
   // recycled (never reuse possibly-poisoned state — spec).
-  if (!terminatedWorkers.has(worker)) {
-    worker.removeEventListener('message', onMessage);
-    releaseWorker(worker);
-  }
+  worker.removeEventListener('message', onMessage);
+  worker.removeEventListener('error', onWorkerFailure);
+  worker.removeEventListener('messageerror', onWorkerFailure);
+  if (terminatedWorkers.has(worker))
+    return unavailableFailure.value === undefined ? outcome : err(unavailableFailure.value);
+  releaseWorker(worker);
 
-  return outcome;
+  return unavailableFailure.value === undefined ? outcome : err(unavailableFailure.value);
 };

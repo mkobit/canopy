@@ -27,6 +27,7 @@ type ResolvedRenderer =
   | Readonly<{ kind: 'system'; content: React.ReactNode }>
   | Readonly<{ kind: 'wasm'; pluginNode: Node }>
   | Readonly<{ kind: 'tier2'; pluginNode: Node; guestId: string; token: string }>
+  | Readonly<{ kind: 'unavailable' }>
   | null;
 
 function isSystemRendererEntryPoint(value: string): value is SystemRendererEntryPoint {
@@ -50,6 +51,14 @@ function renderNativeFallback(node: Node): React.ReactNode {
       return <div className="text-gray-400 italic">Unknown block type: {node.type}</div>;
     }
   }
+}
+
+export function renderUnavailableInteractiveRenderer(): React.ReactNode {
+  return (
+    <div data-testid="renderer-unavailable" role="status">
+      Interactive renderer unavailable
+    </div>
+  );
 }
 
 function resolveRenderer(node: Node, graph: Graph): ResolvedRenderer {
@@ -93,6 +102,9 @@ function resolveRenderer(node: Node, graph: Graph): ResolvedRenderer {
     const dispatch = resolveWasmRenderDispatch(pluginNode);
     if (dispatch.tier === 'tier2') {
       return { kind: 'tier2', pluginNode, guestId: dispatch.guestId, token: dispatch.token };
+    }
+    if (dispatch.tier === 'unavailable') {
+      return { kind: 'unavailable' };
     }
     return { kind: 'wasm', pluginNode };
   }
@@ -176,6 +188,8 @@ export const BlockRenderer: React.FC<BlockRendererProperties> = ({
         token={resolved.token}
         fallback={renderNativeFallback(node)}
       />
+    ) : resolved.kind === 'unavailable' ? (
+      renderUnavailableInteractiveRenderer()
     ) : (
       resolved.content
     );

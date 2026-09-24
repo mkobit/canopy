@@ -1,8 +1,9 @@
 import '../../../test/setup';
-import { describe, it, expect } from 'bun:test';
+import { afterEach, describe, it, expect } from 'bun:test';
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { BlockRenderer } from '../block-renderer';
+import { setRenderGrantForPlugin } from '../render-grants';
 import {
   createGraph,
   asGraphId,
@@ -18,6 +19,10 @@ import {
   unwrap,
 } from '@canopy/graph';
 import type { Node, Edge } from '@canopy/graph';
+
+afterEach(() => {
+  setRenderGrantForPlugin('plugin:missing-guest', undefined);
+});
 
 describe('BlockRenderer', () => {
   it('renders content using type-based fallback when resolution fails', () => {
@@ -128,5 +133,85 @@ describe('BlockRenderer', () => {
     // CodeBlockRenderer displays the language in the top-right
     expect(screen.queryByText('typescript')).not.toBeNull();
     expect(screen.queryByText('Dynamic Content')).not.toBeNull();
+  });
+
+  it('fails closed through production dispatch when an authorized guest is missing', () => {
+    let graph = unwrap(createGraph(asGraphId('test-unavailable-graph'), 'Test unavailable graph'));
+    const nodeId = asNodeId('user:node:interactive-unavailable');
+    const typeId = asTypeId('user:nodetype:interactive-unavailable');
+    const viewNodeId = asNodeId('user:view:interactive-unavailable');
+    const rendererNodeId = asNodeId('user:renderer:interactive-unavailable');
+    const pluginNodeId = asNodeId('plugin:missing-guest');
+
+    const metadata = {
+      created: createInstant(),
+      modified: createInstant(),
+      modifiedBy: SYSTEM_DEVICE_ID,
+    };
+    const add = (nextGraph: typeof graph, nextNode: Node): typeof graph =>
+      unwrap(addNode(nextGraph, nextNode, { deviceId: SYSTEM_DEVICE_ID })).graph;
+
+    const targetNode: Node = {
+      id: nodeId,
+      type: typeId,
+      properties: new Map([['content', 'must not be shown as fallback']]),
+      metadata,
+    };
+    graph = add(graph, targetNode);
+    graph = add(graph, {
+      id: viewNodeId,
+      type: SYSTEM_IDS.VIEW_DEFINITION,
+      properties: new Map([['name', 'Unavailable interactive view']]),
+      metadata,
+    });
+    graph = add(graph, {
+      id: rendererNodeId,
+      type: SYSTEM_IDS.RENDERER,
+      properties: new Map([
+        ['rendererKind', 'wasm'],
+        ['entryPoint', pluginNodeId],
+      ]),
+      metadata,
+    });
+    graph = add(graph, {
+      id: pluginNodeId,
+      type: asTypeId('canopy:system/plugin'),
+      properties: new Map([['manifest', JSON.stringify({ capabilities: ['render:interactive'] })]]),
+      metadata,
+    });
+    graph = unwrap(
+      addEdge(
+        graph,
+        {
+          id: asEdgeId('user:edge:unavailable-override'),
+          type: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
+          source: nodeId,
+          target: viewNodeId,
+          properties: new Map(),
+          metadata,
+        },
+        { deviceId: SYSTEM_DEVICE_ID },
+      ),
+    ).graph;
+    graph = unwrap(
+      addEdge(
+        graph,
+        {
+          id: asEdgeId('user:edge:unavailable-renderer'),
+          type: SYSTEM_EDGE_TYPES.USES_RENDERER,
+          source: viewNodeId,
+          target: rendererNodeId,
+          properties: new Map(),
+          metadata,
+        },
+        { deviceId: SYSTEM_DEVICE_ID },
+      ),
+    ).graph;
+
+    setRenderGrantForPlugin('plugin:missing-guest', 'render:interactive');
+    render(<BlockRenderer node={targetNode} graph={graph} />);
+
+    expect(screen.queryByTestId('renderer-unavailable')).not.toBeNull();
+    expect(screen.queryByText('must not be shown as fallback')).toBeNull();
   });
 });

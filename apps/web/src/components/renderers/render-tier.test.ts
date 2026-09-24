@@ -73,9 +73,12 @@ describe('resolveWasmRenderDispatch (tier selection)', () => {
     expect(resolveWasmRenderDispatch(node).tier).toBe('tier1');
   });
 
-  it('stays Tier-1 when no worker guest id is resolvable', () => {
+  it('fails closed when no worker guest id is resolvable', () => {
     setRenderGrantForPlugin('plugin:a', 'render:interactive');
     const node = buildPluginNode('plugin:a', { manifest: interactiveManifest });
-    expect(resolveWasmRenderDispatch(node).tier).toBe('tier1');
+    expect(resolveWasmRenderDispatch(node)).toEqual({
+      tier: 'unavailable',
+      reason: 'missing-guest',
+    });
   });
 });
