@@ -221,6 +221,44 @@ const createWorkerMessageHandler =
     }
   };
 
+const createWorkerLoadFailureHandler =
+  (
+    worker: Worker,
+    onUnavailable: (error: RenderWorkerUnavailableError) => void,
+    resolveResult: (result: RenderWorkerUnavailableError) => void,
+  ): ((event: Readonly<Event>) => void) =>
+  (event): void => {
+    event.preventDefault();
+    if (terminatedWorkers.has(worker)) return;
+    const error = unavailable(
+      'worker-script-load',
+      'The interactive renderer worker could not load',
+    );
+    onUnavailable(error);
+    terminatedWorkers.add(worker);
+    discardWorker(worker);
+    resolveResult(error);
+  };
+
+const createWorkerMessageFailureHandler =
+  (
+    worker: Worker,
+    resolveResult: (result: SerializedResult) => void,
+  ): ((event: Readonly<Event>) => void) =>
+  (event): void => {
+    event.preventDefault();
+    if (terminatedWorkers.has(worker)) return;
+    terminatedWorkers.add(worker);
+    discardWorker(worker);
+    resolveResult({
+      ok: false,
+      error: {
+        category: 'INTERNAL_ERROR',
+        message: 'The interactive renderer worker returned an unreadable message',
+      },
+    });
+  };
+
 export const executeSandboxedGuestPluginInWorker = async (
   context: ApiAdapterContext,
   token: string,
@@ -262,22 +300,14 @@ export const executeSandboxedGuestPluginInWorker = async (
     unavailableFailure.value = error;
   };
 
-  const onWorkerFailure = (event: Readonly<Event>): void => {
-    event.preventDefault();
-    if (terminatedWorkers.has(worker)) return;
-    onUnavailable(
-      unavailable('worker-script-load', 'The interactive renderer worker could not load'),
-    );
-    terminatedWorkers.add(worker);
-    discardWorker(worker);
-    resolveResult(unavailableFailure.value);
-  };
+  const onWorkerFailure = createWorkerLoadFailureHandler(worker, onUnavailable, resolveResult);
+  const onWorkerMessageFailure = createWorkerMessageFailureHandler(worker, resolveResult);
 
   const onMessage = createWorkerMessageHandler(worker, requestId, dispatch, resolveResult);
 
   worker.addEventListener('message', onMessage);
   worker.addEventListener('error', onWorkerFailure);
-  worker.addEventListener('messageerror', onWorkerFailure);
+  worker.addEventListener('messageerror', onWorkerMessageFailure);
 
   const outcome = await executeTerminableGuest(
     {
@@ -301,7 +331,7 @@ export const executeSandboxedGuestPluginInWorker = async (
   // recycled (never reuse possibly-poisoned state — spec).
   worker.removeEventListener('message', onMessage);
   worker.removeEventListener('error', onWorkerFailure);
-  worker.removeEventListener('messageerror', onWorkerFailure);
+  worker.removeEventListener('messageerror', onWorkerMessageFailure);
   if (terminatedWorkers.has(worker))
     return unavailableFailure.value === undefined ? outcome : err(unavailableFailure.value);
   releaseWorker(worker);

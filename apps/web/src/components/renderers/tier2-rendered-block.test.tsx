@@ -74,6 +74,16 @@ class OrdinaryErrorWorker extends EventTarget {
   }
 }
 
+class MessageErrorWorker extends EventTarget {
+  public postMessage(): void {
+    queueMicrotask(() => this.dispatchEvent(new MessageEvent('messageerror')));
+  }
+
+  public terminate(): void {
+    return undefined;
+  }
+}
+
 const zeroRectangle: DOMRectReadOnly = {
   bottom: 0,
   height: 0,
@@ -141,6 +151,31 @@ describe('Tier2RenderedBlock unavailable behavior', () => {
   });
 
   it('preserves the native fallback for an ordinary execution error', async () => {
+    Object.defineProperty(globalThis, 'Worker', {
+      configurable: true,
+      value: MessageErrorWorker,
+    });
+    const transportErrorNode = buildNode('user:node:tier2-message-error');
+
+    render(
+      <Tier2RenderedBlock
+        node={transportErrorNode}
+        graph={graph}
+        pluginNode={transportErrorNode}
+        guestId="fixture:message-error"
+        token="render:interactive"
+        fallback={<span>transport error fallback</span>}
+      />,
+    );
+
+    await waitFor(() =>
+      expect(screen.getByTestId('tier2-rendered-block').dataset.renderStatus).toBe('error'),
+    );
+    expect(screen.queryByText('transport error fallback')).not.toBeNull();
+    expect(screen.queryByTestId('renderer-unavailable')).toBeNull();
+  });
+
+  it('preserves the native fallback for a serialized guest execution error', async () => {
     Object.defineProperty(globalThis, 'Worker', {
       configurable: true,
       value: OrdinaryErrorWorker,
