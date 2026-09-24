@@ -15,7 +15,7 @@ import {
   type WasmHostBindings,
   type WitErrorPayload,
 } from '@canopy/api-adapter';
-import { err, fromThrowable, ok, type Result } from '@canopy/graph';
+import { err, fromThrowable, type Result } from '@canopy/graph';
 import {
   hostCallSchema,
   executeResultSchema,
@@ -87,17 +87,15 @@ const acquireWorker = (
   if (typeof Worker === 'undefined') {
     return err(unavailable('worker-construction', 'The renderer worker is unavailable'));
   }
-  // eslint-disable-next-line functional/no-try-statements -- Worker construction is an unavailable-renderer boundary
-  try {
-    return ok(idleWorkers.pop() ?? createWorker());
-  } catch (error) {
-    return err(
-      unavailable(
-        'worker-construction',
-        `The renderer worker could not be constructed: ${error instanceof Error ? error.message : String(error)}`,
-      ),
-    );
-  }
+  const workerResult = fromThrowable(() => idleWorkers.pop() ?? createWorker());
+  return workerResult.ok
+    ? workerResult
+    : err(
+        unavailable(
+          'worker-construction',
+          `The renderer worker could not be constructed: ${workerResult.error.message}`,
+        ),
+      );
 };
 
 const releaseWorker = (worker: Worker): void => {
