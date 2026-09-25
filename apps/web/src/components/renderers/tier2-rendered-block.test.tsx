@@ -1,7 +1,7 @@
 import '../../test/setup';
 import { afterEach, describe, expect, it } from 'bun:test';
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import {
   asGraphId,
   asNodeId,
@@ -35,6 +35,7 @@ const originalIntersectionObserver = Object.getOwnPropertyDescriptor(
 );
 
 afterEach(() => {
+  cleanup();
   if (originalWorker === undefined) Reflect.deleteProperty(globalThis, 'Worker');
   else Object.defineProperty(globalThis, 'Worker', originalWorker);
   if (originalIntersectionObserver === undefined)
@@ -132,7 +133,7 @@ class OffscreenObserver implements IntersectionObserver {
   }
 }
 
-describe('Tier2RenderedBlock unavailable behavior', () => {
+describe.serial('Tier2RenderedBlock unavailable behavior', () => {
   it('shows a host-owned unavailable indication for a missing guest', async () => {
     render(
       <Tier2RenderedBlock
