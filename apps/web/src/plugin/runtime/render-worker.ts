@@ -100,6 +100,20 @@ const runExecute = async (request: ExecuteRequest): Promise<void> => {
   });
 };
 
+const reportExecutionFailure = (request: ExecuteRequest, error: unknown): void => {
+  postMessage({
+    kind: 'result',
+    requestId: request.requestId,
+    result: {
+      ok: false,
+      error: {
+        category: 'INTERNAL_ERROR',
+        message: error instanceof Error ? error.message : String(error),
+      },
+    },
+  });
+};
+
 addEventListener('message', (event: MessageEvent<unknown>) => {
   const parsed = workerInboundSchema.safeParse(event.data);
   if (!parsed.success) {
@@ -114,5 +128,5 @@ addEventListener('message', (event: MessageEvent<unknown>) => {
     }
     return;
   }
-  void runExecute(message);
+  void runExecute(message).catch((error: unknown) => reportExecutionFailure(message, error));
 });

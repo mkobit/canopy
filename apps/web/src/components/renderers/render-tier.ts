@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { Node } from '@canopy/graph';
+import { fromThrowable, type Node } from '@canopy/graph';
 import { grantsCapabilityExplicitly, intersectCapabilities } from '@canopy/api-adapter';
 import { resolveGuestId, resolveRenderGrant } from './render-grants';
 
@@ -8,27 +8,23 @@ import { resolveGuestId, resolveRenderGrant } from './render-grants';
 // Tier-2 requires ALL of: an explicit non-wildcard `render:interactive` in the
 // host grant (so a `render:*`/`*` grant does not auto-convey it — finding 5), a
 // manifest that declares `render:interactive` (so the intersected token actually
-// carries it), and a resolvable worker guest. Anything else stays Tier-1.
+// carries it), and a resolvable worker guest. An authorized interactive renderer
+// without a guest fails closed instead of silently downgrading to Tier-1.
 
 export type WasmRenderDispatch =
-  Readonly<{ tier: 'tier1' }> | Readonly<{ tier: 'tier2'; token: string; guestId: string }>;
+  | Readonly<{ tier: 'tier1' }>
+  | Readonly<{ tier: 'tier2'; token: string; guestId: string }>
+  | Readonly<{ tier: 'unavailable'; reason: 'missing-guest' }>;
 
 const manifestSchema = z.object({ capabilities: z.array(z.string()) });
 
 const parseManifestCapabilities = (pluginNode: Node): readonly string[] => {
   const raw = pluginNode.properties.get('manifest');
   if (typeof raw !== 'string') return [];
-  const parsed = manifestSchema.safeParse(safeJsonParse(raw));
+  const decoded = fromThrowable<unknown>(() => JSON.parse(raw));
+  if (!decoded.ok) return [];
+  const parsed = manifestSchema.safeParse(decoded.value);
   return parsed.success ? parsed.data.capabilities : [];
-};
-
-const safeJsonParse = (value: string): unknown => {
-  // eslint-disable-next-line functional/no-try-statements -- malformed manifest degrades to Tier-1
-  try {
-    return JSON.parse(value);
-  } catch {
-    return undefined;
-  }
 };
 
 export const resolveWasmRenderDispatch = (pluginNode: Node): WasmRenderDispatch => {
@@ -44,7 +40,7 @@ export const resolveWasmRenderDispatch = (pluginNode: Node): WasmRenderDispatch 
   }
   const guestId = resolveGuestId(pluginNode);
   if (guestId === undefined) {
-    return { tier: 'tier1' };
+    return { tier: 'unavailable', reason: 'missing-guest' };
   }
   return { tier: 'tier2', token, guestId };
 };
