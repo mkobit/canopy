@@ -1,6 +1,6 @@
 schemaVersion: "1"
-name: "canopy-codex"
-agent: codex
+name: "canopy-claude"
+agent: claude
 workspace:
   path: ..
   clone: false
