@@ -9,7 +9,8 @@ The historical pending-approval text in the design predates those merges.
 The [delivery contract](../agent-delivery-boundaries/design.md) and [handoff template](../agent-delivery-boundaries/handoff-template.md) were approved through [PR #542](https://github.com/mkobit/canopy/pull/542) at `c19969800553819a91bbee1e297450de2832e26e`.
 
 `canopy-7rv.1` tracks preparation and independent packet review only.
-Implementation tasks below are staged, unclaimed, and unauthorized for execution.
+The coupled baseline was authorized, claimed, and completed at `2708898cd63dd24d631443e6ae0e48edf983ae29` from pinned base `ae24f09f63a3aa617ef1741415f6cc7efc14230b`.
+Downstream tasks remain staged and unclaimed.
 The complete packets live in their Beads descriptions; this artifact maps the approved work to those records.
 Keep the existing `spec-driven` schema and generated instructions unchanged.
 Do not archive this change or interpret structural validation as implementation acceptance.
@@ -19,7 +20,8 @@ The independent review route is `/root/plan_reviewer`, renewed against the actua
 Before any implementation claim, obtain separate user authorization, establish clean isolated execution storage, verify current contracts/prerequisites, and renew the packet and independent readiness review.
 That renewal must preserve PR #549's fail-closed renderer behavior, worker lifecycle behavior and accepted browser evidence while moving imports and package ownership.
 All five unrelated edits in `apps/clip-host/src/{framing,host,index,rate-limiter}.ts` and `tools/eslint-disable-baseline.json` remain reserved.
-Planning alignment only is authorized in this renewal; no commit, push, PR, merge, implementation publication or archive is authorized.
+The user separately authorized coupled-baseline publication and merge after green checks.
+That authority does not claim or complete downstream tasks and does not authorize archive.
 
 ## 1. Coupled extraction baseline — canopy-7rv.2
 
@@ -27,15 +29,15 @@ Depends on preparation `canopy-7rv.1` and completed design/security prerequisite
 One integration owner retains all production changes, shared contracts, manifests, lockfile, exports, references, aliases, tooling and consumer cutover through a passing build/typecheck commit.
 Do not dispatch independent test workers during this transition or publish broken intermediate PRs.
 
-- [ ] 1.1 Capture reproducible pre-extraction main/worker assets and module evidence at the pinned base, using the same toolchain as the result; verify graph builds and validates manifests before any host build.
-- [ ] 1.2 Move shared context, payloads, handlers and protocol-neutral errors into `@canopy/graph-access`; apply approved public renames, preserve operation payloads and `GraphSession.commit`, and use `unknown` with narrowing for error details.
-- [ ] 1.3 Move WASM execution, capabilities, bindings, facade and WIT conversion into `@canopy/plugin-host`; preserve bound authority, manifest intersection, termination, vocabulary equality, separate total/per-import fuel controls and PR #549's worker construction, module-load, cleanup and terminated-result handling.
-- [ ] 1.4 Update all production consumers, manifests, lockfile, exports, TS references, both web path maps, aliases and the canonical bounded-context map atomically; remove moved api-adapter exports without compatibility aliases; preserve the approved unavailable-interactive classification without an alternate guest, Tier-1 downgrade, frame or plugin output.
-- [ ] 1.5 Move inline WIT and its snapshot byte-for-byte; split compatibility tooling and mixed error/schema tests by owner, including the repository-checker test's WIT reachability; retain browser-owned modular worlds and unchanged transport snapshots.
-- [ ] 1.6 Move the seven host test files and shared-handler tests, repair retained/app imports, and preserve assertions before declaring a passing baseline; retain the focused worker, tier, block-renderer and Tier-2 component tests plus the renderer-unavailable, Markdown and sandboxed-render browser suites; later tasks complete coverage rather than defer required baseline repairs.
-- [ ] 1.7 Add deterministic source-boundary enforcement for normal, type-only, alias, relative, deep and dynamic imports, with allowed/forbidden fixtures wired into the normal dependency quality gate.
-- [ ] 1.8 Add main-and-worker production artifact assertions using shipped build resolution, reject missing worker evidence, verify built public entrypoints without source aliases, and wire assertions into the normal quality gate.
-- [ ] 1.9 Run clean build, typecheck, relocated regressions, compatibility and new boundary checks; run the PR #549 focused and Chromium preservation matrix; verify its test fixture is absent from production artifacts; record the actual passing commit and renew downstream packets against it before any ownership transfer.
+- [x] 1.1 Capture reproducible pre-extraction main/worker assets and module evidence at the pinned base, using the same toolchain as the result; verify graph builds and validates manifests before any host build.
+- [x] 1.2 Move shared context, payloads, handlers and protocol-neutral errors into `@canopy/graph-access`; apply approved public renames, preserve operation payloads and `GraphSession.commit`, and use `unknown` with narrowing for error details.
+- [x] 1.3 Move WASM execution, capabilities, bindings, facade and WIT conversion into `@canopy/plugin-host`; preserve bound authority, manifest intersection, termination, vocabulary equality, separate total/per-import fuel controls and PR #549's worker construction, module-load, cleanup and terminated-result handling.
+- [x] 1.4 Update all production consumers, manifests, lockfile, exports, TS references, both web path maps, aliases and the canonical bounded-context map atomically; remove moved api-adapter exports without compatibility aliases; preserve the approved unavailable-interactive classification without an alternate guest, Tier-1 downgrade, frame or plugin output.
+- [x] 1.5 Move inline WIT and its snapshot byte-for-byte; split compatibility tooling and mixed error/schema tests by owner, including the repository-checker test's WIT reachability; retain browser-owned modular worlds and unchanged transport snapshots.
+- [x] 1.6 Move the seven host test files and shared-handler tests, repair retained/app imports, and preserve assertions before declaring a passing baseline; retain the focused worker, tier, block-renderer and Tier-2 component tests plus the renderer-unavailable, Markdown and sandboxed-render browser suites; later tasks complete coverage rather than defer required baseline repairs.
+- [x] 1.7 Add deterministic source-boundary enforcement for normal, type-only, alias, relative, deep and dynamic imports, with allowed/forbidden fixtures wired into the normal dependency quality gate.
+- [x] 1.8 Add main-and-worker production artifact assertions using shipped build resolution, reject missing worker evidence, verify built public entrypoints without source aliases, and wire assertions into the normal quality gate.
+- [x] 1.9 Run clean build, typecheck, relocated regressions, compatibility and new boundary checks; run the PR #549 focused and Chromium preservation matrix; verify its test fixture is absent from production artifacts; record the actual passing commit and renew downstream packets against it before any ownership transfer.
 
 ## 2. Host regression completion — canopy-7rv.3
 
