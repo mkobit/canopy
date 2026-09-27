@@ -8,10 +8,10 @@ import {
   createGraphSession,
 } from '@canopy/graph';
 import { createInMemoryEventStore } from '@canopy/storage';
-import { createApiAdapterContext } from '../src/api-context';
+import { createGraphAccessContext } from '@canopy/graph-access';
 import { createSubscriptionResolvers } from '../src/graphql/resolvers/subscriptions';
-import { executeCreateNode } from '../src/mutation-handlers';
-import { createApiRequest } from '../src/api-payloads';
+import { executeCreateNode } from '@canopy/graph-access';
+import { createGraphAccessRequest } from '@canopy/graph-access';
 
 const graphId = asGraphId('g1');
 const deviceId = asDeviceId('device-1');
@@ -21,7 +21,7 @@ const setupTestContext = async () => {
   const session = createGraphSession(store, graphId, deviceId);
   await session.load();
   const graph = session.graph();
-  return { context: createApiAdapterContext({ graph, session, eventLogStore: store }), session };
+  return { context: createGraphAccessContext({ graph, session, eventLogStore: store }), session };
 };
 
 describe('GraphQL subscription resolvers', () => {
@@ -39,7 +39,7 @@ describe('GraphQL subscription resolvers', () => {
     const sub = resolvers.eventStream.subscribe(null, { bufferCapacity: 10 });
     const iterator = sub[Symbol.asyncIterator]();
 
-    const request = createApiRequest('req-1', context, {
+    const request = createGraphAccessRequest('req-1', context, {
       id: asNodeId('n-sub-1'),
       type: asTypeId('doc'),
       properties: { title: 'Subscribed Node' },

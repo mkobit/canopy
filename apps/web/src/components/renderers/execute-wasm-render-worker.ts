@@ -1,7 +1,6 @@
 /* eslint-disable functional/immutable-data -- encapsulated warm-worker pool + request-sequence state */
 import { z } from 'zod';
 import {
-  createApiAdapterError,
   createWasmHostBindings,
   createFuelMeter,
   createMemoryChecker,
@@ -10,11 +9,14 @@ import {
   DEFAULT_UNTRUSTED_RENDER_TIMEOUT_MS,
   DEFAULT_WASM_FUEL_LIMIT,
   DEFAULT_WASM_MAX_MEMORY_BYTES,
-  type ApiAdapterContext,
-  type ApiAdapterError,
   type WasmHostBindings,
   type WitErrorPayload,
-} from '@canopy/api-adapter';
+} from '@canopy/plugin-host';
+import {
+  createGraphAccessError,
+  type GraphAccessContext,
+  type GraphAccessError,
+} from '@canopy/graph-access';
 import { err, fromThrowable, type Result } from '@canopy/graph';
 import {
   hostCallSchema,
@@ -57,11 +59,11 @@ export type RenderWorkerUnavailableError = Readonly<{
 
 export type SandboxedGuestRenderResult = Result<
   string,
-  ApiAdapterError | RenderWorkerUnavailableError
+  GraphAccessError | RenderWorkerUnavailableError
 >;
 
 export const isRenderWorkerUnavailable = (
-  error: ApiAdapterError | RenderWorkerUnavailableError,
+  error: GraphAccessError | RenderWorkerUnavailableError,
 ): error is RenderWorkerUnavailableError => error.code === 'RENDERER_UNAVAILABLE';
 
 const unavailable = (
@@ -149,12 +151,12 @@ const runWorkerRequest = async (
   }>,
   resultReady: Promise<SerializedResult | RenderWorkerUnavailableError>,
   onUnavailable: (error: RenderWorkerUnavailableError) => void,
-): Promise<Result<string, ApiAdapterError>> => {
+): Promise<Result<string, GraphAccessError>> => {
   worker.postMessage({ kind: 'execute', ...request });
   const serialized = await resultReady;
   if (isUnavailableResult(serialized)) {
     onUnavailable(serialized);
-    return err(createApiAdapterError('INTERNAL_ERROR', serialized.message));
+    return err(createGraphAccessError('INTERNAL_ERROR', serialized.message));
   }
   if (
     !serialized.ok &&
@@ -162,10 +164,10 @@ const runWorkerRequest = async (
     serialized.error.message.startsWith('unknown guest ')
   ) {
     onUnavailable(unavailable('unknown-guest', serialized.error.message));
-    return err(createApiAdapterError('INTERNAL_ERROR', serialized.error.message));
+    return err(createGraphAccessError('INTERNAL_ERROR', serialized.error.message));
   }
   if (!serialized.ok) {
-    return { ok: false, error: createApiAdapterError('INTERNAL_ERROR', serialized.error.message) };
+    return { ok: false, error: createGraphAccessError('INTERNAL_ERROR', serialized.error.message) };
   }
   const decoded = fromThrowable<unknown>(() => JSON.parse(serialized.value));
   const parsed = decoded.ok ? renderOutputSchema.safeParse(decoded.value) : undefined;
@@ -173,7 +175,7 @@ const runWorkerRequest = async (
     ? { ok: true, value: parsed.data.html }
     : {
         ok: false,
-        error: createApiAdapterError('INTERNAL_ERROR', 'plugin returned invalid render output'),
+        error: createGraphAccessError('INTERNAL_ERROR', 'plugin returned invalid render output'),
       };
 };
 
@@ -258,7 +260,7 @@ const createWorkerMessageFailureHandler =
   };
 
 export const executeSandboxedGuestPluginInWorker = async (
-  context: ApiAdapterContext,
+  context: GraphAccessContext,
   token: string,
   inputJson: string,
   guestId: string,
@@ -309,7 +311,7 @@ export const executeSandboxedGuestPluginInWorker = async (
 
   const outcome = await executeTerminableGuest(
     {
-      execute: (): Promise<Result<string, ApiAdapterError>> =>
+      execute: (): Promise<Result<string, GraphAccessError>> =>
         runWorkerRequest(
           worker,
           { requestId, guestId, token, inputJson, timeoutMs },

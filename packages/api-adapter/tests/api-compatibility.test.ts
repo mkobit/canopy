@@ -1,11 +1,16 @@
 import { describe, expect, test } from 'bun:test';
 import { checkApiCompatibility } from '../../../tools/lib/api-compatibility-checker';
+import { GRAPHQL_SDL_SCHEMA, JSON_RPC_IPC_SPECIFICATION, PROTO_SERVICES_SDL } from '../src';
 
 describe('API Compatibility Checker Engine', () => {
   test('passes clean verification against unchanged baselines', () => {
-    const result = checkApiCompatibility();
-    expect(result.success).toBe(true);
-    expect(result.violations.length).toEqual(0);
+    const results = [
+      checkApiCompatibility({ target: 'graphql', currentGql: GRAPHQL_SDL_SCHEMA }),
+      checkApiCompatibility({ target: 'connect', currentProto: PROTO_SERVICES_SDL }),
+      checkApiCompatibility({ target: 'ipc', currentIpc: JSON_RPC_IPC_SPECIFICATION }),
+    ];
+    expect(results.every((result) => result.success)).toBe(true);
+    expect(results.flatMap((result) => result.violations)).toEqual([]);
   });
 
   test('detects breaking GraphQL field removal', () => {
@@ -15,6 +20,7 @@ describe('API Compatibility Checker Engine', () => {
       }
     `;
     const result = checkApiCompatibility({
+      target: 'graphql',
       overrideGql: modifiedGql,
     });
     expect(result.success).toBe(false);
@@ -29,6 +35,7 @@ describe('API Compatibility Checker Engine', () => {
       }
     `;
     const result = checkApiCompatibility({
+      target: 'graphql',
       overrideGql: modifiedGql,
     });
     expect(result.success).toBe(false);
@@ -46,6 +53,7 @@ describe('API Compatibility Checker Engine', () => {
       }
     `;
     const result = checkApiCompatibility({
+      target: 'graphql',
       overrideGql: modifiedGql,
     });
     expect(result.success).toBe(false);
@@ -64,6 +72,7 @@ describe('API Compatibility Checker Engine', () => {
       }
     `;
     const result = checkApiCompatibility({
+      target: 'connect',
       overrideProto: modifiedPrototype,
     });
     expect(result.success).toBe(false);
@@ -80,31 +89,12 @@ describe('API Compatibility Checker Engine', () => {
       }
     `;
     const result = checkApiCompatibility({
+      target: 'connect',
       overrideProto: modifiedPrototype,
     });
     expect(result.success).toBe(false);
     expect(
       result.violations.some((v) => v.protocol === 'connect' && v.changeType === 'TAG_SHIFT'),
-    ).toBe(true);
-  });
-
-  test('detects WIT function removal and signature changes', () => {
-    const modifiedWit = `
-      interface host-queries {
-        use graph-types.{capability-token, adapter-error};
-        query-nodes: func(token: capability-token) -> result<string, adapter-error>;
-      }
-    `;
-    const result = checkApiCompatibility({
-      overrideWit: modifiedWit,
-    });
-    expect(result.success).toBe(false);
-    expect(
-      result.violations.some(
-        (v) =>
-          v.protocol === 'wit' &&
-          (v.changeType === 'FUNCTION_REMOVAL' || v.changeType === 'SIGNATURE_CHANGE'),
-      ),
     ).toBe(true);
   });
 
@@ -127,6 +117,7 @@ describe('API Compatibility Checker Engine', () => {
       },
     ];
     const result = checkApiCompatibility({
+      target: 'graphql',
       overrideGql: modifiedGql,
       overrideWaivers: waivers,
     });
@@ -152,6 +143,7 @@ describe('API Compatibility Checker Engine', () => {
       },
     ];
     const result = checkApiCompatibility({
+      target: 'graphql',
       overrideGql: modifiedGql,
       overrideWaivers: waivers,
     });
@@ -173,7 +165,9 @@ describe('API Compatibility Checker Engine', () => {
       },
     ];
     const result = checkApiCompatibility({
+      target: 'graphql',
       overrideWaivers: waivers,
+      currentGql: GRAPHQL_SDL_SCHEMA,
     });
     expect(result.success).toBe(false);
     expect(result.staleWaivers.length).toBeGreaterThan(0);
@@ -194,6 +188,7 @@ describe('API Compatibility Checker Engine', () => {
       ],
     });
     const result = checkApiCompatibility({
+      target: 'ipc',
       overrideIpc: modifiedIpc,
     });
     expect(result.success).toBe(false);
@@ -215,6 +210,7 @@ describe('API Compatibility Checker Engine', () => {
       errors: [],
     });
     const result = checkApiCompatibility({
+      target: 'ipc',
       overrideIpc: modifiedIpc,
     });
     expect(result.success).toBe(false);

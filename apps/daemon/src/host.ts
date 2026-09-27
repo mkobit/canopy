@@ -1,5 +1,6 @@
 import type { IpcProtocolError, IpcSocketInUseError } from '@canopy/api-adapter';
-import { createApiAdapterContext, createIpcServer } from '@canopy/api-adapter';
+import { createIpcServer } from '@canopy/api-adapter';
+import { createGraphAccessContext } from '@canopy/graph-access';
 import type { EventLogStore, Result } from '@canopy/graph';
 import { createGraphSession, err, ok } from '@canopy/graph';
 import { createInMemoryEventStore } from '@canopy/storage';
@@ -44,7 +45,7 @@ const bootWithEventLog = async (
     return err(daemonEventLogError(`Failed to load graph session: ${loadResult.error.message}`));
   }
 
-  const context = createApiAdapterContext({
+  const context = createGraphAccessContext({
     graph: session.graph(),
     session,
     eventLogStore: eventLog,
@@ -69,7 +70,7 @@ const bootWithEventLog = async (
 
 /**
  * Boots the host: opens an EventLogStore (SQLite-on-disk, or in-memory in
- * ephemeral mode), loads a GraphSession, builds a live ApiAdapterContext, and
+ * ephemeral mode), loads a GraphSession, builds a live GraphAccessContext, and
  * hosts createIpcServer. On IpcSocketInUseError (another host already owns
  * this socket path) this fails fast without binding a second listener.
  */

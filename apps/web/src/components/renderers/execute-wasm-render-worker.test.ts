@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'bun:test';
 import { asGraphId, createGraph, unwrap } from '@canopy/graph';
-import { createApiAdapterContext } from '@canopy/api-adapter';
+import { createGraphAccessContext } from '@canopy/graph-access';
 import {
   executeSandboxedGuestPluginInWorker,
   isRenderWorkerUnavailable,
 } from './execute-wasm-render-worker';
 
-const context = createApiAdapterContext({
+const context = createGraphAccessContext({
   graph: unwrap(createGraph(asGraphId('worker-test-graph'), 'Worker test graph')),
 });
 

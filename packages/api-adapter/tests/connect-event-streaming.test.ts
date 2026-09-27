@@ -2,11 +2,11 @@ import { describe, expect, it } from 'bun:test';
 import { asDeviceId, asGraphId, asNodeId, asTypeId, createGraphSession } from '@canopy/graph';
 import { createInMemoryEventStore } from '@canopy/storage';
 import {
-  createApiAdapterContext,
-  createApiRequest,
-  createConnectEventStreamHandlers,
+  createGraphAccessContext,
+  createGraphAccessRequest,
   executeCreateNode,
-} from '../src';
+} from '@canopy/graph-access';
+import { createConnectEventStreamHandlers } from '../src';
 
 const graphId = asGraphId('g1');
 const deviceId = asDeviceId('device-1');
@@ -15,7 +15,7 @@ const setupSessionContext = async () => {
   const eventLogStore = createInMemoryEventStore();
   const session = createGraphSession(eventLogStore, graphId, deviceId);
   await session.load();
-  const context = createApiAdapterContext({
+  const context = createGraphAccessContext({
     graph: session.graph(),
     session,
     eventLogStore,
@@ -31,7 +31,7 @@ describe('Connect gRPC event log streaming and replay handlers', () => {
     const iterator = handlers.subscribeEventStream({});
     const nextPromise = iterator.next();
 
-    const request = createApiRequest('req-live-1', context, {
+    const request = createGraphAccessRequest('req-live-1', context, {
       id: asNodeId('n-live-1'),
       type: asTypeId('doc'),
       properties: { title: 'Live Streaming Test' },
@@ -61,7 +61,7 @@ describe('Connect gRPC event log streaming and replay handlers', () => {
     const handlers = createConnectEventStreamHandlers(context);
 
     for (let index = 1; index <= 3; index++) {
-      const request = createApiRequest(`req-replay-${index}`, context, {
+      const request = createGraphAccessRequest(`req-replay-${index}`, context, {
         id: asNodeId(`n-replay-${index}`),
         type: asTypeId('doc'),
         properties: { count: index },
@@ -93,7 +93,7 @@ describe('Connect gRPC event log streaming and replay handlers', () => {
     const handlers = createConnectEventStreamHandlers(context);
 
     for (let index = 1; index <= 6; index++) {
-      const request = createApiRequest(`req-overflow-${index}`, context, {
+      const request = createGraphAccessRequest(`req-overflow-${index}`, context, {
         id: asNodeId(`n-overflow-${index}`),
         type: asTypeId('doc'),
         properties: { count: index },

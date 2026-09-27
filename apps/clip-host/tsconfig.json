@@ -4,6 +4,7 @@
     "paths": {
       "@canopy/api-adapter": ["../../packages/api-adapter/src/index.ts"],
       "@canopy/graph": ["../../packages/graph/src/index.ts"],
+      "@canopy/graph-access": ["../../packages/graph-access/src/index.ts"],
       "@canopy/storage": ["../../packages/storage/src/index.ts"]
     },
     "composite": false,

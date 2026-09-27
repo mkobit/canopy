@@ -5,7 +5,7 @@ import {
   createConnectErrorPayload,
   mapResultErrorToGrpcStatusCode,
 } from '../src/connect/grpc-errors';
-import { createApiAdapterError } from '../src/result-errors';
+import { createGraphAccessError } from '@canopy/graph-access';
 
 describe('gRPC status code and error mapper', () => {
   it('defines standard gRPC status codes matching specification', () => {
@@ -106,8 +106,8 @@ describe('gRPC status code and error mapper', () => {
     ).toBe(GrpcStatusCode.INTERNAL);
   });
 
-  it('maps ApiAdapterError categories correctly', () => {
-    const error = createApiAdapterError('CONCURRENCY_CONFLICT', 'CAS conflict', { seq: 10 });
+  it('maps GraphAccessError categories correctly', () => {
+    const error = createGraphAccessError('CONCURRENCY_CONFLICT', 'CAS conflict', { seq: 10 });
     expect(mapResultErrorToGrpcStatusCode(error)).toBe(GrpcStatusCode.ABORTED);
   });
 
@@ -125,8 +125,8 @@ describe('gRPC status code and error mapper', () => {
     expect(rpcError.details).toEqual({ field: 'age', value: -1 });
   });
 
-  it('creates ConnectRpcError from ApiAdapterError category instance', () => {
-    const adapterError = createApiAdapterError('NOT_FOUND', 'Node node-123 does not exist');
+  it('creates ConnectRpcError from GraphAccessError category instance', () => {
+    const adapterError = createGraphAccessError('NOT_FOUND', 'Node node-123 does not exist');
     const rpcError = createConnectErrorPayload(adapterError);
     expect(rpcError.code).toBe(GrpcStatusCode.NOT_FOUND);
     expect(rpcError.errorCode).toBe('NOT_FOUND');

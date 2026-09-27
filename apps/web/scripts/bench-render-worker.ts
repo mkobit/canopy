@@ -4,14 +4,15 @@
  * construction + per-render round-trip) can be measured without the 12.5 MB WASM
  * component. Driven by `bench-wasm-render.ts`; not wired into CI.
  */
-import { createApiAdapterContext, executeSandboxedGuestPlugin } from '@canopy/api-adapter';
+import { createGraphAccessContext } from '@canopy/graph-access';
+import { executeSandboxedGuestPlugin } from '@canopy/plugin-host';
 import { asGraphId, createGraph } from '@canopy/graph';
 import { WORKER_GUESTS } from '../src/plugin/runtime/worker-guests';
 
 declare const self: Worker;
 
 const graphResult = createGraph(asGraphId('bench-worker'), 'bench-worker');
-const context = graphResult.ok ? createApiAdapterContext({ graph: graphResult.value }) : undefined;
+const context = graphResult.ok ? createGraphAccessContext({ graph: graphResult.value }) : undefined;
 
 self.onmessage = async (event: MessageEvent<{ id: number; inputJson: string }>): Promise<void> => {
   const guest = WORKER_GUESTS.get('fixture:interactive');

@@ -1,17 +1,14 @@
 import { describe, expect, test } from 'bun:test';
+import { createGraphAccessError, type GraphAccessErrorCategory } from '@canopy/graph-access';
 import {
   buildGraphQLSchema,
-  CANOPY_WIT_SPECIFICATION,
   CONNECT_SERVICE_DESCRIPTORS,
-  createApiAdapterError,
   GRAPHQL_SDL_SCHEMA,
   GrpcStatusCode,
   PROTO_SERVICES_SDL,
   toGraphQLExtensions,
   toGrpcStatus,
-  toWitError,
 } from '../src';
-import type { ApiErrorCategory } from '../src';
 
 describe('Single-source Schema Consistency Verification', () => {
   test('GraphQL schema SDL and built schema object define all core queries, mutations, and subscriptions', () => {
@@ -58,30 +55,8 @@ describe('Single-source Schema Consistency Verification', () => {
     expect(serviceNames).toContain('canopy.api.v1.EventStreamService');
   });
 
-  test('WASM WIT specification defines host-queries, host-mutations, host-events, and plugin interface', () => {
-    expect(CANOPY_WIT_SPECIFICATION).toContain('package canopy:graph-api@0.1.0;');
-    expect(CANOPY_WIT_SPECIFICATION).toContain('interface graph-types');
-    expect(CANOPY_WIT_SPECIFICATION).toContain('interface host-queries');
-    expect(CANOPY_WIT_SPECIFICATION).toContain('query-nodes: func(');
-    expect(CANOPY_WIT_SPECIFICATION).toContain('query-edges: func(');
-    expect(CANOPY_WIT_SPECIFICATION).toContain('traverse-graph: func(');
-
-    expect(CANOPY_WIT_SPECIFICATION).toContain('interface host-mutations');
-    expect(CANOPY_WIT_SPECIFICATION).toContain('create-node: func(');
-    expect(CANOPY_WIT_SPECIFICATION).toContain('update-node-properties: func(');
-    expect(CANOPY_WIT_SPECIFICATION).toContain('delete-node: func(');
-    expect(CANOPY_WIT_SPECIFICATION).toContain('create-edge: func(');
-    expect(CANOPY_WIT_SPECIFICATION).toContain('delete-edge: func(');
-
-    expect(CANOPY_WIT_SPECIFICATION).toContain('interface host-events');
-    expect(CANOPY_WIT_SPECIFICATION).toContain('subscribe-events: func(');
-    expect(CANOPY_WIT_SPECIFICATION).toContain('replay-events: func(');
-
-    expect(CANOPY_WIT_SPECIFICATION).toContain('world graph-plugin');
-  });
-
-  test('Canonical error translation produces consistent mapping across GraphQL, gRPC, and WIT adapters', () => {
-    const categories: readonly ApiErrorCategory[] = [
+  test('maps every graph access error category to GraphQL and gRPC', () => {
+    const categories: readonly GraphAccessErrorCategory[] = [
       'VALIDATION_ERROR',
       'NOT_FOUND',
       'CONCURRENCY_CONFLICT',
@@ -90,20 +65,10 @@ describe('Single-source Schema Consistency Verification', () => {
       'RESOURCE_EXHAUSTED',
       'INTERNAL_ERROR',
     ];
-
     for (const category of categories) {
-      const errorPayload = createApiAdapterError(category, `Test error for ${category}`);
-
-      const gqlExtension = toGraphQLExtensions(errorPayload);
-      expect(gqlExtension.category).toBe(category);
-
-      const grpcStatus = toGrpcStatus(errorPayload);
-      expect(typeof grpcStatus.code).toBe('number');
-      expect(Object.values(GrpcStatusCode)).toContain(grpcStatus.code);
-
-      const witError = toWitError(errorPayload);
-      expect(witError.code).toBeDefined();
-      expect(witError.message).toBe(errorPayload.message);
+      const error = createGraphAccessError(category, `Test error for ${category}`);
+      expect(toGraphQLExtensions(error).category).toBe(category);
+      expect(Object.values(GrpcStatusCode)).toContain(toGrpcStatus(error).code);
     }
   });
 });

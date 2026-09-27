@@ -13,7 +13,7 @@ import {
   unwrap,
 } from '@canopy/graph';
 import { createInMemoryEventStore } from '@canopy/storage';
-import { createApiAdapterContext } from '../src/api-context';
+import { createGraphAccessContext } from '@canopy/graph-access';
 import { IPC_METHODS, createIpcServer } from '../src/ipc';
 import type { IpcServer } from '../src/ipc';
 
@@ -150,7 +150,7 @@ describe('canopy.v1.draft.* JSON-RPC flow', () => {
     const graphId = asGraphId('graph_draft_happy');
     const deviceId = asDeviceId('dev_draft_happy');
     const session = createGraphSession(eventLogStore, graphId, deviceId);
-    const context = createApiAdapterContext({ graph: session.graph(), session, eventLogStore });
+    const context = createGraphAccessContext({ graph: session.graph(), session, eventLogStore });
 
     server = createIpcServer({ socketPath, context });
     await server.listen();
@@ -206,7 +206,7 @@ describe('canopy.v1.draft.* JSON-RPC flow', () => {
     const graphId = asGraphId('graph_draft_conflict');
     const deviceId = asDeviceId('dev_draft_conflict');
     const session = createGraphSession(eventLogStore, graphId, deviceId);
-    const context = createApiAdapterContext({ graph: session.graph(), session, eventLogStore });
+    const context = createGraphAccessContext({ graph: session.graph(), session, eventLogStore });
 
     server = createIpcServer({ socketPath, context });
     await server.listen();
@@ -272,7 +272,7 @@ describe('canopy.v1.draft.* JSON-RPC flow', () => {
     const graphId = asGraphId('graph_draft_invalid');
     const deviceId = asDeviceId('dev_draft_invalid');
     const session = createGraphSession(eventLogStore, graphId, deviceId);
-    const context = createApiAdapterContext({ graph: session.graph(), session, eventLogStore });
+    const context = createGraphAccessContext({ graph: session.graph(), session, eventLogStore });
 
     server = createIpcServer({ socketPath, context });
     await server.listen();
@@ -311,7 +311,7 @@ describe('canopy.v1.draft.* JSON-RPC flow', () => {
     const graphId = asGraphId('graph_draft_bounded');
     const deviceId = asDeviceId('dev_draft_bounded');
     const session = createGraphSession(eventLogStore, graphId, deviceId);
-    const context = createApiAdapterContext({ graph: session.graph(), session, eventLogStore });
+    const context = createGraphAccessContext({ graph: session.graph(), session, eventLogStore });
 
     server = createIpcServer({ socketPath, context });
     await server.listen();
@@ -351,7 +351,7 @@ describe('canopy.v1.draft.* JSON-RPC flow', () => {
     const graphId = asGraphId('graph_draft_cleanup');
     const deviceId = asDeviceId('dev_draft_cleanup');
     const session = createGraphSession(eventLogStore, graphId, deviceId);
-    const context = createApiAdapterContext({ graph: session.graph(), session, eventLogStore });
+    const context = createGraphAccessContext({ graph: session.graph(), session, eventLogStore });
 
     server = createIpcServer({ socketPath, context });
     await server.listen();
@@ -382,7 +382,7 @@ describe('canopy.v1.draft.* JSON-RPC flow', () => {
     const graphId = asGraphId('graph_draft_limits');
     const deviceId = asDeviceId('dev_draft_limits');
     const session = createGraphSession(eventLogStore, graphId, deviceId);
-    const context = createApiAdapterContext({ graph: session.graph(), session, eventLogStore });
+    const context = createGraphAccessContext({ graph: session.graph(), session, eventLogStore });
 
     server = createIpcServer({ socketPath, context });
     await server.listen();
@@ -436,7 +436,7 @@ describe('canopy.v1.draft.* JSON-RPC flow', () => {
 
   it('8.7 missing-session: every draft.* method rejects a read-only context', async () => {
     const graph = unwrap(createGraph(asGraphId('graph_draft_readonly'), 'Readonly Graph'));
-    const context = createApiAdapterContext({ graph });
+    const context = createGraphAccessContext({ graph });
 
     server = createIpcServer({ socketPath, context });
     await server.listen();

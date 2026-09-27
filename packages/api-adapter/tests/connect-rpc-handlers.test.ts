@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import { asDeviceId, asGraphId, createGraphSession } from '@canopy/graph';
 import { createInMemoryEventStore } from '@canopy/storage';
-import { createApiAdapterContext } from '../src/api-context';
+import { createGraphAccessContext } from '@canopy/graph-access';
 import {
   createConnectMutationHandlers,
   createConnectQueryHandlers,
@@ -14,7 +14,7 @@ const setupTestContext = async () => {
   const store = createInMemoryEventStore();
   const session = createGraphSession(store, graphId, deviceId);
   await session.load();
-  const context = createApiAdapterContext({ graph: session.graph(), session });
+  const context = createGraphAccessContext({ graph: session.graph(), session });
   return { context, session };
 };
 

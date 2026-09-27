@@ -17,8 +17,9 @@
   },
   "dependencies": {
     "@bytecodealliance/preview2-shim": "0.19.0",
-    "@canopy/api-adapter": "workspace:*",
     "@canopy/graph": "workspace:*",
+    "@canopy/graph-access": "workspace:*",
+    "@canopy/plugin-host": "workspace:*",
     "@canopy/queries": "workspace:*",
     "@canopy/settings": "workspace:*",
     "@canopy/storage": "workspace:*",

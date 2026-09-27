@@ -3,7 +3,7 @@
   "compilerOptions": {
     "paths": {
       "@canopy/graph": ["../../packages/graph/src/index.ts"],
-      "@canopy/queries": ["../../packages/queries/src/index.ts"],
+      "@canopy/graph-access": ["../../packages/graph-access/src/index.ts"],
       "@canopy/api-adapter": ["../../packages/api-adapter/src/index.ts"]
     },
     "composite": false,

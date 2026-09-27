@@ -1,4 +1,4 @@
-import type { WasmGuestPlugin } from '@canopy/api-adapter';
+import type { WasmGuestPlugin } from '@canopy/plugin-host';
 
 // Guests the render worker is allowed to run, keyed by a stable id the main
 // thread names in its `execute` request. Functions cannot cross `postMessage`,

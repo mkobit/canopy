@@ -1,6 +1,6 @@
 # Bounded contexts
 
-Canopy is split into nine packages.
+Canopy is split into eleven packages.
 Each owns a single bounded concept.
 Generic catch-all packages (`types`, `schema`, `api`) are not used.
 
@@ -16,6 +16,8 @@ graph TD
   storageSqlite[@canopy/storage-sqlite]
   storageFile[@canopy/storage-file]
   storageHttp[@canopy/storage-http]
+  graphAccess[@canopy/graph-access]
+  pluginHost[@canopy/plugin-host]
   apiAdapter[@canopy/api-adapter]
   web[apps/web]
   cli[apps/cli]
@@ -30,15 +32,20 @@ graph TD
   storageSqlite --> graph
   storageFile --> graph
   storageHttp --> graph
+  graphAccess --> graph
+  graphAccess --> queries
+  pluginHost --> graph
+  pluginHost --> graphAccess
   apiAdapter --> graph
-  apiAdapter --> queries
+  apiAdapter --> graphAccess
 
   web --> graph
   web --> queries
   web --> settings
   web --> storage
   web --> storageIndexeddb
-  web --> apiAdapter
+  web --> graphAccess
+  web --> pluginHost
   cli --> graph
   cli --> storage
   cli --> apiAdapter
@@ -46,8 +53,10 @@ graph TD
   daemon --> storage
   daemon --> storageSqlite
   daemon --> apiAdapter
+  daemon --> graphAccess
   clipHost --> graph
   clipHost --> apiAdapter
+  clipHost --> graphAccess
 ```
 
 `apps/extension` has no `@canopy/*` dependencies (zero-dependency browser code, no bundler -- see `apps/extension/AGENTS.md`) and so has no outgoing edges above; it talks to `apps/clip-host` over native-messaging stdio, not an import.
@@ -102,11 +111,22 @@ Adds a `reconcile` operation that ingests other devices' segment folders via per
 
 Implements `EventLogStore` over a REST API (`POST`/`GET /graphs/:id/events`) — a stateless request/response event carrier with no background sync loop.
 
+### @canopy/graph-access
+
+The protocol-neutral application operation layer over `@canopy/graph` and `@canopy/queries`.
+Owns graph access context, request and response payloads, query and mutation handlers, event access, and shared `Result` error categories.
+All mutations continue through `GraphSession.commit`.
+
+### @canopy/plugin-host
+
+The WASM plugin execution host over `@canopy/graph-access` and `@canopy/graph`.
+Owns host bindings, capability validation, sandbox execution, fuel and memory limits, termination helpers, WIT error conversion, and the inline graph API WIT contract.
+
 ### @canopy/api-adapter
 
-The transport and protocol adapter layer over `@canopy/graph` and `@canopy/queries`.
-Hosts the Unix-socket JSON-RPC IPC server (`createIpcServer`) and the `canopy.v1.draft.*` family that wraps `DraftSession`, plus the WASM plugin host bindings.
-Consumed by `apps/cli`, `apps/daemon`, `apps/clip-host`, and `apps/web` (the WASM plugin host bindings for content rendering).
+The transport and protocol adapter layer over `@canopy/graph-access` and `@canopy/graph`.
+Hosts Connect, GraphQL, and the Unix-socket JSON-RPC IPC server (`createIpcServer`), including the `canopy.v1.draft.*` family that wraps `DraftSession`.
+Owns protocol-specific error translation and is consumed by `apps/cli`, `apps/daemon`, and `apps/clip-host`.
 
 ## Cross-context ports
 

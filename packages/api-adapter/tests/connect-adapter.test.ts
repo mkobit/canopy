@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'bun:test';
 import { asDeviceId, asGraphId, createGraphSession } from '@canopy/graph';
 import { createInMemoryEventStore } from '@canopy/storage';
-import { createApiAdapterContext, createConnectAdapter } from '../src';
+import { createGraphAccessContext } from '@canopy/graph-access';
+import { createConnectAdapter } from '../src';
 
 const graphId = asGraphId('graph-connect-adapter-test');
 const deviceId = asDeviceId('device-connect-adapter-test');
@@ -11,7 +12,7 @@ describe('ConnectAdapter complete service assembly', () => {
     const store = createInMemoryEventStore();
     const session = createGraphSession(store, graphId, deviceId);
     await session.load();
-    const context = createApiAdapterContext({ graph: session.graph(), session });
+    const context = createGraphAccessContext({ graph: session.graph(), session });
 
     const adapter = createConnectAdapter(context);
     expect(adapter.descriptors.length).toBe(5);

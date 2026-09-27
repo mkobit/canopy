@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import { asDeviceId, asGraphId, asNodeId, createGraphSession } from '@canopy/graph';
 import { createInMemoryEventStore } from '@canopy/storage';
-import { createApiAdapterContext } from '../src/api-context';
+import { createGraphAccessContext } from '@canopy/graph-access';
 import {
   createMutationResolvers,
   validateActorDelegation,
@@ -15,7 +15,7 @@ const setupTestContext = async () => {
   const session = createGraphSession(store, graphId, deviceId);
   await session.load();
   const graph = session.graph();
-  return createApiAdapterContext({ graph, session, eventLogStore: store });
+  return createGraphAccessContext({ graph, session, eventLogStore: store });
 };
 
 describe('GraphQL mutation resolvers & actor delegation', () => {

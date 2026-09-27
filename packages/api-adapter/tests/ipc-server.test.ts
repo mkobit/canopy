@@ -4,7 +4,7 @@ import * as path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import { asDeviceId, asGraphId, createGraph, createGraphSession, unwrap } from '@canopy/graph';
 import { createInMemoryEventStore } from '@canopy/storage';
-import { createApiAdapterContext } from '../src/api-context';
+import { createGraphAccessContext } from '@canopy/graph-access';
 import { IPC_METHODS, createIpcServer } from '../src/ipc';
 import type { IpcServer } from '../src/ipc';
 
@@ -39,7 +39,7 @@ describe('IpcServer integration and socket lifecycle', () => {
 
   it('starts server and creates socket file with umask permissions', async () => {
     const graph = unwrap(createGraph(asGraphId('g1'), 'Test Graph'));
-    const context = createApiAdapterContext({ graph });
+    const context = createGraphAccessContext({ graph });
     server = createIpcServer({ socketPath, context });
 
     const result = await server.listen();
@@ -54,7 +54,7 @@ describe('IpcServer integration and socket lifecycle', () => {
 
   it('detects active listener and returns IpcSocketInUseError', async () => {
     const graph = unwrap(createGraph(asGraphId('g1'), 'Test Graph'));
-    const context = createApiAdapterContext({ graph });
+    const context = createGraphAccessContext({ graph });
     server = createIpcServer({ socketPath, context });
 
     const result1 = await server.listen();
@@ -77,7 +77,7 @@ describe('IpcServer integration and socket lifecycle', () => {
     fs.writeFileSync(socketPath, 'stale');
 
     const graph = unwrap(createGraph(asGraphId('g1'), 'Test Graph'));
-    const context = createApiAdapterContext({ graph });
+    const context = createGraphAccessContext({ graph });
     server = createIpcServer({ socketPath, context });
 
     const result = await server.listen();
@@ -90,7 +90,7 @@ describe('IpcServer integration and socket lifecycle', () => {
     const graphId = asGraphId('graph_test');
     const deviceId = asDeviceId('dev_test');
     const session = createGraphSession(eventLogStore, graphId, deviceId);
-    const context = createApiAdapterContext({ graph: session.graph(), session, eventLogStore });
+    const context = createGraphAccessContext({ graph: session.graph(), session, eventLogStore });
 
     server = createIpcServer({ socketPath, context });
     const listenResult = await server.listen();
@@ -160,7 +160,7 @@ describe('IpcServer integration and socket lifecycle', () => {
     const graphId = asGraphId('graph_test');
     const deviceId = asDeviceId('dev_test');
     const session = createGraphSession(eventLogStore, graphId, deviceId);
-    const context = createApiAdapterContext({ graph: session.graph(), session, eventLogStore });
+    const context = createGraphAccessContext({ graph: session.graph(), session, eventLogStore });
 
     server = createIpcServer({ socketPath, context });
     await server.listen();
@@ -246,7 +246,7 @@ describe('IpcServer integration and socket lifecycle', () => {
 
   it('supports additive properties in request and response schemas', async () => {
     const graph = unwrap(createGraph(asGraphId('g1'), 'Test Graph'));
-    const context = createApiAdapterContext({ graph });
+    const context = createGraphAccessContext({ graph });
 
     server = createIpcServer({ socketPath, context });
     await server.listen();

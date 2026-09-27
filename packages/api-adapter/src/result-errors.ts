@@ -1,124 +1,16 @@
-import type { Result } from '@canopy/graph';
-import { err, isErr, isOk, ok } from '@canopy/graph';
-
-export type ApiErrorCategory =
-  | 'VALIDATION_ERROR'
-  | 'NOT_FOUND'
-  | 'CONCURRENCY_CONFLICT'
-  | 'UNAUTHORIZED'
-  | 'FORBIDDEN'
-  | 'RESOURCE_EXHAUSTED'
-  | 'INTERNAL_ERROR';
-
+import type { GraphAccessError, GraphAccessErrorCategory } from '@canopy/graph-access';
 import { GrpcStatusCode } from './connect/grpc-errors';
 
 export { GrpcStatusCode } from './connect/grpc-errors';
 
-export type WitErrorCode =
-  | 'ValidationError'
-  | 'NotFound'
-  | 'ConcurrencyConflict'
-  | 'PermissionDenied'
-  | 'ResourceExhausted'
-  | 'InternalError';
-
-export type ApiAdapterError = Readonly<{
-  code: string;
-  message: string;
-  category: ApiErrorCategory;
-  details?: Readonly<Record<string, unknown>>;
-}>;
-
-export const createApiAdapterError = (
-  category: ApiErrorCategory,
-  message: string,
-  details?: Readonly<Record<string, unknown>>,
-): ApiAdapterError => ({
-  code: category,
-  message,
-  category,
-  ...(details && { details }),
-});
-
-export const inferCategoryFromError = (error: Error): ApiErrorCategory => {
-  const message = error.message.toLowerCase();
-  if (message.includes('not found') || message.includes('does not exist')) {
-    return 'NOT_FOUND';
-  }
-  if (message.includes('validation') || message.includes('invalid') || message.includes('schema')) {
-    return 'VALIDATION_ERROR';
-  }
-  if (
-    message.includes('sequence') ||
-    message.includes('conflict') ||
-    message.includes('concurrent') ||
-    message.includes('cas')
-  ) {
-    return 'CONCURRENCY_CONFLICT';
-  }
-  if (message.includes('unauthorized') || message.includes('unauthenticated')) {
-    return 'UNAUTHORIZED';
-  }
-  if (message.includes('forbidden') || message.includes('permission denied')) {
-    return 'FORBIDDEN';
-  }
-  if (
-    message.includes('limit') ||
-    message.includes('quota') ||
-    message.includes('exhausted') ||
-    message.includes('fuel') ||
-    message.includes('depth') ||
-    message.includes('cost')
-  ) {
-    return 'RESOURCE_EXHAUSTED';
-  }
-  return 'INTERNAL_ERROR';
-};
-
-export const toApiAdapterError = (
-  error: unknown,
-  categoryOverride?: ApiErrorCategory,
-): ApiAdapterError => {
-  if (
-    typeof error === 'object' &&
-    error !== null &&
-    'category' in error &&
-    'message' in error &&
-    typeof (error as Record<string, unknown>).message === 'string'
-  ) {
-    const adapterError = error as ApiAdapterError;
-    if (categoryOverride !== undefined) {
-      return createApiAdapterError(categoryOverride, adapterError.message, adapterError.details);
-    }
-    return adapterError;
-  }
-
-  const errorInstance = error instanceof Error ? error : new Error(String(error));
-  const category = categoryOverride ?? inferCategoryFromError(errorInstance);
-  return createApiAdapterError(category, errorInstance.message);
-};
-
-export const mapKernelResultToApiResult = <T>(
-  result: Result<T, Error>,
-  categoryOverride?: ApiErrorCategory,
-): Result<T, ApiAdapterError> => {
-  if (isOk(result)) {
-    return ok(result.value);
-  }
-  if (isErr(result)) {
-    return err(toApiAdapterError(result.error, categoryOverride));
-  }
-  return err(createApiAdapterError('INTERNAL_ERROR', 'Unknown result state'));
-};
-
 export const toGrpcStatus = (
-  error: ApiAdapterError,
+  error: GraphAccessError,
 ): Readonly<{
   code: GrpcStatusCode;
   message: string;
-  details?: Readonly<Record<string, unknown>>;
+  details?: unknown;
 }> => {
-  const codeMap: Readonly<Record<ApiErrorCategory, GrpcStatusCode>> = {
+  const codeMap: Readonly<Record<GraphAccessErrorCategory, GrpcStatusCode>> = {
     VALIDATION_ERROR: GrpcStatusCode.INVALID_ARGUMENT,
     NOT_FOUND: GrpcStatusCode.NOT_FOUND,
     UNAUTHORIZED: GrpcStatusCode.PERMISSION_DENIED,
@@ -130,39 +22,18 @@ export const toGrpcStatus = (
   return {
     code: codeMap[error.category],
     message: error.message,
-    ...(error.details && { details: error.details }),
+    ...(error.details !== undefined && { details: error.details }),
   };
 };
 
 export const toGraphQLExtensions = (
-  error: ApiAdapterError,
+  error: GraphAccessError,
 ): Readonly<{
   code: string;
-  category: ApiErrorCategory;
-  details?: Readonly<Record<string, unknown>>;
+  category: GraphAccessErrorCategory;
+  details?: unknown;
 }> => ({
   code: error.code,
   category: error.category,
-  ...(error.details && { details: error.details }),
+  ...(error.details !== undefined && { details: error.details }),
 });
-
-export const toWitError = (
-  error: ApiAdapterError,
-): Readonly<{
-  code: WitErrorCode;
-  message: string;
-}> => {
-  const witCodeMap: Readonly<Record<ApiErrorCategory, WitErrorCode>> = {
-    VALIDATION_ERROR: 'ValidationError',
-    NOT_FOUND: 'NotFound',
-    CONCURRENCY_CONFLICT: 'ConcurrencyConflict',
-    UNAUTHORIZED: 'PermissionDenied',
-    FORBIDDEN: 'PermissionDenied',
-    RESOURCE_EXHAUSTED: 'ResourceExhausted',
-    INTERNAL_ERROR: 'InternalError',
-  };
-  return {
-    code: witCodeMap[error.category],
-    message: error.message,
-  };
-};

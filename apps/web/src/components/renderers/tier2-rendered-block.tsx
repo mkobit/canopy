@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { Graph, Node } from '@canopy/graph';
-import { createApiAdapterContext } from '@canopy/api-adapter';
+import { createGraphAccessContext } from '@canopy/graph-access';
 import {
   executeSandboxedGuestPluginInWorker,
   isRenderWorkerUnavailable,
@@ -114,7 +114,7 @@ const useTier2Output = (
     let cancelled = false;
     void (async (): Promise<void> => {
       const result = await executeSandboxedGuestPluginInWorker(
-        createApiAdapterContext({ graph }),
+        createGraphAccessContext({ graph }),
         token,
         contentToInput(node),
         guestId,
