@@ -428,6 +428,14 @@ export default tseslint.config(
       'unicorn/prefer-module': 'off', // Allow CommonJS-ish patterns or __dirname in config files if needed, though usually they are modules.
     },
   },
+  {
+    files: ['apps/web/vite.config.ts'],
+    rules: {
+      // Rollup binds its plugin context as `this`; emitting build assets requires that API.
+      'functional/no-this-expressions': 'off',
+      'unicorn/no-this-outside-of-class': 'off',
+    },
+  },
   // Override for Zod schemas using .map() which confuses Unicorn
   {
     files: ['packages/graph/src/schemas.ts'],

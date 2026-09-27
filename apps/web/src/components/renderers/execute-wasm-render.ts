@@ -1,10 +1,7 @@
 import { z } from 'zod';
 import type { Graph, Node } from '@canopy/graph';
-import {
-  createApiAdapterContext,
-  executeSandboxedGuestPlugin,
-  intersectCapabilities,
-} from '@canopy/api-adapter';
+import { createGraphAccessContext } from '@canopy/graph-access';
+import { executeSandboxedGuestPlugin, intersectCapabilities } from '@canopy/plugin-host';
 
 // Implicit system render-grant. For a bundled/first-party renderer the host
 // supplies this fixed grant, which `intersectCapabilities` narrows against the
@@ -56,7 +53,7 @@ export const executeWasmRender = async (
   try {
     const { markdownRenderGuest } = await import('../../plugin/runtime/markdown-render-plugin');
 
-    const context = createApiAdapterContext({ graph });
+    const context = createGraphAccessContext({ graph });
     const executionResult = await executeSandboxedGuestPlugin(
       context,
       token,

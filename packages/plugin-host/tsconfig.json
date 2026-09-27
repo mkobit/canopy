@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.build.json",
+  "compilerOptions": {
+    "paths": {
+      "@canopy/graph": ["../../packages/graph/src/index.ts"],
+      "@canopy/graph-access": ["../../packages/graph-access/src/index.ts"],
+      "@canopy/plugin-host": ["../../packages/plugin-host/src/index.ts"]
+    },
+    "composite": false,
+    "noEmit": true
+  },
+  "include": ["src/**/*", "tests/**/*"],
+  "exclude": []
+}

@@ -1,8 +1,8 @@
 import type { EventBus } from '@canopy/graph';
 import { createInstant } from '@canopy/graph';
-import type { ApiAdapterContext } from '../../api-context';
-import type { EventStreamMessage } from '../../api-payloads';
-import { createEventStreamSubscriber, executeReplayEventStream } from '../../event-stream-handlers';
+import type { GraphAccessContext } from '@canopy/graph-access';
+import type { EventStreamMessage } from '@canopy/graph-access';
+import { createEventStreamSubscriber, executeReplayEventStream } from '@canopy/graph-access';
 
 export type ConnectEventStreamItem = Readonly<{
   event_id: string;
@@ -94,7 +94,7 @@ const formatMessageToConnectItem = (message: EventStreamMessage): ConnectEventSt
 };
 
 const createSubscribeGenerator = async function* (
-  context: ApiAdapterContext,
+  context: GraphAccessContext,
   options?: ConnectEventStreamOptions,
 ): AsyncGenerator<ConnectEventStreamItem, void, unknown> {
   const subscriber = createEventStreamSubscriber(context, {
@@ -177,7 +177,7 @@ const createSubscribeGenerator = async function* (
 };
 
 const createReplayGenerator = async function* (
-  context: ApiAdapterContext,
+  context: GraphAccessContext,
   request: EventStreamRequestPayload,
   options?: ConnectEventStreamOptions,
 ): AsyncGenerator<ConnectEventStreamItem, void, unknown> {
@@ -226,7 +226,7 @@ const createReplayGenerator = async function* (
 };
 
 export const createConnectEventStreamHandlers = (
-  context: ApiAdapterContext,
+  context: GraphAccessContext,
   options?: ConnectEventStreamOptions,
 ) => ({
   subscribeEventStream: (_request: EventStreamRequestPayload) =>

@@ -10,12 +10,8 @@ import {
   err,
   ok,
 } from '@canopy/graph';
-import type {
-  ApiNodePayload,
-  DraftApplyParamsInput,
-  IpcClient,
-  IpcClientError,
-} from '@canopy/api-adapter';
+import type { DraftApplyParamsInput, IpcClient, IpcClientError } from '@canopy/api-adapter';
+import type { GraphAccessNodePayload } from '@canopy/graph-access';
 import { Effect } from 'effect';
 
 export const CLIP_NAMESPACE = 'clip';
@@ -68,7 +64,9 @@ export const toWireEvent = (event: GraphEvent): Readonly<WireGraphEvent> => {
   }
 };
 
-const findExistingWebClipType = (nodes: readonly ApiNodePayload[]): ApiNodePayload | undefined =>
+const findExistingWebClipType = (
+  nodes: readonly GraphAccessNodePayload[],
+): GraphAccessNodePayload | undefined =>
   nodes.find(
     (node) =>
       node.properties.name === WEBCLIP_TYPE_NAME && node.properties.namespace === CLIP_NAMESPACE,

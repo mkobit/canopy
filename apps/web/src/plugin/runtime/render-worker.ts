@@ -1,13 +1,12 @@
 /// <reference lib="webworker" />
 /* eslint-disable functional/immutable-data -- encapsulated worker call-registry + sequence state */
 import {
-  createApiAdapterContext,
   executeSandboxedGuestPlugin,
   hardenGuestWorkerScope,
-  type ApiAdapterContext,
   type RemoteHostDispatch,
   type WasmCapability,
-} from '@canopy/api-adapter';
+} from '@canopy/plugin-host';
+import { createGraphAccessContext, type GraphAccessContext } from '@canopy/graph-access';
 import { asGraphId, createGraph, err, ok } from '@canopy/graph';
 import { WORKER_GUESTS } from './worker-guests';
 import { workerInboundSchema, type ExecuteRequest, type SerializedResult } from './worker-protocol';
@@ -21,9 +20,9 @@ hardenGuestWorkerScope(globalThis);
 // below, so the guards run in this worker but the real graph stays on main.
 // Bootstrap of a fresh empty graph does not fail; `undefined` is the belt-and-
 // braces fallback so the module never throws at load.
-const buildStubContext = (): ApiAdapterContext | undefined => {
+const buildStubContext = (): GraphAccessContext | undefined => {
   const graphResult = createGraph(asGraphId('render-worker-stub'), 'render-worker');
-  return graphResult.ok ? createApiAdapterContext({ graph: graphResult.value }) : undefined;
+  return graphResult.ok ? createGraphAccessContext({ graph: graphResult.value }) : undefined;
 };
 
 const stubContext = buildStubContext();

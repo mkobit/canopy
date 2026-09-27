@@ -1,7 +1,7 @@
-import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { checkSourceImportBoundaries, readTypescriptAliases } from './lib/source-import-boundaries';
 
 // Derives the real internal @canopy/* dependency graph from every workspace
 // package.json and enforces three properties: the kernel is a dependency
@@ -29,7 +29,7 @@ interface Edge {
 }
 
 interface Violation {
-  readonly kind: 'leaf' | 'cycle' | 'doc-parity';
+  readonly kind: 'leaf' | 'cycle' | 'doc-parity' | 'source-import';
   readonly message: string;
 }
 
@@ -40,12 +40,12 @@ interface PackageJsonShape {
 }
 
 function listWorkspaceManifestPaths(root: string): readonly string[] {
-  const output = execFileSync(
-    'git',
-    ['ls-files', '-z', '--', 'packages/*/package.json', 'apps/*/package.json'],
-    { cwd: root, encoding: 'utf8' },
+  return ['packages', 'apps'].flatMap((workspaceRoot) =>
+    readdirSync(path.join(root, workspaceRoot), { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => path.join(workspaceRoot, entry.name, 'package.json'))
+      .filter((manifestPath) => existsSync(path.join(root, manifestPath))),
   );
-  return output.split('\0').filter((entry) => entry.length > 0);
 }
 
 function canopyDependencyNames(
@@ -320,6 +320,44 @@ function main(): undefined {
 
   const resolved = resolveMermaidGraph(parsedGraph, workspaces);
 
+  const forbiddenApiAdapterRoot = path.join(rootDirectory, 'packages/api-adapter');
+  const forbiddenPluginHostRoot = path.join(rootDirectory, 'packages/plugin-host');
+  const sourceImportViolations = checkSourceImportBoundaries([
+    {
+      sourceRoot: path.join(rootDirectory, 'packages/graph-access/src'),
+      forbiddenPackage: '@canopy/api-adapter',
+      forbiddenRoot: forbiddenApiAdapterRoot,
+      aliases: readTypescriptAliases(
+        path.join(rootDirectory, 'packages/graph-access/tsconfig.json'),
+      ),
+    },
+    {
+      sourceRoot: path.join(rootDirectory, 'packages/plugin-host/src'),
+      forbiddenPackage: '@canopy/api-adapter',
+      forbiddenRoot: forbiddenApiAdapterRoot,
+      aliases: readTypescriptAliases(
+        path.join(rootDirectory, 'packages/plugin-host/tsconfig.json'),
+      ),
+    },
+    {
+      sourceRoot: path.join(rootDirectory, 'apps/web/src'),
+      forbiddenPackage: '@canopy/api-adapter',
+      forbiddenRoot: forbiddenApiAdapterRoot,
+      aliases: readTypescriptAliases(path.join(rootDirectory, 'apps/web/tsconfig.json')),
+    },
+    {
+      sourceRoot: path.join(rootDirectory, 'packages/api-adapter/src'),
+      forbiddenPackage: '@canopy/plugin-host',
+      forbiddenRoot: forbiddenPluginHostRoot,
+      aliases: readTypescriptAliases(
+        path.join(rootDirectory, 'packages/api-adapter/tsconfig.json'),
+      ),
+    },
+  ]).map((violation) => ({
+    kind: 'source-import' as const,
+    message: `${path.relative(rootDirectory, violation.importer)} imports forbidden ${violation.forbiddenPackage} through "${violation.specifier}"`,
+  }));
+
   const violations = [
     ...checkLeaf(workspaces),
     ...checkCycle(
@@ -327,6 +365,7 @@ function main(): undefined {
       allEdges,
     ),
     ...checkDocumentParity(workspaces, runtimeEdges, resolved),
+    ...sourceImportViolations,
   ];
 
   if (violations.length > 0) {

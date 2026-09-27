@@ -2,7 +2,7 @@
 /* eslint-disable unicorn/no-top-level-assignment-in-function -- lazy singleton instantiation cache */
 /* eslint-disable @typescript-eslint/no-unsafe-type-assertion -- bridging the jco ImportObject shape */
 import { WASIShim } from '@bytecodealliance/preview2-shim/instantiation';
-import type { WasmHostBindings } from '@canopy/api-adapter';
+import type { WasmHostBindings } from '@canopy/plugin-host';
 // The transpiled component and its core modules are build-time artifacts of the
 // `codegen:wit` pipeline (gitignored), regenerated before every build/test. The
 // graph's stored `wasm_binary` is the same component; Tier-1 executes the

@@ -1,7 +1,7 @@
 import type { EventBus } from '@canopy/graph';
-import type { ApiAdapterContext } from '../../api-context';
-import type { EventStreamMessage } from '../../api-payloads';
-import { createEventStreamSubscriber } from '../../event-stream-handlers';
+import type { GraphAccessContext } from '@canopy/graph-access';
+import type { EventStreamMessage } from '@canopy/graph-access';
+import { createEventStreamSubscriber } from '@canopy/graph-access';
 
 // eslint-disable-next-line unicorn/name-replacements -- renaming would also require updating the import alias in graphql-adapter.ts, outside this batch
 export type EventStreamSubscriptionArgs = Readonly<{
@@ -13,7 +13,7 @@ export type EventStreamSubscriptionValue = Readonly<{
   eventStream: EventStreamMessage;
 }>;
 
-export const createSubscriptionResolvers = (context: ApiAdapterContext, _eventBus?: EventBus) => ({
+export const createSubscriptionResolvers = (context: GraphAccessContext, _eventBus?: EventBus) => ({
   eventStream: {
     subscribe: (_parent: unknown, arguments_: EventStreamSubscriptionArgs) => {
       const subscriber = createEventStreamSubscriber(context, {

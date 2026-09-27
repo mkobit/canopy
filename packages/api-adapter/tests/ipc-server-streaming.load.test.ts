@@ -4,7 +4,7 @@ import * as path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import { asDeviceId, asGraphId, createGraphSession } from '@canopy/graph';
 import { createInMemoryEventStore } from '@canopy/storage';
-import { createApiAdapterContext } from '../src/api-context';
+import { createGraphAccessContext } from '@canopy/graph-access';
 import { IPC_METHODS, createIpcServer } from '../src/ipc';
 import type { IpcServer } from '../src/ipc';
 
@@ -76,7 +76,7 @@ describe('IpcServer Streaming Load Test (high concurrency)', () => {
     const graphId = asGraphId('graph_load_concurrency');
     const deviceId = asDeviceId('dev_load_concurrency');
     const session = createGraphSession(eventLogStore, graphId, deviceId);
-    const context = createApiAdapterContext({ graph: session.graph(), session, eventLogStore });
+    const context = createGraphAccessContext({ graph: session.graph(), session, eventLogStore });
 
     server = createIpcServer({ socketPath, context });
     await server.listen();
@@ -123,7 +123,7 @@ describe('IpcServer Streaming Load Test (high concurrency)', () => {
     const graphId = asGraphId('graph_load_fanout');
     const deviceId = asDeviceId('dev_load_fanout');
     const session = createGraphSession(eventLogStore, graphId, deviceId);
-    const context = createApiAdapterContext({ graph: session.graph(), session, eventLogStore });
+    const context = createGraphAccessContext({ graph: session.graph(), session, eventLogStore });
 
     server = createIpcServer({ socketPath, context });
     await server.listen();

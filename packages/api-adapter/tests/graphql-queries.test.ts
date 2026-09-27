@@ -11,7 +11,7 @@ import {
   createGraph,
   unwrap,
 } from '@canopy/graph';
-import { createApiAdapterContext } from '../src/api-context';
+import { createGraphAccessContext } from '@canopy/graph-access';
 import { buildConnection, decodeCursor, encodeCursor } from '../src/graphql/connection';
 import { createQueryResolvers } from '../src/graphql/resolvers/queries';
 
@@ -113,7 +113,7 @@ describe('Relay Connection helpers', () => {
 describe('GraphQL Query Resolvers', () => {
   it('resolves node by id', () => {
     const graph = setupTestGraph();
-    const context = createApiAdapterContext({ graph });
+    const context = createGraphAccessContext({ graph });
     const resolvers = createQueryResolvers(context);
 
     const result = resolvers.node(null, { id: 'n1' });
@@ -126,7 +126,7 @@ describe('GraphQL Query Resolvers', () => {
 
   it('resolves nodes with type filtering and pagination', () => {
     const graph = setupTestGraph();
-    const context = createApiAdapterContext({ graph });
+    const context = createGraphAccessContext({ graph });
     const resolvers = createQueryResolvers(context);
 
     const documentNodes = resolvers.nodes(null, { type: 'doc' });
@@ -148,7 +148,7 @@ describe('GraphQL Query Resolvers', () => {
 
   it('resolves edges with filtering and pagination', () => {
     const graph = setupTestGraph();
-    const context = createApiAdapterContext({ graph });
+    const context = createGraphAccessContext({ graph });
     const resolvers = createQueryResolvers(context);
 
     const allEdges = resolvers.edges(null, { type: 'links' });
@@ -164,7 +164,7 @@ describe('GraphQL Query Resolvers', () => {
 
   it('resolves traversal queries and handles bounds', () => {
     const graph = setupTestGraph();
-    const context = createApiAdapterContext({ graph });
+    const context = createGraphAccessContext({ graph });
     const resolvers = createQueryResolvers(context);
 
     const result = resolvers.traversal(null, {
@@ -185,7 +185,7 @@ describe('GraphQL Query Resolvers', () => {
 
   it('resolves gqlQuery correctly', () => {
     const graph = setupTestGraph();
-    const context = createApiAdapterContext({ graph });
+    const context = createGraphAccessContext({ graph });
     const resolvers = createQueryResolvers(context);
 
     const result = resolvers.gqlQuery(null, { query: 'MATCH (n) RETURN n' });
@@ -195,7 +195,7 @@ describe('GraphQL Query Resolvers', () => {
 
   it('resolves nodeTypes and nodeType metadata', () => {
     const graph = setupTestGraph();
-    const context = createApiAdapterContext({ graph });
+    const context = createGraphAccessContext({ graph });
     const resolvers = createQueryResolvers(context);
 
     const types = resolvers.nodeTypes();
@@ -208,7 +208,7 @@ describe('GraphQL Query Resolvers', () => {
 
   it('resolves edgeTypes and edgeType metadata', () => {
     const graph = setupTestGraph();
-    const context = createApiAdapterContext({ graph });
+    const context = createGraphAccessContext({ graph });
     const resolvers = createQueryResolvers(context);
 
     const types = resolvers.edgeTypes();
@@ -221,7 +221,7 @@ describe('GraphQL Query Resolvers', () => {
 
   it('resolves systemIds summary', () => {
     const graph = setupTestGraph();
-    const context = createApiAdapterContext({ graph });
+    const context = createGraphAccessContext({ graph });
     const resolvers = createQueryResolvers(context);
 
     const summary = resolvers.systemIds();

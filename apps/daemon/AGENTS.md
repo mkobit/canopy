@@ -4,7 +4,7 @@ The foreground host process that stands up the `@canopy/api-adapter` IPC server;
 
 ## Allowed dependencies
 
-`@canopy/api-adapter`, `@canopy/graph`, `@canopy/storage`, `@canopy/storage-sqlite`.
+`@canopy/api-adapter`, `@canopy/graph`, `@canopy/graph-access`, `@canopy/storage`, `@canopy/storage-sqlite`.
 External: `effect`, `@effect/cli`, `@effect/platform-node`, `@effect/platform`.
 
 ## Forbidden

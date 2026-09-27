@@ -4,7 +4,7 @@ import * as net from 'node:net';
 import * as path from 'node:path';
 import type { Result } from '@canopy/graph';
 import { err, ok } from '@canopy/graph';
-import type { ApiAdapterContext } from '../api-context';
+import type { GraphAccessContext } from '@canopy/graph-access';
 import type { DraftRegistryEntry } from './ipc-handlers';
 import { handleIpcRequestLine } from './ipc-handlers';
 import type { IpcProtocolError, IpcSocketInUseError } from './ipc-schema';
@@ -17,7 +17,7 @@ import {
 
 export type IpcServerOptions = Readonly<{
   socketPath: string;
-  context: ApiAdapterContext;
+  context: GraphAccessContext;
 }>;
 
 export interface IpcServer {

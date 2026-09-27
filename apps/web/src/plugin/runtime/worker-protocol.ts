@@ -7,7 +7,7 @@ import { z } from 'zod';
 // worker posts a final `result`. All payloads are plain, structured-clone-safe
 // objects, and every inbound message is validated before use.
 
-// Serialized `Result<string, ApiAdapterError>` across the worker boundary. The
+// Serialized `Result<string, GraphAccessError>` across the worker boundary. The
 // error carries only category + message (no non-cloneable fields).
 export const serializedResultSchema = z.union([
   z.object({ ok: z.literal(true), value: z.string() }).strict(),

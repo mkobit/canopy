@@ -1,0 +1,1 @@
+export const loadTransport = async () => import('@canopy/api-adapter');

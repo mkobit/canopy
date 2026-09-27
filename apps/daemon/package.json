@@ -15,6 +15,7 @@
   "dependencies": {
     "@canopy/api-adapter": "workspace:*",
     "@canopy/graph": "workspace:*",
+    "@canopy/graph-access": "workspace:*",
     "@canopy/storage": "workspace:*",
     "@canopy/storage-sqlite": "workspace:*",
     "@effect/cli": "^0.77.0",

@@ -4,7 +4,7 @@ A same-user native-messaging host that relays an allowlisted set of clip request
 
 ## Allowed dependencies
 
-`@canopy/api-adapter`, `@canopy/graph`.
+`@canopy/api-adapter`, `@canopy/graph`, `@canopy/graph-access`.
 External: `effect`.
 
 ## Forbidden

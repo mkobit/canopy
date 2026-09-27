@@ -1,18 +1,18 @@
 /* eslint-disable max-lines-per-function, functional/prefer-immutable-types */
 import type { DraftError, DraftSession, Graph, PropertyValue, Result } from '@canopy/graph';
 import { asEdgeId, asNodeId, asTypeId, createDraftSession, err, ok } from '@canopy/graph';
-import type { ApiAdapterContext } from '../api-context';
-import { createApiRequest } from '../api-payloads';
-import type { EventStreamSubscription } from '../event-stream-handlers';
-import { createEventStreamSubscriber } from '../event-stream-handlers';
+import type { GraphAccessContext } from '@canopy/graph-access';
+import { createGraphAccessRequest } from '@canopy/graph-access';
+import type { EventStreamSubscription } from '@canopy/graph-access';
+import { createEventStreamSubscriber } from '@canopy/graph-access';
 import {
   executeCreateEdge,
   executeCreateNode,
   executeDeleteEdge,
   executeDeleteNode,
   executeUpdateNodeProperties,
-} from '../mutation-handlers';
-import { executeEdgeQuery, executeNodeQuery } from '../query-handlers';
+} from '@canopy/graph-access';
+import { executeEdgeQuery, executeNodeQuery } from '@canopy/graph-access';
 import type {
   DraftApplyResult,
   DraftCreateResult,
@@ -267,7 +267,7 @@ const safeParseJson = (json: string): Result<unknown, Error> => {
 // to enforce the global concurrent-draft cap on draft.create.
 export const handleIpcRequestLine = async (
   line: string,
-  context: ApiAdapterContext,
+  context: GraphAccessContext,
   drafts: ReadonlyMap<string, DraftRegistryEntry> = new Map(),
   globalDraftCount = 0,
 ): Promise<Result<IpcHandlerResponse, IpcProtocolError>> => {
@@ -337,7 +337,9 @@ export const handleIpcRequestLine = async (
         });
       }
       const result = executeNodeQuery(
-        createApiRequest('ipc-get-node', context, { id: asNodeId(parametersResult.data.id) }),
+        createGraphAccessRequest('ipc-get-node', context, {
+          id: asNodeId(parametersResult.data.id),
+        }),
       );
       if (!result.ok) {
         return ok({
@@ -375,7 +377,7 @@ export const handleIpcRequestLine = async (
         });
       }
       const result = executeNodeQuery(
-        createApiRequest('ipc-get-nodes', context, {
+        createGraphAccessRequest('ipc-get-nodes', context, {
           type: parametersResult.data.type ? asTypeId(parametersResult.data.type) : undefined,
           limit: parametersResult.data.limit,
         }),
@@ -406,7 +408,9 @@ export const handleIpcRequestLine = async (
         });
       }
       const result = executeEdgeQuery(
-        createApiRequest('ipc-get-edge', context, { id: asEdgeId(parametersResult.data.id) }),
+        createGraphAccessRequest('ipc-get-edge', context, {
+          id: asEdgeId(parametersResult.data.id),
+        }),
       );
       if (!result.ok) {
         return ok({
@@ -444,7 +448,7 @@ export const handleIpcRequestLine = async (
         });
       }
       const result = executeEdgeQuery(
-        createApiRequest('ipc-get-edges', context, {
+        createGraphAccessRequest('ipc-get-edges', context, {
           type: parametersResult.data.type ? asTypeId(parametersResult.data.type) : undefined,
           source: parametersResult.data.source ? asNodeId(parametersResult.data.source) : undefined,
           target: parametersResult.data.target ? asNodeId(parametersResult.data.target) : undefined,
@@ -478,7 +482,7 @@ export const handleIpcRequestLine = async (
         });
       }
       const result = executeNodeQuery(
-        createApiRequest('ipc-execute-query', context, {
+        createGraphAccessRequest('ipc-execute-query', context, {
           type: undefined,
           limit: undefined,
         }),
@@ -509,7 +513,7 @@ export const handleIpcRequestLine = async (
         });
       }
       const result = await executeCreateNode(
-        createApiRequest('ipc-create-node', context, {
+        createGraphAccessRequest('ipc-create-node', context, {
           ...(parametersResult.data.id && { id: asNodeId(parametersResult.data.id) }),
           type: asTypeId(parametersResult.data.type),
           properties: parametersResult.data.properties as Readonly<Record<string, PropertyValue>>,
@@ -544,7 +548,7 @@ export const handleIpcRequestLine = async (
         });
       }
       const result = await executeUpdateNodeProperties(
-        createApiRequest('ipc-update-node-properties', context, {
+        createGraphAccessRequest('ipc-update-node-properties', context, {
           id: asNodeId(parametersResult.data.id),
           properties: parametersResult.data.properties as Readonly<Record<string, PropertyValue>>,
           ...(parametersResult.data.expectedSequence !== undefined && {
@@ -578,7 +582,7 @@ export const handleIpcRequestLine = async (
         });
       }
       const result = await executeDeleteNode(
-        createApiRequest('ipc-delete-node', context, {
+        createGraphAccessRequest('ipc-delete-node', context, {
           id: asNodeId(parametersResult.data.id),
           ...(parametersResult.data.expectedSequence !== undefined && {
             expectedSequence: parametersResult.data.expectedSequence,
@@ -611,7 +615,7 @@ export const handleIpcRequestLine = async (
         });
       }
       const result = await executeCreateEdge(
-        createApiRequest('ipc-create-edge', context, {
+        createGraphAccessRequest('ipc-create-edge', context, {
           ...(parametersResult.data.id && { id: asEdgeId(parametersResult.data.id) }),
           type: asTypeId(parametersResult.data.type),
           source: asNodeId(parametersResult.data.source),
@@ -650,7 +654,7 @@ export const handleIpcRequestLine = async (
         });
       }
       const result = await executeDeleteEdge(
-        createApiRequest('ipc-delete-edge', context, {
+        createGraphAccessRequest('ipc-delete-edge', context, {
           id: asEdgeId(parametersResult.data.id),
           ...(parametersResult.data.expectedSequence !== undefined && {
             expectedSequence: parametersResult.data.expectedSequence,

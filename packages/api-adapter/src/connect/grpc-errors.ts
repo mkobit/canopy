@@ -1,4 +1,4 @@
-import type { ApiAdapterError, ApiErrorCategory } from '../result-errors';
+import type { GraphAccessError, GraphAccessErrorCategory } from '@canopy/graph-access';
 
 export enum GrpcStatusCode {
   OK = 0,
@@ -23,7 +23,7 @@ export enum GrpcStatusCode {
 export type ApiAdapterErrorPayload = Readonly<{
   code: string;
   message: string;
-  category?: ApiErrorCategory;
+  category?: GraphAccessErrorCategory;
   details?: Readonly<Record<string, unknown>>;
 }>;
 
@@ -31,11 +31,11 @@ export type ConnectRpcError = Readonly<{
   code: GrpcStatusCode;
   errorCode: string;
   message: string;
-  details?: Readonly<Record<string, unknown>>;
+  details?: unknown;
 }>;
 
 export const mapResultErrorToGrpcStatusCode = (
-  error: ApiAdapterErrorPayload | ApiAdapterError,
+  error: ApiAdapterErrorPayload | GraphAccessError,
 ): GrpcStatusCode => {
   const codeKey = error.code ?? error.category;
 
@@ -102,10 +102,10 @@ export const mapResultErrorToGrpcStatusCode = (
 };
 
 export const createConnectErrorPayload = (
-  error: ApiAdapterErrorPayload | ApiAdapterError,
+  error: ApiAdapterErrorPayload | GraphAccessError,
 ): ConnectRpcError => ({
   code: mapResultErrorToGrpcStatusCode(error),
   errorCode: error.code ?? error.category ?? 'UNKNOWN',
   message: error.message,
-  ...(error.details && { details: error.details }),
+  ...(error.details !== undefined && { details: error.details }),
 });

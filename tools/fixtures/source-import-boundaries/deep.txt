@@ -1,0 +1,1 @@
+export { createIpcServer } from '@canopy/api-adapter/src/ipc/ipc-server';

@@ -1,6 +1,6 @@
 import type { EventBus } from '@canopy/graph';
 import { graphql, parse, subscribe, type ExecutionResult, type GraphQLSchema } from 'graphql';
-import type { ApiAdapterContext } from '../api-context';
+import type { GraphAccessContext } from '@canopy/graph-access';
 import { createMutationResolvers } from './resolvers/mutations';
 import { createQueryResolvers } from './resolvers/queries';
 import {
@@ -33,7 +33,7 @@ export type GraphQLAdapterExecution = Readonly<{
 export type GraphQLAdapter = GraphQLAdapterSchema & GraphQLAdapterExecution;
 
 export const createGraphQLAdapter = (
-  context: ApiAdapterContext,
+  context: GraphAccessContext,
   options?: GraphQLAdapterOptions,
 ): GraphQLAdapter => {
   const schema = buildGraphQLSchema();

@@ -1,9 +1,9 @@
 import { SYSTEM_EDGE_TYPES, SYSTEM_IDS, asNodeId, asTypeId } from '@canopy/graph';
-import type { ApiAdapterContext } from '../../api-context';
-import { executeQuery } from '../../query-handlers';
+import type { GraphAccessContext } from '@canopy/graph-access';
+import { executeQuery } from '@canopy/graph-access';
 import { buildConnection, decodeCursor } from '../connection';
 
-const createNodeQueryResolvers = (context: ApiAdapterContext) => ({
+const createNodeQueryResolvers = (context: GraphAccessContext) => ({
   node: (_parent: unknown, arguments_: Readonly<{ id: string }>) => {
     const result = executeQuery.getNode(context, asNodeId(arguments_.id));
     return result.ok ? result.value : null;
@@ -145,7 +145,7 @@ const createMetadataQueryResolvers = () => ({
   }),
 });
 
-export const createQueryResolvers = (context: ApiAdapterContext) => ({
+export const createQueryResolvers = (context: GraphAccessContext) => ({
   ...createNodeQueryResolvers(context),
   ...createMetadataQueryResolvers(),
 });

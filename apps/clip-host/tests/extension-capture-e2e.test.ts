@@ -2,7 +2,8 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import type { IpcServer } from '@canopy/api-adapter';
-import { createApiAdapterContext, createIpcServer } from '@canopy/api-adapter';
+import { createIpcServer } from '@canopy/api-adapter';
+import { createGraphAccessContext } from '@canopy/graph-access';
 import { asDeviceId, asGraphId, createGraphSession } from '@canopy/graph';
 import { createInMemoryEventStore } from '@canopy/storage';
 import { createClipHost } from '../src/host';
@@ -61,7 +62,7 @@ describe('extension capture -> commit -> query (7.5)', () => {
     const graphId = asGraphId('graph_extension_e2e_test');
     const deviceId = asDeviceId('dev_extension_e2e_test');
     const session = createGraphSession(eventLogStore, graphId, deviceId);
-    const context = createApiAdapterContext({ graph: session.graph(), session, eventLogStore });
+    const context = createGraphAccessContext({ graph: session.graph(), session, eventLogStore });
 
     server = createIpcServer({ socketPath, context });
     const listenResponse = await server.listen();

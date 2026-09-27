@@ -1,13 +1,6 @@
-/* eslint-disable import/extensions -- Needed for ESM */
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import {
-  GRAPHQL_SDL_SCHEMA,
-  PROTO_SERVICES_SDL,
-  CANOPY_WIT_SPECIFICATION,
-  JSON_RPC_IPC_SPECIFICATION,
-} from '../../packages/api-adapter/src/index.js';
 
 export interface Violation {
   readonly protocol: 'graphql' | 'connect' | 'wit' | 'ipc';
@@ -40,6 +33,10 @@ interface CompatibilityResult {
 
 export interface CheckOptions {
   readonly target?: 'graphql' | 'connect' | 'wit' | 'ipc' | 'all';
+  readonly currentGql?: string;
+  readonly currentProto?: string;
+  readonly currentWit?: string;
+  readonly currentIpc?: string;
   readonly overrideGql?: string;
   readonly overrideProto?: string;
   readonly overrideWit?: string;
@@ -324,31 +321,34 @@ export const checkIpc = (liveSchema: string, baselineSchema?: string): readonly 
   return [...methodViolations, ...errorViolations];
 };
 
+const checkerDirectory = path.dirname(fileURLToPath(import.meta.url));
+const BASELINES_DIR = path.resolve(checkerDirectory, '../../packages/api-adapter/schema-baselines');
+const PLUGIN_HOST_BASELINES_DIR = path.resolve(
+  checkerDirectory,
+  '../../packages/plugin-host/schema-baselines',
+);
+
+const readBaseline = (filename: string): string | undefined => {
+  const baselinePath = path.join(BASELINES_DIR, filename);
+  return fs.existsSync(baselinePath) ? fs.readFileSync(baselinePath, 'utf8') : undefined;
+};
+
 export const checkApiCompatibility = (options?: CheckOptions): CompatibilityResult => {
   const waivers = options?.overrideWaivers ?? [];
   const target = options?.target ?? 'all';
   const now = '2026-07-25';
 
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename);
-  const BASELINES_DIR = path.resolve(__dirname, '../../packages/api-adapter/schema-baselines');
-
-  const readBaseline = (filename: string) => {
-    const p = path.join(BASELINES_DIR, filename);
-    if (fs.existsSync(p)) {
-      return fs.readFileSync(p, 'utf8');
-    }
-    return undefined;
-  };
-
-  const gqlLive = options?.overrideGql ?? GRAPHQL_SDL_SCHEMA;
-  const prototypeLive = options?.overrideProto ?? PROTO_SERVICES_SDL;
-  const witLive = options?.overrideWit ?? CANOPY_WIT_SPECIFICATION;
-  const ipcLive = options?.overrideIpc ?? JSON_RPC_IPC_SPECIFICATION;
+  const gqlLive = options?.overrideGql ?? options?.currentGql ?? '';
+  const prototypeLive = options?.overrideProto ?? options?.currentProto ?? '';
+  const witLive = options?.overrideWit ?? options?.currentWit ?? '';
+  const ipcLive = options?.overrideIpc ?? options?.currentIpc ?? '';
 
   const gqlBaseline = readBaseline('graphql.graphql');
   const prototypeBaseline = readBaseline('connect.proto');
-  const witBaseline = readBaseline('plugin.wit');
+  const witBaseline =
+    target === 'all' || target === 'wit'
+      ? fs.readFileSync(path.join(PLUGIN_HOST_BASELINES_DIR, 'plugin.wit'), 'utf8')
+      : undefined;
   const ipcBaseline = readBaseline('ipc-openrpc.json');
 
   const violations1 =

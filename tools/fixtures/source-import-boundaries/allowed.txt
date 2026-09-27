@@ -1,0 +1,2 @@
+import { createGraph } from '@canopy/graph';
+export type Allowed = typeof createGraph;

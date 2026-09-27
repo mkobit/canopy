@@ -1,7 +1,7 @@
 /* eslint-disable max-lines-per-function */
 import * as net from 'node:net';
 import { err, ok } from '@canopy/graph';
-import type { ApiEdgePayload, ApiNodePayload } from '../api-payloads';
+import type { GraphAccessEdgePayload, GraphAccessNodePayload } from '@canopy/graph-access';
 import type {
   CreateEdgeParams as CreateEdgeParameters,
   CreateNodeParams as CreateNodeParameters,
@@ -48,29 +48,29 @@ const createIpcClientError = (
 
 export interface IpcClient {
   readonly handshake: (clientVersion?: string) => Effect.Effect<HandshakeResult, IpcClientError>;
-  readonly getNode: (id: string) => Effect.Effect<ApiNodePayload, IpcClientError>;
+  readonly getNode: (id: string) => Effect.Effect<GraphAccessNodePayload, IpcClientError>;
   readonly getNodes: (
     parameters?: Readonly<GetNodesParameters>,
-  ) => Effect.Effect<readonly ApiNodePayload[], IpcClientError>;
-  readonly getEdge: (id: string) => Effect.Effect<ApiEdgePayload, IpcClientError>;
+  ) => Effect.Effect<readonly GraphAccessNodePayload[], IpcClientError>;
+  readonly getEdge: (id: string) => Effect.Effect<GraphAccessEdgePayload, IpcClientError>;
   readonly getEdges: (
     parameters?: Readonly<GetEdgesParameters>,
-  ) => Effect.Effect<readonly ApiEdgePayload[], IpcClientError>;
+  ) => Effect.Effect<readonly GraphAccessEdgePayload[], IpcClientError>;
   readonly executeQuery: (
     parameters?: Readonly<ExecuteQueryParameters>,
-  ) => Effect.Effect<readonly ApiNodePayload[], IpcClientError>;
+  ) => Effect.Effect<readonly GraphAccessNodePayload[], IpcClientError>;
   readonly createNode: (
     parameters: Readonly<CreateNodeParameters>,
-  ) => Effect.Effect<ApiNodePayload, IpcClientError>;
+  ) => Effect.Effect<GraphAccessNodePayload, IpcClientError>;
   readonly updateNodeProperties: (
     parameters: Readonly<UpdateNodePropertiesParameters>,
-  ) => Effect.Effect<ApiNodePayload, IpcClientError>;
+  ) => Effect.Effect<GraphAccessNodePayload, IpcClientError>;
   readonly deleteNode: (
     parameters: Readonly<DeleteNodeParameters>,
   ) => Effect.Effect<Readonly<{ id: string }>, IpcClientError>;
   readonly createEdge: (
     parameters: Readonly<CreateEdgeParameters>,
-  ) => Effect.Effect<ApiEdgePayload, IpcClientError>;
+  ) => Effect.Effect<GraphAccessEdgePayload, IpcClientError>;
   readonly deleteEdge: (
     parameters: Readonly<DeleteEdgeParameters>,
   ) => Effect.Effect<Readonly<{ id: string }>, IpcClientError>;
@@ -214,7 +214,7 @@ export const makeIpcClient = (socketPath: string): Effect.Effect<IpcClient, IpcC
 
         getNode: (id: string) =>
           Effect.tryPromise({
-            try: () => sendRpcRequest<ApiNodePayload>(IPC_METHODS.QUERY_GET_NODE, { id }),
+            try: () => sendRpcRequest<GraphAccessNodePayload>(IPC_METHODS.QUERY_GET_NODE, { id }),
             catch: (error) =>
               typeof error === 'object' &&
               error !== null &&
@@ -230,7 +230,7 @@ export const makeIpcClient = (socketPath: string): Effect.Effect<IpcClient, IpcC
         getNodes: (parameters) =>
           Effect.tryPromise({
             try: () =>
-              sendRpcRequest<readonly ApiNodePayload[]>(
+              sendRpcRequest<readonly GraphAccessNodePayload[]>(
                 IPC_METHODS.QUERY_GET_NODES,
                 parameters ?? {},
               ),
@@ -248,7 +248,7 @@ export const makeIpcClient = (socketPath: string): Effect.Effect<IpcClient, IpcC
 
         getEdge: (id: string) =>
           Effect.tryPromise({
-            try: () => sendRpcRequest<ApiEdgePayload>(IPC_METHODS.QUERY_GET_EDGE, { id }),
+            try: () => sendRpcRequest<GraphAccessEdgePayload>(IPC_METHODS.QUERY_GET_EDGE, { id }),
             catch: (error) =>
               typeof error === 'object' &&
               error !== null &&
@@ -264,7 +264,7 @@ export const makeIpcClient = (socketPath: string): Effect.Effect<IpcClient, IpcC
         getEdges: (parameters) =>
           Effect.tryPromise({
             try: () =>
-              sendRpcRequest<readonly ApiEdgePayload[]>(
+              sendRpcRequest<readonly GraphAccessEdgePayload[]>(
                 IPC_METHODS.QUERY_GET_EDGES,
                 parameters ?? {},
               ),
@@ -283,7 +283,7 @@ export const makeIpcClient = (socketPath: string): Effect.Effect<IpcClient, IpcC
         executeQuery: (parameters) =>
           Effect.tryPromise({
             try: () =>
-              sendRpcRequest<readonly ApiNodePayload[]>(
+              sendRpcRequest<readonly GraphAccessNodePayload[]>(
                 IPC_METHODS.QUERY_EXECUTE_QUERY,
                 parameters ?? {},
               ),
@@ -301,7 +301,8 @@ export const makeIpcClient = (socketPath: string): Effect.Effect<IpcClient, IpcC
 
         createNode: (parameters) =>
           Effect.tryPromise({
-            try: () => sendRpcRequest<ApiNodePayload>(IPC_METHODS.MUTATION_CREATE_NODE, parameters),
+            try: () =>
+              sendRpcRequest<GraphAccessNodePayload>(IPC_METHODS.MUTATION_CREATE_NODE, parameters),
             catch: (error) =>
               typeof error === 'object' &&
               error !== null &&
@@ -317,7 +318,7 @@ export const makeIpcClient = (socketPath: string): Effect.Effect<IpcClient, IpcC
         updateNodeProperties: (parameters) =>
           Effect.tryPromise({
             try: () =>
-              sendRpcRequest<ApiNodePayload>(
+              sendRpcRequest<GraphAccessNodePayload>(
                 IPC_METHODS.MUTATION_UPDATE_NODE_PROPERTIES,
                 parameters,
               ),
@@ -354,7 +355,8 @@ export const makeIpcClient = (socketPath: string): Effect.Effect<IpcClient, IpcC
 
         createEdge: (parameters) =>
           Effect.tryPromise({
-            try: () => sendRpcRequest<ApiEdgePayload>(IPC_METHODS.MUTATION_CREATE_EDGE, parameters),
+            try: () =>
+              sendRpcRequest<GraphAccessEdgePayload>(IPC_METHODS.MUTATION_CREATE_EDGE, parameters),
             catch: (error) =>
               typeof error === 'object' &&
               error !== null &&

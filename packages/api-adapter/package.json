@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@canopy/graph": "workspace:*",
-    "@canopy/queries": "workspace:*",
+    "@canopy/graph-access": "workspace:*",
     "effect": "^3.22.1",
     "graphql": "^17.0.2",
     "zod": "^4.4.1"

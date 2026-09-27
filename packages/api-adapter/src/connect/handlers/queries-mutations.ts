@@ -1,15 +1,15 @@
 import type { PropertyValue } from '@canopy/graph';
 import { asEdgeId, asNodeId, asTypeId, createInstant } from '@canopy/graph';
-import type { ApiAdapterContext } from '../../api-context';
-import { createApiRequest } from '../../api-payloads';
+import type { GraphAccessContext } from '@canopy/graph-access';
+import { createGraphAccessRequest } from '@canopy/graph-access';
 import {
   executeCreateEdge,
   executeCreateNode,
   executeDeleteEdge,
   executeDeleteNode,
   executeUpdateNodeProperties,
-} from '../../mutation-handlers';
-import { executeNodeQuery, executeQuery } from '../../query-handlers';
+} from '@canopy/graph-access';
+import { executeNodeQuery, executeQuery } from '@canopy/graph-access';
 import { createConnectErrorPayload } from '../grpc-errors';
 
 export type ConnectNodeResponse = Readonly<{
@@ -80,7 +80,7 @@ const parseJsonPropertyValue = (valueJson: string): PropertyValue => {
 };
 
 const handleGetNodeById = async (
-  context: ApiAdapterContext,
+  context: GraphAccessContext,
   request: Readonly<{ id: string }>,
 ): Promise<ConnectNodeResponse> => {
   const result = executeQuery.getNode(context, asNodeId(request.id));
@@ -99,7 +99,7 @@ const handleGetNodeById = async (
 };
 
 const handleGetNodesByType = async (
-  context: ApiAdapterContext,
+  context: GraphAccessContext,
   request: Readonly<{ type_id: string }>,
 ): Promise<ConnectNodeListResponse> => {
   const result = executeQuery.getNodes(context, { type: asTypeId(request.type_id) });
@@ -121,12 +121,12 @@ const handleGetNodesByType = async (
 };
 
 const handleGetNodesByProperty = async (
-  context: ApiAdapterContext,
+  context: GraphAccessContext,
   request: Readonly<{ key: string; value_json: string }>,
 ): Promise<ConnectNodeListResponse> => {
   const parsedValue = parseJsonPropertyValue(request.value_json);
   const result = executeNodeQuery(
-    createApiRequest('connect-get-nodes-by-property', context, {
+    createGraphAccessRequest('connect-get-nodes-by-property', context, {
       filter: { property: request.key, operator: 'eq', value: parsedValue },
     }),
   );
@@ -148,7 +148,7 @@ const handleGetNodesByProperty = async (
 };
 
 const handleGetInboundEdges = async (
-  context: ApiAdapterContext,
+  context: GraphAccessContext,
   request: Readonly<{ target_node_id: string; predicate_type_id?: string }>,
 ): Promise<ConnectEdgeListResponse> => {
   const result = executeQuery.getEdges(context, {
@@ -173,7 +173,7 @@ const handleGetInboundEdges = async (
 };
 
 const handleGetOutboundEdges = async (
-  context: ApiAdapterContext,
+  context: GraphAccessContext,
   request: Readonly<{ source_node_id: string; predicate_type_id?: string }>,
 ): Promise<ConnectEdgeListResponse> => {
   const result = executeQuery.getEdges(context, {
@@ -198,7 +198,7 @@ const handleGetOutboundEdges = async (
 };
 
 const handleExecuteTraversalQuery = async (
-  context: ApiAdapterContext,
+  context: GraphAccessContext,
   request: Readonly<{
     start_node_id: string;
     max_depth?: number;
@@ -275,7 +275,7 @@ const handleExecuteTraversalQuery = async (
   };
 };
 
-export const createConnectQueryHandlers = (context: ApiAdapterContext) => ({
+export const createConnectQueryHandlers = (context: GraphAccessContext) => ({
   getNodeById: (request: Readonly<{ id: string }>) => handleGetNodeById(context, request),
   getNodesByType: (request: Readonly<{ type_id: string }>) =>
     handleGetNodesByType(context, request),
@@ -295,7 +295,7 @@ export const createConnectQueryHandlers = (context: ApiAdapterContext) => ({
 });
 
 const handleCreateNode = async (
-  context: ApiAdapterContext,
+  context: GraphAccessContext,
   request: Readonly<{
     type_id: string;
     properties_json?: string;
@@ -314,7 +314,7 @@ const handleCreateNode = async (
     expectedSequence === undefined ? {} : { expectedSequence: expectedSequence };
 
   const result = await executeCreateNode(
-    createApiRequest('connect-create-node', context, {
+    createGraphAccessRequest('connect-create-node', context, {
       type: asTypeId(request.type_id),
       properties,
       ...sequenceOption,
@@ -335,7 +335,7 @@ const handleCreateNode = async (
 };
 
 const handleUpdateNodeProperties = async (
-  context: ApiAdapterContext,
+  context: GraphAccessContext,
   request: Readonly<{
     id: string;
     properties_json: string;
@@ -352,7 +352,7 @@ const handleUpdateNodeProperties = async (
     expectedSequence === undefined ? {} : { expectedSequence: expectedSequence };
 
   const result = await executeUpdateNodeProperties(
-    createApiRequest('connect-update-node-props', context, {
+    createGraphAccessRequest('connect-update-node-props', context, {
       id: asNodeId(request.id),
       properties,
       ...sequenceOption,
@@ -373,7 +373,7 @@ const handleUpdateNodeProperties = async (
 };
 
 const handleDeleteNode = async (
-  context: ApiAdapterContext,
+  context: GraphAccessContext,
   request: Readonly<{
     id: string;
     expected_sequence?: string;
@@ -386,7 +386,7 @@ const handleDeleteNode = async (
     expectedSequence === undefined ? {} : { expectedSequence: expectedSequence };
 
   const result = await executeDeleteNode(
-    createApiRequest('connect-delete-node', context, {
+    createGraphAccessRequest('connect-delete-node', context, {
       id: asNodeId(request.id),
       ...sequenceOption,
     }),
@@ -406,7 +406,7 @@ const handleDeleteNode = async (
 };
 
 const handleCreateEdge = async (
-  context: ApiAdapterContext,
+  context: GraphAccessContext,
   request: Readonly<{
     source_node_id: string;
     target_node_id: string;
@@ -427,7 +427,7 @@ const handleCreateEdge = async (
     expectedSequence === undefined ? {} : { expectedSequence: expectedSequence };
 
   const result = await executeCreateEdge(
-    createApiRequest('connect-create-edge', context, {
+    createGraphAccessRequest('connect-create-edge', context, {
       source: asNodeId(request.source_node_id),
       target: asNodeId(request.target_node_id),
       type: asTypeId(request.predicate_type_id),
@@ -450,7 +450,7 @@ const handleCreateEdge = async (
 };
 
 const handleDeleteEdge = async (
-  context: ApiAdapterContext,
+  context: GraphAccessContext,
   request: Readonly<{
     id: string;
     expected_sequence?: string;
@@ -463,7 +463,7 @@ const handleDeleteEdge = async (
     expectedSequence === undefined ? {} : { expectedSequence: expectedSequence };
 
   const result = await executeDeleteEdge(
-    createApiRequest('connect-delete-edge', context, {
+    createGraphAccessRequest('connect-delete-edge', context, {
       id: asEdgeId(request.id),
       ...sequenceOption,
     }),
@@ -482,7 +482,7 @@ const handleDeleteEdge = async (
   };
 };
 
-export const createConnectMutationHandlers = (context: ApiAdapterContext) => ({
+export const createConnectMutationHandlers = (context: GraphAccessContext) => ({
   createNode: (
     request: Readonly<{
       type_id: string;

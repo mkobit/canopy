@@ -8,10 +8,10 @@ import {
   ok,
 } from '@canopy/graph';
 import { GraphQLError } from 'graphql';
-import type { ApiAdapterContext } from '../../api-context';
-import { executeMutation } from '../../mutation-handlers';
-import type { ApiAdapterError } from '../../result-errors';
-import { createApiAdapterError } from '../../result-errors';
+import type { GraphAccessContext } from '@canopy/graph-access';
+import { executeMutation } from '@canopy/graph-access';
+import type { GraphAccessError } from '@canopy/graph-access';
+import { createGraphAccessError } from '@canopy/graph-access';
 
 export interface ActorContextInput {
   readonly actingId?: string | undefined;
@@ -28,9 +28,9 @@ export type ValidatedActorContext = Readonly<{
 }>;
 
 export const validateActorDelegation = (
-  context: ApiAdapterContext,
+  context: GraphAccessContext,
   actorInput?: ActorContextInput,
-): Result<ValidatedActorContext, ApiAdapterError> => {
+): Result<ValidatedActorContext, GraphAccessError> => {
   const principalId = context.authContext?.userId ?? 'user:default';
 
   if (!actorInput || !actorInput.actorType || actorInput.actorType === 'USER') {
@@ -45,11 +45,15 @@ export const validateActorDelegation = (
   if (actorInput.actorType === 'AGENT' || actorInput.actorType === 'PLUGIN') {
     if (!actorInput.delegationToken || actorInput.delegationToken === 'invalid') {
       return err(
-        createApiAdapterError('UNAUTHORIZED', 'Agent execution requires a valid delegation token', {
-          code: 'AGENT_APPROVAL_REQUIRED',
-          actorType: actorInput.actorType,
-          actingId: actorInput.actingId ?? 'agent:unknown',
-        }),
+        createGraphAccessError(
+          'UNAUTHORIZED',
+          'Agent execution requires a valid delegation token',
+          {
+            code: 'AGENT_APPROVAL_REQUIRED',
+            actorType: actorInput.actorType,
+            actingId: actorInput.actingId ?? 'agent:unknown',
+          },
+        ),
       );
     }
 
@@ -71,7 +75,7 @@ export const validateActorDelegation = (
 };
 
 const resolveCreateNode = async (
-  context: ApiAdapterContext,
+  context: GraphAccessContext,
   arguments_: Readonly<{
     input: Readonly<{
       id?: string | undefined;
@@ -118,7 +122,7 @@ const resolveCreateNode = async (
 };
 
 const resolveUpdateNodeProperties = async (
-  context: ApiAdapterContext,
+  context: GraphAccessContext,
   arguments_: Readonly<{
     input: Readonly<{
       id: string;
@@ -163,7 +167,7 @@ const resolveUpdateNodeProperties = async (
 };
 
 const resolveDeleteNode = async (
-  context: ApiAdapterContext,
+  context: GraphAccessContext,
   arguments_: Readonly<{
     input: Readonly<{
       id: string;
@@ -206,7 +210,7 @@ const resolveDeleteNode = async (
 };
 
 const resolveCreateEdge = async (
-  context: ApiAdapterContext,
+  context: GraphAccessContext,
   arguments_: Readonly<{
     input: Readonly<{
       id?: string | undefined;
@@ -257,7 +261,7 @@ const resolveCreateEdge = async (
 };
 
 const resolveDeleteEdge = async (
-  context: ApiAdapterContext,
+  context: GraphAccessContext,
   arguments_: Readonly<{
     input: Readonly<{
       id: string;
@@ -299,7 +303,7 @@ const resolveDeleteEdge = async (
   };
 };
 
-export const createMutationResolvers = (context: ApiAdapterContext) => ({
+export const createMutationResolvers = (context: GraphAccessContext) => ({
   createNode: (_parent: unknown, arguments_: Parameters<typeof resolveCreateNode>[1]) =>
     resolveCreateNode(context, arguments_),
   updateNodeProperties: (

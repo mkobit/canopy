@@ -12,6 +12,7 @@
   "include": ["src/**/*"],
   "references": [
     { "path": "../../packages/graph/tsconfig.build.json" },
+    { "path": "../../packages/graph-access/tsconfig.build.json" },
     { "path": "../../packages/storage/tsconfig.build.json" },
     { "path": "../../packages/storage-sqlite/tsconfig.build.json" },
     { "path": "../../packages/api-adapter/tsconfig.build.json" }

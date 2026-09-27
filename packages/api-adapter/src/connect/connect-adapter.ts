@@ -1,5 +1,5 @@
 import type { EventBus } from '@canopy/graph';
-import type { ApiAdapterContext } from '../api-context';
+import type { GraphAccessContext } from '@canopy/graph-access';
 import { createConnectEventStreamHandlers } from './handlers/event-streaming';
 import {
   createConnectMutationHandlers,
@@ -30,7 +30,7 @@ export type ConnectAdapter = Readonly<{
 }>;
 
 export const createConnectAdapter = (
-  context: ApiAdapterContext,
+  context: GraphAccessContext,
   options?: ConnectAdapterOptions,
 ): ConnectAdapter => {
   const queryHandlers = createConnectQueryHandlers(context);

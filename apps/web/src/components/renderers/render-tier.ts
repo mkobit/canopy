@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { fromThrowable, type Node } from '@canopy/graph';
-import { grantsCapabilityExplicitly, intersectCapabilities } from '@canopy/api-adapter';
+import { grantsCapabilityExplicitly, intersectCapabilities } from '@canopy/plugin-host';
 import { resolveGuestId, resolveRenderGrant } from './render-grants';
 
 // Resolves the render tier for a `rendererKind: 'wasm'` plugin from its EFFECTIVE

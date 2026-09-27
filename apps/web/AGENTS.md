@@ -4,7 +4,7 @@ Vite + React + xyflow frontend for Canopy.
 
 ## Allowed dependencies
 
-`@canopy/graph`, `@canopy/queries`, `@canopy/settings`, `@canopy/storage`, `@canopy/storage-indexeddb`.
+`@canopy/graph`, `@canopy/graph-access`, `@canopy/plugin-host`, `@canopy/queries`, `@canopy/settings`, `@canopy/storage`, `@canopy/storage-indexeddb`.
 
 ## Architectural invariants
 
