@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import {
   addEdge,
   addNode,
+  asDeviceId,
   asEdgeId,
   asGraphId,
   asInstant,
@@ -9,11 +10,14 @@ import {
   asTypeId,
   createDeviceId,
   createGraph,
+  createGraphSession,
   unwrap,
 } from '@canopy/graph';
+import { createInMemoryEventStore } from '@canopy/storage';
 import {
   createGraphAccessContext,
   createGraphAccessRequest,
+  executeCreateNode,
   executeEdgeQuery,
   executeGraphTraversal,
   executeNodeQuery,
@@ -108,6 +112,42 @@ describe('Query execution handlers', () => {
       expect(result.value).toHaveLength(1);
       expect(result.value[0]?.id).toBe(asNodeId('n1'));
     }
+  });
+
+  test('executeNodeQuery reads the current graph from GraphSession after a commit', async () => {
+    const eventLogStore = createInMemoryEventStore();
+    const session = createGraphSession(
+      eventLogStore,
+      asGraphId('current-session-graph'),
+      asDeviceId('current-session-device'),
+    );
+    await session.load();
+    const context = createGraphAccessContext({ graph: session.graph(), session });
+
+    const createResult = await executeCreateNode(
+      createGraphAccessRequest('req-current-session-create', context, {
+        id: asNodeId('current-session-node'),
+        type: asTypeId('doc'),
+        properties: { title: 'Committed node' },
+      }),
+    );
+    expect(createResult.ok).toBe(true);
+
+    const readResult = executeNodeQuery(
+      createGraphAccessRequest('req-current-session-read', context, {
+        id: asNodeId('current-session-node'),
+      }),
+    );
+    expect(readResult).toEqual({
+      ok: true,
+      value: [
+        expect.objectContaining({
+          id: asNodeId('current-session-node'),
+          type: asTypeId('doc'),
+          properties: { title: 'Committed node' },
+        }),
+      ],
+    });
   });
 
   test('executeNodeQuery direct lookup missing ID returns NOT_FOUND', () => {
