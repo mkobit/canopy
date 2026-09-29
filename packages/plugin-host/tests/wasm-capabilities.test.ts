@@ -104,6 +104,14 @@ describe('WASM Capability Security Token Validation', () => {
     it('drops unrecognized manifest capability strings', () => {
       expect(intersectCapabilities(['read:nodes', 'invalid:capability'], '*')).toBe('read:nodes');
     });
+
+    it('does not let a forged wildcard exceed the manifest intersection', () => {
+      const effectiveToken = intersectCapabilities(['read:nodes', 'write:create-node'], 'read:*');
+      expect(effectiveToken).toBe('read:nodes');
+      expect(defaultCapabilityValidator(effectiveToken, 'read:nodes')).toBe(true);
+      expect(defaultCapabilityValidator(effectiveToken, 'write:create-node')).toBe(false);
+      expect(defaultCapabilityValidator('*', 'write:create-node')).toBe(true);
+    });
   });
 
   // Tier-2 interactive rendering is a privilege that a broad wildcard grant must

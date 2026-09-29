@@ -22,6 +22,13 @@ const setupTestContext = async () => {
   return { context, session };
 };
 
+const expectHostSuccess = async (
+  resultPromise: Promise<Readonly<{ ok: boolean }>>,
+): Promise<void> => {
+  const result = await resultPromise;
+  expect(result.ok).toBe(true);
+};
+
 describe('WASM WIT Host Import Bindings', () => {
   it('executes createNode and queryNodes over WIT host bindings', async () => {
     const { context } = await setupTestContext();
@@ -89,6 +96,78 @@ describe('WASM WIT Host Import Bindings', () => {
       JSON.stringify({ id: 'e1' }),
     );
     expect(deleteEdgeResult.ok).toBe(true);
+  });
+
+  it('preserves every query, mutation, and event host operation', async () => {
+    const { context } = await setupTestContext();
+    const hostBindings = createWasmHostBindings(context);
+
+    const firstNode = JSON.stringify({
+      id: 'operation-node-1',
+      type: 'doc',
+      properties: { title: 'first' },
+    });
+    const secondNode = JSON.stringify({
+      id: 'operation-node-2',
+      type: 'doc',
+      properties: { title: 'second' },
+    });
+    await expectHostSuccess(hostBindings.mutations.createNode('*', firstNode));
+    await expectHostSuccess(hostBindings.mutations.createNode('*', secondNode));
+
+    const edgePayload = JSON.stringify({
+      id: 'operation-edge-1',
+      type: 'links',
+      source: 'operation-node-1',
+      target: 'operation-node-2',
+      properties: { relation: 'related' },
+    });
+    await expectHostSuccess(hostBindings.mutations.createEdge('write:create-edge', edgePayload));
+
+    await expectHostSuccess(hostBindings.queries.queryEdges('read:edges', '{}'));
+    await expectHostSuccess(
+      hostBindings.queries.lookupProperties(
+        'read:properties',
+        JSON.stringify({ entityId: 'operation-node-1', propertyKey: 'title' }),
+      ),
+    );
+    await expectHostSuccess(
+      hostBindings.queries.traverseGraph(
+        'read:traversal',
+        JSON.stringify({ startNodeIds: ['operation-node-1'], direction: 'out' }),
+      ),
+    );
+    await expectHostSuccess(hostBindings.events.subscribeEvents('read:events', '{}'));
+    await expectHostSuccess(
+      hostBindings.events.replayEvents(
+        'read:events',
+        JSON.stringify({
+          tenantId: '',
+          graphId,
+          lastSeenEventId: '',
+          maxReplayCount: 100,
+        }),
+      ),
+    );
+
+    await expectHostSuccess(
+      hostBindings.mutations.updateNodeProperties(
+        'write:update-properties',
+        JSON.stringify({ id: 'operation-node-1', properties: { title: 'updated' } }),
+      ),
+    );
+    await expectHostSuccess(
+      hostBindings.mutations.deleteEdge(
+        'write:delete-edge',
+        JSON.stringify({ id: 'operation-edge-1' }),
+      ),
+    );
+    await expectHostSuccess(
+      hostBindings.mutations.deleteNode(
+        'write:delete-node',
+        JSON.stringify({ id: 'operation-node-2' }),
+      ),
+    );
   });
 
   it('rejects calls when capability token does not grant required scope', async () => {
@@ -164,6 +243,22 @@ describe('WASM WIT Host Import Bindings', () => {
     expect(fuelMeter.remaining()).toBe(0n);
     const secondResult = await hostBindings.queries.queryNodes('read:nodes', '{}');
     expect(secondResult.ok).toBe(false);
+  });
+
+  it('honors an explicit per-import fuel override independently of total fuel', async () => {
+    const { context } = await setupTestContext();
+    const fuelMeter = createFuelMeter(50n);
+    const hostBindings = createWasmHostBindings(context, {
+      fuelMeter,
+      defaultFuelPerImport: 25n,
+    });
+
+    const firstOverrideResult = await hostBindings.queries.queryNodes('read:nodes', '{}');
+    expect(firstOverrideResult.ok).toBe(true);
+    expect(fuelMeter.remaining()).toBe(25n);
+    const secondOverrideResult = await hostBindings.queries.queryNodes('read:nodes', '{}');
+    expect(secondOverrideResult.ok).toBe(true);
+    expect(fuelMeter.remaining()).toBe(0n);
   });
 
   it('prevents reentrant host import calls', async () => {

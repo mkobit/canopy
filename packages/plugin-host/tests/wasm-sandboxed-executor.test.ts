@@ -69,6 +69,16 @@ const guestSuppliedWildcardReadPlugin = async (hostBindings: WasmHostBindings): 
 const guestSuppliedEmptyReadPlugin = async (hostBindings: WasmHostBindings): Promise<string> =>
   JSON.stringify(await hostBindings.queries.queryNodes('', JSON.stringify({})));
 
+const guestSuppliedChangedTokenMutationPlugin = async (
+  hostBindings: WasmHostBindings,
+): Promise<string> =>
+  JSON.stringify(
+    await hostBindings.mutations.createNode(
+      'write:*',
+      JSON.stringify({ id: 'changed-token-node', type: 'note', properties: {} }),
+    ),
+  );
+
 describe('WASM Sandboxed Execution Boundary', () => {
   it('executes guest plugin successfully within sandbox', async () => {
     const context = await setupTestContext();
@@ -167,6 +177,32 @@ describe('WASM Sandboxed Execution Boundary', () => {
 
     expect(result.ok).toBe(true);
     expect(dispatchCount).toBe(0);
+  });
+
+  it('rejects a changed guest token while keeping the fixed bound token', async () => {
+    const context = await setupTestContext();
+    const initialEventsResult = await context.eventLogStore?.getEvents(graphId);
+    const initialEventCount = initialEventsResult?.ok ? initialEventsResult.value.length : 0;
+
+    const result = await executeSandboxedGuestPlugin(
+      context,
+      'read:*',
+      '{}',
+      guestSuppliedChangedTokenMutationPlugin,
+    );
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const hostResult = JSON.parse(result.value) as { ok: boolean; error?: { code: string } };
+      expect(hostResult.ok).toBe(false);
+      expect(hostResult.error?.code).toBe('PermissionDenied');
+    }
+    const eventsResult = await context.eventLogStore?.getEvents(graphId);
+    expect(eventsResult?.ok).toBe(true);
+    if (eventsResult?.ok) {
+      expect(eventsResult.value).toHaveLength(initialEventCount);
+    }
+    expect(context.session?.graph().nodes.has(asNodeId('changed-token-node'))).toBe(false);
   });
 
   it('dispatches remotely with the executor token and gives it to custom validation', async () => {

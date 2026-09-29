@@ -5,7 +5,7 @@ import {
   createConnectErrorPayload,
   mapResultErrorToGrpcStatusCode,
 } from '../src/connect/grpc-errors';
-import { createGraphAccessError } from '@canopy/graph-access';
+import { createGraphAccessError, type GraphAccessErrorCategory } from '@canopy/graph-access';
 
 describe('gRPC status code and error mapper', () => {
   it('defines standard gRPC status codes matching specification', () => {
@@ -131,5 +131,35 @@ describe('gRPC status code and error mapper', () => {
     expect(rpcError.code).toBe(GrpcStatusCode.NOT_FOUND);
     expect(rpcError.errorCode).toBe('NOT_FOUND');
     expect(rpcError.message).toBe('Node node-123 does not exist');
+  });
+
+  it('preserves exact Connect error payloads for every graph-access category', () => {
+    const mappings: readonly Readonly<{
+      readonly category: GraphAccessErrorCategory;
+      readonly grpcCode: GrpcStatusCode;
+    }>[] = [
+      { category: 'VALIDATION_ERROR', grpcCode: GrpcStatusCode.INVALID_ARGUMENT },
+      { category: 'NOT_FOUND', grpcCode: GrpcStatusCode.NOT_FOUND },
+      { category: 'CONCURRENCY_CONFLICT', grpcCode: GrpcStatusCode.ABORTED },
+      { category: 'UNAUTHORIZED', grpcCode: GrpcStatusCode.UNAUTHENTICATED },
+      { category: 'FORBIDDEN', grpcCode: GrpcStatusCode.PERMISSION_DENIED },
+      { category: 'RESOURCE_EXHAUSTED', grpcCode: GrpcStatusCode.RESOURCE_EXHAUSTED },
+      { category: 'INTERNAL_ERROR', grpcCode: GrpcStatusCode.INTERNAL },
+    ];
+
+    for (const { category, grpcCode } of mappings) {
+      const message = `Connect error for ${category}`;
+      const details = { category, retryable: false };
+      const rpcError = createConnectErrorPayload(
+        createGraphAccessError(category, message, details),
+      );
+
+      expect(rpcError).toEqual({
+        code: grpcCode,
+        errorCode: category,
+        message,
+        details,
+      });
+    }
   });
 });
