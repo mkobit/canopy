@@ -5,6 +5,21 @@ import {
   TIER2_SANDBOX_TOKENS,
 } from '../src/components/renderers/tier2/sandbox-frame-document';
 
+const expectPluginHostRegressionReport = (reportText: string): void => {
+  expect(reportText).toContain('"manifestIntersection":"read:nodes"');
+  expect(reportText).toContain('"forgedWildcard":{"ok":true');
+  expect(reportText).toContain('PermissionDenied');
+  expect(reportText).toContain('"changedToken":{"ok":true');
+  expect(reportText).toContain('"authorized":{"ok":true');
+  expect(reportText).toContain('"authorizedEventCount":1');
+  expect(reportText).toContain('"runaway":{"ok":false,"category":"RESOURCE_EXHAUSTED"');
+  expect(reportText).toContain('"listenerCleanup":true');
+  expect(reportText).toContain('"nativeTermination":true');
+  expect(reportText).toContain('"lateMessageDispatched":true');
+  expect(reportText).toContain('"lateMessageEventCount":1');
+  expect(reportText).toContain('"lateMessageRejected":true');
+};
+
 // Proves the Tier-2 opaque-origin isolation boundary in a real browser using the
 // REAL srcdoc/CSP builder and the REAL sandbox/allow attributes. A fixture
 // interactive guest emits hostile HTML; the sandbox + null origin + in-document
@@ -95,5 +110,16 @@ test.describe('Tier-2 sandboxed-iframe isolation', () => {
 
     // 5. Host DOM the frame tried to reach is untouched.
     expect(result.sentinelValue).toBe('untouched');
+  });
+
+  test('enforces bound host authority and terminates a non-yielding native worker', async ({
+    page,
+  }) => {
+    await page.goto('/e2e/fixtures/plugin-host-regressions/index.html');
+    const reportElement = page.getByTestId('regressions-report');
+    await expect(reportElement).toBeVisible({ timeout: 30_000 });
+    const reportText = await reportElement.textContent();
+    expect(reportText).not.toBeNull();
+    expectPluginHostRegressionReport(reportText ?? '');
   });
 });
