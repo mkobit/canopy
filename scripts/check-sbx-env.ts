@@ -1,13 +1,7 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { kitSpecSchema, sbxEnvV1Schema } from './sbx-schemas';
 
-const FORBIDDEN_KEYS = [
-  'secrets',
-  'bindings',
-  'registries',
-  'additionalWorkspaces',
-  'localWorkspaces',
-] as const;
+const FORBIDDEN_KEYS = ['secrets', 'bindings', 'registries', 'localWorkspaces'] as const;
 
 const REQUIRED_PORTS = [5173, 6006] as const;
 const filesToCheck = [
