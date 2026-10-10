@@ -325,12 +325,28 @@ export const sbxEnvWorkspaceSchema = z
   })
   .strict();
 
+export const sbxEnvArgItemSchema = z
+  .object({
+    default: z.string().optional(),
+    description: z.string().optional(),
+  })
+  .strict();
+
+export const sbxEnvAdditionalWorkspaceSchema = z
+  .object({
+    path: z.string().min(1),
+    readOnly: z.boolean().optional(),
+  })
+  .strict();
+
 export const sbxEnvV1Schema = z
   .object({
     schemaVersion: z.union([z.literal('1'), z.literal(1)]).optional(),
     name: z.string().min(1),
     agent: z.string().min(1),
+    args: z.record(z.string(), sbxEnvArgItemSchema).optional(),
     workspace: z.union([sbxEnvWorkspaceSchema, z.string().min(1)]),
+    additionalWorkspaces: z.array(sbxEnvAdditionalWorkspaceSchema).optional(),
     kit: z.string().optional(),
     kits: z.array(z.string()).optional(),
     ports: z.array(sbxEnvPortSchema).optional(),
