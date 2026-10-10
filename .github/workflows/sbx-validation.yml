@@ -1,0 +1,61 @@
+name: Docker Sandbox validation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.sbx/**'
+      - '.github/workflows/sbx-validation.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - '.sbx/**'
+      - '.github/workflows/sbx-validation.yml'
+  workflow_dispatch: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  SBX_VERSION: "v0.47.0"
+
+permissions: {}
+
+jobs:
+  validate:
+    name: Validate Docker Sandbox environments
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Setup mise
+        uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c
+        with:
+          version: v2026.5.1
+          cache: 'true'
+
+      - name: Cache sbx deb package
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        id: sbx-deb-cache
+        with:
+          path: /tmp/sbx.deb
+          key: sbx-${{ env.SBX_VERSION }}-deb
+
+      - name: Download sbx CLI
+        if: steps.sbx-deb-cache.outputs.cache-hit != 'true'
+        run: gh release download "${SBX_VERSION}" --repo docker/sbx-releases --pattern "DockerSandboxes-linux-amd64-ubuntu2404.deb" --output /tmp/sbx.deb
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install and start sbx CLI
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y /tmp/sbx.deb
+          sbx daemon start -d
+
+      - name: Validate Docker Sandbox environments
+        run: mise run validate-sbx
