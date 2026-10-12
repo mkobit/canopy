@@ -34,8 +34,8 @@ run = "bun run check:unused"
 description = "Check for unused files, exports, and dependencies with Knip"
 
 [tasks.validate-sbx]
-run = "bun run check:sbx-env"
-description = "Validate Docker Sandbox environment files"
+run = "sbx kit validate .sbx/kit && sbx env plan .sbx/sbxenv.yaml && sbx env plan .sbx/sbxenv.agy.yaml && sbx env plan .sbx/sbxenv.claude.yaml && bun run check:sbx-env"
+description = "Validate Docker Sandbox kit, environments, and toolchain parity"
 
 # OpenSpec Tools
 

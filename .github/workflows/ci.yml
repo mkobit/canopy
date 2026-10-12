@@ -66,7 +66,7 @@ jobs:
         # to avoid OOM-crashing on GitHub's macos-14 runners (canopy-9ec).
         run: bun run lint
 
-      - name: Validate Docker Sandbox environments
+      - name: Verify Docker Sandbox toolchain parity
         if: "!cancelled() && steps.install.outcome == 'success'"
         run: bun run check:sbx-env
 

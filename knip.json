@@ -4,7 +4,7 @@
   "ignoreBinaries": ["sbx"],
   "workspaces": {
     ".": {
-      "entry": ["scripts/sbx-schemas.ts"],
+      "entry": ["scripts/check-sbx-env.ts"],
       "project": ["scripts/**/*.ts"],
       "ignoreDependencies": []
     },
