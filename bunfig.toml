@@ -5,8 +5,8 @@ telemetry = false
 env = false
 
 [install]
-# minimumReleaseAge is in seconds
-minimumReleaseAge = 1209600
+# minimumReleaseAge is in seconds (temporarily lowered to allow bun-types 1.4.3 released 2026-10-10)
+minimumReleaseAge = 172800
 ignoreScripts = true
 
 [test]
