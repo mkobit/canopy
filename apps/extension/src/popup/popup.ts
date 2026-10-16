@@ -1,22 +1,15 @@
 import type { BackgroundResponse, PopupRequest, RawClipCapture } from '../shared/messages.js';
+import { resolvePopupElements, type PopupElements } from './dom.js';
 
-const statusElement = document.querySelector<HTMLParagraphElement>('#status');
-const errorElement = document.querySelector<HTMLDivElement>('#error');
-const previewElement = document.querySelector<HTMLDivElement>('#preview');
-const previewTitleElement = document.querySelector<HTMLHeadingElement>('#preview-title');
-const previewSourceElement = document.querySelector<HTMLParagraphElement>('#preview-source');
-const previewContentElement = document.querySelector<HTMLDivElement>('#preview-content');
-const confirmButton = document.querySelector<HTMLButtonElement>('#confirm-button');
-const discardButton = document.querySelector<HTMLButtonElement>('#discard-button');
+const popupElements = resolvePopupElements(document);
 
-const setStatus = (text: string): void => {
-  if (statusElement) statusElement.textContent = text;
+const setStatus = (elements: PopupElements, text: string): void => {
+  elements.statusElement.textContent = text;
 };
 
-const setError = (message: string): void => {
-  if (!errorElement) return;
-  errorElement.textContent = message;
-  errorElement.style.display = 'block';
+const setError = (elements: PopupElements, message: string): void => {
+  elements.errorElement.textContent = message;
+  elements.errorElement.style.display = 'block';
 };
 
 const ERROR_GUIDANCE: Readonly<Record<string, string>> = {
@@ -40,70 +33,79 @@ const captureActiveTab = async (): Promise<RawClipCapture> => {
   return injection?.result as RawClipCapture;
 };
 
-const showPreview = (response: BackgroundResponse & Readonly<{ type: 'preview-ready' }>): void => {
-  setStatus('Review before saving:');
-  if (previewTitleElement) previewTitleElement.textContent = response.clip.title;
-  if (previewSourceElement) previewSourceElement.textContent = response.clip.sourceUrl;
-  if (previewContentElement) previewContentElement.textContent = response.clip.content;
-  if (previewElement) previewElement.style.display = 'block';
+const showPreview = (
+  elements: PopupElements,
+  response: BackgroundResponse & Readonly<{ type: 'preview-ready' }>,
+): void => {
+  setStatus(elements, 'Review before saving:');
+  elements.previewTitleElement.textContent = response.clip.title;
+  elements.previewSourceElement.textContent = response.clip.sourceUrl;
+  elements.previewContentElement.textContent = response.clip.content;
+  elements.previewElement.style.display = 'block';
 
-  confirmButton?.addEventListener(
+  elements.confirmButton.addEventListener(
     'click',
     () => {
-      void handleConfirm(response.draftId);
+      void handleConfirm(elements, response.draftId);
     },
     { once: true },
   );
-  discardButton?.addEventListener(
+  elements.discardButton.addEventListener(
     'click',
     () => {
-      void handleDiscard(response.draftId);
+      void handleDiscard(elements, response.draftId);
     },
     { once: true },
   );
 };
 
-const disableActions = (): void => {
-  if (confirmButton) confirmButton.disabled = true;
-  if (discardButton) discardButton.disabled = true;
+const disableActions = (elements: PopupElements): void => {
+  elements.confirmButton.disabled = true;
+  elements.discardButton.disabled = true;
 };
 
-const handleConfirm = async (draftId: string): Promise<void> => {
-  disableActions();
-  setStatus('Saving…');
+const handleConfirm = async (elements: PopupElements, draftId: string): Promise<void> => {
+  disableActions(elements);
+  setStatus(elements, 'Saving…');
   const response = await sendToBackground({ type: 'confirm-commit', draftId });
   if (response.type === 'commit-success') {
-    setStatus(`Saved as ${response.nodeId}.`);
+    setStatus(elements, `Saved as ${response.nodeId}.`);
     return;
   }
-  setError(response.type === 'commit-error' ? response.message : 'Could not save the clip.');
-  setStatus('Save failed.');
+  setError(
+    elements,
+    response.type === 'commit-error' ? response.message : 'Could not save the clip.',
+  );
+  setStatus(elements, 'Save failed.');
 };
 
-const handleDiscard = async (draftId: string): Promise<void> => {
-  disableActions();
+const handleDiscard = async (elements: PopupElements, draftId: string): Promise<void> => {
+  disableActions(elements);
   await sendToBackground({ type: 'discard', draftId });
-  setStatus('Discarded. Nothing was saved.');
-  if (previewElement) previewElement.style.display = 'none';
+  setStatus(elements, 'Discarded. Nothing was saved.');
+  elements.previewElement.style.display = 'none';
 };
 
 const run = async (): Promise<void> => {
+  if (!popupElements.ok) return;
+  const elements = popupElements.value;
+
   // eslint-disable-next-line functional/no-try-statements -- top-level popup entry point; failures render as UI, not thrown
   try {
     const capture = await captureActiveTab();
-    setStatus('Staging the clip…');
+    setStatus(elements, 'Staging the clip…');
     const response = await sendToBackground({ type: 'stage-clip', capture });
     if (response.type === 'preview-ready') {
-      showPreview(response);
+      showPreview(elements, response);
       return;
     }
-    setStatus('Could not capture this page.');
+    setStatus(elements, 'Could not capture this page.');
     if (response.type === 'capture-error') {
-      setError(ERROR_GUIDANCE[response.reason] ?? response.message);
+      setError(elements, ERROR_GUIDANCE[response.reason] ?? response.message);
     }
   } catch (error) {
-    setStatus('Could not capture this page.');
-    setError(error instanceof Error ? error.message : 'Unknown error.');
+    setStatus(elements, 'Could not capture this page.');
+    setError(elements, error instanceof Error ? error.message : 'Unknown error.');
   }
 };
 
