@@ -47,7 +47,7 @@ const DialogFooter: React.FC<DialogFooterProperties> = ({ submitLabel, onCancel,
       disabled={isInvalid}
       className="px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider bg-primary-container text-on-primary-container disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary-container/80 transition-all flex items-center gap-1.5 active:scale-[0.98]"
     >
-      <span>{submitLabel || 'Submit'}</span>
+      <span>{submitLabel.length === 0 ? 'Submit' : submitLabel}</span>
       <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
     </button>
   </div>
@@ -163,8 +163,7 @@ export const WizardDialog: React.FC = () => {
     event_.preventDefault();
     const entries = stepSchema.fields.map((field) => {
       const value = formValues[field.name];
-      const parsedValue = field.kind === 'number' ? Number(value) : value;
-      return [field.name, parsedValue] as const;
+      return [field.name, field.kind === 'number' ? Number(value) : value] as const;
     });
     void submitWizardStep(new Map<string, unknown>(entries));
   };
@@ -173,10 +172,13 @@ export const WizardDialog: React.FC = () => {
     stepSchema.fields.some((field) => {
       if (!field.required) return false;
       const value = formValues[field.name];
-      if (field.kind === 'boolean') return false;
-      if (value === undefined || value === null) return true;
-      if (typeof value === 'string' && value.trim() === '') return true;
-      return field.kind === 'number' && Number.isNaN(Number(value));
+      return (
+        field.kind !== 'boolean' &&
+        (value === undefined ||
+          value === null ||
+          (typeof value === 'string' && value.trim() === '') ||
+          (field.kind === 'number' && Number.isNaN(Number(value))))
+      );
     });
 
   return (

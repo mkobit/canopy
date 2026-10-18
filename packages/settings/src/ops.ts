@@ -10,8 +10,8 @@ export type AddUserSettingParameters = Readonly<{
 }>;
 
 /**
- * Creates a USER_SETTING node in the graph.
- */
+Creates a USER_SETTING node in the graph.
+*/
 export function addUserSetting(
   graph: Graph,
   parameters: AddUserSettingParameters,

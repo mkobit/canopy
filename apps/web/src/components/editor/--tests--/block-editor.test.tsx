@@ -4,8 +4,8 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
 import { BlockEditor } from '../block-editor';
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+function sleep(): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, 5));
 }
 
 // Clean up before each test too, so we are not affected by DOM left over by other test files.
@@ -46,10 +46,10 @@ describe('BlockEditor', () => {
     const editor = screen.getByText('Hello');
     editor.textContent = 'Hello w';
     fireEvent.input(editor);
-    await sleep(5);
+    await sleep();
     editor.textContent = 'Hello wo';
     fireEvent.input(editor);
-    await sleep(5);
+    await sleep();
     editor.textContent = 'Hello world';
     fireEvent.input(editor);
 

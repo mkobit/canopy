@@ -123,12 +123,12 @@ export function executeQuery(graph: Graph, query: Query): Result<QueryResult, Er
 }
 
 /**
- * Reference oracle for the scan-vs-index equivalence property test (design.md Decision 7):
- * identical step handling to `executeQuery`, but never consults the read model -- every step
- * scans `graph.nodes`/`graph.edges` directly. Deliberately a standalone copy of the reduce loop
- * rather than derived from `executeQuery`, so a bug shared by both wouldn't be masked; the two are
- * kept in lockstep only by the property test that compares their output on random graphs/queries.
- */
+Reference oracle for the scan-vs-index equivalence property test (design.md Decision 7):
+identical step handling to `executeQuery`, but never consults the read model -- every step
+scans `graph.nodes`/`graph.edges` directly. Deliberately a standalone copy of the reduce loop
+rather than derived from `executeQuery`, so a bug shared by both wouldn't be masked; the two are
+kept in lockstep only by the property test that compares their output on random graphs/queries.
+*/
 export function executeQueryScanOnly(graph: Graph, query: Query): Result<QueryResult, Error> {
   const initial: Accumulator = { items: [], isNodeContext: false };
 
@@ -201,19 +201,19 @@ export function executeQueryScanOnly(graph: Graph, query: Query): Result<QueryRe
 
 function scanNodes(graph: Graph, type?: string): readonly Node[] {
   const nodes = [...graph.nodes.values()];
-  if (!type) return nodes;
-  return filter(nodes, (node) => node.type === type);
+  return type ? filter(nodes, (node) => node.type === type) : nodes;
 }
 
-/** Resolves a `node-scan` by type through the read model's type index instead of a full scan. */
+/**
+Resolves a `node-scan` by type through the read model's type index instead of a full scan.
+*/
 function scanNodesIndexed(readModel: ReadModelPort, graph: Graph, type: string): readonly Node[] {
   return resolveNodeIds(graph, readModel.typedNodeIds(asTypeId(type)));
 }
 
 function scanEdges(graph: Graph, type?: string): readonly Edge[] {
   const edges = [...graph.edges.values()];
-  if (!type) return edges;
-  return filter(edges, (edge) => edge.type === type);
+  return type ? filter(edges, (edge) => edge.type === type) : edges;
 }
 
 function resolveNodeIds(graph: Graph, ids: Iterable<NodeId>): readonly Node[] {
@@ -223,10 +223,10 @@ function resolveNodeIds(graph: Graph, ids: Iterable<NodeId>): readonly Node[] {
 }
 
 /**
- * Resolves a `traversal` step through the read model's adjacency index instead of scanning every
- * edge once per hop. Semantically identical to `traverse` below (same per-node out/in/both union,
- * same edge-type narrowing, same dedup-by-id), just sourced from the index.
- */
+Resolves a `traversal` step through the read model's adjacency index instead of scanning every
+edge once per hop. Semantically identical to `traverse` below (same per-node out/in/both union,
+same edge-type narrowing, same dedup-by-id), just sourced from the index.
+*/
 function traverseIndexed(
   readModel: ReadModelPort,
   graph: Graph,
@@ -242,14 +242,14 @@ function traverseIndexed(
 }
 
 /**
- * Resolves an equality `filter` step on node items through the read model's property-equality
- * index, falling back to `applyFilter` for anything the index can't answer: non-`eq` operators,
- * edge items (only node properties are indexed), and values that aren't a plain scalar (`null`
- * and `ExternalReferenceValue` unwrap differently than they're indexed -- see `unwrapScalar`).
- * The index result is a narrowing pre-filter, not a final arbiter: `applyFilter` re-verifies every
- * candidate, so an index/scan serialization mismatch (e.g. `NaN` self-equality) can only produce a
- * false *negative* pre-filter, never a wrong final result.
- */
+Resolves an equality `filter` step on node items through the read model's property-equality
+index, falling back to `applyFilter` for anything the index can't answer: non-`eq` operators,
+edge items (only node properties are indexed), and values that aren't a plain scalar (`null`
+and `ExternalReferenceValue` unwrap differently than they're indexed -- see `unwrapScalar`).
+The index result is a narrowing pre-filter, not a final arbiter: `applyFilter` re-verifies every
+candidate, so an index/scan serialization mismatch (e.g. `NaN` self-equality) can only produce a
+false *negative* pre-filter, never a wrong final result.
+*/
 function applyFilterIndexed(
   readModel: ReadModelPort,
   items: readonly GraphItem[],
@@ -280,8 +280,7 @@ function applyFilter(items: readonly GraphItem[], predicate: Filter): readonly G
       if ('target' in item && predicate.property === 'target') return item.target;
 
       const property = item.properties.get(predicate.property);
-      if (property !== undefined) return unwrapValue(property);
-      return undefined;
+      return property === undefined ? undefined : unwrapValue(property);
     };
 
     const pValue = getPropertyValue();
@@ -312,25 +311,16 @@ function applyFilter(items: readonly GraphItem[], predicate: Filter): readonly G
         return compare(pValue, value) <= 0;
       }
       case 'contains': {
-        if (Array.isArray(pValue)) {
-          return pValue.includes(value);
-        }
-        if (typeof pValue === 'string') {
-          return pValue.includes(value as string);
-        }
-        return false;
+        return (
+          (Array.isArray(pValue) && pValue.includes(value)) ||
+          (typeof pValue === 'string' && pValue.includes(value as string))
+        );
       }
       case 'starts-with': {
-        if (typeof pValue === 'string' && typeof value === 'string') {
-          return pValue.startsWith(value);
-        }
-        return false;
+        return typeof pValue === 'string' && typeof value === 'string' && pValue.startsWith(value);
       }
       case 'ends-with': {
-        if (typeof pValue === 'string' && typeof value === 'string') {
-          return pValue.endsWith(value);
-        }
-        return false;
+        return typeof pValue === 'string' && typeof value === 'string' && pValue.endsWith(value);
       }
       case 'exists': {
         return pValue !== undefined && pValue !== null;

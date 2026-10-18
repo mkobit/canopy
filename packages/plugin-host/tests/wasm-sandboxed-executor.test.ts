@@ -91,11 +91,10 @@ describe('WASM Sandboxed Execution Boundary', () => {
     );
 
     expect(result.ok).toBe(true);
-    if (result.ok) {
-      const output = JSON.parse(result.value) as { status: string; nodeId: string };
-      expect(output.status).toBe('created');
-      expect(output.nodeId).toBe('sb-1');
-    }
+    if (!result.ok) return;
+    const output = JSON.parse(result.value) as { status: string; nodeId: string };
+    expect(output.status).toBe('created');
+    expect(output.nodeId).toBe('sb-1');
   });
 
   it('enforces the executor token when a guest supplies a wildcard mutation token', async () => {
@@ -151,11 +150,10 @@ describe('WASM Sandboxed Execution Boundary', () => {
     );
 
     expect(result.ok).toBe(true);
-    if (result.ok) {
-      const hostResult = JSON.parse(result.value) as { ok: boolean; value?: string };
-      expect(hostResult.ok).toBe(true);
-      expect(Array.isArray(JSON.parse(hostResult.value ?? ''))).toBe(true);
-    }
+    if (!result.ok) return;
+    const hostResult = JSON.parse(result.value) as { ok: boolean; value?: string };
+    expect(hostResult.ok).toBe(true);
+    expect(Array.isArray(JSON.parse(hostResult.value ?? ''))).toBe(true);
   });
 
   it('does not dispatch remotely when the executor token denies a guest mutation', async () => {
@@ -241,10 +239,12 @@ describe('WASM Sandboxed Execution Boundary', () => {
     });
 
     expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.error.category).toBe('RESOURCE_EXHAUSTED');
-      expect(result.error.message).toContain('memory quota');
+    if (result.ok) {
+      return;
     }
+
+    expect(result.error.category).toBe('RESOURCE_EXHAUSTED');
+    expect(result.error.message).toContain('memory quota');
   });
 
   it('halts execution when fuel limit is exhausted by host calls', async () => {
@@ -265,10 +265,12 @@ describe('WASM Sandboxed Execution Boundary', () => {
     });
 
     expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.error.category).toBe('RESOURCE_EXHAUSTED');
-      expect(result.error.message).toContain('timed out');
+    if (result.ok) {
+      return;
     }
+
+    expect(result.error.category).toBe('RESOURCE_EXHAUSTED');
+    expect(result.error.message).toContain('timed out');
   });
 
   it('catches guest plugin exceptions and returns INTERNAL_ERROR result', async () => {
@@ -276,9 +278,11 @@ describe('WASM Sandboxed Execution Boundary', () => {
 
     const result = await executeSandboxedGuestPlugin(context, '*', '{}', panicPlugin);
     expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.error.category).toBe('INTERNAL_ERROR');
-      expect(result.error.message).toContain('Guest panicking');
+    if (result.ok) {
+      return;
     }
+
+    expect(result.error.category).toBe('INTERNAL_ERROR');
+    expect(result.error.message).toContain('Guest panicking');
   });
 });

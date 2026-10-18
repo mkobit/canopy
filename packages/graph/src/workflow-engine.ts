@@ -116,10 +116,7 @@ export function createWorkflowTriggerRegistry(): WorkflowTriggerRegistry {
   };
 
   const getTriggersForEvent = (event: GraphEvent): readonly Node[] => {
-    if (event.type === 'NodeCreated') {
-      return triggersCell.current.get(event.nodeType) ?? [];
-    }
-    return [];
+    return event.type === 'NodeCreated' ? (triggersCell.current.get(event.nodeType) ?? []) : [];
   };
 
   return {

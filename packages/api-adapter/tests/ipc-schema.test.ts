@@ -49,10 +49,12 @@ describe('IPC schema and protocol definitions', () => {
 
     const parsed = JsonRpcRequestSchema.safeParse(validRequest);
     expect(parsed.success).toBe(true);
-    if (parsed.success) {
-      expect(parsed.data.method).toBe('canopy.v1.handshake');
-      expect((parsed.data as Record<string, unknown>).extraFutureField).toBe('should_be_ignored');
+    if (!parsed.success) {
+      return;
     }
+
+    expect(parsed.data.method).toBe('canopy.v1.handshake');
+    expect((parsed.data as Record<string, unknown>).extraFutureField).toBe('should_be_ignored');
   });
 
   it('validates JSON-RPC responses and error payloads', () => {

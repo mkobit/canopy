@@ -241,10 +241,12 @@ describe('Graph Queries', () => {
 
       const result = findInverseEdgeType(testGraph, asTypeId('custom:edgetype:parent-of'));
       expect(result.ok).toBeTrue();
-      if (result.ok) {
-        expect(result.value).toBeDefined();
-        expect(result.value?.id).toBe(childOfId);
+      if (!result.ok) {
+        return;
       }
+
+      expect(result.value).toBeDefined();
+      expect(result.value?.id).toBe(childOfId);
     });
 
     test('returns err if inverse property is not a string', () => {

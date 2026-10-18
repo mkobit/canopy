@@ -84,15 +84,14 @@ export const createReentrancyGuard = (): ReentrancyGuard => {
 // Creates a memory quota checker verifying byte allocation bounds.
 export const createMemoryChecker = (maxMemoryBytes: number): MemoryChecker => ({
   checkBytes: (bytes: number): Result<void, GraphAccessError> => {
-    if (bytes > maxMemoryBytes) {
-      return err(
-        createGraphAccessError(
-          'RESOURCE_EXHAUSTED',
-          `WASM memory quota exceeded: ${bytes} bytes exceeds maximum limit of ${maxMemoryBytes} bytes`,
-        ),
-      );
-    }
-    return ok(undefined);
+    return bytes > maxMemoryBytes
+      ? err(
+          createGraphAccessError(
+            'RESOURCE_EXHAUSTED',
+            `WASM memory quota exceeded: ${bytes} bytes exceeds maximum limit of ${maxMemoryBytes} bytes`,
+          ),
+        )
+      : ok(undefined);
   },
 });
 
@@ -155,10 +154,7 @@ export const executeSandboxedGuestPlugin = async (
     .then((outputJson: string) => {
       const outputBytes = utf8ByteLength(outputJson);
       const outputMemoryResult = memoryChecker.checkBytes(outputBytes);
-      if (!outputMemoryResult.ok) {
-        return err(outputMemoryResult.error);
-      }
-      return ok(outputJson);
+      return outputMemoryResult.ok ? ok(outputJson) : err(outputMemoryResult.error);
     })
     .catch((error: unknown) =>
       err(

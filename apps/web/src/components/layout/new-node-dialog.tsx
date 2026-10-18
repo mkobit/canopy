@@ -58,11 +58,14 @@ function initialValuesFor(
 }
 
 function isEmpty(value: PropertyValue, kind: PropertyValueKind): boolean {
-  if (kind === 'boolean' || kind === 'number') return false;
-  if (Array.isArray(value)) return value.length === 0;
-  if (value === null || value === undefined) return true;
-  if (typeof value === 'string') return value.length === 0;
-  return false;
+  return (
+    kind !== 'boolean' &&
+    kind !== 'number' &&
+    ((Array.isArray(value) && value.length === 0) ||
+      value === null ||
+      value === undefined ||
+      (typeof value === 'string' && value.length === 0))
+  );
 }
 
 const TypeSelect: React.FC<
@@ -71,7 +74,7 @@ const TypeSelect: React.FC<
     selectedTypeId: TypeId | null;
     onChange: (next: NodeTypeOption) => unknown;
   }>
-> = ({ nodeTypes, selectedTypeId, onChange }) => (
+> = ({ nodeTypes, selectedTypeId = null, onChange }) => (
   <label className="block space-y-1">
     <span className="text-xs uppercase tracking-wider text-on-surface-variant">Type</span>
     <select
@@ -148,14 +151,16 @@ function hasRequiredMissing(
   selected: NodeTypeOption | undefined,
   values: Readonly<Record<string, PropertyValue>>,
 ): boolean {
-  if (!selected) return true;
-  return selected.properties.some(
-    (definition) =>
-      definition.required &&
-      isEmpty(
-        values[definition.name] ?? getInitialValue(definition.valueKind),
-        definition.valueKind,
-      ),
+  return (
+    !selected ||
+    selected.properties.some(
+      (definition) =>
+        definition.required &&
+        isEmpty(
+          values[definition.name] ?? getInitialValue(definition.valueKind),
+          definition.valueKind,
+        ),
+    )
   );
 }
 

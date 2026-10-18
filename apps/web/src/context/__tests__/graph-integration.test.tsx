@@ -356,7 +356,7 @@ describe('type-authoring bridge — context integration', () => {
     expect(nodeTypeId).toBeDefined();
     if (!nodeTypeId) return;
     const raw = result.current.graph?.nodes.get(nodeTypeId)?.properties.get('properties');
-    if (typeof raw !== 'string') throw new Error('expected properties to be a JSON string');
+    if (typeof raw !== 'string') throw new TypeError('expected properties to be a JSON string');
     const parsed: unknown = JSON.parse(raw);
     expect(parsed).toEqual([
       { name: 'priority', valueKind: 'number', required: true, description: undefined },

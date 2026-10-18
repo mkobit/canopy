@@ -38,10 +38,7 @@ function addNodeGraph(graph: Graph, node: Node, migrationId?: string): Result<Gr
     deviceId: SYSTEM_DEVICE_ID,
     ...(migrationId !== undefined && { migrationId }),
   });
-  if (result.ok) {
-    return ok(result.value.graph);
-  }
-  return result;
+  return result.ok ? ok(result.value.graph) : result;
 }
 
 function addEdgeGraph(
@@ -66,10 +63,7 @@ function addEdgeGraph(
   const result = addEdge(graph, edge, {
     deviceId: SYSTEM_DEVICE_ID,
   });
-  if (result.ok) {
-    return ok(result.value.graph);
-  }
-  return result;
+  return result.ok ? ok(result.value.graph) : result;
 }
 
 // Helper to reduce results safely using recursion to avoid loops
@@ -88,16 +82,13 @@ function reduceResult<T, R>(
   }
   const tail = items.slice(1);
   const result = function_(initial, head);
-  if (!result.ok) {
-    return result;
-  }
-  return reduceResult(tail, function_, result.value);
+  return result.ok ? reduceResult(tail, function_, result.value) : result;
 }
 
 /**
- * Bootstraps a graph with system nodes.
- * This is idempotent - it only adds nodes if they are missing.
- */
+Bootstraps a graph with system nodes.
+This is idempotent - it only adds nodes if they are missing.
+*/
 // eslint-disable-next-line max-lines-per-function
 export function bootstrap(graph: Graph): Result<Graph, Error> {
   const steps: readonly ((g: Graph) => Result<Graph, Error>)[] = [

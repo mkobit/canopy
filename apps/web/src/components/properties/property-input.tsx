@@ -268,6 +268,7 @@ const ScalarInput: React.FC<
 function inferKind(value: ScalarValue): PropertyValueKind {
   if (typeof value === 'boolean') return 'boolean';
   if (typeof value === 'number') return 'number';
-  if (typeof value === 'object' && value !== null && 'graph' in value) return 'external-reference';
-  return 'text';
+  return typeof value === 'object' && value !== null && 'graph' in value
+    ? 'external-reference'
+    : 'text';
 }

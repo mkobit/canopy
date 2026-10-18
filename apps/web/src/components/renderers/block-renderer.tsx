@@ -103,10 +103,7 @@ function resolveRenderer(node: Node, graph: Graph): ResolvedRenderer {
     if (dispatch.tier === 'tier2') {
       return { kind: 'tier2', pluginNode, guestId: dispatch.guestId, token: dispatch.token };
     }
-    if (dispatch.tier === 'unavailable') {
-      return { kind: 'unavailable' };
-    }
-    return { kind: 'wasm', pluginNode };
+    return dispatch.tier === 'unavailable' ? { kind: 'unavailable' } : { kind: 'wasm', pluginNode };
   }
 
   if (!isSystemRendererEntryPoint(entryPoint)) {

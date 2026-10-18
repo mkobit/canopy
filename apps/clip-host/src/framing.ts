@@ -19,7 +19,9 @@ const framingError = (
   message: string,
 ): NativeMessagingFramingError => ({ _tag: 'NativeMessagingFramingError', reason, message });
 
-/** Encodes one native-messaging frame: a 4-byte little-endian length prefix followed by UTF-8 JSON. */
+/**
+Encodes one native-messaging frame: a 4-byte little-endian length prefix followed by UTF-8 JSON.
+*/
 export const encodeFrame = (payload: unknown): Result<Buffer, NativeMessagingFramingError> => {
   const json = Buffer.from(JSON.stringify(payload), 'utf8');
   if (json.byteLength > MAX_FRAME_BYTES) {
@@ -37,16 +39,18 @@ export const encodeFrame = (payload: unknown): Result<Buffer, NativeMessagingFra
 
 export type DecodedFrames = Readonly<{
   messages: readonly unknown[];
-  /** Bytes not yet consumed -- either an incomplete length prefix or an incomplete message body. */
+  /**
+  Bytes not yet consumed -- either an incomplete length prefix or an incomplete message body.
+  */
   remainder: Buffer;
 }>;
 
 /**
- * Extracts as many complete, length-prefixed JSON frames as `buffer` contains.
- * Pure: does not mutate `buffer` and performs no I/O. On a malformed or
- * oversize frame, returns an error and no messages -- callers must not act on
- * any prior message that would have shipped alongside it (no partial state).
- */
+Extracts as many complete, length-prefixed JSON frames as `buffer` contains.
+Pure: does not mutate `buffer` and performs no I/O. On a malformed or
+oversize frame, returns an error and no messages -- callers must not act on
+any prior message that would have shipped alongside it (no partial state).
+*/
 export const decodeFrames = (
   buffer: Buffer,
 ): Result<DecodedFrames, NativeMessagingFramingError> => {

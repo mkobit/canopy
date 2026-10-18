@@ -54,14 +54,13 @@ describe('WASM WIT Host Import Bindings', () => {
     const queryPayload = JSON.stringify({ id: 'node-wit-1' });
     const queryResult = await hostBindings.queries.queryNodes('read:nodes', queryPayload);
     expect(queryResult.ok).toBe(true);
-    if (queryResult.ok) {
-      const nodes = JSON.parse(queryResult.value) as readonly {
-        id: string;
-        properties: { title: string };
-      }[];
-      expect(nodes).toHaveLength(1);
-      expect(nodes[0]?.properties.title).toBe('WIT Document');
-    }
+    if (!queryResult.ok) return;
+    const nodes = JSON.parse(queryResult.value) as readonly {
+      id: string;
+      properties: { title: string };
+    }[];
+    expect(nodes).toHaveLength(1);
+    expect(nodes[0]?.properties.title).toBe('WIT Document');
   });
 
   it('executes edge creation and deletion mutations via host bindings', async () => {
@@ -176,10 +175,12 @@ describe('WASM WIT Host Import Bindings', () => {
 
     const result = await hostBindings.queries.queryNodes('read:edges', JSON.stringify({}));
     expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.error.code).toBe('PermissionDenied');
-      expect(result.error.message).toContain('read:nodes');
+    if (result.ok) {
+      return;
     }
+
+    expect(result.error.code).toBe('PermissionDenied');
+    expect(result.error.message).toContain('read:nodes');
   });
 
   it('enforces the load-time bound token over the guest-supplied argument', async () => {
@@ -195,10 +196,12 @@ describe('WASM WIT Host Import Bindings', () => {
       JSON.stringify({ id: 'blocked', type: 'doc', properties: {} }),
     );
     expect(writeResult.ok).toBe(false);
-    if (!writeResult.ok) {
-      expect(writeResult.error.code).toBe('PermissionDenied');
-      expect(writeResult.error.message).toContain('write:create-node');
+    if (writeResult.ok) {
+      return;
     }
+
+    expect(writeResult.error.code).toBe('PermissionDenied');
+    expect(writeResult.error.message).toContain('write:create-node');
   });
 
   it('returns VALIDATION_ERROR when payload is invalid JSON', async () => {
@@ -207,10 +210,12 @@ describe('WASM WIT Host Import Bindings', () => {
 
     const result = await hostBindings.queries.queryNodes('read:nodes', '{ bad json }');
     expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.error.code).toBe('ValidationError');
-      expect(result.error.message).toContain('Invalid JSON');
+    if (result.ok) {
+      return;
     }
+
+    expect(result.error.code).toBe('ValidationError');
+    expect(result.error.message).toContain('Invalid JSON');
   });
 
   it('consumes fuel on host import calls and returns ResourceExhausted when depleted', async () => {
@@ -227,10 +232,12 @@ describe('WASM WIT Host Import Bindings', () => {
 
     const secondResult = await hostBindings.queries.queryNodes('read:nodes', JSON.stringify({}));
     expect(secondResult.ok).toBe(false);
-    if (!secondResult.ok) {
-      expect(secondResult.error.code).toBe('ResourceExhausted');
-      expect(secondResult.error.message).toContain('fuel');
+    if (secondResult.ok) {
+      return;
     }
+
+    expect(secondResult.error.code).toBe('ResourceExhausted');
+    expect(secondResult.error.message).toContain('fuel');
   });
 
   it('uses 100 fuel units per import by default', async () => {

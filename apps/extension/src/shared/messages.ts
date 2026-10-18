@@ -5,7 +5,9 @@
 export type RawClipCapture = Readonly<{
   title: string;
   sourceUrl: string;
-  /** Selected text, or '' when nothing was selected (mainText is used instead). */
+  /**
+  Selected text, or '' when nothing was selected (mainText is used instead).
+  */
   selectionText: string;
   mainText: string;
 }>;

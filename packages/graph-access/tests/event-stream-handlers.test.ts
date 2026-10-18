@@ -111,16 +111,14 @@ describe('Event Catch-Up Replay Handler', () => {
     });
 
     expect(replayResult.ok).toBe(true);
-    if (replayResult.ok) {
-      expect(replayResult.value).toHaveLength(2);
-      expect(replayResult.value[0]?.kind).toBe('event');
-      const firstEvent = replayResult.value[0]?.event;
-      const secondEvent = replayResult.value[1]?.event;
-      if (firstEvent?.type === 'NodeCreated' && secondEvent?.type === 'NodeCreated') {
-        expect(firstEvent.id).toBe(asNodeId('n-replay-2'));
-        expect(secondEvent.id).toBe(asNodeId('n-replay-3'));
-      }
-    }
+    if (!replayResult.ok) return;
+    expect(replayResult.value).toHaveLength(2);
+    expect(replayResult.value[0]?.kind).toBe('event');
+    const firstEvent = replayResult.value[0]?.event;
+    const secondEvent = replayResult.value[1]?.event;
+    if (firstEvent?.type !== 'NodeCreated' || secondEvent?.type !== 'NodeCreated') return;
+    expect(firstEvent.id).toBe(asNodeId('n-replay-2'));
+    expect(secondEvent.id).toBe(asNodeId('n-replay-3'));
   });
 
   it('emits gap notification when requested replay count exceeds maxReplayCount limit', async () => {
@@ -142,11 +140,13 @@ describe('Event Catch-Up Replay Handler', () => {
     });
 
     expect(replayResult.ok).toBe(true);
-    if (replayResult.ok) {
-      expect(replayResult.value).toHaveLength(1);
-      expect(replayResult.value[0]?.kind).toBe('gap');
-      expect(replayResult.value[0]?.reason).toContain('exceeds maximum replay threshold of 5');
+    if (!replayResult.ok) {
+      return;
     }
+
+    expect(replayResult.value).toHaveLength(1);
+    expect(replayResult.value[0]?.kind).toBe('gap');
+    expect(replayResult.value[0]?.reason).toContain('exceeds maximum replay threshold of 5');
   });
 
   it('rejects replay request if tenant boundary validation fails', async () => {

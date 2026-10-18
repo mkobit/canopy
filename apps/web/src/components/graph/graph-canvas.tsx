@@ -53,10 +53,12 @@ export const GraphCanvas: React.FC<GraphCanvasProperties> = ({
         return;
       }
       const targetNode = nodes.find((n) => n.id === nodeId);
-      if (targetNode) {
-        onNodeClick(targetNode);
-        announce(`Selected node ${nodeId}`);
+      if (!targetNode) {
+        return;
       }
+
+      onNodeClick(targetNode);
+      announce(`Selected node ${nodeId}`);
     },
     [nodes, onNodeClick, announce],
   );

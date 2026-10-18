@@ -13,10 +13,10 @@ export type ClipPayloadResult =
 const byteLength = (text: string): number => new TextEncoder().encode(text).length;
 
 /**
- * Pure: picks the selection over extracted main content when a selection
- * exists (design.md's "Clip a selection" scenario), enforces the
- * native-messaging/UDS size cap, and rejects rather than silently truncating.
- */
+Pure: picks the selection over extracted main content when a selection
+exists (design.md's "Clip a selection" scenario), enforces the
+native-messaging/UDS size cap, and rejects rather than silently truncating.
+*/
 export const buildClipPayload = (
   capture: RawClipCapture,
   capturedAt: string,

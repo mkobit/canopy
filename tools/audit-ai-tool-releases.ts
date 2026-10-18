@@ -89,10 +89,9 @@ function formatResult(result: ToolAuditResult): string {
   if (result.error) {
     return `❌ ${result.name}: Error fetching latest release (${result.error})`;
   }
-  if (result.upToDate) {
-    return `✅ ${result.name}: Up to date (v${result.configuredVersion})`;
-  }
-  return `⚠️ ${result.name}: Update available! (Configured: v${result.configuredVersion}, Latest: v${result.latestVersion})`;
+  return result.upToDate
+    ? `✅ ${result.name}: Up to date (v${result.configuredVersion})`
+    : `⚠️ ${result.name}: Update available! (Configured: v${result.configuredVersion}, Latest: v${result.latestVersion})`;
 }
 
 async function main(): Promise<boolean> {

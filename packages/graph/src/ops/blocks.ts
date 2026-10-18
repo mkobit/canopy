@@ -45,8 +45,7 @@ export function insertBlock(
       const posA = (a.properties.get('position') as string) || '';
       const posB = (b.properties.get('position') as string) || '';
       if (posA < posB) return -1;
-      if (posA > posB) return 1;
-      return 0;
+      return posA > posB ? 1 : 0;
     });
 
   // Validate prevBlockId if provided

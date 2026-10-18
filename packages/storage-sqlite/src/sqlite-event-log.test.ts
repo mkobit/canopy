@@ -6,12 +6,9 @@ import type { NodeCreated, GraphEvent } from '@canopy/graph';
 
 const mockGraphId = 'test-graph-id';
 
-const assertDefined = <T>(
-  value: T | null | undefined,
-  message = 'Expected value to be defined',
-): T => {
+const assertDefined = <T>(value: T | null | undefined): T => {
   if (value === null || value === undefined) {
-    throw new Error(message);
+    throw new Error('Expected value to be defined');
   }
   return value;
 };

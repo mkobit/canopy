@@ -94,12 +94,11 @@ describe('addUserSetting', () => {
     const graphResult = unwrap(result);
 
     const event = graphResult.events[0];
-    if (event && event.type === 'NodeCreated') {
-      expect(event.properties.get('scopeType')).toBe('node');
-      expect(event.properties.get('scopeTarget')).toBe('node:test-target');
+    if (!event || event.type !== 'NodeCreated') return;
+    expect(event.properties.get('scopeType')).toBe('node');
+    expect(event.properties.get('scopeTarget')).toBe('node:test-target');
 
-      const value = event.properties.get('value');
-      expect(JSON.parse(value as string)).toBe('some-string-value');
-    }
+    const value = event.properties.get('value');
+    expect(JSON.parse(value as string)).toBe('some-string-value');
   });
 });

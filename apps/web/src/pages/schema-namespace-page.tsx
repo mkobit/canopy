@@ -82,30 +82,28 @@ const PropertyTypeList: React.FC<Readonly<{ items: readonly PropertyTypeOption[]
 };
 
 export const SchemaNamespacePage = () => {
-  const { graphId, namespaceName } =
+  const { graphId, namespaceName = '' } =
     useParams<Readonly<{ graphId: string; namespaceName: string }>>();
   const { graph, createNodeType, createEdgeType, createPropertyType } = useGraph();
   const navigate = useNavigate();
 
-  const namespace = namespaceName ?? '';
-
   const namespaceInfo = useMemo(
-    () => (graph ? listNamespaces(graph).find((ns) => ns.name === namespace) : undefined),
-    [graph, namespace],
+    () => (graph ? listNamespaces(graph).find((ns) => ns.name === namespaceName) : undefined),
+    [graph, namespaceName],
   );
   const isRestricted = namespaceInfo ? RESTRICTED_NAMESPACE_KINDS.has(namespaceInfo.kind) : false;
 
   const nodeTypes = useMemo(
-    () => (graph ? listNodeTypesIn(graph, namespace) : []),
-    [graph, namespace],
+    () => (graph ? listNodeTypesIn(graph, namespaceName) : []),
+    [graph, namespaceName],
   );
   const edgeTypes = useMemo(
-    () => (graph ? listEdgeTypesIn(graph, namespace) : []),
-    [graph, namespace],
+    () => (graph ? listEdgeTypesIn(graph, namespaceName) : []),
+    [graph, namespaceName],
   );
   const propertyTypes = useMemo(
-    () => (graph ? listPropertyTypesIn(graph, namespace) : []),
-    [graph, namespace],
+    () => (graph ? listPropertyTypesIn(graph, namespaceName) : []),
+    [graph, namespaceName],
   );
   const allPropertyTypes = useMemo(() => (graph ? listAllPropertyTypes(graph) : []), [graph]);
   const allNodeTypes = useMemo(() => (graph ? listAllNodeTypes(graph) : []), [graph]);
@@ -123,7 +121,7 @@ export const SchemaNamespacePage = () => {
         >
           <ArrowLeft size={16} /> Namespaces
         </button>
-        <h1 className="text-2xl font-bold text-gray-900">{namespace}</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{namespaceName}</h1>
         {namespaceInfo && (
           <p className="text-xs text-gray-500 font-mono mt-1">
             kind: {namespaceInfo.kind}
@@ -141,7 +139,7 @@ export const SchemaNamespacePage = () => {
         <h2 className="text-lg font-semibold text-gray-900">Node types</h2>
         <TypeDefinitionList items={nodeTypes} />
         <NodeTypeCreateForm
-          namespace={namespace}
+          namespace={namespaceName}
           propertyTypeOptions={allPropertyTypes}
           onSubmit={createNodeType}
         />
@@ -151,7 +149,7 @@ export const SchemaNamespacePage = () => {
         <h2 className="text-lg font-semibold text-gray-900">Edge types</h2>
         <EdgeTypeList items={edgeTypes} />
         <EdgeTypeCreateForm
-          namespace={namespace}
+          namespace={namespaceName}
           propertyTypeOptions={allPropertyTypes}
           nodeTypeOptions={allNodeTypes}
           onSubmit={createEdgeType}
@@ -161,7 +159,7 @@ export const SchemaNamespacePage = () => {
       <section className="space-y-4">
         <h2 className="text-lg font-semibold text-gray-900">Property types</h2>
         <PropertyTypeList items={propertyTypes} />
-        <PropertyTypeCreateForm namespace={namespace} onSubmit={createPropertyType} />
+        <PropertyTypeCreateForm namespace={namespaceName} onSubmit={createPropertyType} />
       </section>
     </div>
   );

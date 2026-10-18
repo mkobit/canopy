@@ -97,13 +97,7 @@ function scanHuskyHook(
 
 async function main(): Promise<void> {
   const packageJsonGlob = new Glob('**/package.json');
-  // eslint-disable-next-line functional/prefer-immutable-types -- mutable array used to collect results from async generator
-  const rawPaths: string[] = [];
-  // eslint-disable-next-line functional/no-loop-statements -- Glob scan requires async iteration
-  for await (const relativePath of packageJsonGlob.scan(rootDirectory)) {
-    // eslint-disable-next-line functional/immutable-data -- collect results
-    rawPaths.push(relativePath);
-  }
+  const rawPaths = await Array.fromAsync(packageJsonGlob.scan(rootDirectory));
 
   const packageJsonPaths = rawPaths.filter(
     (p) => !p.includes('node_modules') && !p.includes('.beads'),

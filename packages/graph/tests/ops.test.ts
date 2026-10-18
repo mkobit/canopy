@@ -244,12 +244,14 @@ describe('createEdgeAction', () => {
     });
 
     expect(isOk(result)).toBe(true);
-    if (isOk(result)) {
-      expect(result.value.event.type).toBe('EdgeCreated');
-      expect(result.value.event.source).toBe(asNodeId('n1'));
-      expect(result.value.event.target).toBe(asNodeId('n2'));
-      expect(result.value.graph.edges.has(result.value.event.id)).toBe(true);
+    if (!isOk(result)) {
+      return;
     }
+
+    expect(result.value.event.type).toBe('EdgeCreated');
+    expect(result.value.event.source).toBe(asNodeId('n1'));
+    expect(result.value.event.target).toBe(asNodeId('n2'));
+    expect(result.value.graph.edges.has(result.value.event.id)).toBe(true);
   });
 
   it('fails if the source node is missing', () => {

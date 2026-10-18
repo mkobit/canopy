@@ -5,18 +5,18 @@ import type { Edge } from './edge';
 import type { GraphIndexes } from './indexes';
 
 /**
- * A graph is the aggregate root—the bounded context for a collection of nodes and edges.
- * Analogous to a vault or database.
- */
+A graph is the aggregate root—the bounded context for a collection of nodes and edges.
+Analogous to a vault or database.
+*/
 export type Graph = Readonly<{
   id: GraphId;
   name: string;
   metadata: TemporalMetadata;
   /**
-   * Collision-proof optimistic-concurrency token: the running maximum applied
-   * EventId (see revision.ts). Not temporal -- distinct from metadata.modified,
-   * which keeps its human-timestamp/display/query-sorting meaning unchanged.
-   */
+  Collision-proof optimistic-concurrency token: the running maximum applied
+  EventId (see revision.ts). Not temporal -- distinct from metadata.modified,
+  which keeps its human-timestamp/display/query-sorting meaning unchanged.
+  */
   revision: Revision;
   nodes: ReadonlyMap<NodeId, Node>;
   edges: ReadonlyMap<EdgeId, Edge>;
@@ -24,8 +24,8 @@ export type Graph = Readonly<{
 }>;
 
 /**
- * Result of a graph query or traversal.
- */
+Result of a graph query or traversal.
+*/
 export type QueryResult = Readonly<{
   nodes: readonly Node[];
   edges: readonly Edge[];

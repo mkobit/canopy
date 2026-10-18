@@ -54,7 +54,7 @@ export default tseslint.config(
   ...tseslint.configs.strict,
   ...tseslint.configs.stylistic,
   promisePlugin.configs['flat/recommended'],
-  unicorn.configs['flat/recommended'],
+  unicorn.configs.recommended,
   stylistic.configs.customize({
     flat: true,
   }),
@@ -426,6 +426,13 @@ export default tseslint.config(
     files: ['vitest.workspace.ts', 'packages/*/vitest.config.ts', 'eslint.config.mjs'],
     rules: {
       'unicorn/prefer-module': 'off', // Allow CommonJS-ish patterns or __dirname in config files if needed, though usually they are modules.
+    },
+  },
+  {
+    files: ['eslint.config.mjs', 'apps/web/vite.config.ts', 'apps/web/playwright.config.ts'],
+    rules: {
+      // Configuration entrypoints run factories and initialize shared test ports when loaded.
+      'unicorn/no-top-level-side-effects': 'off',
     },
   },
   {

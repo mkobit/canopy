@@ -30,10 +30,7 @@ const parseAstValue = (ast: ValueNode): unknown => {
   if (ast.kind === Kind.BOOLEAN) {
     return ast.value;
   }
-  if (ast.kind === Kind.NULL) {
-    return null;
-  }
-  return null;
+  return ast.kind === Kind.NULL ? null : null;
 };
 
 const tryParseJson = (value: string): unknown => {
@@ -58,10 +55,7 @@ const parseLiteral = (ast: ValueNode): unknown => {
   if (ast.kind === Kind.STRING) {
     return deepFreeze(tryParseJson(ast.value));
   }
-  if (SUPPORTED_AST_KINDS.has(ast.kind)) {
-    return deepFreeze(parseAstValue(ast));
-  }
-  return null;
+  return SUPPORTED_AST_KINDS.has(ast.kind) ? deepFreeze(parseAstValue(ast)) : null;
 };
 
 export const GraphQLJSON = new GraphQLScalarType({

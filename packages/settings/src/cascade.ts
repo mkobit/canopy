@@ -4,9 +4,9 @@ import { fromThrowable, getGraphIndexes } from '@canopy/graph';
 export type ScopeType = 'node' | 'type' | 'namespace' | 'global';
 
 /**
- * Resolves a setting value for a given node using the 5-level cascade.
- * Returns the resolved value or undefined if no setting is found and there is no default.
- */
+Resolves a setting value for a given node using the 5-level cascade.
+Returns the resolved value or undefined if no setting is found and there is no default.
+*/
 export function resolveSetting(
   graph: Graph,
   settingKey: string,
@@ -38,34 +38,31 @@ export function resolveSetting(
   if (typeof defaultValueRaw === 'string' && defaultValueRaw !== 'null') {
     // defaultValue is JSON-encoded
     const result = fromThrowable(() => JSON.parse(defaultValueRaw) as PropertyValue);
-    if (result.ok) {
-      return result.value;
-    }
-    return undefined;
+    return result.ok ? result.value : undefined;
   }
 
   return undefined;
 }
 
 /**
- * Finds a SettingsSchema node by its key property.
- */
+Finds a SettingsSchema node by its key property.
+*/
 export function findSettingsSchema(graph: Graph, key: string): Node | undefined {
   const indexes = getGraphIndexes(graph);
   return indexes.settingsSchemas.get(key);
 }
 
 /**
- * Finds a UserSetting node matching the given schema, scope type, and target.
- * Returns the parsed value, or undefined if not found.
- */
+Finds a UserSetting node matching the given schema, scope type, and target.
+Returns the parsed value, or undefined if not found.
+*/
 function findUserSetting(
   graph: Graph,
   schemaNodeId: NodeId,
   scopeType: ScopeType,
-  scopeTarget?: string,
+  scopeTarget = '',
 ): PropertyValue | undefined {
   const indexes = getGraphIndexes(graph);
-  const key = `${schemaNodeId}\0${scopeType}\0${scopeTarget ?? ''}`;
+  const key = `${schemaNodeId}\0${scopeType}\0${scopeTarget}`;
   return indexes.userSettings.get(key);
 }

@@ -23,11 +23,11 @@ function findNamespaceNode(graph: Graph, name: string): Node | undefined {
 }
 
 /**
- * Confirms `name` resolves to an existing, non-restricted Namespace node -- the
- * check `createNodeType`/`createEdgeType`/`createPropertyType` run against the
- * *target* namespace they're writing into. Distinct from `createNamespace`'s own
- * kind check, which is against the namespace being created.
- */
+Confirms `name` resolves to an existing, non-restricted Namespace node -- the
+check `createNodeType`/`createEdgeType`/`createPropertyType` run against the
+*target* namespace they're writing into. Distinct from `createNamespace`'s own
+kind check, which is against the namespace being created.
+*/
 function checkNamespaceWritable(graph: Graph, name: string): Result<undefined, ValidationError> {
   const node = findNamespaceNode(graph, name);
   if (!node) {
@@ -46,10 +46,7 @@ function checkNamespaceWritable(graph: Graph, name: string): Result<undefined, V
 function fromAddNodeResult(
   result: Result<GraphResult<Graph>, Error>,
 ): Result<GraphResult<Graph>, ValidationError> {
-  if (result.ok) {
-    return result;
-  }
-  return error({ path: [], message: result.error.message });
+  return result.ok ? result : error({ path: [], message: result.error.message });
 }
 
 export type CreateNamespaceInput = Readonly<{
@@ -59,9 +56,9 @@ export type CreateNamespaceInput = Readonly<{
 }>;
 
 /**
- * Creates a new Namespace node.
- * Rejects a duplicate `name` or a restricted `kind` (see `RESTRICTED_NAMESPACE_KINDS`).
- */
+Creates a new Namespace node.
+Rejects a duplicate `name` or a restricted `kind` (see `RESTRICTED_NAMESPACE_KINDS`).
+*/
 export function createNamespace(
   graph: Graph,
   input: CreateNamespaceInput,
@@ -107,10 +104,10 @@ export function createNamespace(
 }
 
 /**
- * A property on a new NodeType/EdgeType: either an inline definition, or a
- * reference to an existing PropertyType node (resolved into an inline
- * definition at creation time -- storage format doesn't change).
- */
+A property on a new NodeType/EdgeType: either an inline definition, or a
+reference to an existing PropertyType node (resolved into an inline
+definition at creation time -- storage format doesn't change).
+*/
 export type TypePropertyInput =
   | Readonly<{
       kind: 'inline';
@@ -185,22 +182,21 @@ function resolveProperties(
     return ok(resolved);
   }
   const result = resolvePropertyInput(graph, input, index);
-  if (!result.ok) {
-    return result;
-  }
-  return resolveProperties(graph, inputs, index + 1, [...resolved, result.value]);
+  return result.ok
+    ? resolveProperties(graph, inputs, index + 1, [...resolved, result.value])
+    : result;
 }
 
 /**
- * Generates the default table-view artifacts for a just-created NodeType: a
- * QueryDefinition that scans nodes of that type, a table ViewDefinition with one
- * column per declared property, and a `default_view` edge linking the NodeType to
- * the view (which populates `indexes.defaultViews`, read by `resolveViewDefinition`).
- *
- * Starts from a graph that already contains `nodeTypeNode`. All-or-nothing: any
- * sub-step failure returns an error and emits no events. The generated definitions
- * inhabit the NodeType's own (already-proven non-restricted) namespace.
- */
+Generates the default table-view artifacts for a just-created NodeType: a
+QueryDefinition that scans nodes of that type, a table ViewDefinition with one
+column per declared property, and a `default_view` edge linking the NodeType to
+the view (which populates `indexes.defaultViews`, read by `resolveViewDefinition`).
+
+Starts from a graph that already contains `nodeTypeNode`. All-or-nothing: any
+sub-step failure returns an error and emits no events. The generated definitions
+inhabit the NodeType's own (already-proven non-restricted) namespace.
+*/
 function generateDefaultView(
   graph: Graph,
   nodeTypeNode: Node,
@@ -292,9 +288,9 @@ export type CreateNodeTypeInput = Readonly<{
 }>;
 
 /**
- * Creates a new NodeType definition node in `input.namespace`.
- * Rejects a duplicate `name`, a restricted target namespace, or a malformed property list.
- */
+Creates a new NodeType definition node in `input.namespace`.
+Rejects a duplicate `name`, a restricted target namespace, or a malformed property list.
+*/
 export function createNodeType(
   graph: Graph,
   input: CreateNodeTypeInput,
@@ -367,10 +363,10 @@ export type CreateEdgeTypeInput = Readonly<{
 }>;
 
 /**
- * Creates a new EdgeType definition node in `input.namespace`.
- * `sourceTypes`/`targetTypes` are stored as best-effort compatibility metadata only
- * (see `isEdgeCompatible`) -- they are never hard-enforced.
- */
+Creates a new EdgeType definition node in `input.namespace`.
+`sourceTypes`/`targetTypes` are stored as best-effort compatibility metadata only
+(see `isEdgeCompatible`) -- they are never hard-enforced.
+*/
 export function createEdgeType(
   graph: Graph,
   input: CreateEdgeTypeInput,
@@ -427,10 +423,10 @@ export type CreatePropertyTypeInput = Readonly<{
 }>;
 
 /**
- * Creates a new PropertyType node in `input.namespace`, resolvable by `validatePropertyByType`.
- * Rejects a duplicate `name`, a restricted target namespace, or a `valueKind` outside
- * the `PropertyValueKind` union. Accepts optional constraint options (cardinality, choices, targetTypeId, regex, min, max).
- */
+Creates a new PropertyType node in `input.namespace`, resolvable by `validatePropertyByType`.
+Rejects a duplicate `name`, a restricted target namespace, or a `valueKind` outside
+the `PropertyValueKind` union. Accepts optional constraint options (cardinality, choices, targetTypeId, regex, min, max).
+*/
 export function createPropertyType(
   graph: Graph,
   input: CreatePropertyTypeInput,

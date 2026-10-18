@@ -103,9 +103,9 @@ export function saveViewDefinition(
     ...(options.batchId !== undefined && { batchId: options.batchId }),
     ...(options.migrationId !== undefined && { migrationId: options.migrationId }),
   });
-  if (!newGraphResult.ok) return err(newGraphResult.error);
-
-  return ok({ graph: newGraphResult.value.graph, nodeId });
+  return newGraphResult.ok
+    ? ok({ graph: newGraphResult.value.graph, nodeId })
+    : err(newGraphResult.error);
 }
 
 export function getViewDefinition(graph: Graph, nodeId: NodeId): Result<ViewDefinition, Error> {

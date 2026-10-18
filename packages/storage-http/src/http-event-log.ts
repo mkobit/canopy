@@ -172,11 +172,9 @@ export const createHTTPEventLog = (baseUrl: string, options?: HTTPOptions): HTTP
 
       const eventResults = rawEvents.map(deserializeEvent);
       const firstError = eventResults.find((r) => !r.ok);
-      if (firstError && !firstError.ok) {
-        return firstError;
-      }
-
-      return ok(eventResults.map((r) => (r as { ok: true; value: GraphEvent }).value));
+      return firstError && !firstError.ok
+        ? firstError
+        : ok(eventResults.map((r) => (r as { ok: true; value: GraphEvent }).value));
     },
   };
 };

@@ -66,11 +66,11 @@ const cacheWebClipTypeId = async (typeId: string): Promise<void> => {
 };
 
 /**
- * Stages a draft.apply for the WebClip instance, retrying once with the
- * host-supplied real type id if the caller's guess (cached or placeholder)
- * is rejected -- see apps/clip-host/src/host.ts's NAMESPACE_REJECTED
- * addendum and openspec/changes/browser-extension-web-clipper's tasks.md 3.5.
- */
+Stages a draft.apply for the WebClip instance, retrying once with the
+host-supplied real type id if the caller's guess (cached or placeholder)
+is rejected -- see apps/clip-host/src/host.ts's NAMESPACE_REJECTED
+addendum and openspec/changes/browser-extension-web-clipper's tasks.md 3.5.
+*/
 const stageClipEvent = async (
   client: NativeRpcClient,
   draftId: string,
@@ -222,8 +222,7 @@ const commitWithRetry = async (
     draftId,
     expectedParentRevision: freshRevision,
   });
-  if (!retry.error) return { ok: true };
-  return { ok: false, message: retry.error.message };
+  return retry.error ? { ok: false, message: retry.error.message } : { ok: true };
 };
 
 const handleConfirmCommit = async (draftId: string): Promise<BackgroundResponse> => {
@@ -238,8 +237,9 @@ const handleConfirmCommit = async (draftId: string): Promise<BackgroundResponse>
     const result = await commitWithRetry(client, draftId, state.parentRevision);
     // eslint-disable-next-line functional/immutable-data -- per-session draft-state table
     drafts.delete(draftId);
-    if (!result.ok) return { type: 'commit-error', message: result.message };
-    return { type: 'commit-success', nodeId: state.nodeId };
+    return result.ok
+      ? { type: 'commit-success', nodeId: state.nodeId }
+      : { type: 'commit-error', message: result.message };
   } catch (error) {
     return {
       type: 'commit-error',

@@ -16,9 +16,9 @@ export type EdgeOperationOptions = Readonly<{
 }>;
 
 /**
- * Creates an edge between two nodes and returns the resulting graph and EdgeCreated event.
- * Returns Error if source or target nodes do not exist.
- */
+Creates an edge between two nodes and returns the resulting graph and EdgeCreated event.
+Returns Error if source or target nodes do not exist.
+*/
 export function createEdgeAction(
   graph: Graph,
   parameters: Readonly<{ source: NodeId; target: NodeId; type: TypeId }>,
@@ -54,10 +54,10 @@ export function createEdgeAction(
 }
 
 /**
- * Adds an edge to the graph.
- * Returns a new graph.
- * Returns Error if source or target nodes do not exist.
- */
+Adds an edge to the graph.
+Returns a new graph.
+Returns Error if source or target nodes do not exist.
+*/
 export function addEdge(
   graph: Graph,
   edge: Edge,
@@ -117,9 +117,9 @@ export function addEdge(
 }
 
 /**
- * Removes an edge from the graph.
- * Returns a new graph.
- */
+Removes an edge from the graph.
+Returns a new graph.
+*/
 export function removeEdge(
   graph: Graph,
   edgeId: EdgeId,
@@ -163,10 +163,10 @@ export function removeEdge(
 }
 
 /**
- * Updates an edge in the graph using a functional updater.
- * Returns a new graph.
- * Returns Error if the edge does not exist.
- */
+Updates an edge in the graph using a functional updater.
+Returns a new graph.
+Returns Error if the edge does not exist.
+*/
 export function updateEdge(
   graph: Graph,
   edgeId: EdgeId,
@@ -214,10 +214,7 @@ export function updateEdge(
 
   const newEdges = new Map(
     [...graph.edges].map(([id, edge]) => {
-      if (id === edgeId) {
-        return [id, finalEdge];
-      }
-      return [id, edge];
+      return [id, id === edgeId ? finalEdge : edge];
     }),
   );
 

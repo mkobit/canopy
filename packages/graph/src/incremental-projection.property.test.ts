@@ -27,12 +27,12 @@ const devices: readonly DeviceId[] = Array.from({ length: DEVICE_COUNT }, (_, in
 const BASE_EPOCH_MS = Temporal.Instant.from('2024-01-01T00:00:00Z').epochMilliseconds;
 
 /**
- * Deterministic, monotonically-increasing eventId keyed purely by a step
- * counter -- avoids any dependency on real UUIDv7 generation or system-clock
- * mocking (see incremental-projection.test.ts for why that combination is
- * fragile: uuid v7 keeps its own monotonic ratchet that setSystemTime can't
- * rewind). Strict counter order here is exactly canonical (eventId) order.
- */
+Deterministic, monotonically-increasing eventId keyed purely by a step
+counter -- avoids any dependency on real UUIDv7 generation or system-clock
+mocking (see incremental-projection.test.ts for why that combination is
+fragile: uuid v7 keeps its own monotonic ratchet that setSystemTime can't
+rewind). Strict counter order here is exactly canonical (eventId) order.
+*/
 function syntheticEventId(counter: number): EventId {
   const epochMs = BASE_EPOCH_MS + counter;
   const hex = epochMs.toString(16).padStart(12, '0');
@@ -40,12 +40,12 @@ function syntheticEventId(counter: number): EventId {
 }
 
 /**
- * Temporal.Instant#toString() omits the millisecond fraction only when it's
- * exactly zero, which breaks plain string comparison between an
- * exact-whole-second instant and one a millisecond later ("...:00Z" sorts
- * after "...:00.001Z" lexicographically). Force a fixed 3-digit fraction so
- * synthetic timestamps compare correctly the same way lwwWins does.
- */
+Temporal.Instant#toString() omits the millisecond fraction only when it's
+exactly zero, which breaks plain string comparison between an
+exact-whole-second instant and one a millisecond later ("...:00Z" sorts
+after "...:00.001Z" lexicographically). Force a fixed 3-digit fraction so
+synthetic timestamps compare correctly the same way lwwWins does.
+*/
 function syntheticTimestamp(counter: number): string {
   return Temporal.Instant.fromEpochMilliseconds(BASE_EPOCH_MS + counter).toString({
     fractionalSecondDigits: 3,
@@ -76,13 +76,13 @@ const stepArb: fc.Arbitrary<Step> = fc.record({
 });
 
 /**
- * Turns abstract steps into a valid GraphEvent stream: every reference
- * (edge endpoints, update/delete targets) resolves against entities already
- * live at that point in generation order, so the result is exactly the kind
- * of stream a real op layer would produce and canonical projectGraph can
- * fold without error. Steps whose precondition isn't met (e.g. updateNode
- * with nothing live yet) are silently skipped.
- */
+Turns abstract steps into a valid GraphEvent stream: every reference
+(edge endpoints, update/delete targets) resolves against entities already
+live at that point in generation order, so the result is exactly the kind
+of stream a real op layer would produce and canonical projectGraph can
+fold without error. Steps whose precondition isn't met (e.g. updateNode
+with nothing live yet) are silently skipped.
+*/
 function resolveSteps(steps: readonly Step[]): readonly GraphEvent[] {
   const events: GraphEvent[] = [];
   const liveNodes: NodeId[] = [];
@@ -146,11 +146,10 @@ function resolveSteps(steps: readonly Step[]): readonly GraphEvent[] {
       // too (referencing them would make canonical projectGraph error).
       for (let index_ = liveEdges.length - 1; index_ >= 0; index_ -= 1) {
         const edgeId = liveEdges[index_];
-        if (edgeId !== undefined) {
-          const endpoints = edgeEndpoints.get(edgeId);
-          if (endpoints && (endpoints.source === id || endpoints.target === id)) {
-            liveEdges.splice(index_, 1);
-          }
+        if (edgeId === undefined) continue;
+        const endpoints = edgeEndpoints.get(edgeId);
+        if (endpoints && (endpoints.source === id || endpoints.target === id)) {
+          liveEdges.splice(index_, 1);
         }
       }
       counter += 1;
@@ -196,15 +195,13 @@ function resolveSteps(steps: readonly Step[]): readonly GraphEvent[] {
       continue;
     }
 
-    if (step.kind === 'deleteEdge') {
-      if (liveEdges.length === 0) continue;
-      const index = step.a % liveEdges.length;
-      const id = liveEdges[index];
-      if (id === undefined) continue;
-      events.push({ type: 'EdgeDeleted', eventId, id, timestamp, deviceId });
-      liveEdges.splice(index, 1);
-      counter += 1;
-    }
+    if (step.kind !== 'deleteEdge' || liveEdges.length === 0) continue;
+    const index = step.a % liveEdges.length;
+    const id = liveEdges[index];
+    if (id === undefined) continue;
+    events.push({ type: 'EdgeDeleted', eventId, id, timestamp, deviceId });
+    liveEdges.splice(index, 1);
+    counter += 1;
   }
 
   return events;
@@ -212,7 +209,9 @@ function resolveSteps(steps: readonly Step[]): readonly GraphEvent[] {
 
 const MULBERRY32_INCREMENT = 0x6d_2b_79_f5;
 
-/** Seeded Fisher-Yates shuffle (mulberry32 PRNG) -- deterministic per fast-check-provided seed. */
+/**
+Seeded Fisher-Yates shuffle (mulberry32 PRNG) -- deterministic per fast-check-provided seed.
+*/
 function seededShuffle<T>(items: readonly T[], seed: number): readonly T[] {
   let state = seed >>> 0;
   const next = (): number => {

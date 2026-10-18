@@ -6,7 +6,9 @@ import { createRateLimiter } from '../src/rate-limiter';
 
 const WEBCLIP_TYPE_ID = 'node_webclip_type';
 
-/** A stub IpcClient that records every call so tests can assert what was (and wasn't) relayed. */
+/**
+A stub IpcClient that records every call so tests can assert what was (and wasn't) relayed.
+*/
 const createStubClient = (): Readonly<{ client: IpcClient; calls: string[] }> => {
   const calls: string[] = [];
   const record = <T>(name: string, value: T): Effect.Effect<T, IpcClientError> => {

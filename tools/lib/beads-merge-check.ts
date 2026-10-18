@@ -20,13 +20,10 @@ export type ClosedIssue = Readonly<{
 // (e.g. a spike that did produce a commit). Otherwise, fall back to the
 // default type list.
 export function isCheckable(issue: ClosedIssue): boolean {
-  if (issue.labels.includes('no-code')) {
-    return false;
-  }
-  if (issue.labels.includes('code-bearing')) {
-    return true;
-  }
-  return DEFAULT_CODE_BEARING_TYPES.has(issue.type);
+  return (
+    !issue.labels.includes('no-code') &&
+    (issue.labels.includes('code-bearing') || DEFAULT_CODE_BEARING_TYPES.has(issue.type))
+  );
 }
 
 function escapeRegExp(value: string): string {
@@ -92,15 +89,12 @@ function isRawClosedIssue(value: unknown): value is RawClosedIssue {
 
 // `bd query --json` omits the `labels` key entirely for unlabeled issues.
 function extractLabels(value: unknown): readonly string[] {
-  if (
-    typeof value === 'object' &&
+  return typeof value === 'object' &&
     value !== null &&
     'labels' in value &&
     isStringArray(value.labels)
-  ) {
-    return value.labels;
-  }
-  return [];
+    ? value.labels
+    : [];
 }
 
 // `bd query --json` uses `issue_type`, not `type`, as the field name.
@@ -110,9 +104,8 @@ export function parseClosedIssues(raw: string): readonly ClosedIssue[] {
     return [];
   }
   return parsed.flatMap((item): readonly ClosedIssue[] => {
-    if (!isRawClosedIssue(item)) {
-      return [];
-    }
-    return [{ id: item.id, title: item.title, type: item.issue_type, labels: extractLabels(item) }];
+    return isRawClosedIssue(item)
+      ? [{ id: item.id, title: item.title, type: item.issue_type, labels: extractLabels(item) }]
+      : [];
   });
 }

@@ -53,10 +53,7 @@ function extractTypeIdList(value: PropertyValue | undefined): readonly TypeId[] 
   }
   if (typeof value === 'string') {
     const result = fromThrowable(() => JSON.parse(value) as readonly string[]);
-    if (result.ok && Array.isArray(result.value)) {
-      return result.value.map(asTypeId);
-    }
-    return [];
+    return result.ok && Array.isArray(result.value) ? result.value.map(asTypeId) : [];
   }
   return [];
 }
@@ -522,10 +519,7 @@ function validateProperties(
         ];
       }
 
-      if (value !== undefined) {
-        return validateValue(value, propertyDefinition, graph);
-      }
-      return [];
+      return value === undefined ? [] : validateValue(value, propertyDefinition, graph);
     }),
   );
 }
@@ -559,11 +553,7 @@ export function validateNode(graph: Graph, node: Node): ValidationResult {
 
   const allErrors = [...errors, ...pluginErrors];
 
-  if (allErrors.length > 0) {
-    return failure(allErrors);
-  }
-
-  return SUCCESS;
+  return allErrors.length > 0 ? failure(allErrors) : SUCCESS;
 }
 
 export function matchesCondition(
@@ -645,11 +635,7 @@ export function validatePropertyByType(
   };
 
   const errors = validateValue(value, definition, graph);
-  if (errors.length > 0) {
-    return failure(errors);
-  }
-
-  return SUCCESS;
+  return errors.length > 0 ? failure(errors) : SUCCESS;
 }
 
 export function isEdgeCompatible(
@@ -769,9 +755,5 @@ export function validateEdge(graph: Graph, edge: Edge): ValidationResult {
 
   const errors = [...edgeTypeErrors, ...nodeTypeErrors];
 
-  if (errors.length > 0) {
-    return failure(errors);
-  }
-
-  return SUCCESS;
+  return errors.length > 0 ? failure(errors) : SUCCESS;
 }
