@@ -1,8 +1,8 @@
 # Migrate the Effect package family to Effect 4
 
-Status: draft for owner review.
+Status: proposed; approval takes effect only when the root integration owner merges the design PR.
 
-Repository base: `origin/main` at `43504ba9c62882d32529015db6a94e821b4c3a4c`.
+Review baseline: `main` at `87f47ba99db0acde59f6ed6ebabf085c412faf39`.
 The failed dependency update is `origin/dependabot/bun/functional-768120836b` at `8006d7f6133f632df97d6b89069aa26c3e17de95`.
 
 ## Why
@@ -20,10 +20,11 @@ The known source consumers are `@canopy/api-adapter`, `apps/cli`, `apps/daemon`,
 The [clip host](../../../apps/clip-host/src/host.ts) consumes Effect APIs but does not consume the CLI API.
 The migration must inspect the complete package closure at the approved base.
 
-Use `effect@4.0.3` and, where required, `@effect/platform-node@4.0.3` as the proposed exact package set.
+Use `effect@4.0.3` and, where required, `@effect/platform-node@4.0.3` as the proposed exact direct package versions.
+Keep `@effect/platform-node-shared` transitive and use one root override to resolve it to `4.0.3`.
 Remove `@effect/cli` and `@effect/platform` because the stable Effect package exports the CLI and consolidated platform modules under `effect/*`.
 The official repository identifies its Effect packages as synchronized releases, and the `effect@4.0.3` release includes `@effect/platform-node@4.0.3`.
-This is a proposed maintainer choice, not an owner-approved package policy.
+This proposed package set becomes approved only when the root integration owner merges the design PR.
 
 ## Capabilities
 
@@ -36,8 +37,10 @@ This is a proposed maintainer choice, not an owner-approved package policy.
 ## Impact
 
 Update Effect package manifests, imports, consumers, tests, and the lockfile as one coordinated change.
-No graph, persistence, authorization, or wire-protocol change is intended.
-No implementation is authorized until the owner approves the design and independent adversarial review is complete.
+No graph, persistence, authorization, or IPC wire-protocol change is intended.
+The proposal adds deterministic typed rejection when a pending request loses its socket, replacing current hangs after clean close or explicit client close.
+The root integration owner's merge of this design PR, after independent adversarial review, approves the design.
+The merge does not authorize implementation; the integration owner must complete and verify a bounded-delivery packet first.
 
 ## Goals
 
@@ -65,17 +68,18 @@ The [bounded-context map](../../../docs/architecture/bounded-contexts.md) assign
 The [IPC transport specification](../../specs/unix-socket-ipc-transport/spec.md) defines Unix socket permissions, JSON-RPC framing, subscription cleanup, and the CLI client contract.
 The [daemon host specification](../../specs/agent-daemon-host/spec.md) defines session loading, foreground execution, and graceful shutdown.
 
-No proposed change alters those contracts.
+No proposed change alters graph, persistence, authorization, or wire contracts.
+The proposed client pending-request lifecycle correction is recorded in the migration specification.
 The proposed [effect runtime migration specification](specs/effect-runtime-migration/spec.md) records package compatibility and behavior-preservation checks without changing graph or kernel semantics.
 
-## Owner decisions still open
+## Approval boundary
 
-- Approve or reject a coordinated Effect 4 migration.
-- Approve or change the proposed exact release set and pin policy.
-- Confirm the migration stays one change across all current consumers.
-- Confirm the package scope against the approved implementation base.
-
-No implementation is authorized by this draft.
+The design PR merge by the root integration owner approves this migration proposal and its mitigations.
+The approved review baseline is `main` at `87f47ba99db0acde59f6ed6ebabf085c412faf39`.
+That approval does not authorize task staging, Beads creation or claims, or implementation dispatch.
+The integration owner must complete the bounded-delivery packet and verify prerequisites and current contracts after the merge.
+The failed version-only dependency attempts are documented in [PR #567](https://github.com/mkobit/canopy/pull/567) and [PR #574](https://github.com/mkobit/canopy/pull/574).
+PR #574 remains unmerged and is not this proposal.
 
 ## Upstream sources
 
