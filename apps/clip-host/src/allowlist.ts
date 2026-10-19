@@ -37,11 +37,11 @@ export const needsNamespaceCheck = (method: string): boolean =>
   NAMESPACE_NARROWED_METHODS.has(method);
 
 /**
- * Constrains a direct canopy.v1.mutation.createNode call to the ensured
- * WebClip type -- the host's only notion of "the clip namespace" at the
- * wire level is the single type id ensureWebClipType resolved, since
- * instances carry a `type` (TypeId), not a namespace, on the wire.
- */
+Constrains a direct canopy.v1.mutation.createNode call to the ensured
+WebClip type -- the host's only notion of "the clip namespace" at the
+wire level is the single type id ensureWebClipType resolved, since
+instances carry a `type` (TypeId), not a namespace, on the wire.
+*/
 export const checkCreateNodeParameters = (
   parameters: unknown,
   webClipTypeId: TypeId | undefined,
@@ -55,24 +55,21 @@ export const checkCreateNodeParameters = (
     return err(reject('canopy.v1.mutation.createNode requires a type parameter'));
   }
   const { type } = parameters as Readonly<{ type: unknown }>;
-  if (type !== webClipTypeId) {
-    return err(
-      reject('canopy.v1.mutation.createNode is restricted to the clip namespace WebClip type'),
-    );
-  }
-  return ok(undefined);
+  return type === webClipTypeId
+    ? ok(undefined)
+    : err(reject('canopy.v1.mutation.createNode is restricted to the clip namespace WebClip type'));
 };
 
 type WireGraphEvent = Readonly<{ type?: unknown; nodeType?: unknown }>;
 
 /**
- * Constrains a draft.apply request's staged events to a single NodeCreated
- * for the ensured WebClip type. Type-authoring (the namespace + NodeType +
- * default-view events) is committed internally by ensureWebClipType, never
- * relayed from the extension, so any incoming draft.apply batch is expected
- * to be exactly the clip instance -- anything else (deletes, updates, other
- * types, multi-event batches) is rejected without reaching the daemon.
- */
+Constrains a draft.apply request's staged events to a single NodeCreated
+for the ensured WebClip type. Type-authoring (the namespace + NodeType +
+default-view events) is committed internally by ensureWebClipType, never
+relayed from the extension, so any incoming draft.apply batch is expected
+to be exactly the clip instance -- anything else (deletes, updates, other
+types, multi-event batches) is rejected without reaching the daemon.
+*/
 export const checkDraftApplyParameters = (
   parameters: unknown,
   webClipTypeId: TypeId | undefined,
@@ -88,15 +85,10 @@ export const checkDraftApplyParameters = (
     return err(reject('canopy.v1.draft.apply is restricted to a single staged clip event'));
   }
   const [event] = events as readonly unknown[];
-  if (
-    typeof event !== 'object' ||
+  return typeof event !== 'object' ||
     event === null ||
     (event as WireGraphEvent).type !== 'NodeCreated' ||
     (event as WireGraphEvent).nodeType !== webClipTypeId
-  ) {
-    return err(
-      reject('canopy.v1.draft.apply is restricted to a NodeCreated event for the WebClip type'),
-    );
-  }
-  return ok(undefined);
+    ? err(reject('canopy.v1.draft.apply is restricted to a NodeCreated event for the WebClip type'))
+    : ok(undefined);
 };

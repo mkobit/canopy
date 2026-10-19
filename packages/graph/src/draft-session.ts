@@ -21,35 +21,46 @@ export type QueryError =
   | Readonly<{ type: 'access-denied' }>;
 
 export interface DraftSession {
-  /** Stages a batch of events onto the draft graph projection. */
+  /**
+  Stages a batch of events onto the draft graph projection.
+  */
   readonly applyEvents: (events: readonly GraphEvent[]) => Result<void, DraftError>;
-  /** Commits staged events to the parent session if the parent revision matches. */
+  /**
+  Commits staged events to the parent session if the parent revision matches.
+  */
   readonly commit: (expectedParentRevision: string) => Promise<Result<void, DraftError>>;
-  /** Discards the draft session. */
+  /**
+  Discards the draft session.
+  */
   readonly discard: () => Result<void, DraftError>;
-  /** Gets the current revision of the parent graph. */
+  /**
+  Gets the current revision of the parent graph.
+  */
   readonly getParentRevision: () => Result<string, DraftError>;
-  /** Fetches a single node from the combined projection. */
+  /**
+  Fetches a single node from the combined projection.
+  */
   readonly getNode: (id: NodeId) => Result<Node, QueryError>;
-  /** Executes a search on the combined projection. */
+  /**
+  Executes a search on the combined projection.
+  */
   readonly queryNodes: (queryString: string) => Result<readonly Node[], QueryError>;
-  /** Gets the current combined projected graph. */
+  /**
+  Gets the current combined projected graph.
+  */
   readonly graph: () => Graph;
 }
 
 /**
- * Creates a new draft session overlaying a parent graph session.
- */
+Creates a new draft session overlaying a parent graph session.
+*/
 export function createDraftSession(parentSession: GraphSession): DraftSession {
   const stagedEventsCell = { current: [] as readonly GraphEvent[] };
 
   const graph = (): Graph => {
     const parentGraph = parentSession.graph();
     const result = projectDraftOverlay(parentGraph, stagedEventsCell.current);
-    if (result.ok) {
-      return result.value;
-    }
-    return parentGraph;
+    return result.ok ? result.value : parentGraph;
   };
 
   const applyEvents = (events: readonly GraphEvent[]): Result<void, DraftError> => {
@@ -91,10 +102,7 @@ export function createDraftSession(parentSession: GraphSession): DraftSession {
   const getNode = (id: NodeId): Result<Node, QueryError> => {
     const currentGraph = graph();
     const node = currentGraph.nodes.get(id);
-    if (!node) {
-      return error({ type: 'node-not-found' });
-    }
-    return ok(node);
+    return node ? ok(node) : error({ type: 'node-not-found' });
   };
 
   const queryNodes = (queryString: string): Result<readonly Node[], QueryError> => {
@@ -106,19 +114,15 @@ export function createDraftSession(parentSession: GraphSession): DraftSession {
     }
 
     const matches = nodes.filter((node) => {
-      if (node.id.toLowerCase().includes(query)) return true;
-      if (node.type.toLowerCase().includes(query)) return true;
+      if (node.id.toLowerCase().includes(query) || node.type.toLowerCase().includes(query))
+        return true;
 
       return node.properties.values().some((value) => {
-        if (typeof value === 'string' && value.toLowerCase().includes(query)) {
-          return true;
-        }
-        if (Array.isArray(value)) {
-          return value.some(
-            (item) => typeof item === 'string' && item.toLowerCase().includes(query),
-          );
-        }
-        return false;
+        return (
+          (typeof value === 'string' && value.toLowerCase().includes(query)) ||
+          (Array.isArray(value) &&
+            value.some((item) => typeof item === 'string' && item.toLowerCase().includes(query)))
+        );
       });
     });
 

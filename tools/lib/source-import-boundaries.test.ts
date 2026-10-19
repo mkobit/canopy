@@ -4,16 +4,16 @@ import path from 'node:path';
 import { findForbiddenImportsInSource } from './source-import-boundaries';
 
 const fixtures = path.resolve(__dirname, '../fixtures/source-import-boundaries');
-const repoRoot = path.resolve(__dirname, '../..');
-const importer = path.join(repoRoot, 'packages/plugin-host/src/fixture.ts');
+const repositoryRoot = path.resolve(__dirname, '../..');
+const importer = path.join(repositoryRoot, 'packages/plugin-host/src/fixture.ts');
 const boundary = {
   sourceRoot: path.dirname(importer),
   forbiddenPackage: '@canopy/api-adapter',
-  forbiddenRoot: path.join(repoRoot, 'packages/api-adapter'),
+  forbiddenRoot: path.join(repositoryRoot, 'packages/api-adapter'),
   aliases: [
     {
       name: '#transport',
-      target: path.join(repoRoot, 'packages/api-adapter/src/index.ts'),
+      target: path.join(repositoryRoot, 'packages/api-adapter/src/index.ts'),
     },
   ],
 } as const;

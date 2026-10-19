@@ -347,8 +347,7 @@ export const executeMutation = {
     const result = await executeCreateNode(
       createGraphAccessRequest('gql-create-node', context, payload),
     );
-    if (!result.ok) return result;
-    return ok({ id: result.value.id, success: true, affectedEventsCount: 1 });
+    return result.ok ? ok({ id: result.value.id, success: true, affectedEventsCount: 1 }) : result;
   },
 
   updateNodeProperties: async (
@@ -358,8 +357,7 @@ export const executeMutation = {
     const result = await executeUpdateNodeProperties(
       createGraphAccessRequest('gql-update-node-props', context, payload),
     );
-    if (!result.ok) return result;
-    return ok({ id: result.value.id, success: true, affectedEventsCount: 1 });
+    return result.ok ? ok({ id: result.value.id, success: true, affectedEventsCount: 1 }) : result;
   },
 
   deleteNode: async (
@@ -376,8 +374,7 @@ export const executeMutation = {
     const result = await executeCreateEdge(
       createGraphAccessRequest('gql-create-edge', context, payload),
     );
-    if (!result.ok) return result;
-    return ok({ id: result.value.id, success: true, affectedEventsCount: 1 });
+    return result.ok ? ok({ id: result.value.id, success: true, affectedEventsCount: 1 }) : result;
   },
 
   deleteEdge: async (

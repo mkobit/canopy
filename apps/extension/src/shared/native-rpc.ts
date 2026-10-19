@@ -12,13 +12,15 @@ export type JsonRpcResponse = Readonly<{
 
 export type NativeRpcClient = Readonly<{
   call: (method: string, parameters?: unknown) => Promise<JsonRpcResponse>;
-  /** Wire this to the native-messaging port's onMessage listener. */
+  /**
+  Wire this to the native-messaging port's onMessage listener.
+  */
   handleIncoming: (message: unknown) => void;
   /**
-   * Wire this to the port's onDisconnect listener. Without this, a call
-   * pending when the port disconnects (e.g. host not installed, or the host
-   * crashes) would never resolve or reject -- the caller would hang forever.
-   */
+  Wire this to the port's onDisconnect listener. Without this, a call
+  pending when the port disconnects (e.g. host not installed, or the host
+  crashes) would never resolve or reject -- the caller would hang forever.
+  */
   handleDisconnect: (reason: string) => void;
 }>;
 
@@ -28,10 +30,10 @@ type PendingCall = Readonly<{
 }>;
 
 /**
- * `send` is injected so this client is testable without a real
- * chrome.runtime.Port -- mirrors apps/clip-host's ClipHostOptions.connect
- * dependency-injection pattern.
- */
+`send` is injected so this client is testable without a real
+chrome.runtime.Port -- mirrors apps/clip-host's ClipHostOptions.connect
+dependency-injection pattern.
+*/
 export const createNativeRpcClient = (send: (message: unknown) => void): NativeRpcClient => {
   const pending = new Map<number, PendingCall>();
   // eslint-disable-next-line functional/no-let -- monotonic request-id counter, incremented per call()
@@ -90,10 +92,10 @@ export type BuildNodeCreatedEventInput = Readonly<{
 }>;
 
 /**
- * Pure: the caller supplies eventId/nodeId/timestamp/deviceId (generated via
- * crypto.randomUUID()/Temporal.Now.instant() at the call site) so this stays
- * testable without stubbing those globals.
- */
+Pure: the caller supplies eventId/nodeId/timestamp/deviceId (generated via
+crypto.randomUUID()/Temporal.Now.instant() at the call site) so this stays
+testable without stubbing those globals.
+*/
 export const buildNodeCreatedEvent = (input: BuildNodeCreatedEventInput): WireNodeCreatedEvent => ({
   type: 'NodeCreated',
   eventId: input.eventId,
@@ -108,16 +110,18 @@ const CLIP_HOST_NAMESPACE_REJECTED_CODE = -32_002;
 const CLIP_HOST_DAEMON_UNAVAILABLE_CODE = -32_004;
 const CANOPY_DOMAIN_ERROR_CODE = -32_000;
 
-/** Matches apps/clip-host/src/host.ts's CLIP_HOST_ERROR_CODES.DAEMON_UNAVAILABLE. */
+/**
+Matches apps/clip-host/src/host.ts's CLIP_HOST_ERROR_CODES.DAEMON_UNAVAILABLE.
+*/
 export const isDaemonUnavailable = (response: JsonRpcResponse): boolean =>
   response.error?.code === CLIP_HOST_DAEMON_UNAVAILABLE_CODE;
 
 /**
- * Extracts the ensured WebClip TypeId from a NAMESPACE_REJECTED response
- * (apps/clip-host/src/host.ts's addendum: the rejection carries the
- * already-resolved id in `error.data.webClipTypeId` so a caller that didn't
- * know it yet can retry with the correct nodeType).
- */
+Extracts the ensured WebClip TypeId from a NAMESPACE_REJECTED response
+(apps/clip-host/src/host.ts's addendum: the rejection carries the
+already-resolved id in `error.data.webClipTypeId` so a caller that didn't
+know it yet can retry with the correct nodeType).
+*/
 export const extractRejectedTypeId = (response: JsonRpcResponse): string | undefined => {
   if (response.error?.code !== CLIP_HOST_NAMESPACE_REJECTED_CODE) return undefined;
   const data = response.error.data;
@@ -127,10 +131,10 @@ export const extractRejectedTypeId = (response: JsonRpcResponse): string | undef
 };
 
 /**
- * Extracts the fresh parent revision from a draft.commit `concurrent-modification`
- * error (see packages/api-adapter/src/ipc/ipc-handlers.ts's draftErrorResponse),
- * so the caller can re-preview/retry (tasks.md 6.5).
- */
+Extracts the fresh parent revision from a draft.commit `concurrent-modification`
+error (see packages/api-adapter/src/ipc/ipc-handlers.ts's draftErrorResponse),
+so the caller can re-preview/retry (tasks.md 6.5).
+*/
 export const extractConcurrentModificationRevision = (
   response: JsonRpcResponse,
 ): string | undefined => {

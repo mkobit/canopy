@@ -1,8 +1,8 @@
 import type { PropertyMap, PropertyValue } from './properties';
 
 /**
- * Creates a PropertyMap from a plain object.
- */
+Creates a PropertyMap from a plain object.
+*/
 export function createPropertyMap(
   properties: Readonly<Record<string, PropertyValue>>,
 ): PropertyMap {
@@ -10,22 +10,22 @@ export function createPropertyMap(
 }
 
 /**
- * Converts a PropertyMap to a plain object.
- */
+Converts a PropertyMap to a plain object.
+*/
 export function propertyMapToObject(map: PropertyMap): Readonly<Record<string, PropertyValue>> {
   return Object.fromEntries(map);
 }
 
 /**
- * Safely gets a property value from a map.
- */
+Safely gets a property value from a map.
+*/
 export function getProperty(map: PropertyMap, key: string): PropertyValue | undefined {
   return map.get(key);
 }
 
 /**
- * Returns an empty PropertyMap.
- */
+Returns an empty PropertyMap.
+*/
 export function emptyPropertyMap(): PropertyMap {
   return new Map();
 }

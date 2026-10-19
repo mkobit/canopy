@@ -7,7 +7,10 @@ export interface MarkdownRendererProperties {
   className?: string;
 }
 
-export const MarkdownRenderer: React.FC<MarkdownRendererProperties> = ({ node, className }) => {
+export const MarkdownRenderer: React.FC<MarkdownRendererProperties> = ({
+  node,
+  className = '',
+}) => {
   const content = node.properties.get('content');
 
   if (typeof content !== 'string') {
@@ -15,7 +18,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProperties> = ({ node, c
   }
 
   return (
-    <div className={`prose dark:prose-invert ${className || ''}`}>
+    <div className={`prose dark:prose-invert ${className}`}>
       <ReactMarkdown>{content}</ReactMarkdown>
     </div>
   );

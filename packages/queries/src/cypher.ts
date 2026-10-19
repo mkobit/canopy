@@ -16,10 +16,7 @@ export interface QueryEngine {
 
 function extractQueryString(query: QueryNode): string {
   const q = query.properties.get('query');
-  if (typeof q === 'string') {
-    return q;
-  }
-  return '';
+  return typeof q === 'string' ? q : '';
 }
 
 export function executeCypherQuery(

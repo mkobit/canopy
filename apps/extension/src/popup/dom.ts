@@ -31,10 +31,10 @@ const isElementOfTag = <K extends PopupElementTag>(
 ): element is HTMLElementTagNameMap[K] => element.tagName.toLowerCase() === expectedTag;
 
 /**
- * Queries `root` for `selector` and narrows the matched element to the expected
- * HTML tag type via runtime `tagName` verification instead of an unchecked
- * `querySelector<T>` generic assertion.
- */
+Queries `root` for `selector` and narrows the matched element to the expected
+HTML tag type via runtime `tagName` verification instead of an unchecked
+`querySelector<T>` generic assertion.
+*/
 export const queryPopupElement = <K extends PopupElementTag>(
   selector: string,
   expectedTag: K,
@@ -73,8 +73,8 @@ export const queryPopupElement = <K extends PopupElementTag>(
 };
 
 /**
- * Resolves all 8 required popup.html elements into a non-nullable, typed record.
- */
+Resolves all 8 required popup.html elements into a non-nullable, typed record.
+*/
 export const resolvePopupElements = (root: QueryRoot = document): PopupDomResult<PopupElements> => {
   const statusElement = queryPopupElement('#status', 'p', root);
   if (!statusElement.ok) return statusElement;

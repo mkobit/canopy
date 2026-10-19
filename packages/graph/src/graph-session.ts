@@ -21,16 +21,20 @@ interface GraphChangeSubscription {
 }
 
 export interface GraphSession {
-  /** Reads the full event log and (re)projects it as the session's current graph. */
+  /**
+  Reads the full event log and (re)projects it as the session's current graph.
+  */
   readonly load: () => Promise<Result<Graph, Error>>;
   /**
-   * Validates, appends, and merges a set of events as one atomic commit.
-   * Events are stamped with the session's own deviceId regardless of what
-   * they already carry. On validation failure, nothing is appended and the
-   * projected graph is unchanged.
-   */
+  Validates, appends, and merges a set of events as one atomic commit.
+  Events are stamped with the session's own deviceId regardless of what
+  they already carry. On validation failure, nothing is appended and the
+  projected graph is unchanged.
+  */
   readonly commit: (events: readonly GraphEvent[]) => Promise<Result<Graph, Error>>;
-  /** The session's current projected graph (bootstrap-only if load() hasn't run yet). */
+  /**
+  The session's current projected graph (bootstrap-only if load() hasn't run yet).
+  */
   readonly graph: () => Graph;
   readonly subscribe: (handler: GraphChangeHandler) => () => boolean;
 }
@@ -38,12 +42,12 @@ export interface GraphSession {
 const SESSION_GRAPH_NAME = 'graph';
 
 /**
- * Structural + referential + type validation for a candidate commit.
- * Referential/structural checks reuse the canonical fold directly (a dry-run
- * projectGraph against the pre-commit graph rejects duplicate ids and
- * dangling references exactly as commit needs); type checks then run
- * validateNode/validateEdge against the entities the dry run produced.
- */
+Structural + referential + type validation for a candidate commit.
+Referential/structural checks reuse the canonical fold directly (a dry-run
+projectGraph against the pre-commit graph rejects duplicate ids and
+dangling references exactly as commit needs); type checks then run
+validateNode/validateEdge against the entities the dry run produced.
+*/
 function validateCommit(graph: Graph, events: readonly GraphEvent[]): Result<void, Error> {
   const deletedSystemEvent = events.find(
     (event) => event.type === 'NodeDeleted' && isSystemNodeId(event.id),
@@ -59,14 +63,14 @@ function validateCommit(graph: Graph, events: readonly GraphEvent[]): Result<voi
   const touchedNodeIds = [
     ...new Set<NodeId>(
       events.flatMap((event) =>
-        event.type === 'NodeCreated' || event.type === 'NodePropertiesUpdated' ? [event.id] : [],
+        event.type === 'NodeCreated' || event.type === 'NodePropertiesUpdated' ? event.id : [],
       ),
     ),
   ];
   const touchedEdgeIds = [
     ...new Set<EdgeId>(
       events.flatMap((event) =>
-        event.type === 'EdgeCreated' || event.type === 'EdgePropertiesUpdated' ? [event.id] : [],
+        event.type === 'EdgeCreated' || event.type === 'EdgePropertiesUpdated' ? event.id : [],
       ),
     ),
   ];
@@ -101,11 +105,7 @@ function validateCommit(graph: Graph, events: readonly GraphEvent[]): Result<voi
     })
     .find((error_): error_ is Error => error_ !== undefined);
 
-  if (invalidEdgeError) {
-    return error(invalidEdgeError);
-  }
-
-  return ok(undefined);
+  return invalidEdgeError ? error(invalidEdgeError) : ok(undefined);
 }
 
 function dispatchChangeHandlers(
@@ -117,10 +117,10 @@ function dispatchChangeHandlers(
 }
 
 /**
- * The single write path for a graph: op events flow through
- * validate -> EventLogStore append -> incremental projection -> subscriber
- * notification. See openspec/changes/event-log-source-of-truth/specs/graph-session.
- */
+The single write path for a graph: op events flow through
+validate -> EventLogStore append -> incremental projection -> subscriber
+notification. See openspec/changes/event-log-source-of-truth/specs/graph-session.
+*/
 export function createGraphSession(
   eventLog: EventLogStore,
   graphId: GraphId,

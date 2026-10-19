@@ -23,7 +23,7 @@ export const NodePage = () => {
   const content = currentNode?.properties.get('content');
 
   const propertiesToEdit = useMemo(() => {
-    return new Map([...editedProperties.entries()].filter(([key]) => key !== 'content'));
+    return new Map([...editedProperties].filter(([key]) => key !== 'content'));
   }, [editedProperties]);
 
   // Subscribe/Fetch node from graph
@@ -96,12 +96,12 @@ export const NodePage = () => {
 
   // Find connected edges
   const connectedEdges = useMemo(() => {
-    if (!graph || !currentNode) return [];
-
-    return filter(
-      [...graph.edges.values()],
-      (edge) => edge.source === currentNode.id || edge.target === currentNode.id,
-    );
+    return !graph || !currentNode
+      ? []
+      : filter(
+          [...graph.edges.values()],
+          (edge) => edge.source === currentNode.id || edge.target === currentNode.id,
+        );
   }, [graph, currentNode]);
 
   if (!currentNode || !graph) {

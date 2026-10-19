@@ -93,11 +93,7 @@ export const defaultCapabilityValidator: CapabilityValidator = (
   }
 
   const [category] = requiredCapability.split(':', 1);
-  if (category && scopes.includes(`${category}:*`)) {
-    return true;
-  }
-
-  return scopes.includes(requiredCapability);
+  return category && scopes.includes(`${category}:*`) ? true : scopes.includes(requiredCapability);
 };
 
 // Verifies capability token against required capability scope.
@@ -107,15 +103,14 @@ export const verifyCapability = (
   customValidator?: CapabilityValidator,
 ): Result<void, GraphAccessError> => {
   const validator = customValidator ?? defaultCapabilityValidator;
-  if (!validator(token, requiredCapability)) {
-    return err(
-      createGraphAccessError(
-        'FORBIDDEN',
-        `Capability token does not grant required capability '${requiredCapability}'`,
-      ),
-    );
-  }
-  return ok(undefined);
+  return validator(token, requiredCapability)
+    ? ok(undefined)
+    : err(
+        createGraphAccessError(
+          'FORBIDDEN',
+          `Capability token does not grant required capability '${requiredCapability}'`,
+        ),
+      );
 };
 
 // Computes the effective capability scope by intersecting manifest declarations

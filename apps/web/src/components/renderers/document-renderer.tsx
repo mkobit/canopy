@@ -11,13 +11,13 @@ export interface DocumentRendererProperties {
 export const DocumentRenderer: React.FC<DocumentRendererProperties> = ({
   rootNode,
   graph,
-  className,
+  className = '',
 }) => {
   const title =
     rootNode.properties.get('name') || rootNode.properties.get('title') || 'Untitled Document';
 
   return (
-    <div className={`max-w-4xl mx-auto w-full px-8 py-12 bg-white ${className || ''}`}>
+    <div className={`max-w-4xl mx-auto w-full px-8 py-12 bg-white ${className}`}>
       {/* Document Header */}
       <div className="mb-12">
         <h1 className="text-4xl font-bold tracking-tight text-gray-900 leading-tight">

@@ -6,7 +6,7 @@ export interface AriaLiveRegionProperties {
 }
 
 export function AriaLiveRegion({
-  message,
+  message = '',
   role = 'status',
 }: AriaLiveRegionProperties): React.ReactElement {
   return (
@@ -17,7 +17,7 @@ export function AriaLiveRegion({
       className="sr-only"
       data-testid="aria-live-region"
     >
-      {message ?? ''}
+      {message}
     </div>
   );
 }

@@ -29,12 +29,14 @@ function freshGraph() {
   return unwrap(createGraph(createGraphId(), 'test-graph'));
 }
 
-/** Advances the mocked clock by `ms` and mints a real (monotonic, organically-paired) eventId + timestamp. */
-function tick(ms = 1000): Readonly<{
+/**
+Advances the mocked clock by `ms` and mints a real (monotonic, organically-paired) eventId + timestamp.
+*/
+function tick(): Readonly<{
   eventId: ReturnType<typeof createEventId>;
   timestamp: ReturnType<typeof createInstant>;
 }> {
-  const current = Temporal.Now.instant().add({ milliseconds: ms });
+  const current = Temporal.Now.instant().add({ milliseconds: 1000 });
   setSystemTime(current.epochMilliseconds);
   return { eventId: createEventId(), timestamp: createInstant() };
 }

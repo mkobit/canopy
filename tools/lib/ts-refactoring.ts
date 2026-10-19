@@ -210,13 +210,11 @@ export function runTsRefactoring(options: RefactorOptions = {}): RefactorReport 
     allUnindexedImports.push(...unindexed);
 
     // Fix if requested
-    if (options.fix && unindexed.length > 0) {
-      const { updatedContent, changed } = rewriteUnindexedImportsInContent(content);
-      if (changed) {
-        fs.writeFileSync(filePath, updatedContent, 'utf8');
-        fixedFilesCount += 1;
-      }
-    }
+    if (!options.fix || unindexed.length === 0) continue;
+    const { updatedContent, changed } = rewriteUnindexedImportsInContent(content);
+    if (!changed) continue;
+    fs.writeFileSync(filePath, updatedContent, 'utf8');
+    fixedFilesCount += 1;
   }
 
   // Group duplicate type declarations by structural equivalence and name across different files

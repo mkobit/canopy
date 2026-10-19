@@ -18,9 +18,9 @@ interface GraphRegistryDB extends DBSchema {
 }
 
 /**
- * Lists known graphs by id/name/timestamps, independent of EventLogStore (which is scoped to a
- * known graphId and has no enumerate-all operation). Backs the home page's graph list/create/delete.
- */
+Lists known graphs by id/name/timestamps, independent of EventLogStore (which is scoped to a
+known graphId and has no enumerate-all operation). Backs the home page's graph list/create/delete.
+*/
 export interface GraphRegistry {
   readonly init: () => Promise<Result<void, Error>>;
   readonly close: () => Promise<Result<void, Error>>;

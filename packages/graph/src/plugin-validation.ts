@@ -52,10 +52,7 @@ const brotliDecompressSync = (() => {
 
 function decodeBase64(base64: string): Uint8Array {
   const bufferResult = fromThrowable(() => {
-    if (typeof Buffer !== 'undefined') {
-      return Buffer.from(base64, 'base64');
-    }
-    return undefined;
+    return typeof Buffer === 'undefined' ? undefined : Buffer.from(base64, 'base64');
   });
   if (bufferResult.ok && bufferResult.value !== undefined) {
     return bufferResult.value;

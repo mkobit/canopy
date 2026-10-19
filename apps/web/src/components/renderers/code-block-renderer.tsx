@@ -6,7 +6,10 @@ export interface CodeBlockRendererProperties {
   className?: string;
 }
 
-export const CodeBlockRenderer: React.FC<CodeBlockRendererProperties> = ({ node, className }) => {
+export const CodeBlockRenderer: React.FC<CodeBlockRendererProperties> = ({
+  node,
+  className = '',
+}) => {
   const content = node.properties.get('content');
   if (typeof content !== 'string') {
     return <div className="text-red-500">Invalid code content</div>;
@@ -16,7 +19,7 @@ export const CodeBlockRenderer: React.FC<CodeBlockRendererProperties> = ({ node,
 
   return (
     <div
-      className={`relative bg-[#0c0f0f] text-[#f8f8ff] p-4 rounded-md overflow-x-auto ${className || ''}`}
+      className={`relative bg-[#0c0f0f] text-[#f8f8ff] p-4 rounded-md overflow-x-auto ${className}`}
     >
       {language && typeof language === 'string' && (
         <div className="absolute top-2 right-3 text-xs text-gray-500 font-mono select-none">

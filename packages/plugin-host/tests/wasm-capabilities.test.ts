@@ -53,10 +53,12 @@ describe('WASM Capability Security Token Validation', () => {
     it('returns FORBIDDEN error for invalid capability token', () => {
       const result = verifyCapability('read:nodes', 'write:create-node');
       expect(result.ok).toBe(false);
-      if (!result.ok) {
-        expect(result.error.category).toBe('FORBIDDEN');
-        expect(result.error.message).toContain('write:create-node');
+      if (result.ok) {
+        return;
       }
+
+      expect(result.error.category).toBe('FORBIDDEN');
+      expect(result.error.message).toContain('write:create-node');
     });
 
     it('uses custom validator when provided', () => {

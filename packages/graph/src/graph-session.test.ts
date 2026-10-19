@@ -23,7 +23,9 @@ import {
   SYSTEM_EDGE_TYPES,
 } from '@canopy/graph';
 
-/** Minimal in-process EventLogStore fake, local to this test -- @canopy/graph is a leaf package. */
+/**
+Minimal in-process EventLogStore fake, local to this test -- @canopy/graph is a leaf package.
+*/
 function createTestEventLog(): EventLogStore {
   const events: GraphEvent[] = [];
   return {

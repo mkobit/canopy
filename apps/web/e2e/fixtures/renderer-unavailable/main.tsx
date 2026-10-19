@@ -38,10 +38,7 @@ const isFixtureCase = (value: string): value is FixtureCase => fixtureCases.has(
 
 const readCase = (parameters: Readonly<Pick<URLSearchParams, 'get'>>): FixtureCase => {
   const value = parameters.get('case');
-  if (value !== null && isFixtureCase(value)) {
-    return value;
-  }
-  return 'missing';
+  return value !== null && isFixtureCase(value) ? value : 'missing';
 };
 
 const addFixtureNode = (graph: Graph, node: Node): Graph =>

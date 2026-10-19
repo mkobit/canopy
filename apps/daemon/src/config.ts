@@ -4,11 +4,11 @@ import type { DeviceId, GraphId, Result } from '@canopy/graph';
 import { asDeviceId, asGraphId, createDeviceId, err, ok } from '@canopy/graph';
 
 /**
- * Fixed default graph id so a daemon restarted against the same database path
- * continues appending to (and reading) the same event log. Deliberately not a
- * UUID -- asGraphId/GraphId are trusted string casts with no runtime format
- * validation, so any stable, human-readable string is a valid graph id.
- */
+Fixed default graph id so a daemon restarted against the same database path
+continues appending to (and reading) the same event log. Deliberately not a
+UUID -- asGraphId/GraphId are trusted string casts with no runtime format
+validation, so any stable, human-readable string is a valid graph id.
+*/
 const DEFAULT_GRAPH_ID = 'canopy-default-graph';
 
 const DEFAULT_SOCKET_FILE_NAME = 'canopy.sock';
@@ -25,17 +25,21 @@ const daemonConfigError = (message: string): DaemonConfigError => ({
 });
 
 export type DaemonConfig = Readonly<{
-  /** Absolute path to the Unix domain socket the IPC server listens on. */
+  /**
+  Absolute path to the Unix domain socket the IPC server listens on.
+  */
   socketPath: string;
-  /** Absolute path to the on-disk SQLite event log database file. */
+  /**
+  Absolute path to the on-disk SQLite event log database file.
+  */
   databasePath: string;
   graphId: GraphId;
   deviceId: DeviceId;
   /**
-   * When true, the host uses an in-memory EventLogStore instead of
-   * createSQLiteEventLog. For tests only -- state does not persist across
-   * restarts.
-   */
+  When true, the host uses an in-memory EventLogStore instead of
+  createSQLiteEventLog. For tests only -- state does not persist across
+  restarts.
+  */
   ephemeral: boolean;
 }>;
 
@@ -74,11 +78,11 @@ const resolveEphemeral = (
 };
 
 /**
- * Resolves the daemon's boot configuration from explicit overrides (e.g. CLI
- * flags), falling back to environment variables, then defaults. Never
- * throws -- returns a Result so callers (index.ts) can fail the boot Effect
- * cleanly.
- */
+Resolves the daemon's boot configuration from explicit overrides (e.g. CLI
+flags), falling back to environment variables, then defaults. Never
+throws -- returns a Result so callers (index.ts) can fail the boot Effect
+cleanly.
+*/
 export const resolveDaemonConfig = (
   overrides: DaemonConfigOverrides = {},
   environment: Readonly<NodeJS.ProcessEnv> = process.env,

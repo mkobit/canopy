@@ -46,7 +46,9 @@ export type ClipHost = Readonly<{
 export type ClipHostOptions = Readonly<{
   socketPath: string;
   rateLimiter: RateLimiter;
-  /** Overridable for tests; defaults to the real makeIpcClient. */
+  /**
+  Overridable for tests; defaults to the real makeIpcClient.
+  */
   connect?: (socketPath: string) => Effect.Effect<IpcClient, IpcClientError>;
 }>;
 
@@ -68,10 +70,10 @@ const makeSuccessResponse = (id: JsonRpcId | undefined, result: unknown): JsonRp
 });
 
 /**
- * Dispatches an allowlisted method to the corresponding typed IpcClient call,
- * validating `params` against the same zod schema the daemon itself uses
- * (rather than a raw `as` cast) before crossing into the typed client.
- */
+Dispatches an allowlisted method to the corresponding typed IpcClient call,
+validating `params` against the same zod schema the daemon itself uses
+(rather than a raw `as` cast) before crossing into the typed client.
+*/
 const dispatch = (
   client: IpcClient,
   method: string,
@@ -83,16 +85,15 @@ const dispatch = (
   switch (method) {
     case IPC_METHODS.HANDSHAKE: {
       const parsed = HandshakeParamsSchema.partial().safeParse(parameters ?? {});
-      if (!parsed.success)
-        return Effect.fail({ _tag: 'InvalidParams', message: 'Invalid handshake params' });
-      return client.handshake(parsed.data.clientVersion);
+      return parsed.success
+        ? client.handshake(parsed.data.clientVersion)
+        : Effect.fail({ _tag: 'InvalidParams', message: 'Invalid handshake params' });
     }
     case IPC_METHODS.QUERY_GET_NODES: {
       const parsed = GetNodesParamsSchema.safeParse(parameters ?? {});
-      if (!parsed.success) {
-        return Effect.fail({ _tag: 'InvalidParams', message: 'Invalid query.getNodes params' });
-      }
-      return client.getNodes(parsed.data);
+      return parsed.success
+        ? client.getNodes(parsed.data)
+        : Effect.fail({ _tag: 'InvalidParams', message: 'Invalid query.getNodes params' });
     }
     case IPC_METHODS.MUTATION_CREATE_NODE: {
       const parsed = CreateNodeParamsSchema.safeParse(parameters);
@@ -126,24 +127,21 @@ const dispatch = (
     }
     case IPC_METHODS.DRAFT_PREVIEW: {
       const parsed = DraftPreviewParamsSchema.safeParse(parameters);
-      if (!parsed.success) {
-        return Effect.fail({ _tag: 'InvalidParams', message: 'Invalid draft.preview params' });
-      }
-      return client.draftPreview(parsed.data);
+      return parsed.success
+        ? client.draftPreview(parsed.data)
+        : Effect.fail({ _tag: 'InvalidParams', message: 'Invalid draft.preview params' });
     }
     case IPC_METHODS.DRAFT_COMMIT: {
       const parsed = DraftCommitParamsSchema.safeParse(parameters);
-      if (!parsed.success) {
-        return Effect.fail({ _tag: 'InvalidParams', message: 'Invalid draft.commit params' });
-      }
-      return client.draftCommit(parsed.data);
+      return parsed.success
+        ? client.draftCommit(parsed.data)
+        : Effect.fail({ _tag: 'InvalidParams', message: 'Invalid draft.commit params' });
     }
     case IPC_METHODS.DRAFT_DISCARD: {
       const parsed = DraftDiscardParamsSchema.safeParse(parameters);
-      if (!parsed.success) {
-        return Effect.fail({ _tag: 'InvalidParams', message: 'Invalid draft.discard params' });
-      }
-      return client.draftDiscard(parsed.data);
+      return parsed.success
+        ? client.draftDiscard(parsed.data)
+        : Effect.fail({ _tag: 'InvalidParams', message: 'Invalid draft.discard params' });
     }
     default: {
       // Unreachable given isAllowedMethod already gated the caller, kept for exhaustiveness.
@@ -156,11 +154,11 @@ const dispatch = (
 };
 
 /**
- * Creates a clip-host session: lazily opens (and reuses) one long-lived
- * IpcClient connection to the daemon, lazily ensures the WebClip type on
- * first use, and enforces the method allowlist, namespace narrowing, and
- * rate limit on every incoming request before relaying to the daemon.
- */
+Creates a clip-host session: lazily opens (and reuses) one long-lived
+IpcClient connection to the daemon, lazily ensures the WebClip type on
+first use, and enforces the method allowlist, namespace narrowing, and
+rate limit on every incoming request before relaying to the daemon.
+*/
 // eslint-disable-next-line max-lines-per-function -- lazily-established connection/type-id state plus the sequential allowlist/rate-limit/connect/namespace/dispatch gate, mirrors ipc-handlers.ts's per-method dispatch
 export const createClipHost = (options: ClipHostOptions): ClipHost => {
   const connect = options.connect ?? makeIpcClient;

@@ -67,10 +67,12 @@ describe('GraphQL mutation resolvers & actor delegation', () => {
       });
 
       expect(pluginActor.ok).toBe(true);
-      if (pluginActor.ok) {
-        expect(pluginActor.value.actingId).toBe('agent:authenticated');
-        expect(pluginActor.value.approvalState).toBe('APPROVED');
+      if (!pluginActor.ok) {
+        return;
       }
+
+      expect(pluginActor.value.actingId).toBe('agent:authenticated');
+      expect(pluginActor.value.approvalState).toBe('APPROVED');
     });
 
     it('returns error when delegation token is missing or invalid', async () => {

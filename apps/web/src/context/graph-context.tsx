@@ -45,7 +45,9 @@ function validationErrorToError(validationError: ValidationError): Error {
   );
 }
 
-/** Commits a node-creating op's events and extracts the created node's id from the delta. */
+/**
+Commits a node-creating op's events and extracts the created node's id from the delta.
+*/
 async function commitCreatedNode(
   session: GraphSession,
   opResult: Result<GraphResult<Graph>, ValidationError>,
@@ -56,8 +58,7 @@ async function commitCreatedNode(
   if (!commitResult.ok) return commitResult;
 
   const created = opResult.value.events.find((event) => event.type === 'NodeCreated');
-  if (!created) return err(new Error('Expected op to produce a NodeCreated event'));
-  return ok(created.id);
+  return created ? ok(created.id) : err(new Error('Expected op to produce a NodeCreated event'));
 }
 
 interface GraphContextState {
@@ -272,8 +273,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
       if (!opResult.ok) return err(opResult.error);
 
       const commitResult = await session.commit(opResult.value.events);
-      if (!commitResult.ok) return err(commitResult.error);
-      return ok(undefined);
+      return commitResult.ok ? ok(undefined) : err(commitResult.error);
     },
     [deviceId],
   );
@@ -287,8 +287,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
       if (!opResult.ok) return err(opResult.error);
 
       const commitResult = await session.commit(opResult.value.events);
-      if (!commitResult.ok) return err(commitResult.error);
-      return ok(undefined);
+      return commitResult.ok ? ok(undefined) : err(commitResult.error);
     },
     [deviceId],
   );
@@ -296,8 +295,9 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
   const createNamespace = useCallback(
     (input: CreateNamespaceInput): Promise<Result<NodeId, Error>> => {
       const session = sessionReference.current;
-      if (!session) return Promise.resolve(err(new Error('No graph loaded')));
-      return commitCreatedNode(session, createNamespaceOp(session.graph(), input, { deviceId }));
+      return session
+        ? commitCreatedNode(session, createNamespaceOp(session.graph(), input, { deviceId }))
+        : Promise.resolve(err(new Error('No graph loaded')));
     },
     [deviceId],
   );
@@ -305,8 +305,9 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
   const createNodeType = useCallback(
     (input: CreateNodeTypeInput): Promise<Result<NodeId, Error>> => {
       const session = sessionReference.current;
-      if (!session) return Promise.resolve(err(new Error('No graph loaded')));
-      return commitCreatedNode(session, createNodeTypeOp(session.graph(), input, { deviceId }));
+      return session
+        ? commitCreatedNode(session, createNodeTypeOp(session.graph(), input, { deviceId }))
+        : Promise.resolve(err(new Error('No graph loaded')));
     },
     [deviceId],
   );
@@ -314,8 +315,9 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
   const createEdgeType = useCallback(
     (input: CreateEdgeTypeInput): Promise<Result<NodeId, Error>> => {
       const session = sessionReference.current;
-      if (!session) return Promise.resolve(err(new Error('No graph loaded')));
-      return commitCreatedNode(session, createEdgeTypeOp(session.graph(), input, { deviceId }));
+      return session
+        ? commitCreatedNode(session, createEdgeTypeOp(session.graph(), input, { deviceId }))
+        : Promise.resolve(err(new Error('No graph loaded')));
     },
     [deviceId],
   );
@@ -323,8 +325,9 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
   const createPropertyType = useCallback(
     (input: CreatePropertyTypeInput): Promise<Result<NodeId, Error>> => {
       const session = sessionReference.current;
-      if (!session) return Promise.resolve(err(new Error('No graph loaded')));
-      return commitCreatedNode(session, createPropertyTypeOp(session.graph(), input, { deviceId }));
+      return session
+        ? commitCreatedNode(session, createPropertyTypeOp(session.graph(), input, { deviceId }))
+        : Promise.resolve(err(new Error('No graph loaded')));
     },
     [deviceId],
   );

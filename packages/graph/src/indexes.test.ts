@@ -283,17 +283,12 @@ describe('read-model indexes (type / adjacency / property-equality)', () => {
     };
   }
 
-  function makeEdge(
-    id: string,
-    type: ReturnType<typeof asTypeId>,
-    source: string,
-    target: string,
-  ): Edge {
+  function makeEdge(id: string, type: ReturnType<typeof asTypeId>, source: string): Edge {
     return {
       id: asEdgeId(id),
       type,
       source: asNodeId(source),
-      target: asNodeId(target),
+      target: asNodeId('project-1'),
       properties: new Map(),
       metadata: { created: createInstant(), modified: createInstant(), modifiedBy: deviceId },
     };
@@ -322,9 +317,9 @@ describe('read-model indexes (type / adjacency / property-equality)', () => {
       projectType,
       new Map<string, PropertyValue>([['status', 'open']]),
     );
-    const edge1 = makeEdge('edge-1', belongsToType, 'task-1', 'project-1');
-    const edge2 = makeEdge('edge-2', belongsToType, 'task-2', 'project-1');
-    const edge3 = makeEdge('edge-3', tagType, 'task-1', 'project-1');
+    const edge1 = makeEdge('edge-1', belongsToType, 'task-1');
+    const edge2 = makeEdge('edge-2', belongsToType, 'task-2');
+    const edge3 = makeEdge('edge-3', tagType, 'task-1');
 
     return {
       ...base,
@@ -716,11 +711,11 @@ describe('index maintenance cost regression (delta, not graph size)', () => {
   const deviceId = asDeviceId('00000000-0000-0000-0000-000000000004');
 
   /**
-   * Builds a graph with `count` distinct node TYPES (one node each) and `count` distinct source
-   * nodes each with their own edge-type bucket to a shared hub -- so `typeIndex`/`adjacencyOut`/
-   * `adjacencyIn`/`propertyEquality` each have `count` independent top-level buckets to prove
-   * untouched.
-   */
+  Builds a graph with `count` distinct node TYPES (one node each) and `count` distinct source
+  nodes each with their own edge-type bucket to a shared hub -- so `typeIndex`/`adjacencyOut`/
+  `adjacencyIn`/`propertyEquality` each have `count` independent top-level buckets to prove
+  untouched.
+  */
   function buildManyBucketGraph(count: number): Graph {
     const base = unwrap(createGraph(asGraphId(`bucket-test-${count}`), 'Test'));
     const hubId = asNodeId(`hub-${count}`);

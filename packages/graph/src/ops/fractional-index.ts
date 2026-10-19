@@ -1,8 +1,7 @@
 const DIGITS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 
 function getIndex(char: string | undefined): number {
-  if (char === undefined) return -1;
-  return DIGITS.indexOf(char);
+  return char === undefined ? -1 : DIGITS.indexOf(char);
 }
 
 function findPrefixExtensionKey(a: string, b: string, index: number): string {
@@ -14,10 +13,7 @@ function findPrefixExtensionKey(a: string, b: string, index: number): string {
   const valueAt = getIndex(charAt);
   const midValue = Math.floor(valueAt / 2);
   const midChar = DIGITS[midValue];
-  if (!midChar) {
-    return a + zeros + (DIGITS.at(0) ?? '0');
-  }
-  return a + zeros + midChar;
+  return midChar ? a + zeros + midChar : a + zeros + (DIGITS.at(0) ?? '0');
 }
 
 function findKeyBetween(a: string, b: string, index: number): string {
@@ -49,9 +45,9 @@ function findKeyBetween(a: string, b: string, index: number): string {
 }
 
 /**
- * Generates a sort key lexicographically between two keys.
- * Keys use the base62 alphabet.
- */
+Generates a sort key lexicographically between two keys.
+Keys use the base62 alphabet.
+*/
 export function generateKeyBetween(a: string | null, b: string | null): string {
   if (a !== null && b !== null && a >= b) {
     // eslint-disable-next-line functional/no-throw-statements
@@ -78,10 +74,7 @@ export function generateKeyBetween(a: string | null, b: string | null): string {
     const aFirst = getIndex(a.at(0));
     if (aFirst < DIGITS.length - 1) {
       const nextChar = DIGITS[aFirst + 1];
-      if (!nextChar) {
-        return a + (DIGITS.at(Math.floor(DIGITS.length / 2)) ?? '');
-      }
-      return nextChar;
+      return nextChar || a + (DIGITS.at(Math.floor(DIGITS.length / 2)) ?? '');
     }
     return a + (DIGITS.at(Math.floor(DIGITS.length / 2)) ?? '');
   }

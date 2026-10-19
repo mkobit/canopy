@@ -70,10 +70,9 @@ describe('WASM WIT Protocol Adapter', () => {
       JSON.stringify({ id: 'adapter-node-1' }),
     );
     expect(queryResult.ok).toBe(true);
-    if (queryResult.ok) {
-      const nodes = JSON.parse(queryResult.value) as readonly { properties: { text: string } }[];
-      expect(nodes[0]?.properties.text).toBe('hello');
-    }
+    if (!queryResult.ok) return;
+    const nodes = JSON.parse(queryResult.value) as readonly { properties: { text: string } }[];
+    expect(nodes[0]?.properties.text).toBe('hello');
   });
 
   it('binds the execution token through the adapter facade', async () => {
@@ -114,10 +113,9 @@ describe('WASM WIT Protocol Adapter', () => {
       { fuelLimit: 250n },
     );
     expect(executionOverride.ok).toBe(true);
-    if (executionOverride.ok) {
-      const results = JSON.parse(executionOverride.value) as readonly { readonly ok: boolean }[];
-      expect(results[0]?.ok).toBe(true);
-      expect(results[1]?.ok).toBe(true);
-    }
+    if (!executionOverride.ok) return;
+    const results = JSON.parse(executionOverride.value) as readonly { readonly ok: boolean }[];
+    expect(results[0]?.ok).toBe(true);
+    expect(results[1]?.ok).toBe(true);
   });
 });

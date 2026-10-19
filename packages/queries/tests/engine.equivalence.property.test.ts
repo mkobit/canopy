@@ -18,19 +18,19 @@ import type { Filter, Operator, Query, QueryStep } from '../src/model';
 import { executeQuery, executeQueryScanOnly } from '../src/engine';
 
 /**
- * Small, deliberately-collision-prone pools: real graphs have far more nodes/edges than distinct
- * types/property values, and equality filters/traversals only exercise the index in a meaningful
- * way when random queries actually hit real data some of the time.
- */
+Small, deliberately-collision-prone pools: real graphs have far more nodes/edges than distinct
+types/property values, and equality filters/traversals only exercise the index in a meaningful
+way when random queries actually hit real data some of the time.
+*/
 const NODE_TYPES = ['task', 'project', 'person'] as const;
 const EDGE_TYPES = ['belongs-to', 'tagged-with'] as const;
 const PROP_NAMES = ['status', 'priority', 'flag'] as const;
 /**
- * `null` and `ExternalReferenceValue` are deliberately excluded here -- see engine.ts's
- * `applyFilterIndexed` doc comment: the index-assisted eq-filter fast path never consults the
- * index for those value shapes (unwrap semantics diverge from index serialization), so they're
- * out of scope for this equivalence test, consistent with @canopy/graph's own indexes.test.ts.
- */
+`null` and `ExternalReferenceValue` are deliberately excluded here -- see engine.ts's
+`applyFilterIndexed` doc comment: the index-assisted eq-filter fast path never consults the
+index for those value shapes (unwrap semantics diverge from index serialization), so they're
+out of scope for this equivalence test, consistent with @canopy/graph's own indexes.test.ts.
+*/
 const PROP_VALUES: readonly ScalarValue[] = ['open', 'done', 'pending', 1, 2, 5, true, false];
 
 const DEVICE_ID = asDeviceId('00000000-0000-0000-0000-00000000e001');
@@ -103,10 +103,9 @@ const graphArb: fc.Arbitrary<Graph> = fc
         : edgeSpecs.flatMap((spec, index) => {
             const source = nodeList[spec.sourceIndex % nodeList.length];
             const target = nodeList[spec.targetIndex % nodeList.length];
-            if (source === undefined || target === undefined) {
-              return [];
-            }
-            return [makeEdge(index, spec.type, source.id, target.id)];
+            return source === undefined || target === undefined
+              ? []
+              : [makeEdge(index, spec.type, source.id, target.id)];
           });
     const edges = new Map(edgeList.map((edge) => [edge.id, edge]));
 

@@ -66,11 +66,9 @@ export const executeWasmRender = async (
     }
 
     const outputParse = renderOutputSchema.safeParse(JSON.parse(executionResult.value));
-    if (!outputParse.success || outputParse.data.html.length === 0) {
-      return { ok: false, error: 'plugin returned invalid or empty render output' };
-    }
-
-    return { ok: true, html: outputParse.data.html };
+    return !outputParse.success || outputParse.data.html.length === 0
+      ? { ok: false, error: 'plugin returned invalid or empty render output' }
+      : { ok: true, html: outputParse.data.html };
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : String(error) };
   }

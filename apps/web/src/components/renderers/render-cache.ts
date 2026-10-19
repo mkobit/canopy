@@ -38,10 +38,7 @@ export const getCachedRender = (key: string): string | undefined => {
 export const setCachedRender = (key: string, html: string): void => {
   cache.delete(key);
   cache.set(key, html);
-  if (cache.size > MAX_CACHE_ENTRIES) {
-    const oldest = cache.keys().next().value;
-    if (oldest !== undefined) {
-      cache.delete(oldest);
-    }
-  }
+  if (cache.size <= MAX_CACHE_ENTRIES) return;
+  const oldest = cache.keys().next().value;
+  if (oldest !== undefined) cache.delete(oldest);
 };

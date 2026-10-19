@@ -99,7 +99,7 @@ const isForbiddenSpecifier = (
     return resolvesInside(path.resolve(path.dirname(importer), specifier), boundary.forbiddenRoot);
   }
   const aliasTarget = resolveAlias(specifier, boundary.aliases ?? []);
-  return aliasTarget === undefined ? false : resolvesInside(aliasTarget, boundary.forbiddenRoot);
+  return aliasTarget !== undefined && resolvesInside(aliasTarget, boundary.forbiddenRoot);
 };
 
 export const findForbiddenImportsInSource = (
@@ -135,7 +135,7 @@ export const readTypescriptAliases = (configPath: string): readonly SourceAlias[
     const target = targets[0];
     return target === undefined
       ? []
-      : [{ name, target: path.resolve(path.dirname(configPath), target) }];
+      : { name, target: path.resolve(path.dirname(configPath), target) };
   });
 };
 

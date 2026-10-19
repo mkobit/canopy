@@ -16,10 +16,10 @@ const resolveRuntimeDirectory = (environment: Readonly<NodeJS.ProcessEnv>): stri
 };
 
 /**
- * Resolves the daemon's Unix domain socket path the same way apps/daemon
- * resolves it: an explicit override, then CANOPY_SOCKET_PATH, then the
- * XDG-runtime-dir default.
- */
+Resolves the daemon's Unix domain socket path the same way apps/daemon
+resolves it: an explicit override, then CANOPY_SOCKET_PATH, then the
+XDG-runtime-dir default.
+*/
 export const resolveDaemonSocketPath = (
   overrideSocketPath?: string,
   environment: Readonly<NodeJS.ProcessEnv> = process.env,

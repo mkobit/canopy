@@ -175,7 +175,6 @@ describe('IpcServer integration and socket lifecycle', () => {
 
     const waitForMessage = (
       predicate: (message: Readonly<Record<string, unknown>>) => boolean,
-      timeoutMs = 2000,
     ): Promise<Readonly<Record<string, unknown>>> =>
       new Promise((resolve, reject) => {
         const start = Temporal.Now.instant().epochMilliseconds;
@@ -187,7 +186,7 @@ describe('IpcServer integration and socket lifecycle', () => {
             resolve(found as Readonly<Record<string, unknown>>);
             return;
           }
-          if (Temporal.Now.instant().epochMilliseconds - start > timeoutMs) {
+          if (Temporal.Now.instant().epochMilliseconds - start > 2000) {
             reject(new Error('Timed out waiting for expected IPC message'));
             return;
           }

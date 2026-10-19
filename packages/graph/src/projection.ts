@@ -10,9 +10,9 @@ import { incrementalUpdateIndexes } from './indexes';
 import { maxRevision } from './revision';
 
 /**
- * Returns true if the incoming event should win over the current state.
- * Uses timestamp as primary sort key, deviceId as tiebreaker (lexicographic).
- */
+Returns true if the incoming event should win over the current state.
+Uses timestamp as primary sort key, deviceId as tiebreaker (lexicographic).
+*/
 export function lwwWins(
   incomingTimestamp: Instant,
   incomingDeviceId: DeviceId,
@@ -26,9 +26,9 @@ export function lwwWins(
 }
 
 /**
- * Applies a single event to the graph, returning a new graph state.
- * This function is pure and does not mutate the input graph.
- */
+Applies a single event to the graph, returning a new graph state.
+This function is pure and does not mutate the input graph.
+*/
 
 // eslint-disable-next-line max-lines-per-function
 export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error> {
@@ -308,16 +308,13 @@ function applyEventsFold(
     return ok(current);
   }
   const result = applyEvent(current, event);
-  if (!result.ok) {
-    return result;
-  }
-  return applyEventsFold(events, result.value, index + 1);
+  return result.ok ? applyEventsFold(events, result.value, index + 1) : result;
 }
 
 /**
- * Reconstructs a graph from a stream of events.
- * Optionally accepts an initial graph state.
- */
+Reconstructs a graph from a stream of events.
+Optionally accepts an initial graph state.
+*/
 export function projectGraph(
   events: readonly GraphEvent[],
   initialGraph: Graph,

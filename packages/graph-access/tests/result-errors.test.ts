@@ -25,10 +25,12 @@ describe('ResultErrorUtilities', () => {
 
     const errorResult = mapKernelResultToGraphAccessResult(err(new Error('Node not found')));
     expect(isErr(errorResult)).toBe(true);
-    if (isErr(errorResult)) {
-      expect(errorResult.error.category).toBe('NOT_FOUND');
-      expect(errorResult.error.message).toBe('Node not found');
+    if (!isErr(errorResult)) {
+      return;
     }
+
+    expect(errorResult.error.category).toBe('NOT_FOUND');
+    expect(errorResult.error.message).toBe('Node not found');
   });
 
   it('should convert unknown errors to GraphAccessError safely', () => {
