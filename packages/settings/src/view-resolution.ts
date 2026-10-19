@@ -3,8 +3,8 @@ import { SYSTEM_IDS, ok, err, asNodeId, getGraphIndexes } from '@canopy/graph';
 import { resolveSetting } from './cascade';
 
 /**
- * Resolves the ViewDefinition node for a given node using the 3-step resolution.
- */
+Resolves the ViewDefinition node for a given node using the 3-step resolution.
+*/
 export function resolveViewDefinition(
   graph: Graph,
   nodeId: NodeId,

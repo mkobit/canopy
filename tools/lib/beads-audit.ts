@@ -28,17 +28,14 @@ function isLintFinding(value: unknown): value is LintFinding {
 // `bd lint --json` returns `results: null` (not `[]`) when there are zero findings.
 export function parseLintOutput(raw: string): readonly LintFinding[] {
   const parsed: unknown = JSON.parse(raw);
-  if (
-    typeof parsed !== 'object' ||
+  return typeof parsed !== 'object' ||
     parsed === null ||
     !('results' in parsed) ||
     !Array.isArray(parsed.results)
-  ) {
-    return [];
-  }
-  return parsed.results
-    .filter(isLintFinding)
-    .map((finding) => ({ id: finding.id, title: finding.title, missing: finding.missing }));
+    ? []
+    : parsed.results
+        .filter(isLintFinding)
+        .map((finding) => ({ id: finding.id, title: finding.title, missing: finding.missing }));
 }
 
 export type QueryIssueSummary = Readonly<{
@@ -61,24 +58,22 @@ function isQueryIssueSummary(value: unknown): value is QueryIssueSummary {
 // this drops everything except id/title before it reaches a report.
 export function parseQueryOutput(raw: string): readonly QueryIssueSummary[] {
   const parsed: unknown = JSON.parse(raw);
-  if (!Array.isArray(parsed)) {
-    return [];
-  }
-  return parsed.filter(isQueryIssueSummary).map((issue) => ({ id: issue.id, title: issue.title }));
+  return Array.isArray(parsed)
+    ? parsed.filter(isQueryIssueSummary).map((issue) => ({ id: issue.id, title: issue.title }))
+    : [];
 }
 
 export function parseIssueNumbers(raw: string): readonly number[] {
   const parsed: unknown = JSON.parse(raw);
-  if (!Array.isArray(parsed)) {
-    return [];
-  }
-  return parsed
-    .filter(
-      (item): item is { number: unknown } =>
-        typeof item === 'object' && item !== null && 'number' in item,
-    )
-    .map((item) => item.number)
-    .filter((value): value is number => typeof value === 'number');
+  return Array.isArray(parsed)
+    ? parsed
+        .filter(
+          (item): item is { number: unknown } =>
+            typeof item === 'object' && item !== null && 'number' in item,
+        )
+        .map((item) => item.number)
+        .filter((value): value is number => typeof value === 'number')
+    : [];
 }
 
 export type FindingCheck = 'lint' | 'missing-label' | 'unmerged-close' | 'orphan-informational';

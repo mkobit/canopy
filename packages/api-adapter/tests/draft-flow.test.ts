@@ -92,16 +92,12 @@ const createRpcClient = async (socketPath: string): Promise<RpcClient> => {
 
 // Builds a wire-level (pre-transform) NodeCreated event payload: plain strings, exactly what a
 // draft.apply client sends over JSON-RPC before GraphEventSchema parses/brands the fields.
-const nodeCreatedEvent = (
-  id: string,
-  nodeType = 'concept',
-  properties?: Readonly<Record<string, unknown>>,
-): Readonly<Record<string, unknown>> => ({
+const nodeCreatedEvent = (id: string): Readonly<Record<string, unknown>> => ({
   type: 'NodeCreated',
   eventId: createEventId(),
   id,
-  nodeType,
-  properties: properties ?? { title: id },
+  nodeType: 'concept',
+  properties: { title: id },
   timestamp: createInstant(),
   deviceId: createDeviceId(),
 });

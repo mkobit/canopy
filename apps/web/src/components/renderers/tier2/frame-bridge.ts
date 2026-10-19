@@ -67,10 +67,9 @@ export const validateInboundFrameMessage = (
   if (!parsed.success) {
     return { accepted: false, reason: 'malformed' };
   }
-  if (parsed.data.nonce !== expected.nonce) {
-    return { accepted: false, reason: 'nonce-mismatch' };
-  }
-  return { accepted: true, message: parsed.data };
+  return parsed.data.nonce === expected.nonce
+    ? { accepted: true, message: parsed.data }
+    : { accepted: false, reason: 'nonce-mismatch' };
 };
 
 export type FrameBridgeHandlers = Readonly<{

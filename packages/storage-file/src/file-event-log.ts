@@ -553,10 +553,7 @@ const appendSequentialRemoteEvents = async (
       a.eventId.localeCompare(b.eventId),
     );
     const result = await appendBatch(sorted);
-    if (!result.ok) {
-      return result;
-    }
-    return appendIndex(index + 1);
+    return result.ok ? appendIndex(index + 1) : result;
   };
   return appendIndex(0);
 };
@@ -836,10 +833,9 @@ export const scanRemoteManifests = async (
     fs.readdir(eventsDirectory, { withFileTypes: true }),
   );
   if (!entriesResult.ok) {
-    if ('code' in entriesResult.error && entriesResult.error.code === 'ENOENT') {
-      return ok(new Map<string, FileStoreManifest>());
-    }
-    return entriesResult;
+    return 'code' in entriesResult.error && entriesResult.error.code === 'ENOENT'
+      ? ok(new Map<string, FileStoreManifest>())
+      : entriesResult;
   }
 
   const directoryNames = entriesResult.value
@@ -876,10 +872,7 @@ export const getRemoteSegmentsInOrder = async (
     const jsonlFiles = files.filter((f) => f.endsWith('.jsonl'));
     return jsonlFiles.toSorted((a, b) => a.localeCompare(b));
   });
-  if (!result.ok && 'code' in result.error && result.error.code === 'ENOENT') {
-    return ok([]);
-  }
-  return result;
+  return !result.ok && 'code' in result.error && result.error.code === 'ENOENT' ? ok([]) : result;
 };
 
 export const readRemoteSegmentEvents = async (

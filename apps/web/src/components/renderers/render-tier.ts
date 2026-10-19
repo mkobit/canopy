@@ -39,8 +39,7 @@ export const resolveWasmRenderDispatch = (pluginNode: Node): WasmRenderDispatch 
     return { tier: 'tier1' };
   }
   const guestId = resolveGuestId(pluginNode);
-  if (guestId === undefined) {
-    return { tier: 'unavailable', reason: 'missing-guest' };
-  }
-  return { tier: 'tier2', token, guestId };
+  return guestId === undefined
+    ? { tier: 'unavailable', reason: 'missing-guest' }
+    : { tier: 'tier2', token, guestId };
 };

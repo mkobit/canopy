@@ -42,8 +42,9 @@ export interface PropertyTypeOption {
 }
 
 function readStringArray(value: unknown): readonly string[] {
-  if (!Array.isArray(value)) return [];
-  return value.filter((item): item is string => typeof item === 'string');
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === 'string')
+    : [];
 }
 
 function toNamespaceOption(node: Node): NamespaceOption | undefined {
@@ -101,7 +102,9 @@ export function listNamespaces(graph: Graph): readonly NamespaceOption[] {
     .filter((option): option is NamespaceOption => option !== undefined);
 }
 
-/** Non-restricted `kind` values in use, for populating the namespace-create kind picker. */
+/**
+Non-restricted `kind` values in use, for populating the namespace-create kind picker.
+*/
 export function listCreatableNamespaceKinds(
   namespaces: readonly NamespaceOption[],
 ): readonly string[] {
@@ -135,7 +138,9 @@ export function listPropertyTypesIn(
   return listAllPropertyTypes(graph).filter((option) => option.namespace === namespace);
 }
 
-/** All PropertyType nodes across every namespace, for the reference-existing-PropertyType picker. */
+/**
+All PropertyType nodes across every namespace, for the reference-existing-PropertyType picker.
+*/
 export function listAllPropertyTypes(graph: Graph): readonly PropertyTypeOption[] {
   return getNodesOfType(graph, SYSTEM_IDS.PROPERTY_TYPE)
     .map(toPropertyTypeOption)

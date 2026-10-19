@@ -12,16 +12,16 @@ import { SYSTEM_IDS, SYSTEM_EDGE_TYPES } from './system';
 import { asTypeId } from './factories';
 
 /**
- * Pre-computed settings, view, and read-model indexes for O(1)/O(delta) lookup.
- *
- * `typeIndex`, `adjacencyOut`, `adjacencyIn`, and `propertyEquality` back the `ReadModelPort`
- * (see `read-model.ts` and `createIndexedReadModel` below). They are populated by a full scan in
- * `buildGraphIndexes`, and kept correct across incremental merges by `incrementalUpdateIndexes`
- * (O(delta) per event -- see `updateReadModelIndexesForEvent`), called from both
- * `applyOneEvent` (`incremental-projection.ts`) and `applyEvent` (`projection.ts`) whenever
- * `graph._indexes` is already populated. No executor consumes them yet -- that's a separate,
- * follow-on change.
- */
+Pre-computed settings, view, and read-model indexes for O(1)/O(delta) lookup.
+
+`typeIndex`, `adjacencyOut`, `adjacencyIn`, and `propertyEquality` back the `ReadModelPort`
+(see `read-model.ts` and `createIndexedReadModel` below). They are populated by a full scan in
+`buildGraphIndexes`, and kept correct across incremental merges by `incrementalUpdateIndexes`
+(O(delta) per event -- see `updateReadModelIndexesForEvent`), called from both
+`applyOneEvent` (`incremental-projection.ts`) and `applyEvent` (`projection.ts`) whenever
+`graph._indexes` is already populated. No executor consumes them yet -- that's a separate,
+follow-on change.
+*/
 export interface GraphIndexes {
   readonly settingsSchemas: ReadonlyMap<string, Node>; // key -> SettingsSchema node
   readonly userSettings: ReadonlyMap<string, PropertyValue>; // schemaNodeId\0scopeType\0scopeTarget -> parsed value (deeply frozen)
@@ -38,29 +38,30 @@ export interface GraphIndexes {
 }
 
 /**
- * Serializes a scalar property value into a map key that distinguishes values of different
- * runtime types (e.g. number `1` vs string `"1"`) that would otherwise collide once stringified.
- * Array-valued properties are never passed here -- see `nodesWhereEquals`.
- */
-/** `Array.isArray` alone does not narrow a `readonly T[]` union member reliably; wrap it in an explicit predicate. */
+Serializes a scalar property value into a map key that distinguishes values of different
+runtime types (e.g. number `1` vs string `"1"`) that would otherwise collide once stringified.
+Array-valued properties are never passed here -- see `nodesWhereEquals`.
+*/
+/**
+`Array.isArray` alone does not narrow a `readonly T[]` union member reliably; wrap it in an explicit predicate.
+*/
 function isScalarValue(value: PropertyValue): value is ScalarValue {
   return !Array.isArray(value);
 }
 
 function serializeScalarForIndex(value: ScalarValue): string {
   if (value === null) return 'null:';
-  if (typeof value === 'object') {
-    return `ref:${value.graph}:${value.target}`;
-  }
-  return `${typeof value}:${String(value)}`;
+  return typeof value === 'object'
+    ? `ref:${value.graph}:${value.target}`
+    : `${typeof value}:${String(value)}`;
 }
 
 /**
- * Records `nodeId` under `propertyEquality[property][serializedValue]`, creating buckets as
- * needed. Arrays are never indexed -- see `nodesWhereEquals`. Extracted to its own function (with
- * its own early return) rather than an early `continue` in the caller's loop, since that loop is
- * itself nested inside the per-node scan in `buildGraphIndexes`.
- */
+Records `nodeId` under `propertyEquality[property][serializedValue]`, creating buckets as
+needed. Arrays are never indexed -- see `nodesWhereEquals`. Extracted to its own function (with
+its own early return) rather than an early `continue` in the caller's loop, since that loop is
+itself nested inside the per-node scan in `buildGraphIndexes`.
+*/
 function indexNodeProperty(
   // eslint-disable-next-line functional/prefer-immutable-types
   propertyEquality: Map<string, Map<string, Set<NodeId>>>,
@@ -82,10 +83,10 @@ function indexNodeProperty(
 }
 
 /**
- * Increments `adjacency[nodeId][edgeType][neighbourId]`'s edge count, creating buckets as needed.
- * A count (not a plain Set) because parallel edges between the same pair must each contribute
- * independently -- see the `GraphIndexes.adjacencyOut` doc comment.
- */
+Increments `adjacency[nodeId][edgeType][neighbourId]`'s edge count, creating buckets as needed.
+A count (not a plain Set) because parallel edges between the same pair must each contribute
+independently -- see the `GraphIndexes.adjacencyOut` doc comment.
+*/
 function addNeighbour(
   // eslint-disable-next-line functional/prefer-immutable-types
   adjacency: Map<NodeId, Map<TypeId, Map<NodeId, number>>>,
@@ -104,7 +105,9 @@ function addNeighbour(
   adjacency.set(nodeId, byEdgeType);
 }
 
-/** Immutably adds `value` under `map[key]`, copying only the touched bucket and outer map. */
+/**
+Immutably adds `value` under `map[key]`, copying only the touched bucket and outer map.
+*/
 function addToSet<K>(
   map: ReadonlyMap<K, ReadonlySet<NodeId>>,
   key: K,
@@ -119,7 +122,9 @@ function addToSet<K>(
   return nextMap;
 }
 
-/** Immutably removes `value` from `map[key]`, dropping the bucket/key if it becomes empty. */
+/**
+Immutably removes `value` from `map[key]`, dropping the bucket/key if it becomes empty.
+*/
 function removeFromSet<K>(
   map: ReadonlyMap<K, ReadonlySet<NodeId>>,
   key: K,
@@ -139,7 +144,9 @@ function removeFromSet<K>(
   return nextMap;
 }
 
-/** Immutably adds `value` under `map[key1][key2]`, copying only the touched path. */
+/**
+Immutably adds `value` under `map[key1][key2]`, copying only the touched path.
+*/
 function addToNestedSet<K1, K2>(
   map: ReadonlyMap<K1, ReadonlyMap<K2, ReadonlySet<NodeId>>>,
   key1: K1,
@@ -155,8 +162,8 @@ function addToNestedSet<K1, K2>(
 }
 
 /**
- * Immutably removes `value` from `map[key1][key2]`, dropping empty buckets/keys at both levels.
- */
+Immutably removes `value` from `map[key1][key2]`, dropping empty buckets/keys at both levels.
+*/
 function removeFromNestedSet<K1, K2>(
   map: ReadonlyMap<K1, ReadonlyMap<K2, ReadonlySet<NodeId>>>,
   key1: K1,
@@ -177,10 +184,10 @@ function removeFromNestedSet<K1, K2>(
 }
 
 /**
- * Immutably increments `map[key1][key2][neighbour]`'s count by one, copying only the touched path.
- * Used for adjacency, where multiple parallel edges can each independently contribute the same
- * neighbour -- see the `GraphIndexes.adjacencyOut` doc comment.
- */
+Immutably increments `map[key1][key2][neighbour]`'s count by one, copying only the touched path.
+Used for adjacency, where multiple parallel edges can each independently contribute the same
+neighbour -- see the `GraphIndexes.adjacencyOut` doc comment.
+*/
 function incrementNestedCount<K1, K2>(
   map: ReadonlyMap<K1, ReadonlyMap<K2, ReadonlyMap<NodeId, number>>>,
   key1: K1,
@@ -202,11 +209,11 @@ function incrementNestedCount<K1, K2>(
 }
 
 /**
- * Immutably decrements `map[key1][key2][neighbour]`'s count by one, removing the neighbour and any
- * now-empty buckets/keys once the count reaches zero. Use this when exactly one contributing edge
- * is gone (`removeEdgeFromReadModelIndexes`); use `removeAllFromNestedCount` when every edge a
- * neighbour contributed is gone at once (node-deletion cascade).
- */
+Immutably decrements `map[key1][key2][neighbour]`'s count by one, removing the neighbour and any
+now-empty buckets/keys once the count reaches zero. Use this when exactly one contributing edge
+is gone (`removeEdgeFromReadModelIndexes`); use `removeAllFromNestedCount` when every edge a
+neighbour contributed is gone at once (node-deletion cascade).
+*/
 function decrementNestedCount<K1, K2>(
   map: ReadonlyMap<K1, ReadonlyMap<K2, ReadonlyMap<NodeId, number>>>,
   key1: K1,
@@ -239,10 +246,10 @@ function decrementNestedCount<K1, K2>(
 }
 
 /**
- * Immutably removes `map[key1][key2][neighbour]` entirely, regardless of its current count. Used
- * when cascading a node deletion: every edge that node contributed to a neighbour relationship is
- * gone at once, not just one of several, so the whole entry -- not one count -- must go.
- */
+Immutably removes `map[key1][key2][neighbour]` entirely, regardless of its current count. Used
+when cascading a node deletion: every edge that node contributed to a neighbour relationship is
+gone at once, not just one of several, so the whole entry -- not one count -- must go.
+*/
 function removeAllFromNestedCount<K1, K2>(
   map: ReadonlyMap<K1, ReadonlyMap<K2, ReadonlyMap<NodeId, number>>>,
   key1: K1,
@@ -271,8 +278,8 @@ function removeAllFromNestedCount<K1, K2>(
 }
 
 /**
- * Recursively freezes an object to ensure absolute immutability of cached values.
- */
+Recursively freezes an object to ensure absolute immutability of cached values.
+*/
 function deepFreeze<T>(object: T): T {
   if (object === null || typeof object !== 'object') {
     return object;
@@ -285,8 +292,8 @@ function deepFreeze<T>(object: T): T {
 }
 
 /**
- * Builds the graph indexes from scratch using a single scan of the graph nodes and edges.
- */
+Builds the graph indexes from scratch using a single scan of the graph nodes and edges.
+*/
 // eslint-disable-next-line max-lines-per-function
 export function buildGraphIndexes(graph: Graph): GraphIndexes {
   const settingsSchemas = new Map<string, Node>();
@@ -352,67 +359,43 @@ export function buildGraphIndexes(graph: Graph): GraphIndexes {
   }
 
   // 3. Group and resolve view override edges deterministically
-  const overridesBySource = new Map<NodeId, Edge[]>();
-
-  for (const edge of overrideEdges) {
-    const list = overridesBySource.get(edge.source) ?? [];
-
-    list.push(edge);
-
-    overridesBySource.set(edge.source, list);
-  }
+  const overridesBySource = Map.groupBy(overrideEdges, (edge) => edge.source);
 
   const viewOverrides = new Map<NodeId, Node>();
 
   for (const [source, list] of overridesBySource) {
     list.sort((a, b) => {
       if (a.metadata.created > b.metadata.created) return -1;
-      if (a.metadata.created < b.metadata.created) return 1;
-      return b.id.localeCompare(a.id);
+      return a.metadata.created < b.metadata.created ? 1 : b.id.localeCompare(a.id);
     });
 
     const matchingEdge = list.find((edge) => {
       const targetNode = graph.nodes.get(edge.target);
       return targetNode !== undefined && targetNode.type === SYSTEM_IDS.VIEW_DEFINITION;
     });
-    if (matchingEdge) {
-      const targetNode = graph.nodes.get(matchingEdge.target);
-      if (targetNode) {
-        viewOverrides.set(source, targetNode);
-      }
-    }
+    if (!matchingEdge) continue;
+    const targetNode = graph.nodes.get(matchingEdge.target);
+    if (targetNode) viewOverrides.set(source, targetNode);
   }
 
   // 4. Group and resolve default view edges deterministically
-  const defaultsBySource = new Map<TypeId, Edge[]>();
-
-  for (const edge of defaultEdges) {
-    const list = defaultsBySource.get(asTypeId(edge.source)) ?? [];
-
-    list.push(edge);
-
-    defaultsBySource.set(asTypeId(edge.source), list);
-  }
+  const defaultsBySource = Map.groupBy(defaultEdges, (edge) => asTypeId(edge.source));
 
   const defaultViews = new Map<TypeId, Node>();
 
   for (const [source, list] of defaultsBySource) {
     list.sort((a, b) => {
       if (a.metadata.created > b.metadata.created) return -1;
-      if (a.metadata.created < b.metadata.created) return 1;
-      return b.id.localeCompare(a.id);
+      return a.metadata.created < b.metadata.created ? 1 : b.id.localeCompare(a.id);
     });
 
     const matchingEdge = list.find((edge) => {
       const targetNode = graph.nodes.get(edge.target);
       return targetNode !== undefined && targetNode.type === SYSTEM_IDS.VIEW_DEFINITION;
     });
-    if (matchingEdge) {
-      const targetNode = graph.nodes.get(matchingEdge.target);
-      if (targetNode) {
-        defaultViews.set(source, targetNode);
-      }
-    }
+    if (!matchingEdge) continue;
+    const targetNode = graph.nodes.get(matchingEdge.target);
+    if (targetNode) defaultViews.set(source, targetNode);
   }
 
   return {
@@ -431,14 +414,14 @@ export function buildGraphIndexes(graph: Graph): GraphIndexes {
 const graphCache = new WeakMap<Graph, GraphIndexes>();
 
 /**
- * Gets the pre-computed indexes for a graph, lazily building and caching them if needed.
- *
- * Checks `graph._indexes` before falling back to a full rebuild: every graph produced by a merge
- * that started from an already-indexed graph carries incrementally-maintained indexes on this
- * field (see `incrementalUpdateIndexes`), even though it's a new object the `graphCache` WeakMap
- * has never seen. Skipping this check would silently discard that O(delta) maintenance and force
- * a full O(V+E) rebuild on the first read of every new graph snapshot.
- */
+Gets the pre-computed indexes for a graph, lazily building and caching them if needed.
+
+Checks `graph._indexes` before falling back to a full rebuild: every graph produced by a merge
+that started from an already-indexed graph carries incrementally-maintained indexes on this
+field (see `incrementalUpdateIndexes`), even though it's a new object the `graphCache` WeakMap
+has never seen. Skipping this check would silently discard that O(delta) maintenance and force
+a full O(V+E) rebuild on the first read of every new graph snapshot.
+*/
 export function getGraphIndexes(graph: Graph): GraphIndexes {
   const cached = graphCache.get(graph);
   if (cached) {
@@ -456,8 +439,8 @@ export function getGraphIndexes(graph: Graph): GraphIndexes {
 }
 
 /**
- * Checks if an event modifies settings schema, user settings, or view overrides.
- */
+Checks if an event modifies settings schema, user settings, or view overrides.
+*/
 function isConfigEvent(event: GraphEvent, graph: Graph): boolean {
   if (
     event.type === 'EdgeCreated' &&
@@ -494,7 +477,9 @@ function isConfigEvent(event: GraphEvent, graph: Graph): boolean {
   return false;
 }
 
-/** Adds a newly-created node's type and scalar properties to the read-model indexes. */
+/**
+Adds a newly-created node's type and scalar properties to the read-model indexes.
+*/
 function addNodeToReadModelIndexes(indexes: GraphIndexes, node: Node): GraphIndexes {
   const typeIndex = addToSet(indexes.typeIndex, node.type, node.id);
 
@@ -514,10 +499,10 @@ function addNodeToReadModelIndexes(indexes: GraphIndexes, node: Node): GraphInde
 }
 
 /**
- * Removes a deleted node's type and scalar properties from the read-model indexes, and cascades
- * to every adjacency entry (both directions) touching it -- driven by the read-model's own prior
- * adjacency state, not by re-deriving which edges were removed from the event.
- */
+Removes a deleted node's type and scalar properties from the read-model indexes, and cascades
+to every adjacency entry (both directions) touching it -- driven by the read-model's own prior
+adjacency state, not by re-deriving which edges were removed from the event.
+*/
 function removeNodeFromReadModelIndexes(indexes: GraphIndexes, node: Node): GraphIndexes {
   const typeIndex = removeFromSet(indexes.typeIndex, node.type, node.id);
 
@@ -569,7 +554,9 @@ function removeNodeFromReadModelIndexes(indexes: GraphIndexes, node: Node): Grap
   };
 }
 
-/** Adds a newly-created edge's adjacency entries (incrementing, not just setting) in both directions. */
+/**
+Adds a newly-created edge's adjacency entries (incrementing, not just setting) in both directions.
+*/
 function addEdgeToReadModelIndexes(indexes: GraphIndexes, edge: Edge): GraphIndexes {
   return {
     ...indexes,
@@ -579,9 +566,9 @@ function addEdgeToReadModelIndexes(indexes: GraphIndexes, edge: Edge): GraphInde
 }
 
 /**
- * Removes a deleted edge's adjacency entries (decrementing, not unconditionally clearing) in both
- * directions -- a parallel edge to the same neighbour, if any, keeps that neighbour present.
- */
+Removes a deleted edge's adjacency entries (decrementing, not unconditionally clearing) in both
+directions -- a parallel edge to the same neighbour, if any, keeps that neighbour present.
+*/
 function removeEdgeFromReadModelIndexes(indexes: GraphIndexes, edge: Edge): GraphIndexes {
   return {
     ...indexes,
@@ -591,11 +578,11 @@ function removeEdgeFromReadModelIndexes(indexes: GraphIndexes, edge: Edge): Grap
 }
 
 /**
- * Moves a node's changed scalar properties between property-equality buckets by diffing the
- * before/after graph state for each changed key -- correct regardless of per-property LWW
- * granularity, since a key whose write lost is unchanged between `previousNode`/`nextNode` and is
- * naturally skipped.
- */
+Moves a node's changed scalar properties between property-equality buckets by diffing the
+before/after graph state for each changed key -- correct regardless of per-property LWW
+granularity, since a key whose write lost is unchanged between `previousNode`/`nextNode` and is
+naturally skipped.
+*/
 function updateNodePropertiesInReadModelIndexes(
   indexes: GraphIndexes,
   changes: ReadonlyMap<string, PropertyValue>,
@@ -628,7 +615,9 @@ function updateNodePropertiesInReadModelIndexes(
   return { ...indexes, propertyEquality };
 }
 
-/** Dispatches O(delta) read-model index maintenance for one applied (non-no-op, non-config) event. */
+/**
+Dispatches O(delta) read-model index maintenance for one applied (non-no-op, non-config) event.
+*/
 function updateReadModelIndexesForEvent(
   indexes: GraphIndexes,
   event: GraphEvent,
@@ -672,12 +661,12 @@ function updateReadModelIndexesForEvent(
 }
 
 /**
- * Incrementally updates the read model and config (settings/view) indexes for one applied event.
- * Config-mutating events still trigger a full rebuild (unchanged, rare); everything else is O(delta)
- * against the read-model indexes (type/adjacency/property-equality), or an O(1) passthrough for a
- * no-op event (detected via `previousGraph === nextGraph` reference equality -- every no-op branch
- * in `applyEvent`/`applyOneEventInternal` returns the input graph unchanged).
- */
+Incrementally updates the read model and config (settings/view) indexes for one applied event.
+Config-mutating events still trigger a full rebuild (unchanged, rare); everything else is O(delta)
+against the read-model indexes (type/adjacency/property-equality), or an O(1) passthrough for a
+no-op event (detected via `previousGraph === nextGraph` reference equality -- every no-op branch
+in `applyEvent`/`applyOneEventInternal` returns the input graph unchanged).
+*/
 export function incrementalUpdateIndexes(
   previousIndexes: GraphIndexes,
   event: GraphEvent,
@@ -687,10 +676,9 @@ export function incrementalUpdateIndexes(
   if (isConfigEvent(event, nextGraph)) {
     return buildGraphIndexes(nextGraph);
   }
-  if (previousGraph === nextGraph) {
-    return previousIndexes;
-  }
-  return updateReadModelIndexesForEvent(previousIndexes, event, previousGraph, nextGraph);
+  return previousGraph === nextGraph
+    ? previousIndexes
+    : updateReadModelIndexesForEvent(previousIndexes, event, previousGraph, nextGraph);
 }
 
 function collectNeighbours(
@@ -713,11 +701,11 @@ function collectNeighbours(
 }
 
 /**
- * Creates a `ReadModelPort` backed by this graph's `GraphIndexes` (lazily built and cached via
- * `getGraphIndexes`, which reuses `graph._indexes` when a prior merge already maintained it
- * incrementally). `tryExecutePipeline` is intentionally omitted: no push-down implementation
- * exists yet.
- */
+Creates a `ReadModelPort` backed by this graph's `GraphIndexes` (lazily built and cached via
+`getGraphIndexes`, which reuses `graph._indexes` when a prior merge already maintained it
+incrementally). `tryExecutePipeline` is intentionally omitted: no push-down implementation
+exists yet.
+*/
 export function createIndexedReadModel(graph: Graph): ReadModelPort {
   return {
     typedNodeIds: (type) => getGraphIndexes(graph).typeIndex.get(type) ?? new Set(),
@@ -746,10 +734,10 @@ export function createIndexedReadModel(graph: Graph): ReadModelPort {
 }
 
 /**
- * Canonicalizes the read-model portion of `GraphIndexes` into a JSON string with sorted keys, so
- * two independently-constructed index sets (e.g. incrementally-maintained vs from-scratch) can be
- * compared for equal content regardless of Map/Set insertion order.
- */
+Canonicalizes the read-model portion of `GraphIndexes` into a JSON string with sorted keys, so
+two independently-constructed index sets (e.g. incrementally-maintained vs from-scratch) can be
+compared for equal content regardless of Map/Set insertion order.
+*/
 function canonicalizeReadModelIndexes(indexes: GraphIndexes): string {
   const canonicalizeValue = (value: unknown): unknown => {
     if (value instanceof Map) {
@@ -757,10 +745,9 @@ function canonicalizeReadModelIndexes(indexes: GraphIndexes): string {
         .toSorted(([a], [b]) => String(a).localeCompare(String(b)))
         .map(([key, nested]) => [key, canonicalizeValue(nested)]);
     }
-    if (value instanceof Set) {
-      return [...value].map(String).toSorted((a, b) => a.localeCompare(b));
-    }
-    return value;
+    return value instanceof Set
+      ? [...value].map(String).toSorted((a, b) => a.localeCompare(b))
+      : value;
   };
   return JSON.stringify(
     canonicalizeValue(
@@ -775,10 +762,10 @@ function canonicalizeReadModelIndexes(indexes: GraphIndexes): string {
 }
 
 /**
- * Dev-mode assertion: rebuilds the read-model indexes for `graph` from scratch and compares them
- * against `graph._indexes` (presumed incrementally-maintained), returning an error describing the
- * divergence if they disagree. Intended for use in tests and debug assertions, not the hot path.
- */
+Dev-mode assertion: rebuilds the read-model indexes for `graph` from scratch and compares them
+against `graph._indexes` (presumed incrementally-maintained), returning an error describing the
+divergence if they disagree. Intended for use in tests and debug assertions, not the hot path.
+*/
 export function verifyIndexes(graph: Graph): Result<void, Error> {
   const current = graph._indexes;
   if (!current) {
@@ -787,12 +774,11 @@ export function verifyIndexes(graph: Graph): Result<void, Error> {
     );
   }
   const rebuilt = buildGraphIndexes(graph);
-  if (canonicalizeReadModelIndexes(current) !== canonicalizeReadModelIndexes(rebuilt)) {
-    return error(
-      new Error(
-        'verifyIndexes: incrementally-maintained read-model indexes diverged from a from-scratch rebuild',
-      ),
-    );
-  }
-  return ok(undefined);
+  return canonicalizeReadModelIndexes(current) === canonicalizeReadModelIndexes(rebuilt)
+    ? ok(undefined)
+    : error(
+        new Error(
+          'verifyIndexes: incrementally-maintained read-model indexes diverged from a from-scratch rebuild',
+        ),
+      );
 }

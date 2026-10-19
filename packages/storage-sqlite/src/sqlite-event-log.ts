@@ -183,18 +183,13 @@ const executeGetEvents = (
 
   const eventResults = firstResult.values.map(([payload]) => {
     const jsonResult = fromThrowable(() => JSON.parse(payload as string) as unknown);
-    if (!jsonResult.ok) {
-      return jsonResult;
-    }
-    return deserializeEvent(jsonResult.value);
+    return jsonResult.ok ? deserializeEvent(jsonResult.value) : jsonResult;
   });
 
   const firstError = eventResults.find((r) => !r.ok);
-  if (firstError && !firstError.ok) {
-    return firstError;
-  }
-
-  return ok(eventResults.map((r) => (r as { ok: true; value: GraphEvent }).value));
+  return firstError && !firstError.ok
+    ? firstError
+    : ok(eventResults.map((r) => (r as { ok: true; value: GraphEvent }).value));
 };
 
 export const createSQLiteEventLog = (persistence?: SQLitePersistence): SQLiteEventLog => {
@@ -241,16 +236,18 @@ export const createSQLiteEventLog = (persistence?: SQLitePersistence): SQLiteEve
       graphId: string,
       events: readonly GraphEvent[],
     ): Promise<Result<void, Error>> => {
-      if (!database) return err(new Error('Database not initialized'));
-      return executeAppendEvents(database, persist, graphId, events);
+      return database
+        ? executeAppendEvents(database, persist, graphId, events)
+        : err(new Error('Database not initialized'));
     },
 
     getEvents: async (
       graphId: string,
       options: EventLogQueryOptions = {},
     ): Promise<Result<readonly GraphEvent[], Error>> => {
-      if (!database) return err(new Error('Database not initialized'));
-      return executeGetEvents(database, graphId, options);
+      return database
+        ? executeGetEvents(database, graphId, options)
+        : err(new Error('Database not initialized'));
     },
   };
 };

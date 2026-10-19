@@ -169,8 +169,7 @@ const diffEntries = (
     ([id, draftValue]): readonly Readonly<{ id: string; kind: DraftChangeKind }>[] => {
       const parentValue = parentEntries.get(id);
       if (parentValue === undefined) return [{ id, kind: 'created' }];
-      if (parentValue !== draftValue) return [{ id, kind: 'updated' }];
-      return [];
+      return parentValue === draftValue ? [] : [{ id, kind: 'updated' }];
     },
   );
   const deleted: readonly Readonly<{ id: string; kind: DraftChangeKind }>[] = [

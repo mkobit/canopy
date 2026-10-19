@@ -6,7 +6,9 @@ export interface BlockEditorProperties {
   readonly value: string;
   readonly onCommit: (value: string) => void;
   readonly className?: string;
-  /** Idle debounce before an edit auto-commits. Overridable for tests; defaults to ~1s. */
+  /**
+  Idle debounce before an edit auto-commits. Overridable for tests; defaults to ~1s.
+  */
   readonly idleMs?: number;
 }
 
@@ -47,11 +49,11 @@ const EditorToolbar: React.FC<Readonly<{ onExec: (command: string, value?: strin
 );
 
 /**
- * Event-sourced block editor: edits a plain-string property via local (uncontrolled,
- * DOM-owned) state and commits on idle/blur/unmount. No CRDT -- undo is browser-native
- * contentEditable undo, and the losing side of a concurrent whole-property LWW write
- * stays recoverable in the event log (see openspec block-editing spec).
- */
+Event-sourced block editor: edits a plain-string property via local (uncontrolled,
+DOM-owned) state and commits on idle/blur/unmount. No CRDT -- undo is browser-native
+contentEditable undo, and the losing side of a concurrent whole-property LWW write
+stays recoverable in the event log (see openspec block-editing spec).
+*/
 export const BlockEditor: React.FC<BlockEditorProperties> = ({
   value,
   onCommit,
@@ -75,10 +77,12 @@ export const BlockEditor: React.FC<BlockEditorProperties> = ({
       clearTimeout(timerReference.current);
       timerReference.current = undefined;
     }
-    if (contentReference.current !== lastCommittedReference.current) {
-      lastCommittedReference.current = contentReference.current;
-      onCommitReference.current(contentReference.current);
+    if (contentReference.current === lastCommittedReference.current) {
+      return;
     }
+
+    lastCommittedReference.current = contentReference.current;
+    onCommitReference.current(contentReference.current);
   }, []);
 
   React.useEffect(() => {

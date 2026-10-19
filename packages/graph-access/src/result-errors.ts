@@ -46,17 +46,14 @@ export const inferCategoryFromError = (error: Error): GraphAccessErrorCategory =
     return 'UNAUTHORIZED';
   }
   if (message.includes('forbidden') || message.includes('permission denied')) return 'FORBIDDEN';
-  if (
-    message.includes('limit') ||
+  return message.includes('limit') ||
     message.includes('quota') ||
     message.includes('exhausted') ||
     message.includes('fuel') ||
     message.includes('depth') ||
     message.includes('cost')
-  ) {
-    return 'RESOURCE_EXHAUSTED';
-  }
-  return 'INTERNAL_ERROR';
+    ? 'RESOURCE_EXHAUSTED'
+    : 'INTERNAL_ERROR';
 };
 
 const isGraphAccessError = (error: unknown): error is GraphAccessError =>
@@ -88,6 +85,9 @@ export const mapKernelResultToGraphAccessResult = <T>(
   categoryOverride?: GraphAccessErrorCategory,
 ): Result<T, GraphAccessError> => {
   if (isOk(result)) return ok(result.value);
-  if (isErr(result)) return err(toGraphAccessError(result.error, categoryOverride));
-  return err(createGraphAccessError('INTERNAL_ERROR', 'Unknown result state'));
+  return err(
+    isErr(result)
+      ? toGraphAccessError(result.error, categoryOverride)
+      : createGraphAccessError('INTERNAL_ERROR', 'Unknown result state'),
+  );
 };

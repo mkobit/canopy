@@ -12,8 +12,7 @@ export const ViewPage = () => {
   const navigate = useNavigate();
 
   const viewResult = useMemo(() => {
-    if (!graph || !viewId) return undefined;
-    return executeView(graph, asNodeId(viewId));
+    return !graph || !viewId ? undefined : executeView(graph, asNodeId(viewId));
   }, [graph, viewId]);
 
   if (!graph || !viewId) {

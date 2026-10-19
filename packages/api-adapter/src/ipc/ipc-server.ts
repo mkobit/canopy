@@ -30,11 +30,7 @@ export interface IpcServer {
 const MAX_LINE_BYTES = 10 * 1024 * 1024; // 10MB limit
 
 // Sends NDJSON line over a socket with 15-second slow-consumer backpressure drain timeout.
-const sendToSocket = (
-  socket: Readonly<net.Socket>,
-  payload: string,
-  onDrainTimeout?: (() => unknown) | undefined,
-): boolean => {
+const sendToSocket = (socket: Readonly<net.Socket>, payload: string): boolean => {
   if (socket.destroyed || !socket.writable) return false;
 
   const canWrite = socket.write(`${payload}\n`);
@@ -47,7 +43,6 @@ const sendToSocket = (
 
     const drainTimer = setTimeout(() => {
       socket.removeListener('drain', onDrain);
-      onDrainTimeout?.();
       socket.destroy();
       return undefined;
     }, 15_000);

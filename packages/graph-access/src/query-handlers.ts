@@ -47,10 +47,9 @@ const resolveNextNodeId = (
   if ((direction === 'out' || direction === 'both') && edge.source === currentId) {
     return edge.target;
   }
-  if ((direction === 'in' || direction === 'both') && edge.target === currentId) {
-    return edge.source;
-  }
-  return undefined;
+  return (direction === 'in' || direction === 'both') && edge.target === currentId
+    ? edge.source
+    : undefined;
 };
 
 // Executes a node query against the graph context.
@@ -303,11 +302,9 @@ const stepEdgesRecursively = (
   }
 
   const stepResult = stepSingleEdge(current, edge, context, accumulator);
-  if (!stepResult.ok) {
-    return stepResult;
-  }
-
-  return stepEdgesRecursively(current, restEdges, context, stepResult.value);
+  return stepResult.ok
+    ? stepEdgesRecursively(current, restEdges, context, stepResult.value)
+    : stepResult;
 };
 
 // Executes a graph traversal query with BFS cycle safety and depth/cost constraints.
@@ -334,10 +331,9 @@ export const executeGraphTraversal = (
   const initialValidNodes = startNodeIds.flatMap((id) => {
     const node = graph.nodes.get(id);
     if (!node) return [];
-    if (authContext?.tenantId && node.properties.get('tenantId') !== authContext.tenantId) {
-      return [];
-    }
-    return [{ id, node }];
+    return authContext?.tenantId && node.properties.get('tenantId') !== authContext.tenantId
+      ? []
+      : { id, node };
   });
 
   const initialState: TraversalState = {
@@ -414,10 +410,7 @@ export const executeQuery = {
     const result = executeNodeQuery(createGraphAccessRequest('gql-get-node', context, { id }));
     if (!result.ok) return result;
     const node = result.value[0];
-    if (!node) {
-      return err(createGraphAccessError('NOT_FOUND', `Node not found: ${id}`));
-    }
-    return ok(node);
+    return node ? ok(node) : err(createGraphAccessError('NOT_FOUND', `Node not found: ${id}`));
   },
   getNodes: (
     context: GraphAccessContext,

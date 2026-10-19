@@ -11,9 +11,9 @@ import { fromAsyncThrowable } from './result';
 export type TimeTravelTarget = Readonly<{ timestamp: Instant }> | Readonly<{ eventId: EventId }>;
 
 /**
- * Returns the maximum possible UUIDv7 (lexicographically) for a given timestamp (ms precision).
- * Used to query events "up to and including" a timestamp.
- */
+Returns the maximum possible UUIDv7 (lexicographically) for a given timestamp (ms precision).
+Used to query events "up to and including" a timestamp.
+*/
 export function maxEventIdForTimestamp(timestamp: Instant): EventId {
   const epochMs = Temporal.Instant.from(timestamp).epochMilliseconds;
   const hex = epochMs.toString(16).padStart(12, '0');
@@ -31,9 +31,9 @@ export function maxEventIdForTimestamp(timestamp: Instant): EventId {
 }
 
 /**
- * Increments a UUIDv7 string lexicographically by 1.
- * Used to transform an inclusive upper bound to an exclusive one.
- */
+Increments a UUIDv7 string lexicographically by 1.
+Used to transform an inclusive upper bound to an exclusive one.
+*/
 export function incrementEventId(eventId: EventId): EventId {
   const chars = eventId.toLowerCase().split('');
   const incrementIndex = chars.findLastIndex((char) => char !== '-' && char !== 'f');
@@ -46,23 +46,20 @@ export function incrementEventId(eventId: EventId): EventId {
   const incrementedChars = chars.map((char, index) => {
     if (char === '-') return '-';
     if (index < incrementIndex) return char;
-    if (index === incrementIndex) {
-      return (Number.parseInt(char, 16) + 1).toString(16);
-    }
-    return '0';
+    return index === incrementIndex ? (Number.parseInt(char, 16) + 1).toString(16) : '0';
   });
 
   return incrementedChars.join('') as EventId;
 }
 
 /**
- * Reconstructs the graph state at a specific point in time (timestamp or eventId).
- *
- * @param store The EventLogStore containing the history.
- * @param graphId The ID of the graph to reconstruct.
- * @param target The target point in time (timestamp or eventId).
- * @returns The reconstructed Graph.
- */
+Reconstructs the graph state at a specific point in time (timestamp or eventId).
+
+@param store The EventLogStore containing the history.
+@param graphId The ID of the graph to reconstruct.
+@param target The target point in time (timestamp or eventId).
+@returns The reconstructed Graph.
+*/
 export async function getGraphAt(
   store: EventLogStore,
   graphId: string,

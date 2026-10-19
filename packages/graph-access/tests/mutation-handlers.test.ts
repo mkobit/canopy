@@ -41,10 +41,12 @@ describe('Mutation execution handlers', () => {
 
     const result = await executeCreateNode(request);
     expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.error.category).toBe('VALIDATION_ERROR');
-      expect(result.error.message).toContain('GraphSession is required');
+    if (result.ok) {
+      return;
     }
+
+    expect(result.error.category).toBe('VALIDATION_ERROR');
+    expect(result.error.message).toContain('GraphSession is required');
   });
 
   test('executeCreateNode successfully creates a node', async () => {
@@ -234,11 +236,13 @@ describe('Mutation execution handlers', () => {
 
     const resultEdge = await executeCreateEdge(requestEdge);
     expect(resultEdge.ok).toBe(true);
-    if (resultEdge.ok) {
-      expect(resultEdge.value.id).toBe(asEdgeId('e1'));
-      expect(resultEdge.value.source).toBe(asNodeId('src'));
-      expect(resultEdge.value.target).toBe(asNodeId('tgt'));
+    if (!resultEdge.ok) {
+      return;
     }
+
+    expect(resultEdge.value.id).toBe(asEdgeId('e1'));
+    expect(resultEdge.value.source).toBe(asNodeId('src'));
+    expect(resultEdge.value.target).toBe(asNodeId('tgt'));
   });
 
   test('executeCreateEdge fails if source node does not exist', async () => {

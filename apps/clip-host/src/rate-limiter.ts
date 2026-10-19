@@ -1,5 +1,7 @@
 export type RateLimiter = Readonly<{
-  /** Records one request attempt at `now` and reports whether it is within the configured rate. */
+  /**
+  Records one request attempt at `now` and reports whether it is within the configured rate.
+  */
   tryAcquire: (now?: number) => boolean;
 }>;
 
@@ -9,11 +11,11 @@ export type RateLimiterOptions = Readonly<{
 }>;
 
 /**
- * A simple sliding-window rate limiter: at most `maxRequests` calls to
- * `tryAcquire` return `true` within any `windowMs` interval. Excess calls
- * return `false` so the caller can reject/throttle rather than forward
- * unbounded requests to the daemon.
- */
+A simple sliding-window rate limiter: at most `maxRequests` calls to
+`tryAcquire` return `true` within any `windowMs` interval. Excess calls
+return `false` so the caller can reject/throttle rather than forward
+unbounded requests to the daemon.
+*/
 export const createRateLimiter = (options: RateLimiterOptions): RateLimiter => {
   // eslint-disable-next-line functional/prefer-immutable-types -- local accumulator
   const timestamps: number[] = [];

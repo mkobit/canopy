@@ -2,9 +2,9 @@ import type { TypeId, Namespace } from './identifiers';
 import type { PropertyDefinition } from './properties';
 
 /**
- * Defines a node type in the meta-circular type system.
- * NodeTypeDefinition instances are stored as nodes themselves.
- */
+Defines a node type in the meta-circular type system.
+NodeTypeDefinition instances are stored as nodes themselves.
+*/
 export interface NodeTypeDefinition {
   readonly id: TypeId;
   readonly name: string;
@@ -16,9 +16,9 @@ export interface NodeTypeDefinition {
 }
 
 /**
- * Defines an edge type in the meta-circular type system.
- * EdgeTypeDefinition instances are stored as nodes themselves.
- */
+Defines an edge type in the meta-circular type system.
+EdgeTypeDefinition instances are stored as nodes themselves.
+*/
 export interface EdgeTypeDefinition {
   readonly id: TypeId;
   readonly name: string;

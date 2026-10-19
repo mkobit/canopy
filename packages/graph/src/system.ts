@@ -89,8 +89,8 @@ export const SYSTEM_EDGE_TYPES = {
 export type SystemRendererEntryPoint = 'system:text' | 'system:code' | 'system:markdown';
 
 /**
- * Checks if a NodeId belongs to a system-defined node.
- */
+Checks if a NodeId belongs to a system-defined node.
+*/
 export function isSystemNodeId(nodeId: NodeId | string): boolean {
   const prefixes = [
     'system:',

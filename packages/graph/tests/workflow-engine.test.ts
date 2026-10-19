@@ -195,19 +195,18 @@ describe('WorkflowEngine', () => {
     });
 
     expect(result.ok).toBe(true);
-    if (result.ok) {
-      const newGraph = result.value.graph;
-      expect(newGraph.edges.size).toBe(1);
+    if (!result.ok) return;
+    const newGraph = result.value.graph;
+    expect(newGraph.edges.size).toBe(1);
 
-      const [newEdge] = [...newGraph.edges.values()];
-      if (newEdge === undefined) {
-        throw new Error('Expected new edge to be created');
-      }
-      expect(newEdge.type).toBe(typeId);
-      expect(newEdge.source).toBe(sourceId);
-      expect(newEdge.target).toBe(targetId);
-      expect(newEdge.properties.get('weight')).toBe(10);
+    const [newEdge] = [...newGraph.edges.values()];
+    if (newEdge === undefined) {
+      throw new Error('Expected new edge to be created');
     }
+    expect(newEdge.type).toBe(typeId);
+    expect(newEdge.source).toBe(sourceId);
+    expect(newEdge.target).toBe(targetId);
+    expect(newEdge.properties.get('weight')).toBe(10);
   });
 
   it('should support executeWorkflowAction as a standalone function', () => {
@@ -299,12 +298,11 @@ describe('WorkflowEngine', () => {
     });
 
     expect(result.ok).toBe(true);
-    if (result.ok) {
-      const newGraph = result.value.graph;
-      const updatedNode = newGraph.nodes.get(nodeId);
-      expect(updatedNode).toBeDefined();
-      expect(updatedNode?.properties.get('status')).toBe('published');
-    }
+    if (!result.ok) return;
+    const newGraph = result.value.graph;
+    const updatedNode = newGraph.nodes.get(nodeId);
+    expect(updatedNode).toBeDefined();
+    expect(updatedNode?.properties.get('status')).toBe('published');
   });
 
   it('should return error for set-property action missing required params', () => {

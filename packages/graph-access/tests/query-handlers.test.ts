@@ -108,10 +108,12 @@ describe('Query execution handlers', () => {
 
     const result = executeNodeQuery(request);
     expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.value).toHaveLength(1);
-      expect(result.value[0]?.id).toBe(asNodeId('n1'));
+    if (!result.ok) {
+      return;
     }
+
+    expect(result.value).toHaveLength(1);
+    expect(result.value[0]?.id).toBe(asNodeId('n1'));
   });
 
   test('executeNodeQuery reads the current graph from GraphSession after a commit', async () => {
@@ -181,10 +183,12 @@ describe('Query execution handlers', () => {
 
     const result = executeEdgeQuery(request);
     expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.value).toHaveLength(1);
-      expect(result.value[0]?.id).toBe(asEdgeId('e1'));
+    if (!result.ok) {
+      return;
     }
+
+    expect(result.value).toHaveLength(1);
+    expect(result.value[0]?.id).toBe(asEdgeId('e1'));
   });
 
   test('executePropertyLookup returns entity properties', () => {
@@ -234,10 +238,12 @@ describe('Query execution handlers', () => {
 
     const result = executeGraphTraversal(request);
     expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.value.nodes).toHaveLength(2);
-      expect(result.value.edges).toHaveLength(2);
+    if (!result.ok) {
+      return;
     }
+
+    expect(result.value.nodes).toHaveLength(2);
+    expect(result.value.edges).toHaveLength(2);
   });
 
   test('executeGraphTraversal fails with VALIDATION_ERROR on empty startNodeIds', () => {
@@ -280,10 +286,12 @@ describe('Query execution handlers', () => {
 
     const result = executeNodeQuery(request);
     expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.value).toHaveLength(2);
-      expect(result.value.every((n) => n.properties.tenantId === 't1')).toBe(true);
+    if (!result.ok) {
+      return;
     }
+
+    expect(result.value).toHaveLength(2);
+    expect(result.value.every((n) => n.properties.tenantId === 't1')).toBe(true);
   });
 
   test('executeEdgeQuery direct lookup enforces tenant isolation', () => {

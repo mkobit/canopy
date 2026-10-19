@@ -32,16 +32,16 @@ const toWireProperties = (
 type WireGraphEvent = DraftApplyParamsInput['events'][number];
 
 /**
- * Converts a kernel-op-produced GraphEvent (Map-typed `properties`/`changes`,
- * matching the in-process Graph/Node representation) into the plain-object
- * shape a draft.apply client must send over JSON-RPC -- native JSON.stringify
- * drops Map contents silently. Mirrors the wire shape documented by
- * packages/api-adapter/tests/draft-flow.test.ts's `nodeCreatedEvent` helper.
- * Exhaustive over GraphEvent even though createNamespace/createNodeType only
- * ever emit NodeCreated/EdgeCreated (see generateDefaultView in
- * packages/graph/src/ops/type-authoring.ts) -- keeps this reusable without
- * relying on that as a hidden assumption.
- */
+Converts a kernel-op-produced GraphEvent (Map-typed `properties`/`changes`,
+matching the in-process Graph/Node representation) into the plain-object
+shape a draft.apply client must send over JSON-RPC -- native JSON.stringify
+drops Map contents silently. Mirrors the wire shape documented by
+packages/api-adapter/tests/draft-flow.test.ts's `nodeCreatedEvent` helper.
+Exhaustive over GraphEvent even though createNamespace/createNodeType only
+ever emit NodeCreated/EdgeCreated (see generateDefaultView in
+packages/graph/src/ops/type-authoring.ts) -- keeps this reusable without
+relying on that as a hidden assumption.
+*/
 export const toWireEvent = (event: GraphEvent): Readonly<WireGraphEvent> => {
   switch (event.type) {
     case 'NodeCreated':
@@ -85,13 +85,13 @@ const WEBCLIP_PROPERTIES = [
 type SynthesizedTypeAuthoring = Readonly<{ events: readonly GraphEvent[]; typeId: TypeId }>;
 
 /**
- * Runs the existing createNamespace/createNodeType kernel ops against a
- * throwaway, freshly bootstrapped local Graph purely to derive well-formed
- * events -- the host has no local copy of the real remote graph, but the
- * caller has already confirmed (via a query.getNodes read) that `clip`/
- * `WebClip` don't exist there yet, so validating against a fresh graph (which
- * also lacks them) produces the same result the real graph would.
- */
+Runs the existing createNamespace/createNodeType kernel ops against a
+throwaway, freshly bootstrapped local Graph purely to derive well-formed
+events -- the host has no local copy of the real remote graph, but the
+caller has already confirmed (via a query.getNodes read) that `clip`/
+`WebClip` don't exist there yet, so validating against a fresh graph (which
+also lacks them) produces the same result the real graph would.
+*/
 const synthesizeTypeAuthoringEvents = (): Result<
   SynthesizedTypeAuthoring,
   EnsureWebClipTypeError
@@ -133,21 +133,21 @@ const synthesizeTypeAuthoringEvents = (): Result<
 export type EnsureWebClipTypeResult = Readonly<{ typeId: TypeId; created: boolean }>;
 
 /**
- * Idempotently ensures the `clip` namespace and `WebClip` NodeType exist,
- * authoring them (namespace + type + default-view artifacts) through a
- * self-contained draft.create/apply/commit cycle when absent. This is
- * infrastructure setup, not a user-visible clip, so it commits without a
- * preview/confirm step -- the same way kernel bootstrap runs unconfirmed.
- *
- * Known limitation: two concurrent first-ever ensure calls can both observe
- * "absent" and both attempt to author the type; the second commit either
- * fails on concurrent-modification (surfaced to the caller) or, since
- * name-uniqueness is enforced by the createNamespace/createNodeType ops
- * layer rather than by event projection, could in principle create a second
- * same-named clip/WebClip pair. Not solved here -- low severity (confined to
- * the clip namespace's own metadata) and not exercised by the sequential
- * idempotency scenario this ships against.
- */
+Idempotently ensures the `clip` namespace and `WebClip` NodeType exist,
+authoring them (namespace + type + default-view artifacts) through a
+self-contained draft.create/apply/commit cycle when absent. This is
+infrastructure setup, not a user-visible clip, so it commits without a
+preview/confirm step -- the same way kernel bootstrap runs unconfirmed.
+
+Known limitation: two concurrent first-ever ensure calls can both observe
+"absent" and both attempt to author the type; the second commit either
+fails on concurrent-modification (surfaced to the caller) or, since
+name-uniqueness is enforced by the createNamespace/createNodeType ops
+layer rather than by event projection, could in principle create a second
+same-named clip/WebClip pair. Not solved here -- low severity (confined to
+the clip namespace's own metadata) and not exercised by the sequential
+idempotency scenario this ships against.
+*/
 export const ensureWebClipType = (
   client: IpcClient,
 ): Effect.Effect<EnsureWebClipTypeResult, EnsureWebClipTypeError> =>

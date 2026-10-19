@@ -77,12 +77,12 @@ describe('GraphQL adapter end-to-end integration', () => {
     });
 
     expect(isAsyncIterable(subResult)).toBe(true);
-    if (isAsyncIterable(subResult)) {
-      const iterator = subResult[Symbol.asyncIterator]();
-      const nextPromise = iterator.next();
+    if (!isAsyncIterable(subResult)) return;
+    const iterator = subResult[Symbol.asyncIterator]();
+    const nextPromise = iterator.next();
 
-      await adapter.execute({
-        source: `
+    await adapter.execute({
+      source: `
           mutation {
             createNode(input: { type: "system:nodetype:text-block", properties: { text: "Subscribed Note", content: [] } }) {
               id
@@ -90,15 +90,14 @@ describe('GraphQL adapter end-to-end integration', () => {
             }
           }
         `,
-      });
+    });
 
-      const item = await nextPromise;
-      expect(item.done).toBe(false);
-      expect(item.value.data).toBeDefined();
+    const item = await nextPromise;
+    expect(item.done).toBe(false);
+    expect(item.value.data).toBeDefined();
 
-      if (iterator.return) {
-        await iterator.return();
-      }
+    if (iterator.return) {
+      await iterator.return();
     }
   });
 });

@@ -154,8 +154,7 @@ export function extractMermaidBlock(markdown: string): readonly string[] | undef
   if (fenceOpenIndex === -1) return undefined;
   const afterFenceOpen = afterHeading.slice(fenceOpenIndex + MERMAID_FENCE_OPEN.length);
   const fenceCloseIndex = afterFenceOpen.indexOf(MERMAID_FENCE_CLOSE);
-  if (fenceCloseIndex === -1) return undefined;
-  return afterFenceOpen.slice(0, fenceCloseIndex).split('\n');
+  return fenceCloseIndex === -1 ? undefined : afterFenceOpen.slice(0, fenceCloseIndex).split('\n');
 }
 
 interface MermaidNode {

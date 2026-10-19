@@ -17,10 +17,10 @@ export type NodeOperationOptions = Readonly<{
 }>;
 
 /**
- * Adds a node to the graph.
- * Returns a new graph with the node added.
- * Returns Error if a node with the same ID already exists.
- */
+Adds a node to the graph.
+Returns a new graph with the node added.
+Returns Error if a node with the same ID already exists.
+*/
 export function addNode(
   graph: Graph,
   node: Node,
@@ -72,10 +72,10 @@ export function addNode(
 }
 
 /**
- * Removes a node from the graph.
- * Also removes any edges connected to the node.
- * Returns a new graph.
- */
+Removes a node from the graph.
+Also removes any edges connected to the node.
+Returns a new graph.
+*/
 export function removeNode(
   graph: Graph,
   nodeId: NodeId,
@@ -143,10 +143,10 @@ export function removeNode(
 }
 
 /**
- * Updates a node in the graph using a functional updater.
- * Returns a new graph.
- * Returns Error if the node does not exist.
- */
+Updates a node in the graph using a functional updater.
+Returns a new graph.
+Returns Error if the node does not exist.
+*/
 export function updateNode(
   graph: Graph,
   nodeId: NodeId,
@@ -186,10 +186,7 @@ export function updateNode(
 
   const newNodes = new Map(
     [...graph.nodes].map(([id, node]) => {
-      if (id === nodeId) {
-        return [id, finalNode];
-      }
-      return [id, node];
+      return [id, id === nodeId ? finalNode : node];
     }),
   );
 

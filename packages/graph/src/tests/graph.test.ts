@@ -297,11 +297,13 @@ describe('Core Graph Engine', () => {
     if (!event) throw new Error('Event missing');
 
     expect(event.type).toBe('EdgePropertiesUpdated');
-    if (event.type === 'EdgePropertiesUpdated') {
-      expect(event.eventId).toEqual(expect.any(String));
-      expect(event.id).toBe(edgeId);
-      expect(event.changes.get('since')).toEqual(2023);
+    if (event.type !== 'EdgePropertiesUpdated') {
+      return;
     }
+
+    expect(event.eventId).toEqual(expect.any(String));
+    expect(event.id).toBe(edgeId);
+    expect(event.changes.get('since')).toEqual(2023);
   });
 
   it('should remove edges and emit events', () => {

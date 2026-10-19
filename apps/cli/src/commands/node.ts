@@ -10,10 +10,9 @@ const parseProperties = (raw?: string): Effect.Effect<Record<string, unknown>, E
   return Effect.try({
     try: () => {
       const parsed = JSON.parse(raw) as unknown;
-      if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-        return Record_Type_Error;
-      }
-      return parsed as Record<string, unknown>;
+      return typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)
+        ? Record_Type_Error
+        : (parsed as Record<string, unknown>);
     },
     catch: (error) => new Error(`Invalid properties JSON: ${String(error)}`),
   }).pipe(

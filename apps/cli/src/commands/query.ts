@@ -10,10 +10,7 @@ const parseSteps = (raw?: string): Effect.Effect<readonly unknown[] | undefined,
   return Effect.try({
     try: () => {
       const parsed = JSON.parse(raw) as unknown;
-      if (!Array.isArray(parsed)) {
-        return Array_Type_Error;
-      }
-      return parsed as readonly unknown[];
+      return Array.isArray(parsed) ? (parsed as readonly unknown[]) : Array_Type_Error;
     },
     catch: (error) => new Error(`Invalid steps JSON: ${String(error)}`),
   }).pipe(

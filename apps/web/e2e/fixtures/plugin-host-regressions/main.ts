@@ -159,18 +159,19 @@ const run = async (): Promise<void> => {
     lateMessageRejected: lateMessageEventCount === authorizedEventCount,
   };
   const root = document.querySelector('#root');
-  if (root instanceof HTMLElement) {
-    root.innerHTML = '<pre data-testid="regressions-report"></pre>';
-    const output = root.querySelector('[data-testid="regressions-report"]');
-    if (output !== null) output.textContent = JSON.stringify(report);
-    root.dataset.testid = 'regressions-complete';
-  }
+  if (!(root instanceof HTMLElement)) return;
+  root.innerHTML = '<pre data-testid="regressions-report"></pre>';
+  const output = root.querySelector('[data-testid="regressions-report"]');
+  if (output !== null) output.textContent = JSON.stringify(report);
+  root.dataset.testid = 'regressions-complete';
 };
 
 void run().catch((error: unknown) => {
   const root = document.querySelector('#root');
-  if (root instanceof HTMLElement) {
-    root.dataset.testid = 'regressions-failed';
-    root.textContent = error instanceof Error ? error.message : String(error);
+  if (!(root instanceof HTMLElement)) {
+    return;
   }
+
+  root.dataset.testid = 'regressions-failed';
+  root.textContent = error instanceof Error ? error.message : String(error);
 });

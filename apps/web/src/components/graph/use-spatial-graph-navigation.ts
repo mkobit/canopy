@@ -49,11 +49,7 @@ export function useSpatialGraphNavigation({
       }
 
       const vector = DIRECTION_VECTORS[event_.key];
-      if (!vector) {
-        return;
-      }
-
-      if (nodes.length === 0) {
+      if (!vector || nodes.length === 0) {
         return;
       }
 

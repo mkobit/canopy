@@ -29,15 +29,16 @@ interface LintGroup {
 
 const findWorkspaceDirectories = (parentDirectoryName: string): readonly string[] => {
   const parentDirectory = path.join(rootDirectory, parentDirectoryName);
-  if (!fs.existsSync(parentDirectory)) {
-    return [];
-  }
-  return fs
-    .readdirSync(parentDirectory, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => path.join(parentDirectoryName, entry.name))
-    .filter((relativePath) => fs.existsSync(path.join(rootDirectory, relativePath, 'package.json')))
-    .toSorted((a, b) => a.localeCompare(b));
+  return fs.existsSync(parentDirectory)
+    ? fs
+        .readdirSync(parentDirectory, { withFileTypes: true })
+        .filter((entry) => entry.isDirectory())
+        .map((entry) => path.join(parentDirectoryName, entry.name))
+        .filter((relativePath) =>
+          fs.existsSync(path.join(rootDirectory, relativePath, 'package.json')),
+        )
+        .toSorted((a, b) => a.localeCompare(b))
+    : [];
 };
 
 const workspaceGroups: readonly LintGroup[] = [

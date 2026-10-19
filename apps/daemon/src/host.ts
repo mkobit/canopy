@@ -24,7 +24,9 @@ const daemonEventLogError = (message: string): DaemonHostError => ({
 export interface RunningHost {
   readonly getSocketPath: () => string;
   readonly getActiveConnectionCount: () => number;
-  /** Closes the IPC server (destroys sockets, unbinds subscriptions, unlinks the socket file) and the event log. */
+  /**
+  Closes the IPC server (destroys sockets, unbinds subscriptions, unlinks the socket file) and the event log.
+  */
   readonly close: () => Promise<void>;
 }
 
@@ -69,11 +71,11 @@ const bootWithEventLog = async (
 };
 
 /**
- * Boots the host: opens an EventLogStore (SQLite-on-disk, or in-memory in
- * ephemeral mode), loads a GraphSession, builds a live GraphAccessContext, and
- * hosts createIpcServer. On IpcSocketInUseError (another host already owns
- * this socket path) this fails fast without binding a second listener.
- */
+Boots the host: opens an EventLogStore (SQLite-on-disk, or in-memory in
+ephemeral mode), loads a GraphSession, builds a live GraphAccessContext, and
+hosts createIpcServer. On IpcSocketInUseError (another host already owns
+this socket path) this fails fast without binding a second listener.
+*/
 export const startHost = async (
   config: DaemonConfig,
 ): Promise<Result<RunningHost, DaemonHostError>> => {

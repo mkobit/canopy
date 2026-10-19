@@ -153,12 +153,11 @@ describe('IpcServer Streaming Load Test (high concurrency)', () => {
           resolveSubAck(undefined);
           return;
         }
-        if (line.method === IPC_METHODS.EVENT_STREAM_EVENT && line.params?.event) {
-          const event = line.params.event as Readonly<{ id: string }>;
-          receivedEventIds.push(event.id);
-          if (receivedEventIds.length >= mutationCount) {
-            resolveAllReceived(undefined);
-          }
+        if (line.method !== IPC_METHODS.EVENT_STREAM_EVENT || !line.params?.event) return;
+        const event = line.params.event as Readonly<{ id: string }>;
+        receivedEventIds.push(event.id);
+        if (receivedEventIds.length >= mutationCount) {
+          resolveAllReceived(undefined);
         }
       });
 

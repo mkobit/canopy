@@ -12,12 +12,12 @@ import { incrementalUpdateIndexes } from './indexes';
 import { maxRevision } from './revision';
 
 /**
- * Per-entity merge bookkeeping: which event last wrote each property
- * (removals count as writes), and whether the entity is permanently
- * tombstoned. Display metadata (modified/modifiedBy) lives on the Node/Edge
- * itself in the graph and is kept in sync via the same lwwWins comparator
- * canonical projection uses, so it converges to the identical value.
- */
+Per-entity merge bookkeeping: which event last wrote each property
+(removals count as writes), and whether the entity is permanently
+tombstoned. Display metadata (modified/modifiedBy) lives on the Node/Edge
+itself in the graph and is kept in sync via the same lwwWins comparator
+canonical projection uses, so it converges to the identical value.
+*/
 interface EntityMergeMeta {
   readonly exists: boolean;
   readonly tombstoned: boolean;
@@ -28,7 +28,9 @@ function emptyMeta(): EntityMergeMeta {
   return { exists: false, tombstoned: false, propertyWriters: new Map() };
 }
 
-/** A batchId group (or a singleton for events with no batchId) parked on an unmet dependency. */
+/**
+A batchId group (or a singleton for events with no batchId) parked on an unmet dependency.
+*/
 interface PendingGroup {
   readonly id: number;
   readonly events: readonly GraphEvent[];
@@ -62,14 +64,18 @@ export interface StalePendingWarning {
 export interface MergeResult {
   readonly state: MergeState;
   readonly graph: Graph;
-  /** Events actually applied to the graph by this call, including any drained pending groups. */
+  /**
+  Events actually applied to the graph by this call, including any drained pending groups.
+  */
   readonly applied: readonly GraphEvent[];
   readonly stale: readonly StalePendingWarning[];
 }
 
 export const DEFAULT_STALE_THRESHOLD_MS = 5 * 60 * 1000;
 
-/** Decodes the 48-bit unix-ms timestamp embedded in a UUIDv7 eventId. Inverse of history.ts's encoding. */
+/**
+Decodes the 48-bit unix-ms timestamp embedded in a UUIDv7 eventId. Inverse of history.ts's encoding.
+*/
 export function epochMsFromEventId(eventId: EventId): number {
   const hex = eventId.replaceAll('-', '').slice(0, 12);
   return Number.parseInt(hex, 16);
@@ -108,24 +114,24 @@ interface ApplyOutcome {
 }
 
 /**
- * Graph-level metadata.modified/modifiedBy mirrors canonical projection
- * exactly: replace-if-wins against whatever is already there. Because this is
- * a plain running max over (timestamp, deviceId) pairs, it converges
- * regardless of application order -- and correctly seeds from the incoming
- * graph's own pre-existing metadata (e.g. from bootstrap), not from a
- * merge-local marker.
- *
- * revision folds independently of the modified/modifiedBy timestamp-based
- * isWins check above: it is a running max over EventId (see revision.ts),
- * called unconditionally on every event this function is invoked for.
- * maxRevision's own eventId comparison is what decides whether it actually
- * advances, so no separate condition is needed -- and, critically, it must
- * NOT be gated by the same timestamp comparison as modified/modifiedBy: two
- * events sharing a wall-clock millisecond would both fail that check
- * (isWins would be false for the second), which is exactly the same-
- * millisecond collision the revision token exists to fix. An EventId-only
- * comparison has no such gap.
- */
+Graph-level metadata.modified/modifiedBy mirrors canonical projection
+exactly: replace-if-wins against whatever is already there. Because this is
+a plain running max over (timestamp, deviceId) pairs, it converges
+regardless of application order -- and correctly seeds from the incoming
+graph's own pre-existing metadata (e.g. from bootstrap), not from a
+merge-local marker.
+
+revision folds independently of the modified/modifiedBy timestamp-based
+isWins check above: it is a running max over EventId (see revision.ts),
+called unconditionally on every event this function is invoked for.
+maxRevision's own eventId comparison is what decides whether it actually
+advances, so no separate condition is needed -- and, critically, it must
+NOT be gated by the same timestamp comparison as modified/modifiedBy: two
+events sharing a wall-clock millisecond would both fail that check
+(isWins would be false for the second), which is exactly the same-
+millisecond collision the revision token exists to fix. An EventId-only
+comparison has no such gap.
+*/
 function touchGraphMetadata(
   graph: Graph,
   event: GraphEvent,
@@ -150,9 +156,9 @@ function touchGraphMetadata(
 }
 
 /**
- * Applies a single event against working (graph, nodeMeta, edgeMeta), assuming
- * its dependencies are already satisfied. Pure function, no mutation.
- */
+Applies a single event against working (graph, nodeMeta, edgeMeta), assuming
+its dependencies are already satisfied. Pure function, no mutation.
+*/
 function applyOneEvent(
   graph: Graph,
   nodeMeta: ReadonlyMap<NodeId, EntityMergeMeta>,
@@ -239,11 +245,13 @@ function applyOneEventInternal(
 
       for (const [key, value] of event.changes) {
         const writer = propertyWriters.get(key);
-        if (writer === undefined || event.eventId > writer) {
-          properties.set(key, value);
-
-          propertyWriters.set(key, event.eventId);
+        if (!(writer === undefined || event.eventId > writer)) {
+          continue;
         }
+
+        properties.set(key, value);
+
+        propertyWriters.set(key, event.eventId);
       }
 
       const isTouchWins = lwwWins(
@@ -380,11 +388,13 @@ function applyOneEventInternal(
 
       for (const [key, value] of event.changes) {
         const writer = propertyWriters.get(key);
-        if (writer === undefined || event.eventId > writer) {
-          properties.set(key, value);
-
-          propertyWriters.set(key, event.eventId);
+        if (!(writer === undefined || event.eventId > writer)) {
+          continue;
         }
+
+        properties.set(key, value);
+
+        propertyWriters.set(key, event.eventId);
       }
 
       const isTouchWins = lwwWins(
@@ -530,11 +540,11 @@ interface GroupAttempt {
 }
 
 /**
- * Attempts to apply a co-batched group of events atomically: either every
- * event in the group applies (in ascending eventId order, so intra-group
- * forward references like NodeCreated -> EdgeCreated resolve), or none do and
- * the whole group parks under its unmet dependencies.
- */
+Attempts to apply a co-batched group of events atomically: either every
+event in the group applies (in ascending eventId order, so intra-group
+forward references like NodeCreated -> EdgeCreated resolve), or none do and
+the whole group parks under its unmet dependencies.
+*/
 function attemptGroup(
   graph: Graph,
   nodeMeta: ReadonlyMap<NodeId, EntityMergeMeta>,
@@ -620,15 +630,15 @@ function removePendingGroup(state: MergeState, groupId: number): MergeState {
 }
 
 /**
- * Merges a set of events (typically one commit or one ingest chunk) into the
- * current (state, graph), applying eagerly where possible and parking events
- * whose dependencies are not yet satisfied. Draining previously-parked groups
- * that this call's new entities unblock is handled transitively.
- *
- * Convergence invariant: for any partition of a valid event set E into calls,
- * in any order, repeated application of this function reaches the same graph
- * as `projectGraph(sort(E), initialGraph)`.
- */
+Merges a set of events (typically one commit or one ingest chunk) into the
+current (state, graph), applying eagerly where possible and parking events
+whose dependencies are not yet satisfied. Draining previously-parked groups
+that this call's new entities unblock is handled transitively.
+
+Convergence invariant: for any partition of a valid event set E into calls,
+in any order, repeated application of this function reaches the same graph
+as `projectGraph(sort(E), initialGraph)`.
+*/
 // eslint-disable-next-line max-lines-per-function
 export function mergeEvents(
   state: MergeState,
@@ -711,11 +721,13 @@ export function mergeEvents(
 
     for (const groupId of groupIds) {
       const group = workingState.pendingGroups.get(groupId);
-      if (group) {
-        // Removed here; tryApply will re-register under any still-unmet keys.
-        workingState = removePendingGroup(workingState, groupId);
-        tryApply(group.events, groupId);
+      if (!group) {
+        continue;
       }
+
+      // Removed here; tryApply will re-register under any still-unmet keys.
+      workingState = removePendingGroup(workingState, groupId);
+      tryApply(group.events, groupId);
     }
   }
 
@@ -792,8 +804,8 @@ function validateDraftEvents(graph: Graph, events: readonly GraphEvent[]): Resul
 }
 
 /**
- * Projects a combined graph overlaying staged draft events on top of a parent graph.
- */
+Projects a combined graph overlaying staged draft events on top of a parent graph.
+*/
 export function projectDraftOverlay(
   parentGraph: Graph,
   draftEvents: readonly GraphEvent[],
@@ -802,9 +814,9 @@ export function projectDraftOverlay(
 }
 
 /**
- * Stages a batch of events onto the draft graph projection.
- * Returns the updated list of draft events if validation passes.
- */
+Stages a batch of events onto the draft graph projection.
+Returns the updated list of draft events if validation passes.
+*/
 export function applyDraftEvents(
   parentGraph: Graph,
   currentDraftEvents: readonly GraphEvent[],
@@ -816,9 +828,5 @@ export function applyDraftEvents(
   }
 
   const validation = validateDraftEvents(currentProjectionResult.value, newEvents);
-  if (!validation.ok) {
-    return validation;
-  }
-
-  return ok([...currentDraftEvents, ...newEvents]);
+  return validation.ok ? ok([...currentDraftEvents, ...newEvents]) : validation;
 }
