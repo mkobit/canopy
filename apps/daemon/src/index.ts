@@ -1,23 +1,28 @@
-import { Command, Options } from '@effect/cli';
-import { NodeContext, NodeRuntime } from '@effect/platform-node';
-import { Effect } from 'effect';
+import { Command, Flag } from 'effect/cli';
+import { NodeRuntime, NodeServices } from '@effect/platform-node';
+import { Cause, Effect, Exit, Runtime } from 'effect';
 import type { DaemonConfigOverrides } from './config';
 import { resolveDaemonConfig } from './config';
 import { startHost } from './host';
+import {
+  daemonCliFormatter,
+  runWithDaemonCliOutput,
+  withExecutableErrorReporting,
+} from './cli-output';
 
-const socketPathOption = Options.optional(Options.text('socket-path')).pipe(
-  Options.withDescription(
+const socketPathOption = Flag.optional(Flag.String('socket-path')).pipe(
+  Flag.withDescription(
     'Path to the Unix domain socket to listen on (default: under XDG_RUNTIME_DIR)',
   ),
 );
 
-const databasePathOption = Options.optional(Options.text('db-path')).pipe(
-  Options.withDescription('Path to the SQLite event-log database file'),
+const databasePathOption = Flag.optional(Flag.String('db-path')).pipe(
+  Flag.withDescription('Path to the SQLite event-log database file'),
 );
 
-const ephemeralOption = Options.boolean('ephemeral').pipe(
-  Options.withDefault(false),
-  Options.withDescription(
+const ephemeralOption = Flag.Boolean('ephemeral').pipe(
+  Flag.withDefault(false),
+  Flag.withDescription(
     'Use an in-memory event log instead of SQLite. For tests only -- state is not persisted.',
   ),
 );
@@ -73,8 +78,22 @@ export const daemonCommand = Command.make(
   ),
 );
 
-export const run = Command.run(daemonCommand, { name: 'Canopy Daemon', version: '0.1.0' });
+export const run = Command.run(daemonCommand, { version: '0.1.0', renderErrors: false });
+const runWithOutput = runWithDaemonCliOutput(run, daemonCliFormatter('Canopy Daemon', '0.1.0'));
+
+const teardown: Runtime.Teardown = (exit, onExit) => {
+  if (Exit.isFailure(exit) && Cause.hasInterruptsOnly(exit.cause)) {
+    onExit(0);
+  } else {
+    Runtime.defaultTeardown(exit, onExit);
+  }
+  return undefined;
+};
 
 if (process.argv[1]?.endsWith('index.ts') || process.argv[1]?.endsWith('index.js')) {
-  run(process.argv).pipe(Effect.provide(NodeContext.layer), NodeRuntime.runMain);
+  runWithOutput.pipe(
+    Effect.provide(NodeServices.layer),
+    withExecutableErrorReporting,
+    NodeRuntime.runMain({ teardown, disableErrorReporting: true }),
+  );
 }

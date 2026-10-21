@@ -1,12 +1,74 @@
-import * as crypto from 'node:crypto';
+import * as fs from 'node:fs';
 import * as net from 'node:net';
+import * as os from 'node:os';
 import * as path from 'node:path';
 
 // Mirrors the raw-socket NDJSON test pattern from
 // packages/api-adapter/tests/ipc-server-streaming.load.test.ts.
 
-export const getTemporarySocketPath = (label: string): string =>
-  path.join(process.cwd(), 'tmp', `test-daemon-${label}-${crypto.randomUUID()}.sock`);
+export const getTemporarySocketPath = (label: string): string => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'cn-'));
+  return path.join(directory, `s-${label.slice(0, 4)}.sock`);
+};
+
+export const cleanupTemporarySocketPath = (socketPath: string): void => {
+  const directory = path.dirname(socketPath);
+  if (fs.existsSync(socketPath)) {
+    fs.unlinkSync(socketPath);
+  }
+  fs.rmSync(directory, { recursive: true, force: true });
+};
+
+export const createDaemonChild = (
+  daemonRoot: string,
+  socketPath: string,
+  databasePath?: string,
+): ReturnType<typeof Bun.spawn> => {
+  const entrypoint = path.join(daemonRoot, 'src', 'index.ts');
+  return Bun.spawn(
+    [
+      process.execPath,
+      entrypoint,
+      '--socket-path',
+      socketPath,
+      ...(databasePath ? ['--db-path', databasePath] : ['--ephemeral']),
+    ],
+    { cwd: daemonRoot, stdout: 'pipe', stderr: 'pipe' },
+  );
+};
+
+export const waitForSocketFile = async (socketPath: string, timeoutMs = 10_000): Promise<void> => {
+  const deadline = performance.now() + timeoutMs;
+  while (performance.now() < deadline) {
+    if (fs.existsSync(socketPath)) return;
+    await new Promise((resolve) => setTimeout(resolve, 25));
+  }
+  throw new Error(`Timed out waiting for daemon socket at ${socketPath}`);
+};
+
+export const waitForChildExit = async (
+  child: ReturnType<typeof Bun.spawn>,
+  timeoutMs = 10_000,
+): Promise<number> => {
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  const timedOut = new Promise<never>((_resolve, reject) => {
+    timeout = setTimeout(
+      () => reject(new Error(`Daemon child did not exit within ${timeoutMs} ms`)),
+      timeoutMs,
+    );
+  });
+  try {
+    return await Promise.race([child.exited, timedOut]);
+  } catch (error) {
+    if (child.exitCode === null) {
+      child.kill('SIGKILL');
+      await child.exited;
+    }
+    throw error;
+  } finally {
+    if (timeout) clearTimeout(timeout);
+  }
+};
 
 export type JsonRpcLine = Readonly<{
   id?: number;

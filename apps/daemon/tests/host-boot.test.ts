@@ -1,9 +1,13 @@
-import * as fs from 'node:fs';
 import { afterEach, describe, expect, it } from 'bun:test';
 import { resolveDaemonConfig } from '../src/config';
 import type { RunningHost } from '../src/host';
 import { startHost } from '../src/host';
-import { connect, getTemporarySocketPath, makeJsonRpcTestClient } from './test-support';
+import {
+  cleanupTemporarySocketPath,
+  connect,
+  getTemporarySocketPath,
+  makeJsonRpcTestClient,
+} from './test-support';
 
 describe('daemon host boot', () => {
   let host: RunningHost | undefined;
@@ -14,9 +18,7 @@ describe('daemon host boot', () => {
       await host.close();
       host = undefined;
     }
-    if (socketPath && fs.existsSync(socketPath)) {
-      fs.unlinkSync(socketPath);
-    }
+    if (socketPath) cleanupTemporarySocketPath(socketPath);
   });
 
   it('starts in ephemeral mode and answers a handshake advertising the base capabilities', async () => {

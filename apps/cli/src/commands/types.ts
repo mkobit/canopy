@@ -1,4 +1,4 @@
-import { Command, Options } from '@effect/cli';
+import { Command, Flag } from 'effect/cli';
 import { Console, Effect } from 'effect';
 import { makeIpcClient } from '@canopy/api-adapter';
 import { jsonOption, socketPathOption } from '../options';
@@ -11,8 +11,8 @@ const typesListCommand = Command.make(
   {
     socketPath: socketPathOption,
     json: jsonOption,
-    kind: Options.optional(Options.choice('kind', ['node', 'edge', 'all'])).pipe(
-      Options.withDescription('Filter type definitions by kind (node, edge, all)'),
+    kind: Flag.optional(Flag.Literals('kind', ['node', 'edge', 'all'])).pipe(
+      Flag.withDescription('Filter type definitions by kind (node, edge, all)'),
     ),
   },
   ({ socketPath, json, kind }) =>
@@ -53,7 +53,7 @@ const typesGetCommand = Command.make(
   {
     socketPath: socketPathOption,
     json: jsonOption,
-    id: Options.text('id').pipe(Options.withDescription('Type definition node ID to fetch')),
+    id: Flag.String('id').pipe(Flag.withDescription('Type definition node ID to fetch')),
   },
   ({ socketPath, json, id }) =>
     Effect.gen(function* () {

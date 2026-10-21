@@ -1,15 +1,15 @@
-import { Command, Options } from '@effect/cli';
+import { Command, Flag } from 'effect/cli';
 import type { Option } from 'effect';
 import { Console, Effect } from 'effect';
 import { makeIpcClient } from '@canopy/api-adapter';
 import { jsonOption, socketPathOption } from '../options';
 
-const graphIdOption = Options.optional(Options.text('graph-id')).pipe(
-  Options.withDescription('Filter event stream by graph ID'),
+const graphIdOption = Flag.optional(Flag.String('graph-id')).pipe(
+  Flag.withDescription('Filter event stream by graph ID'),
 );
 
-const fromSequenceOption = Options.optional(Options.integer('from-sequence')).pipe(
-  Options.withDescription('Start streaming from sequence number'),
+const fromSequenceOption = Flag.optional(Flag.Int('from-sequence')).pipe(
+  Flag.withDescription('Start streaming from sequence number'),
 );
 
 const eventsTailEffect = (
@@ -19,9 +19,9 @@ const eventsTailEffect = (
   fromSequence: Readonly<Option.Option<number>>,
 ) =>
   Effect.gen(function* () {
-    const clientResult = yield* Effect.either(makeIpcClient(socketPath));
-    if (clientResult._tag === 'Left') {
-      const errorMessage = clientResult.left.message;
+    const clientResult = yield* Effect.result(makeIpcClient(socketPath));
+    if (clientResult._tag === 'Failure') {
+      const errorMessage = clientResult.failure.message;
       if (json) {
         yield* Console.log(
           JSON.stringify(
@@ -38,14 +38,14 @@ const eventsTailEffect = (
       return yield* Effect.fail(new Error('Socket disconnected'));
     }
 
-    const client = clientResult.right;
+    const client = clientResult.success;
 
     const parameters = {
       ...(graphId._tag === 'Some' && { graphId: graphId.value }),
       ...(fromSequence._tag === 'Some' && { fromSequence: fromSequence.value }),
     };
 
-    const subscribeResult = yield* Effect.either(
+    const subscribeResult = yield* Effect.result(
       client.subscribe(parameters, (event) => {
         if (json) {
           Effect.runSync(Console.log(JSON.stringify(event)));
@@ -56,9 +56,11 @@ const eventsTailEffect = (
       }),
     );
 
-    if (subscribeResult._tag === 'Left') {
+    if (subscribeResult._tag === 'Failure') {
       yield* client.close();
-      return yield* Effect.fail(new Error(`Failed to subscribe: ${subscribeResult.left.message}`));
+      return yield* Effect.fail(
+        new Error(`Failed to subscribe: ${subscribeResult.failure.message}`),
+      );
     }
 
     yield* Effect.never;

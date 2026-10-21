@@ -1,4 +1,4 @@
-import { Command, Options } from '@effect/cli';
+import { Command, Flag } from 'effect/cli';
 import { Console, Effect } from 'effect';
 import { makeIpcClient } from '@canopy/api-adapter';
 import { jsonOption, socketPathOption } from '../options';
@@ -31,7 +31,7 @@ const nodeGetCommand = Command.make(
   {
     socketPath: socketPathOption,
     json: jsonOption,
-    id: Options.text('id').pipe(Options.withDescription('Node ID to fetch')),
+    id: Flag.String('id').pipe(Flag.withDescription('Node ID to fetch')),
   },
   ({ socketPath, json, id }) =>
     Effect.gen(function* () {
@@ -53,11 +53,9 @@ const nodeListCommand = Command.make(
   {
     socketPath: socketPathOption,
     json: jsonOption,
-    type: Options.optional(Options.text('type')).pipe(
-      Options.withDescription('Filter nodes by type'),
-    ),
-    limit: Options.optional(Options.integer('limit')).pipe(
-      Options.withDescription('Max number of nodes to return'),
+    type: Flag.optional(Flag.String('type')).pipe(Flag.withDescription('Filter nodes by type')),
+    limit: Flag.optional(Flag.Int('limit')).pipe(
+      Flag.withDescription('Max number of nodes to return'),
     ),
   },
   ({ socketPath, json, type, limit }) =>
@@ -85,12 +83,10 @@ const nodeCreateCommand = Command.make(
   {
     socketPath: socketPathOption,
     json: jsonOption,
-    id: Options.optional(Options.text('id')).pipe(
-      Options.withDescription('Optional explicit node ID'),
-    ),
-    type: Options.text('type').pipe(Options.withDescription('Node type identifier')),
-    properties: Options.optional(Options.text('properties')).pipe(
-      Options.withDescription('Node properties formatted as JSON string'),
+    id: Flag.optional(Flag.String('id')).pipe(Flag.withDescription('Optional explicit node ID')),
+    type: Flag.String('type').pipe(Flag.withDescription('Node type identifier')),
+    properties: Flag.optional(Flag.String('properties')).pipe(
+      Flag.withDescription('Node properties formatted as JSON string'),
     ),
   },
   ({ socketPath, json, id, type, properties }) =>
@@ -121,9 +117,9 @@ const nodeUpdateCommand = Command.make(
   {
     socketPath: socketPathOption,
     json: jsonOption,
-    id: Options.text('id').pipe(Options.withDescription('Target node ID')),
-    properties: Options.text('properties').pipe(
-      Options.withDescription('Updated properties formatted as JSON string'),
+    id: Flag.String('id').pipe(Flag.withDescription('Target node ID')),
+    properties: Flag.String('properties').pipe(
+      Flag.withDescription('Updated properties formatted as JSON string'),
     ),
   },
   ({ socketPath, json, id, properties }) =>
@@ -150,7 +146,7 @@ const nodeDeleteCommand = Command.make(
   {
     socketPath: socketPathOption,
     json: jsonOption,
-    id: Options.text('id').pipe(Options.withDescription('Node ID to delete')),
+    id: Flag.String('id').pipe(Flag.withDescription('Node ID to delete')),
   },
   ({ socketPath, json, id }) =>
     Effect.gen(function* () {

@@ -1,14 +1,14 @@
 import * as path from 'node:path';
-import { Options } from '@effect/cli';
+import { Flag } from 'effect/cli';
 
-export const socketPathOption = Options.text('socket-path').pipe(
-  Options.withDefault(
+export const socketPathOption = Flag.String('socket-path').pipe(
+  Flag.withDefault(
     process.env.CANOPY_SOCKET_PATH ?? path.join(process.cwd(), 'tmp', 'canopy.sock'),
   ),
-  Options.withDescription('Path to the Canopy IPC Unix domain socket'),
+  Flag.withDescription('Path to the Canopy IPC Unix domain socket'),
 );
 
-export const jsonOption = Options.boolean('json').pipe(
-  Options.withDefault(false),
-  Options.withDescription('Output response as JSON'),
+export const jsonOption = Flag.Boolean('json').pipe(
+  Flag.withDefault(false),
+  Flag.withDescription('Output response as JSON'),
 );

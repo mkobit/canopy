@@ -5,8 +5,8 @@ import type { IpcServer } from '@canopy/api-adapter';
 import { createIpcServer } from '@canopy/api-adapter';
 import { asDeviceId, asGraphId, createGraphSession } from '@canopy/graph';
 import { createInMemoryEventStore } from '@canopy/storage';
-import { Command } from '@effect/cli';
-import { NodeContext } from '@effect/platform-node';
+import { Command } from 'effect/cli';
+import { NodeServices } from '@effect/platform-node';
 import { Effect } from 'effect';
 import { rootCommand } from '../src/index';
 
@@ -15,11 +15,9 @@ const getSocketPath = (): string =>
 
 const runCli = (arguments_: readonly string[]) =>
   Effect.runPromise(
-    Command.run(rootCommand, { name: 'Canopy CLI', version: '0.1.0' })([
-      'node',
-      'canopy',
-      ...arguments_,
-    ]).pipe(Effect.provide(NodeContext.layer)),
+    Command.runWith(rootCommand, { version: '0.1.0' })(arguments_).pipe(
+      Effect.provide(NodeServices.layer),
+    ),
   );
 
 describe('Canopy CLI status commands', () => {

@@ -1,5 +1,6 @@
 import * as fs from 'node:fs';
 import * as net from 'node:net';
+import * as os from 'node:os';
 import * as path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import { asDeviceId, asGraphId, createGraphSession } from '@canopy/graph';
@@ -8,12 +9,10 @@ import { createGraphAccessContext } from '@canopy/graph-access';
 import { IPC_METHODS, createIpcServer } from '../src/ipc';
 import type { IpcServer } from '../src/ipc';
 
-const getSocketPath = (): string =>
-  path.join(
-    process.cwd(),
-    'tmp',
-    `test-ipc-load-${Temporal.Now.instant().epochMilliseconds}-${Math.random().toString(36).slice(2, 7)}.sock`,
-  );
+const getSocketPath = (): string => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'cn-'));
+  return path.join(directory, 's.sock');
+};
 
 type JsonRpcLine = Readonly<{
   id?: number;
@@ -62,13 +61,7 @@ describe('IpcServer Streaming Load Test (high concurrency)', () => {
       await server.close();
       server = undefined;
     }
-    if (fs.existsSync(socketPath)) {
-      try {
-        fs.unlinkSync(socketPath);
-      } catch {
-        // Ignore
-      }
-    }
+    fs.rmSync(path.dirname(socketPath), { recursive: true, force: true });
   });
 
   it('benchmarks 50 concurrent connections issuing 20 sequential requests each (1000 total round trips)', async () => {
