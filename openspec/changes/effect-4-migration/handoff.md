@@ -1,6 +1,6 @@
 # Effect 4 migration handoff
 
-Status: implementation and local acceptance complete; publication and required CI are pending.
+Status: migration source and test isolation repair passed local acceptance and independent review; fresh CI is pending.
 Read [current evidence and remaining checks](evidence.md) before dispatch or integration.
 
 ## Authority and outcome
@@ -104,6 +104,24 @@ That worker must renew focused checks and the remaining quality gate, with separ
 Retain the successful build evidence only while production files and build inputs remain unchanged.
 Host SBX calls require the approved elevated tool execution context when the restricted context reports a login-service access error.
 Do not change authentication, rebuild the environment, or try additional launcher variants for that known permission failure.
+
+### CI test isolation repair
+
+Linux coverage CI at `8fae9bd` failed the unchanged renderer constructor-failure test after the Tier-2 component suite.
+The shared warm worker pool can bypass that test's supplied throwing factory.
+Root transfers only `apps/web/src/components/renderers/execute-wasm-render-worker.test.ts` and one adjacent test fixture, if needed, to `/root/migration_worker`.
+The worker must prove the ordered coverage failure before editing, isolate the test process, and verify both suite orders and the full web coverage suite.
+Run scoped lint and type checks and return exact evidence for independent review.
+Preserve every existing assertion, production renderer APIs and pool behavior, dependencies, and thresholds.
+Root retains integration and publication authority and renews affected acceptance at the resulting revision.
+The production pool ownership question remains evaluation issue `canopy-dss`.
+Deterministic build and test infrastructure is evaluation issue `canopy-io6`.
+The cancelled unchanged CI rerun does not resolve this failure.
+Root took final ownership of the test and fixture after the worker handoff.
+The final fixture is `apps/web/src/components/renderers/tests/execute-wasm-render-worker.fixture.ts`.
+Both suite orders, full web coverage, scoped lint, direct type checking, and unused-file validation passed after the final corrections.
+Independent review approved the final two-file repair.
+All further source edits require root assignment; the earlier worker scope is closed.
 
 You are not alone in the codebase.
 Preserve other contributors' edits and report conflicts to root.

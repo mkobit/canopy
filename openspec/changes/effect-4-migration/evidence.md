@@ -5,7 +5,8 @@
 The approved design is PR #572, merged at `6480f626d8cd9a1f121a32d762f6b14af634b4a0`.
 Root verified the merged design, two independent adversarial reviews, and approved mitigations before preparing tasks.
 The implementation worktree is `.worktrees/effect-4-migration` on `migration/effect-4`.
-Its `HEAD` remains the approved base; implementation changes are uncommitted.
+The migration source was committed as `8fae9bd3bfcd87c3f7c7648024f3b9a1dd4c0098` and published in [PR #575](https://github.com/mkobit/canopy/pull/575).
+The later test isolation repair is part of the same PR.
 The main checkout remains unchanged.
 Root claimed `canopy-mpb` and retains all issue, Git, PR, merge, and closure authority.
 The user approved the implementation plan and proceeding with the recorded base performance failure.
@@ -103,10 +104,38 @@ Do not merge, close the issue, or archive the change until integrated acceptance
 - `canopy-kn7.3`: bounded sandbox agent stalls and resumable progress.
 - `canopy-q4h`: evaluate subscriber buffer ownership, acknowledgement, and consumer queues.
 - `canopy-ssp`: evaluate generated declaration dependencies and workspace lint cost.
+- `canopy-dss`: evaluate shared renderer worker pool ownership and test isolation.
+- `canopy-io6`: evaluate deterministic build artifacts, test execution, and failure diagnostics.
 
 Root also added concrete host and sandbox command failures to the existing `canopy-kn7` delivery design issue.
 These records do not authorize unrelated implementation or weaken migration acceptance.
 The output capture concern has a migration correction and a regression test; close its issue only after integrated acceptance.
+
+## CI test isolation failure
+
+At commit `8fae9bd3bfcd87c3f7c7648024f3b9a1dd4c0098`, macOS CI and OpenSpec validation passed.
+Linux passed build, lint, sandbox parity, and type checks, then failed one web coverage test.
+The failed test was `returns unavailable when Worker construction throws` in `apps/web/src/components/renderers/execute-wasm-render-worker.test.ts`.
+The web suite reported 132 passes and one failure.
+The [failed job](https://github.com/mkobit/canopy/actions/runs/39535381059/job/119010716097) ran the Tier-2 component suite before that test.
+Both renderer production code and the failed test are unchanged from the approved base.
+Their shared module worker pool can supply a worker before the test's throwing factory runs.
+Root cancelled an unchanged failed-job rerun and assigned a bounded test isolation repair.
+A preliminary repair check also exposed a missing test import and fixture classification errors; both were corrected before the final passing sequence.
+The repair must preserve production APIs and assertions and pass both test orders and the full web coverage suite.
+Fresh CI against the repaired revision remains required before merge.
+The worker reproduced the exact failure with a single-process driver that registers Tier-2 tests before renderer tests: five passes, one failure, and 18 assertions.
+Passing the two paths directly to Bun did not reproduce the same module-state conditions.
+The final repair uses a separate Bun process, a decoded file URL, bounded output, a three-second SIGKILL timeout, and an awaited child exit.
+The parent checks the exit and captured stderr before parsing the returned result.
+Both explicit registration orders passed under coverage: six tests, zero failures, and 20 assertions each.
+The full web coverage suite passed 133 tests with zero failures and 388 assertions in 6.65 seconds.
+Independent review approved the two-file repair after the import, path, diagnostics, and cleanup corrections.
+The final scoped lint passed in 59.25 seconds, direct web type checking passed in 34.48 seconds, and unused-file validation passed in 19.11 seconds.
+The fixture uses the existing test directory rules; no lint configuration or suppression was added.
+The diagnostic driver remains in ignored scratch storage.
+The final source review also approved the fixture relocation.
+Earlier migration acceptance remains valid because this repair changes only the unrelated renderer test and its fixture; production files and package inputs are unchanged.
 
 ## Execution limits and recovery
 

@@ -124,3 +124,14 @@ Produce reviewed acceptance evidence and a reviewable PR.
 - [ ] File unresolved work, update issue evidence, commit, rebase, push the branch, and verify remote synchronization.
 - [ ] Create a PR with source links and exact acceptance evidence; merge only after the required review and CI checks pass.
 - [ ] Close the implementation task only after integrated acceptance and authorized landing.
+
+## Task 5: Repair the CI test isolation failure
+
+**Files:** `apps/web/src/components/renderers/execute-wasm-render-worker.test.ts` and one adjacent test fixture if needed.
+Production renderer code, dependencies, and thresholds remain reserved.
+
+- [x] Prove the existing constructor-failure test depends on suite order under coverage.
+- [x] Isolate its worker state and preserve every existing assertion.
+- [x] Pass both suite orders, full web coverage, scoped lint, and type checks.
+- [x] Obtain independent review of the final test repair.
+- [ ] Require fresh CI against the repaired commit before merge.
