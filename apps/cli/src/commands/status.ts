@@ -1,13 +1,13 @@
-import { Command } from '@effect/cli';
+import { Command } from 'effect/cli';
 import { Console, Effect } from 'effect';
 import { makeIpcClient } from '@canopy/api-adapter';
 import { jsonOption, socketPathOption } from '../options';
 
 export const statusEffect = (socketPath: string, json: boolean) =>
   Effect.gen(function* () {
-    const clientResult = yield* Effect.either(makeIpcClient(socketPath));
-    if (clientResult._tag === 'Left') {
-      const errorMessage = clientResult.left.message;
+    const clientResult = yield* Effect.result(makeIpcClient(socketPath));
+    if (clientResult._tag === 'Failure') {
+      const errorMessage = clientResult.failure.message;
       if (json) {
         yield* Console.log(
           JSON.stringify(
@@ -27,12 +27,12 @@ export const statusEffect = (socketPath: string, json: boolean) =>
       return yield* Effect.fail(new Error('Socket disconnected'));
     }
 
-    const client = clientResult.right;
-    const result = yield* Effect.either(client.handshake());
+    const client = clientResult.success;
+    const result = yield* Effect.result(client.handshake());
     yield* client.close();
 
-    if (result._tag === 'Left') {
-      const errorMessage = result.left.message;
+    if (result._tag === 'Failure') {
+      const errorMessage = result.failure.message;
       if (json) {
         yield* Console.log(
           JSON.stringify(
@@ -52,7 +52,7 @@ export const statusEffect = (socketPath: string, json: boolean) =>
       return yield* Effect.fail(new Error('Socket disconnected'));
     }
 
-    const { apiVersion, serverVersion, capabilities } = result.right;
+    const { apiVersion, serverVersion, capabilities } = result.success;
     if (json) {
       yield* Console.log(
         JSON.stringify(

@@ -1,4 +1,4 @@
-import { Command, Options } from '@effect/cli';
+import { Command, Flag } from 'effect/cli';
 import { Console, Effect } from 'effect';
 import { makeIpcClient } from '@canopy/api-adapter';
 import { jsonOption, socketPathOption } from '../options';
@@ -31,7 +31,7 @@ const edgeGetCommand = Command.make(
   {
     socketPath: socketPathOption,
     json: jsonOption,
-    id: Options.text('id').pipe(Options.withDescription('Edge ID to fetch')),
+    id: Flag.String('id').pipe(Flag.withDescription('Edge ID to fetch')),
   },
   ({ socketPath, json, id }) =>
     Effect.gen(function* () {
@@ -57,17 +57,15 @@ const edgeListCommand = Command.make(
   {
     socketPath: socketPathOption,
     json: jsonOption,
-    type: Options.optional(Options.text('type')).pipe(
-      Options.withDescription('Filter edges by type'),
+    type: Flag.optional(Flag.String('type')).pipe(Flag.withDescription('Filter edges by type')),
+    source: Flag.optional(Flag.String('source')).pipe(
+      Flag.withDescription('Filter edges by source node ID'),
     ),
-    source: Options.optional(Options.text('source')).pipe(
-      Options.withDescription('Filter edges by source node ID'),
+    target: Flag.optional(Flag.String('target')).pipe(
+      Flag.withDescription('Filter edges by target node ID'),
     ),
-    target: Options.optional(Options.text('target')).pipe(
-      Options.withDescription('Filter edges by target node ID'),
-    ),
-    limit: Options.optional(Options.integer('limit')).pipe(
-      Options.withDescription('Max number of edges to return'),
+    limit: Flag.optional(Flag.Int('limit')).pipe(
+      Flag.withDescription('Max number of edges to return'),
     ),
   },
   ({ socketPath, json, type, source, target, limit }) =>
@@ -100,14 +98,12 @@ const edgeCreateCommand = Command.make(
   {
     socketPath: socketPathOption,
     json: jsonOption,
-    id: Options.optional(Options.text('id')).pipe(
-      Options.withDescription('Optional explicit edge ID'),
-    ),
-    type: Options.text('type').pipe(Options.withDescription('Edge type identifier')),
-    source: Options.text('source').pipe(Options.withDescription('Source node ID')),
-    target: Options.text('target').pipe(Options.withDescription('Target node ID')),
-    properties: Options.optional(Options.text('properties')).pipe(
-      Options.withDescription('Edge properties formatted as JSON string'),
+    id: Flag.optional(Flag.String('id')).pipe(Flag.withDescription('Optional explicit edge ID')),
+    type: Flag.String('type').pipe(Flag.withDescription('Edge type identifier')),
+    source: Flag.String('source').pipe(Flag.withDescription('Source node ID')),
+    target: Flag.String('target').pipe(Flag.withDescription('Target node ID')),
+    properties: Flag.optional(Flag.String('properties')).pipe(
+      Flag.withDescription('Edge properties formatted as JSON string'),
     ),
   },
   ({ socketPath, json, id, type, source, target, properties }) =>
@@ -140,7 +136,7 @@ const edgeDeleteCommand = Command.make(
   {
     socketPath: socketPathOption,
     json: jsonOption,
-    id: Options.text('id').pipe(Options.withDescription('Edge ID to delete')),
+    id: Flag.String('id').pipe(Flag.withDescription('Edge ID to delete')),
   },
   ({ socketPath, json, id }) =>
     Effect.gen(function* () {

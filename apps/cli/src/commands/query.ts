@@ -1,4 +1,4 @@
-import { Command, Options } from '@effect/cli';
+import { Command, Flag } from 'effect/cli';
 import { Console, Effect } from 'effect';
 import { makeIpcClient } from '@canopy/api-adapter';
 import { jsonOption, socketPathOption } from '../options';
@@ -29,11 +29,11 @@ const queryExecuteCommand = Command.make(
   {
     socketPath: socketPathOption,
     json: jsonOption,
-    query: Options.optional(Options.text('query')).pipe(
-      Options.withDescription('Graph query string or DSL expression'),
+    query: Flag.optional(Flag.String('query')).pipe(
+      Flag.withDescription('Graph query string or DSL expression'),
     ),
-    steps: Options.optional(Options.text('steps')).pipe(
-      Options.withDescription('Query steps formatted as JSON string'),
+    steps: Flag.optional(Flag.String('steps')).pipe(
+      Flag.withDescription('Query steps formatted as JSON string'),
     ),
   },
   ({ socketPath, json, query, steps }) =>

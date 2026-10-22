@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'bun:test';
+import { fileURLToPath } from 'node:url';
 import { asGraphId, createGraph, unwrap } from '@canopy/graph';
 import { createGraphAccessContext } from '@canopy/graph-access';
 import {
@@ -29,23 +30,30 @@ describe('executeSandboxedGuestPluginInWorker unavailable boundaries', () => {
   });
 
   it('returns unavailable when Worker construction throws', async () => {
-    const result = await executeSandboxedGuestPluginInWorker(
-      context,
-      'render:interactive',
-      '{}',
-      'fixture:interactive',
-      2000,
-      () => {
-        throw new Error('constructor blocked');
-      },
+    const child = Bun.spawn(
+      [
+        process.execPath,
+        fileURLToPath(new URL('tests/execute-wasm-render-worker.fixture.ts', import.meta.url)),
+      ],
+      { stdout: 'pipe', stderr: 'pipe', timeout: 3000, killSignal: 'SIGKILL', maxBuffer: 16_384 },
     );
-
-    expect(result.ok).toBe(false);
-    if (!result.ok && isRenderWorkerUnavailable(result.error)) {
-      expect(result.error.reason).toBe('worker-construction');
-      expect(result.error.message).toContain('constructor blocked');
-    } else {
+    const [stdout, stderr, exitCode] = await Promise.all([
+      new Response(child.stdout).text(),
+      new Response(child.stderr).text(),
+      child.exited,
+    ]);
+    expect({ exitCode, stderr }).toEqual({ exitCode: 0, stderr: '' });
+    const result: unknown = JSON.parse(stdout);
+    if (typeof result !== 'object' || result === null || !('ok' in result)) {
       throw new Error('Expected an unavailable Worker result');
     }
+    expect(result.ok).toBe(false);
+    expect(result).toMatchObject({
+      error: {
+        code: 'RENDERER_UNAVAILABLE',
+        reason: 'worker-construction',
+        message: expect.stringContaining('constructor blocked'),
+      },
+    });
   });
 });

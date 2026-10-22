@@ -170,7 +170,7 @@ export const createClipHost = (options: ClipHostOptions): ClipHost => {
   const getConnection = (): Effect.Effect<IpcClient, Readonly<{ _tag: 'DaemonUnavailable' }>> =>
     Effect.gen(function* () {
       if (connection) return connection;
-      // Effect.exit rather than Effect.either: connecting to a missing Unix
+      // Effect.exit rather than Effect.result: connecting to a missing Unix
       // socket path can surface as a synchronous throw (a defect) rather
       // than a typed IpcClientError -- see node:net's ENOENT behavior for a
       // nonexistent socket path. Effect.exit captures defects too, so a
@@ -214,26 +214,26 @@ export const createClipHost = (options: ClipHostOptions): ClipHost => {
         return makeErrorResponse(id, CLIP_HOST_ERROR_CODES.RATE_LIMITED, 'Rate limit exceeded');
       }
 
-      const connectionResult = yield* Effect.either(getConnection());
-      if (connectionResult._tag === 'Left') {
+      const connectionResult = yield* Effect.result(getConnection());
+      if (connectionResult._tag === 'Failure') {
         return makeErrorResponse(
           id,
           CLIP_HOST_ERROR_CODES.DAEMON_UNAVAILABLE,
           'daemon unavailable: could not connect to the Canopy daemon',
         );
       }
-      const client = connectionResult.right;
+      const client = connectionResult.success;
 
       if (needsNamespaceCheck(method)) {
-        const typeIdResult = yield* Effect.either(getWebClipTypeId(client));
-        if (typeIdResult._tag === 'Left') {
+        const typeIdResult = yield* Effect.result(getWebClipTypeId(client));
+        if (typeIdResult._tag === 'Failure') {
           return makeErrorResponse(
             id,
             CLIP_HOST_ERROR_CODES.DAEMON_UNAVAILABLE,
             'daemon unavailable: could not ensure the WebClip type',
           );
         }
-        const typeId = typeIdResult.right;
+        const typeId = typeIdResult.success;
         const check =
           method === IPC_METHODS.MUTATION_CREATE_NODE
             ? checkCreateNodeParameters(params, typeId)
@@ -253,9 +253,9 @@ export const createClipHost = (options: ClipHostOptions): ClipHost => {
         }
       }
 
-      const dispatchResult = yield* Effect.either(dispatch(client, method, params));
-      if (dispatchResult._tag === 'Left') {
-        const failure = dispatchResult.left;
+      const dispatchResult = yield* Effect.result(dispatch(client, method, params));
+      if (dispatchResult._tag === 'Failure') {
+        const failure = dispatchResult.failure;
         const code =
           failure._tag === 'IpcClientError' ? failure.code : JSON_RPC_ERROR_CODES.INVALID_PARAMS;
         // The daemon's own error `data` (e.g. concurrent-modification's
@@ -266,7 +266,7 @@ export const createClipHost = (options: ClipHostOptions): ClipHost => {
         return makeErrorResponse(id, code, failure.message, data);
       }
 
-      return makeSuccessResponse(id, dispatchResult.right);
+      return makeSuccessResponse(id, dispatchResult.success);
     });
 
     return Effect.runPromise(program);

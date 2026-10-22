@@ -5,21 +5,20 @@ import type { IpcServer } from '@canopy/api-adapter';
 import { createIpcServer } from '@canopy/api-adapter';
 import { asDeviceId, asGraphId, createGraphSession } from '@canopy/graph';
 import { createInMemoryEventStore } from '@canopy/storage';
-import { Command } from '@effect/cli';
-import { NodeContext } from '@effect/platform-node';
-import { Effect } from 'effect';
+import { Command } from 'effect/cli';
+import { NodeServices } from '@effect/platform-node';
+import { Cause, Console, Deferred, Effect, Exit, Fiber, Ref } from 'effect';
 import { rootCommand } from '../src/index';
+import { cliOutputLayer, runWithCliOutput, withExecutableErrorReporting } from '../src/cli-output';
 
 const getSocketPath = (): string =>
   path.join(process.cwd(), 'tmp', `test-cli-cmd-${Math.random().toString(36).slice(2, 9)}.sock`);
 
 const runCli = (arguments_: readonly string[]) =>
   Effect.runPromise(
-    Command.run(rootCommand, { name: 'Canopy CLI', version: '0.1.0' })([
-      'node',
-      'canopy',
-      ...arguments_,
-    ]).pipe(Effect.provide(NodeContext.layer)),
+    Command.runWith(rootCommand, { version: '0.1.0' })(arguments_).pipe(
+      Effect.provide(NodeServices.layer),
+    ),
   );
 
 describe('Canopy CLI commands execution', () => {
@@ -177,4 +176,148 @@ describe('rootCommand structure', () => {
     expect(rootCommand).toBeDefined();
     // Effect CLI doesn't easily expose subcommands array, but we can verify it's a Command.
   });
+});
+
+describe('executable output adapter', () => {
+  it('forwards successful Console output before completion, in order and exactly once', async () => {
+    await Effect.runPromise(
+      Console.consoleWith((hostConsole) =>
+        Effect.gen(function* () {
+          const messages = yield* Ref.make<readonly (readonly unknown[])[]>([]);
+          const started = yield* Deferred.make<undefined>();
+          const finish = yield* Deferred.make<undefined>();
+          const command = Command.make('stream', {}, () =>
+            Effect.gen(function* () {
+              yield* Console.log('first', 1);
+              yield* Deferred.succeed(started, undefined);
+              yield* Deferred.await(finish);
+              yield* Console.log('second', 2);
+            }),
+          );
+          const capture: Console.Console = Object.assign(Object.create(hostConsole), {
+            log: new Proxy(hostConsole.log, {
+              apply: (_target, _thisArgument, arguments_: readonly unknown[]) => {
+                Effect.runSync(Ref.update(messages, (current) => [...current, arguments_]));
+                return undefined;
+              },
+            }),
+          });
+          const fiber = yield* Effect.forkChild(
+            runWithCliOutput(
+              Command.runWith(command, { version: '0.1.0', renderErrors: false })([]),
+              cliOutputLayer(command, 'stream', 'Stream', '0.1.0'),
+              command,
+            ).pipe(
+              Effect.provide(NodeServices.layer),
+              Effect.provideService(Console.Console, capture),
+            ),
+          );
+          yield* Deferred.await(started);
+          expect(yield* Ref.get(messages)).toEqual([['first', 1]]);
+          yield* Deferred.succeed(finish, undefined);
+          yield* Fiber.join(fiber);
+          expect(yield* Ref.get(messages)).toEqual([
+            ['first', 1],
+            ['second', 2],
+          ]);
+        }),
+      ),
+    );
+  });
+});
+
+describe('executable failure presentation', () => {
+  it('retains parse failure and legacy stderr blank line while discarding generated help', async () => {
+    await Effect.runPromise(
+      Console.consoleWith((hostConsole) =>
+        Effect.gen(function* () {
+          const stdout = yield* Ref.make<readonly (readonly unknown[])[]>([]);
+          const stderr = yield* Ref.make<readonly (readonly unknown[])[]>([]);
+          const capture: Console.Console = Object.assign(Object.create(hostConsole), {
+            log: new Proxy(hostConsole.log, {
+              apply: (_target, _thisArgument, arguments_: readonly unknown[]) => {
+                Effect.runSync(Ref.update(stdout, (current) => [...current, arguments_]));
+                return undefined;
+              },
+            }),
+            error: new Proxy(hostConsole.error, {
+              apply: (_target, _thisArgument, arguments_: readonly unknown[]) => {
+                Effect.runSync(Ref.update(stderr, (current) => [...current, arguments_]));
+                return undefined;
+              },
+            }),
+          });
+          const exit = yield* Effect.exit(
+            runWithCliOutput(
+              Command.runWith(rootCommand, { version: '0.1.0', renderErrors: false })([
+                '--not-a-flag',
+              ]),
+              cliOutputLayer(rootCommand, 'canopy', 'Canopy CLI', '0.1.0'),
+              rootCommand,
+            ).pipe(
+              Effect.provide(NodeServices.layer),
+              withExecutableErrorReporting,
+              Effect.provideService(Console.Console, capture),
+            ),
+          );
+          expect(Exit.isFailure(exit)).toBe(true);
+          const message =
+            "Invalid subcommand for canopy - use one of 'status', 'node', 'edge', 'types', 'query', 'events'";
+          expect(yield* Ref.get(stderr)).toEqual([[`${message}\n`]]);
+          expect(yield* Ref.get(stdout)).toEqual([
+            [expect.stringMatching(/^\[\d{2}:\d{2}:\d{2}\.\d+\] ERROR \(#\d+\):\n {2}Error: /)],
+          ]);
+          expect((yield* Ref.get(stdout))[0]?.[0]).toEqual(
+            expect.stringContaining(
+              JSON.stringify({
+                _tag: 'CommandMismatch',
+                error: { _tag: 'Paragraph', value: { _tag: 'Text', value: message } },
+              }),
+            ),
+          );
+        }),
+      ),
+    );
+  });
+
+  it.each(['failure', 'defect'] as const)(
+    'reports the complete unhandled %s and preserves its cause',
+    async (kind) => {
+      await Effect.runPromise(
+        Console.consoleWith((hostConsole) =>
+          Effect.gen(function* () {
+            const messages = yield* Ref.make<readonly (readonly unknown[])[]>([]);
+            const capture: Console.Console = Object.assign(Object.create(hostConsole), {
+              log: new Proxy(hostConsole.log, {
+                apply: (_target, _thisArgument, arguments_: readonly unknown[]) => {
+                  Effect.runSync(Ref.update(messages, (current) => [...current, arguments_]));
+                  return undefined;
+                },
+              }),
+            });
+            const error = new Error(`unhandled ${kind}`);
+            const program = kind === 'failure' ? Effect.fail(error) : Effect.die(error);
+            const exit = yield* Effect.exit(
+              program.pipe(
+                withExecutableErrorReporting,
+                Effect.provideService(Console.Console, capture),
+              ),
+            );
+            expect(Exit.isFailure(exit)).toBe(true);
+            if (!Exit.isFailure(exit)) {
+              return;
+            }
+
+            expect(Cause.squash(exit.cause)).toBe(error);
+            expect(yield* Ref.get(messages)).toEqual([
+              [expect.stringMatching(/^\[\d{2}:\d{2}:\d{2}\.\d+\] ERROR \(#\d+\):\n {2}Error: /)],
+            ]);
+            expect((yield* Ref.get(messages))[0]?.[0]).toEqual(
+              expect.stringContaining(`\n  ${Cause.pretty(exit.cause)}`),
+            );
+          }),
+        ),
+      );
+    },
+  );
 });

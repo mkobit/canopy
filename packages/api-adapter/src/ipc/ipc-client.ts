@@ -1,6 +1,5 @@
 /* eslint-disable max-lines-per-function */
 import * as net from 'node:net';
-import { err, ok } from '@canopy/graph';
 import type { GraphAccessEdgePayload, GraphAccessNodePayload } from '@canopy/graph-access';
 import type {
   CreateEdgeParams as CreateEdgeParameters,
@@ -35,6 +34,8 @@ export type IpcClientError = Readonly<{
   details?: unknown;
 }>;
 
+type PendingResponse = JsonRpcResponse | IpcClientError;
+
 const createIpcClientError = (
   payload: Readonly<{
     code: number;
@@ -45,6 +46,12 @@ const createIpcClientError = (
   _tag: 'IpcClientError',
   ...payload,
 });
+
+const removeMapKey = <K, V>(current: ReadonlyMap<K, V>, key: K): ReadonlyMap<K, V> =>
+  new Map([...current].filter(([candidate]) => candidate !== key));
+
+const isIpcClientError = (response: PendingResponse): response is IpcClientError =>
+  '_tag' in response && response._tag === 'IpcClientError';
 
 export interface IpcClient {
   readonly handshake: (clientVersion?: string) => Effect.Effect<HandshakeResult, IpcClientError>;
@@ -106,508 +113,290 @@ const tryParseJson = <T>(json: string): T | undefined => {
   }
 };
 
-export const makeIpcClient = (socketPath: string): Effect.Effect<IpcClient, IpcClientError> => {
-  return Effect.async<IpcClient, IpcClientError>((resume) => {
-    const requestCounter = { current: 0 };
+export const makeIpcClient = (socketPath: string): Effect.Effect<IpcClient, IpcClientError> =>
+  Effect.callback<IpcClient, IpcClientError>((resume) => {
     const pendingRequests = {
-      current: new Map<
+      current: new Map<JsonRpcId, (response: PendingResponse) => undefined>() as ReadonlyMap<
         JsonRpcId,
-        {
-          resolve: (response: JsonRpcResponse) => unknown;
-          reject: (error: IpcClientError) => unknown;
-        }
-      >(),
+        (response: PendingResponse) => undefined
+      >,
     };
     const subscriptionCallbacks = {
-      current: new Map<string, (event: unknown) => unknown>(),
+      current: new Map<string, (event: unknown) => unknown>() as ReadonlyMap<
+        string,
+        (event: unknown) => unknown
+      >,
     };
+    const requestCounter = { current: 0 };
     const streamBuffer = { current: '' };
+    const terminated = { current: false };
+    const connected = { current: false };
+    const connectResult = Effect.runSync(
+      Effect.result(
+        Effect.try({
+          try: () => net.connect(socketPath),
+          catch: (error) =>
+            createIpcClientError({
+              code: JSON_RPC_ERROR_CODES.INTERNAL_ERROR,
+              message: `Socket error: ${error instanceof Error ? error.message : String(error)}`,
+            }),
+        }),
+      ),
+    );
 
-    // net.connect() can throw synchronously for some immediately-knowable
-    // failures (e.g. ENOENT on a Unix domain socket path with no listener --
-    // observed as a sync throw under bun's stricter runtime/test semantics,
-    // vs. an async 'error' event elsewhere) rather than only failing async
-    // via the 'error' event below. Catching it here keeps both paths
-    // reporting through the same resume(Effect.fail(...)) channel instead of
-    // letting a sync throw escape Effect.async's registration uncaught.
-    const connectResult = (() => {
-      // eslint-disable-next-line functional/no-try-statements -- net.connect sync throw guard
-      try {
-        return ok(net.connect(socketPath));
-      } catch (error) {
-        return err(
-          createIpcClientError({
-            code: JSON_RPC_ERROR_CODES.INTERNAL_ERROR,
-            message: `Socket error: ${error instanceof Error ? error.message : String(error)}`,
-          }),
-        );
-      }
-    })();
-
-    if (!connectResult.ok) {
-      resume(Effect.fail(connectResult.error));
+    if (connectResult._tag === 'Failure') {
+      resume(Effect.fail(connectResult.failure));
       return undefined;
     }
-    const socket = connectResult.value;
 
-    socket.on('connect', (): boolean => {
-      // eslint-disable-next-line unicorn/consistent-function-scoping
-      const sendRpcRequest = <T>(method: string, parameters?: unknown): Promise<T> => {
-        return new Promise<T>((resolve, reject) => {
-          requestCounter.current += 1;
-          const id = requestCounter.current;
+    const socket = connectResult.success;
 
-          pendingRequests.current = new Map([
-            ...pendingRequests.current,
-            [
-              id,
-              {
-                resolve: (response: JsonRpcResponse): unknown => {
-                  if (response.error) {
-                    reject(
-                      createIpcClientError({
-                        code: response.error.code,
-                        message: response.error.message,
-                        details: response.error.data,
-                      }),
-                    );
-                    return undefined;
-                  }
-                  resolve(response.result as T);
-                  return undefined;
-                },
-                reject: (error: IpcClientError): unknown => {
-                  reject(error);
-                  return undefined;
-                },
-              },
-            ],
-          ]);
+    const releaseSocket = (): undefined => {
+      socket.off('connect', onConnect);
+      socket.off('data', onData);
+      socket.off('error', onError);
+      socket.off('close', onClose);
+      socket.off('end', onEnd);
+      socket.destroy();
+      return undefined;
+    };
 
-          const payload = JSON.stringify({
-            jsonrpc: '2.0',
-            method,
-            ...(parameters !== undefined && { params: parameters }),
-            id,
-          });
+    const settlePending = (
+      pending: readonly ((response: PendingResponse) => undefined)[],
+      error: IpcClientError,
+      index = 0,
+    ): boolean => {
+      const settle = pending[index];
+      if (settle === undefined) return true;
+      settle(error);
+      return settlePending(pending, error, index + 1);
+    };
 
-          socket.write(`${payload}\n`);
+    const terminate = (error: IpcClientError): boolean => {
+      if (terminated.current) return true;
+      terminated.current = true;
+      subscriptionCallbacks.current = new Map();
+      const pending = [...pendingRequests.current.values()];
+      pendingRequests.current = new Map();
+      settlePending(pending, error);
+      releaseSocket();
+      if (!connected.current) resume(Effect.fail(error));
+      return true;
+    };
+
+    const request = <A>(method: string, parameters?: unknown): Effect.Effect<A, IpcClientError> =>
+      Effect.callback<A, IpcClientError>((resumeRequest) => {
+        if (terminated.current) {
+          resumeRequest(
+            Effect.fail(
+              createIpcClientError({
+                code: JSON_RPC_ERROR_CODES.INTERNAL_ERROR,
+                message: 'Socket is closed',
+              }),
+            ),
+          );
+          return Effect.void;
+        }
+
+        requestCounter.current += 1;
+        const id = requestCounter.current;
+        const settle = (response: PendingResponse): undefined => {
+          if (isIpcClientError(response)) {
+            resumeRequest(Effect.fail(response));
+            return undefined;
+          }
+          if (response.error) {
+            resumeRequest(
+              Effect.fail(
+                createIpcClientError({
+                  code: response.error.code,
+                  message: response.error.message,
+                  details: response.error.data,
+                }),
+              ),
+            );
+            return undefined;
+          }
+          resumeRequest(Effect.succeed(response.result as A));
+          return undefined;
+        };
+        pendingRequests.current = new Map([...pendingRequests.current, [id, settle]]);
+
+        const writeResult = Effect.runSync(
+          Effect.result(
+            Effect.try({
+              try: () =>
+                socket.write(
+                  `${JSON.stringify({
+                    jsonrpc: '2.0',
+                    method,
+                    ...(parameters !== undefined && { params: parameters }),
+                    id,
+                  })}\n`,
+                ),
+              catch: (error) =>
+                createIpcClientError({
+                  code: JSON_RPC_ERROR_CODES.INTERNAL_ERROR,
+                  message: String(error),
+                }),
+            }),
+          ),
+        );
+
+        if (writeResult._tag === 'Failure') {
+          pendingRequests.current = removeMapKey(pendingRequests.current, id);
+          resumeRequest(Effect.fail(writeResult.failure));
+          return Effect.void;
+        }
+
+        return Effect.sync(() => {
+          pendingRequests.current = removeMapKey(pendingRequests.current, id);
           return undefined;
         });
-      };
+      });
 
-      const client: IpcClient = {
-        handshake: (clientVersion = '0.1.0') =>
-          Effect.tryPromise({
-            try: () => sendRpcRequest<HandshakeResult>(IPC_METHODS.HANDSHAKE, { clientVersion }),
-            catch: (error) =>
-              typeof error === 'object' &&
-              error !== null &&
-              '_tag' in error &&
-              error._tag === 'IpcClientError'
-                ? (error as IpcClientError)
-                : createIpcClientError({
-                    code: JSON_RPC_ERROR_CODES.INTERNAL_ERROR,
-                    message: String(error),
-                  }),
-          }),
+    const client: IpcClient = {
+      handshake: (clientVersion = '0.1.0') => request(IPC_METHODS.HANDSHAKE, { clientVersion }),
+      getNode: (id) => request(IPC_METHODS.QUERY_GET_NODE, { id }),
+      getNodes: (parameters) => request(IPC_METHODS.QUERY_GET_NODES, parameters ?? {}),
+      getEdge: (id) => request(IPC_METHODS.QUERY_GET_EDGE, { id }),
+      getEdges: (parameters) => request(IPC_METHODS.QUERY_GET_EDGES, parameters ?? {}),
+      executeQuery: (parameters) => request(IPC_METHODS.QUERY_EXECUTE_QUERY, parameters ?? {}),
+      createNode: (parameters) => request(IPC_METHODS.MUTATION_CREATE_NODE, parameters),
+      updateNodeProperties: (parameters) =>
+        request(IPC_METHODS.MUTATION_UPDATE_NODE_PROPERTIES, parameters),
+      deleteNode: (parameters) => request(IPC_METHODS.MUTATION_DELETE_NODE, parameters),
+      createEdge: (parameters) => request(IPC_METHODS.MUTATION_CREATE_EDGE, parameters),
+      deleteEdge: (parameters) => request(IPC_METHODS.MUTATION_DELETE_EDGE, parameters),
+      subscribe: (parameters, onEvent) =>
+        Effect.map(
+          request<SubscribeResult>(IPC_METHODS.EVENT_STREAM_SUBSCRIBE, parameters ?? {}),
+          (response) => {
+            if (onEvent && response.subscriptionId) {
+              subscriptionCallbacks.current = new Map([
+                ...subscriptionCallbacks.current,
+                [response.subscriptionId, onEvent],
+              ]);
+            }
+            return response;
+          },
+        ),
+      unsubscribe: (subscriptionId) =>
+        Effect.map(
+          request<UnsubscribeResult>(IPC_METHODS.EVENT_STREAM_UNSUBSCRIBE, { subscriptionId }),
+          (response) => {
+            subscriptionCallbacks.current = removeMapKey(
+              subscriptionCallbacks.current,
+              subscriptionId,
+            );
+            return response;
+          },
+        ),
+      draftCreate: () => request(IPC_METHODS.DRAFT_CREATE),
+      draftApply: (parameters) => request(IPC_METHODS.DRAFT_APPLY, parameters),
+      draftPreview: (parameters) => request(IPC_METHODS.DRAFT_PREVIEW, parameters),
+      draftCommit: (parameters) => request(IPC_METHODS.DRAFT_COMMIT, parameters),
+      draftDiscard: (parameters) => request(IPC_METHODS.DRAFT_DISCARD, parameters),
+      close: () =>
+        Effect.asVoid(
+          Effect.sync(() =>
+            terminate(
+              createIpcClientError({
+                code: JSON_RPC_ERROR_CODES.INTERNAL_ERROR,
+                message: 'Socket closed by client',
+              }),
+            ),
+          ),
+        ),
+    };
 
-        getNode: (id: string) =>
-          Effect.tryPromise({
-            try: () => sendRpcRequest<GraphAccessNodePayload>(IPC_METHODS.QUERY_GET_NODE, { id }),
-            catch: (error) =>
-              typeof error === 'object' &&
-              error !== null &&
-              '_tag' in error &&
-              error._tag === 'IpcClientError'
-                ? (error as IpcClientError)
-                : createIpcClientError({
-                    code: JSON_RPC_ERROR_CODES.INTERNAL_ERROR,
-                    message: String(error),
-                  }),
-          }),
-
-        getNodes: (parameters) =>
-          Effect.tryPromise({
-            try: () =>
-              sendRpcRequest<readonly GraphAccessNodePayload[]>(
-                IPC_METHODS.QUERY_GET_NODES,
-                parameters ?? {},
-              ),
-            catch: (error) =>
-              typeof error === 'object' &&
-              error !== null &&
-              '_tag' in error &&
-              error._tag === 'IpcClientError'
-                ? (error as IpcClientError)
-                : createIpcClientError({
-                    code: JSON_RPC_ERROR_CODES.INTERNAL_ERROR,
-                    message: String(error),
-                  }),
-          }),
-
-        getEdge: (id: string) =>
-          Effect.tryPromise({
-            try: () => sendRpcRequest<GraphAccessEdgePayload>(IPC_METHODS.QUERY_GET_EDGE, { id }),
-            catch: (error) =>
-              typeof error === 'object' &&
-              error !== null &&
-              '_tag' in error &&
-              error._tag === 'IpcClientError'
-                ? (error as IpcClientError)
-                : createIpcClientError({
-                    code: JSON_RPC_ERROR_CODES.INTERNAL_ERROR,
-                    message: String(error),
-                  }),
-          }),
-
-        getEdges: (parameters) =>
-          Effect.tryPromise({
-            try: () =>
-              sendRpcRequest<readonly GraphAccessEdgePayload[]>(
-                IPC_METHODS.QUERY_GET_EDGES,
-                parameters ?? {},
-              ),
-            catch: (error) =>
-              typeof error === 'object' &&
-              error !== null &&
-              '_tag' in error &&
-              error._tag === 'IpcClientError'
-                ? (error as IpcClientError)
-                : createIpcClientError({
-                    code: JSON_RPC_ERROR_CODES.INTERNAL_ERROR,
-                    message: String(error),
-                  }),
-          }),
-
-        executeQuery: (parameters) =>
-          Effect.tryPromise({
-            try: () =>
-              sendRpcRequest<readonly GraphAccessNodePayload[]>(
-                IPC_METHODS.QUERY_EXECUTE_QUERY,
-                parameters ?? {},
-              ),
-            catch: (error) =>
-              typeof error === 'object' &&
-              error !== null &&
-              '_tag' in error &&
-              error._tag === 'IpcClientError'
-                ? (error as IpcClientError)
-                : createIpcClientError({
-                    code: JSON_RPC_ERROR_CODES.INTERNAL_ERROR,
-                    message: String(error),
-                  }),
-          }),
-
-        createNode: (parameters) =>
-          Effect.tryPromise({
-            try: () =>
-              sendRpcRequest<GraphAccessNodePayload>(IPC_METHODS.MUTATION_CREATE_NODE, parameters),
-            catch: (error) =>
-              typeof error === 'object' &&
-              error !== null &&
-              '_tag' in error &&
-              error._tag === 'IpcClientError'
-                ? (error as IpcClientError)
-                : createIpcClientError({
-                    code: JSON_RPC_ERROR_CODES.INTERNAL_ERROR,
-                    message: String(error),
-                  }),
-          }),
-
-        updateNodeProperties: (parameters) =>
-          Effect.tryPromise({
-            try: () =>
-              sendRpcRequest<GraphAccessNodePayload>(
-                IPC_METHODS.MUTATION_UPDATE_NODE_PROPERTIES,
-                parameters,
-              ),
-            catch: (error) =>
-              typeof error === 'object' &&
-              error !== null &&
-              '_tag' in error &&
-              error._tag === 'IpcClientError'
-                ? (error as IpcClientError)
-                : createIpcClientError({
-                    code: JSON_RPC_ERROR_CODES.INTERNAL_ERROR,
-                    message: String(error),
-                  }),
-          }),
-
-        deleteNode: (parameters) =>
-          Effect.tryPromise({
-            try: () =>
-              sendRpcRequest<Readonly<{ id: string }>>(
-                IPC_METHODS.MUTATION_DELETE_NODE,
-                parameters,
-              ),
-            catch: (error) =>
-              typeof error === 'object' &&
-              error !== null &&
-              '_tag' in error &&
-              error._tag === 'IpcClientError'
-                ? (error as IpcClientError)
-                : createIpcClientError({
-                    code: JSON_RPC_ERROR_CODES.INTERNAL_ERROR,
-                    message: String(error),
-                  }),
-          }),
-
-        createEdge: (parameters) =>
-          Effect.tryPromise({
-            try: () =>
-              sendRpcRequest<GraphAccessEdgePayload>(IPC_METHODS.MUTATION_CREATE_EDGE, parameters),
-            catch: (error) =>
-              typeof error === 'object' &&
-              error !== null &&
-              '_tag' in error &&
-              error._tag === 'IpcClientError'
-                ? (error as IpcClientError)
-                : createIpcClientError({
-                    code: JSON_RPC_ERROR_CODES.INTERNAL_ERROR,
-                    message: String(error),
-                  }),
-          }),
-
-        deleteEdge: (parameters) =>
-          Effect.tryPromise({
-            try: () =>
-              sendRpcRequest<Readonly<{ id: string }>>(
-                IPC_METHODS.MUTATION_DELETE_EDGE,
-                parameters,
-              ),
-            catch: (error) =>
-              typeof error === 'object' &&
-              error !== null &&
-              '_tag' in error &&
-              error._tag === 'IpcClientError'
-                ? (error as IpcClientError)
-                : createIpcClientError({
-                    code: JSON_RPC_ERROR_CODES.INTERNAL_ERROR,
-                    message: String(error),
-                  }),
-          }),
-
-        subscribe: (parameters, onEvent) =>
-          Effect.tryPromise({
-            try: async () => {
-              const response = await sendRpcRequest<SubscribeResult>(
-                IPC_METHODS.EVENT_STREAM_SUBSCRIBE,
-                parameters ?? {},
-              );
-              if (onEvent && response.subscriptionId) {
-                subscriptionCallbacks.current = new Map([
-                  ...subscriptionCallbacks.current,
-                  [response.subscriptionId, onEvent],
-                ]);
-              }
-              return response;
-            },
-            catch: (error) =>
-              typeof error === 'object' &&
-              error !== null &&
-              '_tag' in error &&
-              error._tag === 'IpcClientError'
-                ? (error as IpcClientError)
-                : createIpcClientError({
-                    code: JSON_RPC_ERROR_CODES.INTERNAL_ERROR,
-                    message: String(error),
-                  }),
-          }),
-
-        unsubscribe: (subscriptionId) =>
-          Effect.tryPromise({
-            try: async () => {
-              const response = await sendRpcRequest<UnsubscribeResult>(
-                IPC_METHODS.EVENT_STREAM_UNSUBSCRIBE,
-                { subscriptionId },
-              );
-              subscriptionCallbacks.current = new Map(
-                [...subscriptionCallbacks.current].filter(([id]) => id !== subscriptionId),
-              );
-              return response;
-            },
-            catch: (error) =>
-              typeof error === 'object' &&
-              error !== null &&
-              '_tag' in error &&
-              error._tag === 'IpcClientError'
-                ? (error as IpcClientError)
-                : createIpcClientError({
-                    code: JSON_RPC_ERROR_CODES.INTERNAL_ERROR,
-                    message: String(error),
-                  }),
-          }),
-
-        draftCreate: () =>
-          Effect.tryPromise({
-            try: () => sendRpcRequest<DraftCreateResult>(IPC_METHODS.DRAFT_CREATE),
-            catch: (error) =>
-              typeof error === 'object' &&
-              error !== null &&
-              '_tag' in error &&
-              error._tag === 'IpcClientError'
-                ? (error as IpcClientError)
-                : createIpcClientError({
-                    code: JSON_RPC_ERROR_CODES.INTERNAL_ERROR,
-                    message: String(error),
-                  }),
-          }),
-
-        draftApply: (parameters) =>
-          Effect.tryPromise({
-            try: () => sendRpcRequest<DraftApplyResult>(IPC_METHODS.DRAFT_APPLY, parameters),
-            catch: (error) =>
-              typeof error === 'object' &&
-              error !== null &&
-              '_tag' in error &&
-              error._tag === 'IpcClientError'
-                ? (error as IpcClientError)
-                : createIpcClientError({
-                    code: JSON_RPC_ERROR_CODES.INTERNAL_ERROR,
-                    message: String(error),
-                  }),
-          }),
-
-        draftPreview: (parameters) =>
-          Effect.tryPromise({
-            try: () => sendRpcRequest<DraftPreviewResult>(IPC_METHODS.DRAFT_PREVIEW, parameters),
-            catch: (error) =>
-              typeof error === 'object' &&
-              error !== null &&
-              '_tag' in error &&
-              error._tag === 'IpcClientError'
-                ? (error as IpcClientError)
-                : createIpcClientError({
-                    code: JSON_RPC_ERROR_CODES.INTERNAL_ERROR,
-                    message: String(error),
-                  }),
-          }),
-
-        draftCommit: (parameters) =>
-          Effect.tryPromise({
-            try: () =>
-              sendRpcRequest<Readonly<{ success: boolean }>>(IPC_METHODS.DRAFT_COMMIT, parameters),
-            catch: (error) =>
-              typeof error === 'object' &&
-              error !== null &&
-              '_tag' in error &&
-              error._tag === 'IpcClientError'
-                ? (error as IpcClientError)
-                : createIpcClientError({
-                    code: JSON_RPC_ERROR_CODES.INTERNAL_ERROR,
-                    message: String(error),
-                  }),
-          }),
-
-        draftDiscard: (parameters) =>
-          Effect.tryPromise({
-            try: () =>
-              sendRpcRequest<Readonly<{ success: boolean }>>(IPC_METHODS.DRAFT_DISCARD, parameters),
-            catch: (error) =>
-              typeof error === 'object' &&
-              error !== null &&
-              '_tag' in error &&
-              error._tag === 'IpcClientError'
-                ? (error as IpcClientError)
-                : createIpcClientError({
-                    code: JSON_RPC_ERROR_CODES.INTERNAL_ERROR,
-                    message: String(error),
-                  }),
-          }),
-
-        close: () =>
-          Effect.sync(() => {
-            subscriptionCallbacks.current = new Map();
-            pendingRequests.current = new Map();
-            socket.destroy();
-            return undefined;
-          }),
-      };
-
+    const onConnect = (): boolean => {
+      if (terminated.current) return true;
+      connected.current = true;
       resume(Effect.succeed(client));
       return true;
-    });
+    };
 
-    socket.on('data', (chunk: Buffer): boolean => {
+    const processLines = (lines: readonly string[], index = 0): boolean => {
+      const line = lines[index];
+      if (line === undefined) return true;
+      const response = tryParseJson<
+        JsonRpcResponse &
+          Readonly<{
+            method?: string;
+            params?: Readonly<{ subscriptionId?: string; event?: unknown }>;
+          }>
+      >(line.trim());
+      if (response) {
+        if (response.method === IPC_METHODS.EVENT_STREAM_EVENT && response.params) {
+          const { subscriptionId, event } = response.params;
+          if (subscriptionId) subscriptionCallbacks.current.get(subscriptionId)?.(event);
+        } else if (response.id !== undefined && response.id !== null) {
+          const settle = pendingRequests.current.get(response.id);
+          if (settle) {
+            pendingRequests.current = removeMapKey(pendingRequests.current, response.id);
+            settle(response);
+          }
+        }
+      }
+      return processLines(lines, index + 1);
+    };
+
+    const onData = (chunk: Buffer): boolean => {
       const combined = streamBuffer.current + chunk.toString('utf8');
       const lastNewline = combined.lastIndexOf('\n');
       if (lastNewline === -1) {
         streamBuffer.current = combined;
         return true;
       }
-
       const completeLines = combined.slice(0, lastNewline).split('\n');
       streamBuffer.current = combined.slice(lastNewline + 1);
-
-      const linesToProcess = completeLines
-        .map((rawLine) => rawLine.trim())
-        .filter((line) => line.length > 0);
-
-      const processLines = (lines: readonly string[], index = 0): boolean => {
-        if (index >= lines.length) return true;
-        const line = lines[index];
-        if (line !== undefined) {
-          const rawObject = tryParseJson<
-            Readonly<{
-              id?: JsonRpcId;
-              method?: string;
-              params?: Readonly<{ subscriptionId?: string; event?: unknown }>;
-            }>
-          >(line);
-
-          if (rawObject) {
-            if (rawObject.method === IPC_METHODS.EVENT_STREAM_EVENT && rawObject.params) {
-              const { subscriptionId, event } = rawObject.params;
-              if (subscriptionId) {
-                const callback = subscriptionCallbacks.current.get(subscriptionId);
-                callback?.(event);
-              }
-            } else if (rawObject.id !== undefined && rawObject.id !== null) {
-              const pending = pendingRequests.current.get(rawObject.id);
-              if (pending) {
-                pendingRequests.current = new Map(
-                  [...pendingRequests.current].filter(([id]) => id !== rawObject.id),
-                );
-                pending.resolve(rawObject as JsonRpcResponse);
-              }
-            }
-          }
-        }
-        return processLines(lines, index + 1);
-      };
-
-      processLines(linesToProcess);
+      processLines(completeLines);
       return true;
-    });
+    };
 
-    socket.on('error', (error: Error): boolean => {
-      const clientError = createIpcClientError({
-        code: JSON_RPC_ERROR_CODES.INTERNAL_ERROR,
-        message: `Socket error: ${error.message}`,
-      });
+    const onError = (error: Error): boolean => {
+      terminate(
+        createIpcClientError({
+          code: JSON_RPC_ERROR_CODES.INTERNAL_ERROR,
+          message: `Socket error: ${error.message}`,
+        }),
+      );
+      return true;
+    };
 
-      const rejectAll = (
-        requests: readonly Readonly<{
-          reject: (error: IpcClientError) => unknown;
-        }>[],
-        index = 0,
-      ): boolean => {
-        if (index >= requests.length) return true;
-        const pending = requests[index];
-        if (pending !== undefined) {
-          pending.reject(clientError);
-        }
-        return rejectAll(requests, index + 1);
-      };
+    const onClose = (): boolean => {
+      terminate(
+        createIpcClientError({
+          code: JSON_RPC_ERROR_CODES.INTERNAL_ERROR,
+          message: 'Socket closed by peer',
+        }),
+      );
+      return true;
+    };
 
-      rejectAll([...pendingRequests.current.values()]);
+    const onEnd = (): boolean => {
+      terminate(
+        createIpcClientError({
+          code: JSON_RPC_ERROR_CODES.INTERNAL_ERROR,
+          message: 'Socket closed by peer',
+        }),
+      );
+      return true;
+    };
+
+    socket.on('connect', onConnect);
+    socket.on('data', onData);
+    socket.on('error', onError);
+    socket.on('close', onClose);
+    socket.on('end', onEnd);
+
+    return Effect.sync(() => {
+      if (terminated.current) return undefined;
+      terminated.current = true;
+      subscriptionCallbacks.current = new Map();
       pendingRequests.current = new Map();
-
-      resume(Effect.fail(clientError));
-      return true;
+      releaseSocket();
+      return undefined;
     });
-
-    return undefined;
   });
-};
