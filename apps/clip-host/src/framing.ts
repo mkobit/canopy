@@ -1,5 +1,6 @@
 import type { Result } from '@canopy/graph';
 import { err, ok } from '@canopy/graph';
+import { Array as EffectArray, Effect, Option } from 'effect';
 
 // Chrome/Chromium's documented native-messaging cap on a single message
 // (host<->extension, either direction) is ~1 MB. Rejecting at this boundary
@@ -45,50 +46,58 @@ export type DecodedFrames = Readonly<{
   remainder: Buffer;
 }>;
 
+type FrameRecord = Readonly<{
+  result: Result<unknown, NativeMessagingFramingError>;
+  end: number;
+}>;
+
+const readFrame = (
+  buffer: Buffer,
+  offset: number,
+): Readonly<Option.Option<readonly [FrameRecord, number]>> => {
+  if (buffer.byteLength - offset < 4) return Option.none<readonly [FrameRecord, number]>();
+  const declaredLength = buffer.readUInt32LE(offset);
+  if (declaredLength > MAX_FRAME_BYTES) {
+    return Option.some([
+      {
+        result: err(
+          framingError(
+            'oversize-frame',
+            `Declared frame length ${declaredLength} exceeds the ${MAX_FRAME_BYTES}-byte native-messaging cap`,
+          ),
+        ),
+        end: offset,
+      },
+      buffer.byteLength,
+    ]);
+  }
+  const bodyStart = offset + 4;
+  const bodyEnd = bodyStart + declaredLength;
+  if (buffer.byteLength < bodyEnd) return Option.none<readonly [FrameRecord, number]>();
+  const parsed = Effect.runSync(
+    Effect.result(
+      Effect.try({
+        try: (): unknown => JSON.parse(buffer.subarray(bodyStart, bodyEnd).toString('utf8')),
+        catch: () => framingError('malformed-json', 'Frame body is not valid JSON'),
+      }),
+    ),
+  );
+  const result = parsed._tag === 'Success' ? ok(parsed.success) : err(parsed.failure);
+  return Option.some([{ result, end: bodyEnd }, result.ok ? bodyEnd : buffer.byteLength]);
+};
+
 /**
-Extracts as many complete, length-prefixed JSON frames as `buffer` contains.
-Pure: does not mutate `buffer` and performs no I/O. On a malformed or
-oversize frame, returns an error and no messages -- callers must not act on
-any prior message that would have shipped alongside it (no partial state).
+Extracts complete frames without mutating input. Inspect terminal errors before
+exposing any messages so valid-then-invalid input remains atomic.
 */
 export const decodeFrames = (
   buffer: Buffer,
 ): Result<DecodedFrames, NativeMessagingFramingError> => {
-  // eslint-disable-next-line functional/no-let -- local cursor into an immutable input buffer, not shared state
-  let offset = 0;
-  // eslint-disable-next-line functional/prefer-immutable-types -- local accumulator
-  const messages: unknown[] = [];
-
-  // eslint-disable-next-line functional/no-loop-statements
-  while (buffer.byteLength - offset >= 4) {
-    const declaredLength = buffer.readUInt32LE(offset);
-    if (declaredLength > MAX_FRAME_BYTES) {
-      return err(
-        framingError(
-          'oversize-frame',
-          `Declared frame length ${declaredLength} exceeds the ${MAX_FRAME_BYTES}-byte native-messaging cap`,
-        ),
-      );
-    }
-
-    const bodyStart = offset + 4;
-    const bodyEnd = bodyStart + declaredLength;
-    if (buffer.byteLength < bodyEnd) {
-      // Full frame not yet received; wait for more data.
-      break;
-    }
-
-    const body = buffer.subarray(bodyStart, bodyEnd);
-    // eslint-disable-next-line functional/no-try-statements
-    try {
-      // eslint-disable-next-line functional/immutable-data
-      messages.push(JSON.parse(body.toString('utf8')) as unknown);
-    } catch {
-      return err(framingError('malformed-json', 'Frame body is not valid JSON'));
-    }
-
-    offset = bodyEnd;
-  }
-
-  return ok({ messages, remainder: buffer.subarray(offset) });
+  const records: readonly FrameRecord[] = EffectArray.unfold(0, (offset) =>
+    readFrame(buffer, offset),
+  );
+  const failure = records.find((record) => !record.result.ok)?.result;
+  if (failure && !failure.ok) return err(failure.error);
+  const messages = records.map((record) => (record.result.ok ? record.result.value : undefined));
+  return ok({ messages, remainder: buffer.subarray(records.at(-1)?.end ?? 0) });
 };

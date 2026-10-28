@@ -1,5 +1,5 @@
-/* eslint-disable functional/no-return-void -- stdio event-handler wiring, not domain logic */
 import type { JsonRpcId } from '@canopy/api-adapter';
+import { Effect, Ref } from 'effect';
 import { resolveDaemonSocketPath } from './config';
 import { decodeFrames, encodeFrame } from './framing';
 import { createClipHost } from './host';
@@ -11,7 +11,7 @@ import { createRateLimiter } from './rate-limiter';
 const RATE_LIMIT_MAX_REQUESTS = 20;
 const RATE_LIMIT_WINDOW_MS = 1000;
 
-export const runClipHost = (): void => {
+export const runClipHost = () => {
   const host = createClipHost({
     socketPath: resolveDaemonSocketPath(),
     rateLimiter: createRateLimiter({
@@ -20,33 +20,27 @@ export const runClipHost = (): void => {
     }),
   });
 
-  // eslint-disable-next-line functional/no-let -- accumulates partial frames across stdin 'data' events
-  let buffer: Buffer = Buffer.alloc(0);
+  const buffer = Ref.makeUnsafe<Buffer>(Buffer.alloc(0));
 
-  const reply = async (message: unknown): Promise<void> => {
+  const reply = async (message: unknown): Promise<boolean> => {
     const request = message as Readonly<{ method?: unknown; params?: unknown; id?: JsonRpcId }>;
     const response = await host.handleRequest(request);
     const encoded = encodeFrame(response);
-    if (encoded.ok) {
-      process.stdout.write(encoded.value);
-    }
+    return encoded.ok && process.stdout.write(encoded.value);
   };
 
-  process.stdin.on('data', (chunk: Buffer) => {
-    buffer = Buffer.concat([buffer, chunk]);
-    const decoded = decodeFrames(buffer);
-    if (!decoded.ok) {
-      // Malformed/oversize frame: framing alignment can't be trusted without
-      // the exact declared byte count, which we refused to buffer -- drop
-      // and wait for the next message rather than risk parsing garbage.
-      buffer = Buffer.alloc(0);
-      return;
-    }
-    buffer = decoded.value.remainder;
-    // eslint-disable-next-line functional/no-loop-statements -- fire-and-forget dispatch per decoded frame
-    for (const message of decoded.value.messages) {
-      void reply(message);
-    }
+  return process.stdin.on('data', (chunk: Buffer) => {
+    const messages = Effect.runSync(
+      Ref.modify(buffer, (previous) => {
+        const decoded = decodeFrames(Buffer.concat([previous, chunk]));
+        // A framing failure invalidates alignment; clear all buffered bytes.
+        return decoded.ok
+          ? ([decoded.value.messages, decoded.value.remainder] as const)
+          : ([[], Buffer.alloc(0)] as const);
+      }),
+    );
+    // Start every reply immediately; independent completion determines wire order.
+    return messages.map(reply);
   });
 };
 

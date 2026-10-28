@@ -160,7 +160,7 @@ describe('clip-host allowlist enforcement', () => {
     expect(response.error?.data).toEqual({ webClipTypeId: WEBCLIP_TYPE_ID });
   });
 
-  it('7.2 relays draft.create/preview/commit (no extra namespace check needed)', async () => {
+  it('7.2 relays draft.create/preview/commit/discard (no extra namespace check needed)', async () => {
     const { client, calls } = createStubClient();
     const host = createClipHost({
       socketPath: '/unused',
@@ -171,6 +171,28 @@ describe('clip-host allowlist enforcement', () => {
     const createResponse = await host.handleRequest({ method: 'canopy.v1.draft.create', id: 1 });
     expect(createResponse.error).toBeUndefined();
     expect(calls).toContain('draftCreate');
+
+    const preview = await host.handleRequest({
+      method: 'canopy.v1.draft.preview',
+      params: { draftId: 'draft_1' },
+      id: 2,
+    });
+    expect(preview.error).toBeUndefined();
+    expect(calls).toContain('draftPreview');
+    const commit = await host.handleRequest({
+      method: 'canopy.v1.draft.commit',
+      params: { draftId: 'draft_1', expectedParentRevision: 'rev_1' },
+      id: 3,
+    });
+    expect(commit.error).toBeUndefined();
+    expect(calls).toContain('draftCommit');
+    const discard = await host.handleRequest({
+      method: 'canopy.v1.draft.discard',
+      params: { draftId: 'draft_1' },
+      id: 4,
+    });
+    expect(discard.error).toBeUndefined();
+    expect(calls).toContain('draftDiscard');
   });
 
   it('3.6 (addendum) draft.apply relays plain-object properties, not a Map, to the wire client', async () => {
