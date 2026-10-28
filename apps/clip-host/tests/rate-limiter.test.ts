@@ -44,3 +44,34 @@ describe('clip-host rate limiting', () => {
     expect(calls).toEqual(['handshake']);
   });
 });
+
+it('Window equality and rejected attempts retain success-only timestamps', () => {
+  const limiter = createRateLimiter({ maxRequests: 1, windowMs: 1000 });
+  expect([0, 500, 1000, 1001, 2001, 2002].map((now) => limiter.tryAcquire(now))).toEqual([
+    true,
+    false,
+    false,
+    true,
+    false,
+    true,
+  ]);
+});
+
+it('Isolated state and supplied times retain prefix-only expiry including NaN', () => {
+  const first = createRateLimiter({ maxRequests: 2, windowMs: 10 });
+  const second = createRateLimiter({ maxRequests: 2, windowMs: 10 });
+  expect([10, 0, 15].map((now) => first.tryAcquire(now))).toEqual([true, true, false]);
+  expect(second.tryAcquire(15)).toBe(true);
+  const nanHead = createRateLimiter({ maxRequests: 1, windowMs: 10 });
+  expect(nanHead.tryAcquire(NaN)).toBe(true);
+  expect(nanHead.tryAcquire(100)).toBe(false);
+  const nanNow = createRateLimiter({ maxRequests: 1, windowMs: 10 });
+  expect(nanNow.tryAcquire(0)).toBe(true);
+  expect(nanNow.tryAcquire(NaN)).toBe(false);
+});
+
+it('Supplied NaN capacity preserves the original rejection comparison', () => {
+  const limiter = createRateLimiter({ maxRequests: NaN, windowMs: 10 });
+  expect(limiter.tryAcquire(0)).toBe(true);
+  expect(limiter.tryAcquire(0)).toBe(true);
+});

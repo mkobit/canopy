@@ -1,3 +1,5 @@
+import { Effect, Ref } from 'effect';
+
 export type RateLimiter = Readonly<{
   /**
   Records one request attempt at `now` and reports whether it is within the configured rate.
@@ -17,23 +19,19 @@ return `false` so the caller can reject/throttle rather than forward
 unbounded requests to the daemon.
 */
 export const createRateLimiter = (options: RateLimiterOptions): RateLimiter => {
-  // eslint-disable-next-line functional/prefer-immutable-types -- local accumulator
-  const timestamps: number[] = [];
+  const timestamps = Ref.makeUnsafe<readonly number[]>([]);
 
   return {
-    tryAcquire: (now = Temporal.Now.instant().epochMilliseconds) => {
-      const windowStart = now - options.windowMs;
-      // eslint-disable-next-line functional/no-loop-statements
-      while (timestamps.length > 0 && (timestamps[0] ?? 0) < windowStart) {
-        // eslint-disable-next-line functional/immutable-data
-        timestamps.shift();
-      }
-      if (timestamps.length >= options.maxRequests) {
-        return false;
-      }
-      // eslint-disable-next-line functional/immutable-data
-      timestamps.push(now);
-      return true;
-    },
+    tryAcquire: (now = Temporal.Now.instant().epochMilliseconds) =>
+      Effect.runSync(
+        Ref.modify(timestamps, (previous) => {
+          const windowStart = now - options.windowMs;
+          // Stop at the first unexpired head, including incomparable NaN values.
+          const head = previous.findIndex((timestamp) => !(timestamp < windowStart));
+          const retained = head === -1 ? [] : previous.slice(head);
+          const acquired = !(retained.length >= options.maxRequests);
+          return [acquired, acquired ? [...retained, now] : retained] as const;
+        }),
+      ),
   };
 };

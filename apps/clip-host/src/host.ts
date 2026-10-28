@@ -12,7 +12,7 @@ import {
   makeIpcClient,
 } from '@canopy/api-adapter';
 import type { TypeId } from '@canopy/graph';
-import { Effect } from 'effect';
+import { Effect, Ref } from 'effect';
 import {
   checkCreateNodeParameters,
   checkDraftApplyParameters,
@@ -42,15 +42,16 @@ export type ClipHost = Readonly<{
   handleRequest: (request: IncomingRequest) => Promise<JsonRpcResponse>;
 }>;
 
-// eslint-disable-next-line functional/no-mixed-types -- config data (socketPath, rateLimiter) plus an injectable connect function for tests
 export type ClipHostOptions = Readonly<{
   socketPath: string;
   rateLimiter: RateLimiter;
-  /**
+}> &
+  Readonly<{
+    /**
   Overridable for tests; defaults to the real makeIpcClient.
   */
-  connect?: (socketPath: string) => Effect.Effect<IpcClient, IpcClientError>;
-}>;
+    connect?: (socketPath: string) => Effect.Effect<IpcClient, IpcClientError>;
+  }>;
 
 const makeErrorResponse = (
   id: JsonRpcId | undefined,
@@ -153,124 +154,135 @@ const dispatch = (
   }
 };
 
+type DaemonUnavailable = Readonly<{ _tag: 'DaemonUnavailable' }>;
+
+type HostSession = Readonly<{
+  connection: Ref.Ref<IpcClient | undefined>;
+  webClipTypeId: Ref.Ref<TypeId | undefined>;
+}>;
+
+const getConnection = (
+  options: ClipHostOptions,
+  session: HostSession,
+): Effect.Effect<IpcClient, DaemonUnavailable> =>
+  Effect.gen(function* () {
+    const connection = yield* Ref.get(session.connection);
+    if (connection) return connection;
+    // Capture both typed connection errors and defects from the Unix-socket API.
+    const exit = yield* Effect.exit((options.connect ?? makeIpcClient)(options.socketPath));
+    if (exit._tag === 'Failure') {
+      return yield* Effect.fail({ _tag: 'DaemonUnavailable' as const });
+    }
+    yield* Ref.set(session.connection, exit.value);
+    return exit.value;
+  });
+
+const getWebClipTypeId = (
+  client: IpcClient,
+  session: HostSession,
+): Effect.Effect<TypeId, DaemonUnavailable> =>
+  Effect.gen(function* () {
+    const typeId = yield* Ref.get(session.webClipTypeId);
+    if (typeId) return typeId;
+    const exit = yield* Effect.exit(ensureWebClipType(client));
+    if (exit._tag === 'Failure') {
+      return yield* Effect.fail({ _tag: 'DaemonUnavailable' as const });
+    }
+    yield* Ref.set(session.webClipTypeId, exit.value.typeId);
+    return exit.value.typeId;
+  });
+
+const checkNamespace = (
+  client: IpcClient,
+  session: HostSession,
+  request: IncomingRequest,
+): Effect.Effect<JsonRpcResponse | undefined> =>
+  Effect.gen(function* () {
+    const typeIdResult = yield* Effect.result(getWebClipTypeId(client, session));
+    if (typeIdResult._tag === 'Failure') {
+      return makeErrorResponse(
+        request.id,
+        CLIP_HOST_ERROR_CODES.DAEMON_UNAVAILABLE,
+        'daemon unavailable: could not ensure the WebClip type',
+      );
+    }
+    const typeId = typeIdResult.success;
+    const check =
+      request.method === IPC_METHODS.MUTATION_CREATE_NODE
+        ? checkCreateNodeParameters(request.params, typeId)
+        : checkDraftApplyParameters(request.params, typeId);
+    // Return the resolved identity so a denied caller can retry the same draft.
+    return check.ok
+      ? undefined
+      : makeErrorResponse(
+          request.id,
+          CLIP_HOST_ERROR_CODES.NAMESPACE_REJECTED,
+          check.error.message,
+          { webClipTypeId: typeId },
+        );
+  });
+
+const relayRequest = (
+  client: IpcClient,
+  method: string,
+  request: IncomingRequest,
+): Effect.Effect<JsonRpcResponse> =>
+  Effect.gen(function* () {
+    const result = yield* Effect.result(dispatch(client, method, request.params));
+    if (result._tag === 'Failure') {
+      const failure = result.failure;
+      const code =
+        failure._tag === 'IpcClientError' ? failure.code : JSON_RPC_ERROR_CODES.INVALID_PARAMS;
+      // Preserve daemon error data for retry (for example parent revision).
+      const data = failure._tag === 'IpcClientError' ? failure.details : undefined;
+      return makeErrorResponse(request.id, code, failure.message, data);
+    }
+    return makeSuccessResponse(request.id, result.success);
+  });
+
+const handleRequest = (
+  options: ClipHostOptions,
+  session: HostSession,
+  request: IncomingRequest,
+): Effect.Effect<JsonRpcResponse> =>
+  Effect.gen(function* () {
+    const { method, id } = request;
+    if (typeof method !== 'string' || !isAllowedMethod(method)) {
+      return makeErrorResponse(
+        id,
+        CLIP_HOST_ERROR_CODES.METHOD_NOT_ALLOWED,
+        `Method not allowed: ${String(method)}`,
+      );
+    }
+    if (!options.rateLimiter.tryAcquire()) {
+      return makeErrorResponse(id, CLIP_HOST_ERROR_CODES.RATE_LIMITED, 'Rate limit exceeded');
+    }
+    const connectionResult = yield* Effect.result(getConnection(options, session));
+    if (connectionResult._tag === 'Failure') {
+      return makeErrorResponse(
+        id,
+        CLIP_HOST_ERROR_CODES.DAEMON_UNAVAILABLE,
+        'daemon unavailable: could not connect to the Canopy daemon',
+      );
+    }
+    const client = connectionResult.success;
+    if (needsNamespaceCheck(method)) {
+      const rejection = yield* checkNamespace(client, session, request);
+      if (rejection) return rejection;
+    }
+    return yield* relayRequest(client, method, request);
+  });
+
 /**
-Creates a clip-host session: lazily opens (and reuses) one long-lived
-IpcClient connection to the daemon, lazily ensures the WebClip type on
-first use, and enforces the method allowlist, namespace narrowing, and
-rate limit on every incoming request before relaying to the daemon.
+Creates isolated success-only connection/type state. Reads happen lazily per
+request; concurrent cold requests remain independent and failures stay retryable.
 */
-// eslint-disable-next-line max-lines-per-function -- lazily-established connection/type-id state plus the sequential allowlist/rate-limit/connect/namespace/dispatch gate, mirrors ipc-handlers.ts's per-method dispatch
 export const createClipHost = (options: ClipHostOptions): ClipHost => {
-  const connect = options.connect ?? makeIpcClient;
-  // eslint-disable-next-line functional/no-let -- lazily-established, reused connection, mirroring IpcClient's own closure-based state
-  let connection: IpcClient | undefined;
-  // eslint-disable-next-line functional/no-let -- resolved once, reused across requests
-  let webClipTypeId: TypeId | undefined;
-
-  const getConnection = (): Effect.Effect<IpcClient, Readonly<{ _tag: 'DaemonUnavailable' }>> =>
-    Effect.gen(function* () {
-      if (connection) return connection;
-      // Effect.exit rather than Effect.result: connecting to a missing Unix
-      // socket path can surface as a synchronous throw (a defect) rather
-      // than a typed IpcClientError -- see node:net's ENOENT behavior for a
-      // nonexistent socket path. Effect.exit captures defects too, so a
-      // missing daemon can't escape as an unhandled rejection.
-      const exit = yield* Effect.exit(connect(options.socketPath));
-      if (exit._tag === 'Failure') {
-        return yield* Effect.fail({ _tag: 'DaemonUnavailable' as const });
-      }
-
-      connection = exit.value;
-      return connection;
-    });
-
-  const getWebClipTypeId = (
-    client: IpcClient,
-  ): Effect.Effect<TypeId, Readonly<{ _tag: 'DaemonUnavailable' }>> =>
-    Effect.gen(function* () {
-      if (webClipTypeId) return webClipTypeId;
-      const exit = yield* Effect.exit(ensureWebClipType(client));
-      if (exit._tag === 'Failure') {
-        return yield* Effect.fail({ _tag: 'DaemonUnavailable' as const });
-      }
-
-      webClipTypeId = exit.value.typeId;
-      return webClipTypeId;
-    });
-
-  const handleRequest = (request: IncomingRequest): Promise<JsonRpcResponse> => {
-    const { method, params, id } = request;
-
-    const program = Effect.gen(function* () {
-      if (typeof method !== 'string' || !isAllowedMethod(method)) {
-        return makeErrorResponse(
-          id,
-          CLIP_HOST_ERROR_CODES.METHOD_NOT_ALLOWED,
-          `Method not allowed: ${String(method)}`,
-        );
-      }
-
-      if (!options.rateLimiter.tryAcquire()) {
-        return makeErrorResponse(id, CLIP_HOST_ERROR_CODES.RATE_LIMITED, 'Rate limit exceeded');
-      }
-
-      const connectionResult = yield* Effect.result(getConnection());
-      if (connectionResult._tag === 'Failure') {
-        return makeErrorResponse(
-          id,
-          CLIP_HOST_ERROR_CODES.DAEMON_UNAVAILABLE,
-          'daemon unavailable: could not connect to the Canopy daemon',
-        );
-      }
-      const client = connectionResult.success;
-
-      if (needsNamespaceCheck(method)) {
-        const typeIdResult = yield* Effect.result(getWebClipTypeId(client));
-        if (typeIdResult._tag === 'Failure') {
-          return makeErrorResponse(
-            id,
-            CLIP_HOST_ERROR_CODES.DAEMON_UNAVAILABLE,
-            'daemon unavailable: could not ensure the WebClip type',
-          );
-        }
-        const typeId = typeIdResult.success;
-        const check =
-          method === IPC_METHODS.MUTATION_CREATE_NODE
-            ? checkCreateNodeParameters(params, typeId)
-            : checkDraftApplyParameters(params, typeId);
-        if (!check.ok) {
-          // Callers that don't yet know the ensured WebClip type id (e.g. a
-          // first-ever clip) can't pre-construct a matching event; surfacing
-          // the resolved id here (already ensured by getWebClipTypeId above)
-          // lets them retry the same request -- same open draftId for
-          // draft.apply -- with the correct nodeType instead of guessing.
-          return makeErrorResponse(
-            id,
-            CLIP_HOST_ERROR_CODES.NAMESPACE_REJECTED,
-            check.error.message,
-            { webClipTypeId: typeId },
-          );
-        }
-      }
-
-      const dispatchResult = yield* Effect.result(dispatch(client, method, params));
-      if (dispatchResult._tag === 'Failure') {
-        const failure = dispatchResult.failure;
-        const code =
-          failure._tag === 'IpcClientError' ? failure.code : JSON_RPC_ERROR_CODES.INVALID_PARAMS;
-        // The daemon's own error `data` (e.g. concurrent-modification's
-        // currentParentRevision) is preserved on IpcClientError.details --
-        // forwarding it is required for callers to retry, not cosmetic; see
-        // tasks.md 6.5's re-preview/retry flow.
-        const data = failure._tag === 'IpcClientError' ? failure.details : undefined;
-        return makeErrorResponse(id, code, failure.message, data);
-      }
-
-      return makeSuccessResponse(id, dispatchResult.success);
-    });
-
-    return Effect.runPromise(program);
+  const session: HostSession = {
+    connection: Ref.makeUnsafe<IpcClient | undefined>(undefined),
+    webClipTypeId: Ref.makeUnsafe<TypeId | undefined>(undefined),
   };
-
-  return { handleRequest };
+  return {
+    handleRequest: (request) => Effect.runPromise(handleRequest(options, session, request)),
+  };
 };
