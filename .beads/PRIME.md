@@ -30,6 +30,7 @@ An explicit task or handoff packet may narrow any of these authorities and overr
 - **Action-specific authority**: Commit, push, PR creation, merge, and issue closure are distinct. Explicit packet restrictions override the general default; no blanket merge, closure, destructive Git, or external-publication authority is granted.
 - **Delivery boundary**: This guidance does not implement or pre-empt the sbx-first migration owned by `canopy-kn7`.
 - **Session management**: Check `bd ready` for available work.
+- **High-reasoning label**: Beads tagged `high-reasoning` require deep architectural modeling and adversarial analysis. In AGY (Antigravity), delegate design exploration, WIT modeling, and adversarial reviews to an Argon (`pro`) subagent while root coordinates on Flash. In Codex and Claude Code, select a high-reasoning model or specialist subagent. Do not stage or claim implementation tasks until an OpenSpec design proposal passes adversarial review.
 
 ## Essential Commands
 
@@ -75,6 +76,17 @@ bd ready
 bd show <id>
 bd update <id> --claim
 ```
+
+**Working on `high-reasoning` issues:**
+
+```bash
+bd list --label high-reasoning
+bd show <id>
+```
+
+- In AGY: Delegate architectural design, WIT modeling, and adversarial reviews to an Argon (`pro`) subagent. Keep root on Flash.
+- In Codex and Claude Code: Use high-reasoning models or dedicated reasoning subagents.
+- Complete the OpenSpec design proposal and adversarial review before creating or claiming implementation tasks.
 
 **Completing work:**
 
