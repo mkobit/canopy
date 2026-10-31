@@ -44,9 +44,11 @@ Restricted to URI path-segment characters (RFC 3986 unreserved: ALPHA / DIGIT / 
 export type Namespace = string & Readonly<{ [namespaceBrand]: never }>;
 
 /**
-Opaque optimistic-concurrency token for a Graph: the running maximum applied
-EventId, so it is collision-proof under concurrent commits (unlike a
-wall-clock timestamp) while remaining a totally-ordered, comparable string.
+Opaque optimistic-concurrency token for a Graph: a commutative set-hash accumulator
+over applied EventIds.
+Permutation-invariant and order-independent across event delivery order.
+Advances whenever any event applies, guaranteeing distinct tokens for distinct states
+and rejecting stale draft commits.
 See DraftSession.commit / getParentRevision.
 */
 export type Revision = string & Readonly<{ [revisionBrand]: never }>;

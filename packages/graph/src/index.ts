@@ -82,7 +82,7 @@ export {
   asNamespace,
 } from './factories';
 
-export { asRevision, zeroRevision, maxRevision } from './revision';
+export { asRevision, zeroRevision, maxRevision, accumulateRevision } from './revision';
 
 export * from './schemas';
 export * from './guards';

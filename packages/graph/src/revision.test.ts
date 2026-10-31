@@ -10,7 +10,8 @@ import {
 import { createGraph } from './create-graph';
 import { applyEvent } from './projection';
 import { unwrap } from './result';
-import { asRevision, zeroRevision, maxRevision } from './revision';
+import { asRevision, zeroRevision, maxRevision, accumulateRevision } from './revision';
+import { RevisionSchema } from './schemas';
 import type { Graph } from './graph';
 import type {
   NodeCreated,
@@ -30,9 +31,106 @@ describe('revision', () => {
       expect(zeroRevision()).toBe(zeroRevision());
     });
 
+    it('returns the standard zero uuid string', () => {
+      expect(zeroRevision()).toBe(asRevision('00000000-0000-0000-0000-000000000000'));
+    });
+
+    it('passes schema validation', () => {
+      expect(RevisionSchema.safeParse(zeroRevision()).success).toBe(true);
+    });
+
     it('sorts below any real EventId', () => {
       const realEventId = asEventId('018f4d2e-1234-7abc-89ab-cdef01234567');
       expect((zeroRevision() as string) < (realEventId as string)).toBe(true);
+    });
+  });
+
+  describe('accumulateRevision', () => {
+    const eventA = asEventId('018f4d2e-0001-7abc-89ab-cdef01234567');
+    const eventB = asEventId('018f4d2e-0002-7abc-89ab-cdef01234567');
+    const eventC = asEventId('018f4d2e-0003-7abc-89ab-cdef01234567');
+    const eventD = asEventId('018f4d2e-0004-7abc-89ab-cdef01234567');
+    const eventE = asEventId('018f4d2e-0005-7abc-89ab-cdef01234567');
+
+    it('single event accumulation advances from zero revision', () => {
+      const initial = zeroRevision();
+      const next = accumulateRevision(initial, eventA);
+      expect(next).not.toBe(initial);
+      expect(next).not.toBe(zeroRevision());
+    });
+
+    it('permutation invariance holds for two events', () => {
+      const initial = zeroRevision();
+      const ab = accumulateRevision(accumulateRevision(initial, eventA), eventB);
+      const ba = accumulateRevision(accumulateRevision(initial, eventB), eventA);
+      expect(ab).toBe(ba);
+    });
+
+    it('permutation invariance holds for multi-event sets', () => {
+      const initial = zeroRevision();
+      const list = [eventA, eventB, eventC, eventD, eventE];
+
+      let forward = initial;
+      for (const eventId of list) {
+        forward = accumulateRevision(forward, eventId);
+      }
+
+      let reversed = initial;
+      for (const eventId of list.toReversed()) {
+        reversed = accumulateRevision(reversed, eventId);
+      }
+
+      let shuffled = initial;
+      for (const eventId of [eventC, eventA, eventE, eventB, eventD]) {
+        shuffled = accumulateRevision(shuffled, eventId);
+      }
+
+      expect(forward).toBe(reversed);
+      expect(forward).toBe(shuffled);
+    });
+
+    it('produces distinct tokens for subsets', () => {
+      const initial = zeroRevision();
+      const revA = accumulateRevision(initial, eventA);
+      const revB = accumulateRevision(initial, eventB);
+      const revAB = accumulateRevision(revA, eventB);
+      const revABC = accumulateRevision(revAB, eventC);
+      const revAC = accumulateRevision(revA, eventC);
+
+      expect(revA).not.toBe(revAB);
+      expect(revB).not.toBe(revAB);
+      expect(revA).not.toBe(revB);
+      expect(revAB).not.toBe(revABC);
+      expect(revAC).not.toBe(revABC);
+      expect(revAC).not.toBe(revAB);
+    });
+
+    it('advances token on out-of-order event arrival', () => {
+      const initial = zeroRevision();
+      const highEvent = asEventId('018f4d2e-0099-7abc-89ab-cdef01234567');
+      const lowEvent = asEventId('018f4d2e-0010-7abc-89ab-cdef01234567');
+
+      const afterHigh = accumulateRevision(initial, highEvent);
+      const afterBoth = accumulateRevision(afterHigh, lowEvent);
+
+      // In contrast to running-max, an older event still advances the token
+      expect(afterBoth).not.toBe(afterHigh);
+
+      // And order does not affect final accumulator
+      const afterLowFirst = accumulateRevision(accumulateRevision(initial, lowEvent), highEvent);
+      expect(afterBoth).toBe(afterLowFirst);
+    });
+
+    it('validates format as UUIDv8', () => {
+      const initial = zeroRevision();
+      const rev = accumulateRevision(initial, eventA);
+
+      // RFC 9562 UUIDv8: 8-4-4-4-12, version 8, variant 10xx (8, 9, a, or b)
+      const uuidv8Pattern = /^[0-9a-f]{8}-[0-9a-f]{4}-8[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+      expect(uuidv8Pattern.test(rev as string)).toBe(true);
+
+      const parsed = RevisionSchema.safeParse(rev);
+      expect(parsed.success).toBe(true);
     });
   });
 
@@ -70,11 +168,11 @@ describe('revision', () => {
     });
   });
 
-  describe('applyEvent folds revision to the eventId, per op type', () => {
+  describe('applyEvent folds revision using accumulateRevision, per op type', () => {
     const device = asDeviceId('00000000-0000-0000-0000-00000000000a');
     const t: Instant = '2024-01-01T10:00:00.000Z' as Instant;
 
-    it('NodeCreated advances revision to its eventId', () => {
+    it('NodeCreated advances revision to accumulateRevision result', () => {
       const graph = freshGraph();
       const eventId = asEventId('018f4d2e-0001-7abc-89ab-cdef01234567');
       const event: NodeCreated = {
@@ -87,10 +185,10 @@ describe('revision', () => {
         deviceId: device,
       };
       const result = unwrap(applyEvent(graph, event));
-      expect(result.revision).toBe(asRevision(eventId));
+      expect(result.revision).toBe(accumulateRevision(graph.revision, eventId));
     });
 
-    it('NodePropertiesUpdated advances revision to its eventId', () => {
+    it('NodePropertiesUpdated advances revision to accumulateRevision result', () => {
       const nodeId = createNodeId();
       const createdEventId = asEventId('018f4d2e-0001-7abc-89ab-cdef01234567');
       const created: NodeCreated = {
@@ -114,10 +212,10 @@ describe('revision', () => {
         deviceId: device,
       };
       const result = unwrap(applyEvent(afterCreate, updated));
-      expect(result.revision).toBe(asRevision(updateEventId));
+      expect(result.revision).toBe(accumulateRevision(afterCreate.revision, updateEventId));
     });
 
-    it('NodeDeleted advances revision to its eventId', () => {
+    it('NodeDeleted advances revision to accumulateRevision result', () => {
       const nodeId = createNodeId();
       const created: NodeCreated = {
         type: 'NodeCreated',
@@ -139,10 +237,10 @@ describe('revision', () => {
         deviceId: device,
       };
       const result = unwrap(applyEvent(afterCreate, deleted));
-      expect(result.revision).toBe(asRevision(deleteEventId));
+      expect(result.revision).toBe(accumulateRevision(afterCreate.revision, deleteEventId));
     });
 
-    it('EdgeCreated advances revision to its eventId', () => {
+    it('EdgeCreated advances revision to accumulateRevision result', () => {
       const sourceId = createNodeId();
       const targetId = createNodeId();
       const withNodes = unwrap(
@@ -183,10 +281,10 @@ describe('revision', () => {
         deviceId: device,
       };
       const result = unwrap(applyEvent(withNodes, edgeCreated));
-      expect(result.revision).toBe(asRevision(edgeEventId));
+      expect(result.revision).toBe(accumulateRevision(withNodes.revision, edgeEventId));
     });
 
-    it('EdgePropertiesUpdated advances revision to its eventId', () => {
+    it('EdgePropertiesUpdated advances revision to accumulateRevision result', () => {
       const sourceId = createNodeId();
       const targetId = createNodeId();
       const edgeId = createEdgeId();
@@ -237,10 +335,10 @@ describe('revision', () => {
         deviceId: device,
       };
       const result = unwrap(applyEvent(graph, updated));
-      expect(result.revision).toBe(asRevision(updateEventId));
+      expect(result.revision).toBe(accumulateRevision(graph.revision, updateEventId));
     });
 
-    it('EdgeDeleted advances revision to its eventId', () => {
+    it('EdgeDeleted advances revision to accumulateRevision result', () => {
       const sourceId = createNodeId();
       const targetId = createNodeId();
       const edgeId = createEdgeId();
@@ -290,10 +388,10 @@ describe('revision', () => {
         deviceId: device,
       };
       const result = unwrap(applyEvent(graph, deleted));
-      expect(result.revision).toBe(asRevision(deleteEventId));
+      expect(result.revision).toBe(accumulateRevision(graph.revision, deleteEventId));
     });
 
-    it('a lower-eventId write applied after a higher one does not lower revision', () => {
+    it('a lower-eventId write applied out of order still advances revision', () => {
       const nodeId = createNodeId();
       const created: NodeCreated = {
         type: 'NodeCreated',
@@ -316,7 +414,7 @@ describe('revision', () => {
         deviceId: device,
       };
       const afterHigh = unwrap(applyEvent(afterCreate, highUpdate));
-      expect(afterHigh.revision).toBe(asRevision(highEventId));
+      expect(afterHigh.revision).toBe(accumulateRevision(afterCreate.revision, highEventId));
 
       // Same timestamp/device shape but a lower eventId, applied out of order.
       const lowEventId = asEventId('018f4d2e-0050-7abc-89ab-cdef01234567');
@@ -329,7 +427,10 @@ describe('revision', () => {
         deviceId: device,
       };
       const afterLow = unwrap(applyEvent(afterHigh, lowUpdate));
-      expect(afterLow.revision).toBe(asRevision(highEventId));
+
+      // The accumulator advances even though lowEventId < highEventId
+      expect(afterLow.revision).not.toBe(afterHigh.revision);
+      expect(afterLow.revision).toBe(accumulateRevision(afterHigh.revision, lowEventId));
     });
   });
 
@@ -381,7 +482,9 @@ describe('revision', () => {
       // The fix: revision is derived from eventId, not timestamp, so it still
       // advances and distinguishes the two states.
       expect(afterSecond.revision).not.toBe(afterFirst.revision);
-      expect(afterSecond.revision).toBe(asRevision(secondUpdateEventId));
+      expect(afterSecond.revision).toBe(
+        accumulateRevision(afterFirst.revision, secondUpdateEventId),
+      );
     });
   });
 });
