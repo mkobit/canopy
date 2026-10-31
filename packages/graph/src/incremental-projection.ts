@@ -9,7 +9,7 @@ import type { Result } from './result';
 import { ok, err as error } from './result';
 import { validateNode, validateEdge } from './validation';
 import { incrementalUpdateIndexes } from './indexes';
-import { maxRevision } from './revision';
+import { accumulateRevision } from './revision';
 
 /**
 Per-entity merge bookkeeping: which event last wrote each property
@@ -122,15 +122,12 @@ graph's own pre-existing metadata (e.g. from bootstrap), not from a
 merge-local marker.
 
 revision folds independently of the modified/modifiedBy timestamp-based
-isWins check above: it is a running max over EventId (see revision.ts),
-called unconditionally on every event this function is invoked for.
-maxRevision's own eventId comparison is what decides whether it actually
-advances, so no separate condition is needed -- and, critically, it must
-NOT be gated by the same timestamp comparison as modified/modifiedBy: two
-events sharing a wall-clock millisecond would both fail that check
-(isWins would be false for the second), which is exactly the same-
-millisecond collision the revision token exists to fix. An EventId-only
-comparison has no such gap.
+isWins check above: it uses a commutative set-hash accumulator over EventId
+(see revision.ts), called unconditionally on every event this function is invoked for.
+The set-hash is order-independent and associative, so it converges to the identical
+value regardless of event arrival order -- and advances on every applied event,
+guaranteeing two commits within the same millisecond or out-of-order writes
+produce distinct revision tokens.
 */
 function touchGraphMetadata(
   graph: Graph,
@@ -148,7 +145,7 @@ function touchGraphMetadata(
     ...graph,
     nodes,
     edges,
-    revision: maxRevision(graph.revision, event.eventId),
+    revision: accumulateRevision(graph.revision, event.eventId),
     metadata: isWins
       ? { ...graph.metadata, modified: event.timestamp, modifiedBy: event.deviceId }
       : graph.metadata,
@@ -194,8 +191,12 @@ function applyOneEventInternal(
           ? { exists: true, tombstoned: false, propertyWriters: new Map() }
           : emptyMeta());
       if (meta.tombstoned || meta.exists) {
-        // Already deleted (arrived out of order) or duplicate create: no-op.
-        return { graph, nodeMeta, edgeMeta };
+        // Already deleted (arrived out of order) or duplicate create: no-op for entity state.
+        return {
+          graph: touchGraphMetadata(graph, event, graph.nodes, graph.edges),
+          nodeMeta,
+          edgeMeta,
+        };
       }
 
       const propertyWriters = new Map<string, EventId>();
@@ -237,7 +238,11 @@ function applyOneEventInternal(
           : undefined);
       const node = graph.nodes.get(event.id);
       if (!meta || !node || !meta.exists || meta.tombstoned) {
-        return { graph, nodeMeta, edgeMeta };
+        return {
+          graph: touchGraphMetadata(graph, event, graph.nodes, graph.edges),
+          nodeMeta,
+          edgeMeta,
+        };
       }
 
       const propertyWriters = new Map(meta.propertyWriters);
@@ -290,7 +295,11 @@ function applyOneEventInternal(
           ? { exists: true, tombstoned: false, propertyWriters: new Map() }
           : undefined);
       if (!meta || !meta.exists || meta.tombstoned) {
-        return { graph, nodeMeta, edgeMeta };
+        return {
+          graph: touchGraphMetadata(graph, event, graph.nodes, graph.edges),
+          nodeMeta,
+          edgeMeta,
+        };
       }
 
       const newNodes = new Map(graph.nodes);
@@ -328,15 +337,23 @@ function applyOneEventInternal(
           ? { exists: true, tombstoned: false, propertyWriters: new Map() }
           : emptyMeta());
       if (meta.tombstoned || meta.exists) {
-        return { graph, nodeMeta, edgeMeta };
+        return {
+          graph: touchGraphMetadata(graph, event, graph.nodes, graph.edges),
+          nodeMeta,
+          edgeMeta,
+        };
       }
       // Defensive: dependency tracking only proves the endpoints were ever
       // created, not that they are still live. A dangling reference here
-      // means the endpoint was deleted before this (out-of-order) arrival --
-      // not a case the property-based test generates, but never produce a
-      // graph with an edge pointing at a missing node.
+      // means the endpoint was deleted before this (out-of-order) arrival.
       if (!graph.nodes.has(event.source) || !graph.nodes.has(event.target)) {
-        return { graph, nodeMeta, edgeMeta };
+        const newEdgeMeta = new Map(edgeMeta);
+        newEdgeMeta.set(event.id, { exists: true, tombstoned: true, propertyWriters: new Map() });
+        return {
+          graph: touchGraphMetadata(graph, event, graph.nodes, graph.edges),
+          nodeMeta,
+          edgeMeta: newEdgeMeta,
+        };
       }
 
       const propertyWriters = new Map<string, EventId>();
@@ -380,7 +397,11 @@ function applyOneEventInternal(
           : undefined);
       const edge = graph.edges.get(event.id);
       if (!meta || !edge || !meta.exists || meta.tombstoned) {
-        return { graph, nodeMeta, edgeMeta };
+        return {
+          graph: touchGraphMetadata(graph, event, graph.nodes, graph.edges),
+          nodeMeta,
+          edgeMeta,
+        };
       }
 
       const propertyWriters = new Map(meta.propertyWriters);
@@ -433,7 +454,11 @@ function applyOneEventInternal(
           ? { exists: true, tombstoned: false, propertyWriters: new Map() }
           : undefined);
       if (!meta || !meta.exists || meta.tombstoned) {
-        return { graph, nodeMeta, edgeMeta };
+        return {
+          graph: touchGraphMetadata(graph, event, graph.nodes, graph.edges),
+          nodeMeta,
+          edgeMeta,
+        };
       }
 
       const newEdges = new Map(graph.edges);

@@ -19,7 +19,7 @@ The system SHALL support creating a draft session that overlays uncommitted even
 
 The system SHALL allow committing staged events from a draft session directly to the parent session's persistent log only if the parent graph revision matches the expected revision.
 The revision token SHALL be derived from graph state such that any two distinct states produce distinct tokens: specifically, two parent commits that occur within the same wall-clock millisecond SHALL still advance the revision, and a draft holding a pre-commit revision SHALL be rejected.
-The revision token SHALL remain an opaque string across the draft API and JSON-RPC wire contract, and the derivation SHALL preserve incremental projection's permutation-invariance guarantee (the token is a running maximum over globally unique applied event identifiers, so it converges to the same value regardless of event delivery order).
+The revision token SHALL remain an opaque string across the draft API and JSON-RPC wire contract, and the derivation SHALL preserve incremental projection's permutation-invariance guarantee (the token is a commutative set-hash accumulator over globally unique applied event identifiers, so it converges to the same value regardless of event delivery order).
 
 #### Scenario: Successful commit with matching revision
 
