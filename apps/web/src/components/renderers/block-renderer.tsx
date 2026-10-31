@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { z } from 'zod';
 import type { Graph, Node, NodeId, SystemRendererEntryPoint } from '@canopy/graph';
 import {
   SYSTEM_IDS,
@@ -6,7 +7,9 @@ import {
   getEdgesFrom,
   resolveNamespace,
   asNodeId,
+  fromThrowable,
 } from '@canopy/graph';
+import { intersectCapabilities } from '@canopy/plugin-host';
 import { resolveViewDefinition } from '@canopy/settings';
 import { MarkdownRenderer } from './markdown-renderer';
 import { TextBlockRenderer } from './text-block-renderer';
@@ -14,6 +17,7 @@ import { CodeBlockRenderer } from './code-block-renderer';
 import { RENDERER_REGISTRY } from './registry';
 import { WasmRenderedBlock } from './wasm-rendered-block';
 import { Tier2RenderedBlock } from './tier2-rendered-block';
+import { resolveRenderGrant } from './render-grants';
 import { resolveWasmRenderDispatch } from './render-tier';
 
 export interface BlockRendererProperties {
@@ -25,10 +29,37 @@ export interface BlockRendererProperties {
 
 type ResolvedRenderer =
   | Readonly<{ kind: 'system'; content: React.ReactNode }>
-  | Readonly<{ kind: 'wasm'; pluginNode: Node }>
-  | Readonly<{ kind: 'tier2'; pluginNode: Node; guestId: string; token: string }>
+  | Readonly<{
+      kind: 'wasm';
+      pluginNode: Node;
+      rendererId: NodeId;
+      viewDefinitionId: NodeId;
+      grantToken: string;
+    }>
+  | Readonly<{
+      kind: 'tier2';
+      pluginNode: Node;
+      rendererId: NodeId;
+      viewDefinitionId: NodeId;
+      guestId: string;
+      token: string;
+    }>
   | Readonly<{ kind: 'unavailable' }>
   | null;
+
+const manifestSchema = z.object({ capabilities: z.array(z.string()) });
+
+const parseManifestCapabilities = (pluginNode: Node): readonly string[] => {
+  const raw = pluginNode.properties.get('manifest');
+  if (typeof raw !== 'string') return [];
+  const decoded = fromThrowable<unknown>(() => JSON.parse(raw));
+  if (!decoded.ok) return [];
+  const parsed = manifestSchema.safeParse(decoded.value);
+  return parsed.success ? parsed.data.capabilities : [];
+};
+
+const resolveTier1GrantToken = (pluginNode: Node): string =>
+  intersectCapabilities(parseManifestCapabilities(pluginNode), resolveRenderGrant(pluginNode));
 
 function isSystemRendererEntryPoint(value: string): value is SystemRendererEntryPoint {
   return (['system:text', 'system:code', 'system:markdown'] as readonly string[]).includes(value);
@@ -101,9 +132,24 @@ function resolveRenderer(node: Node, graph: Graph): ResolvedRenderer {
     }
     const dispatch = resolveWasmRenderDispatch(pluginNode);
     if (dispatch.tier === 'tier2') {
-      return { kind: 'tier2', pluginNode, guestId: dispatch.guestId, token: dispatch.token };
+      return {
+        kind: 'tier2',
+        pluginNode,
+        rendererId,
+        viewDefinitionId: viewDefinitionNode.id,
+        guestId: dispatch.guestId,
+        token: dispatch.token,
+      };
     }
-    return dispatch.tier === 'unavailable' ? { kind: 'unavailable' } : { kind: 'wasm', pluginNode };
+    return dispatch.tier === 'unavailable'
+      ? { kind: 'unavailable' }
+      : {
+          kind: 'wasm',
+          pluginNode,
+          rendererId,
+          viewDefinitionId: viewDefinitionNode.id,
+          grantToken: resolveTier1GrantToken(pluginNode),
+        };
   }
 
   if (!isSystemRendererEntryPoint(entryPoint)) {
@@ -121,6 +167,51 @@ function resolveRenderer(node: Node, graph: Graph): ResolvedRenderer {
       config: viewDefinitionNode.properties,
     }),
   };
+}
+
+function renderResolvedContent(
+  node: Node,
+  graph: Graph,
+  resolved: ResolvedRenderer,
+): React.ReactNode {
+  if (resolved === null) {
+    return renderNativeFallback(node);
+  }
+  switch (resolved.kind) {
+    case 'wasm': {
+      return (
+        <WasmRenderedBlock
+          node={node}
+          graph={graph}
+          pluginNode={resolved.pluginNode}
+          rendererId={resolved.rendererId}
+          viewDefinitionId={resolved.viewDefinitionId}
+          grantToken={resolved.grantToken}
+          fallback={renderNativeFallback(node)}
+        />
+      );
+    }
+    case 'tier2': {
+      return (
+        <Tier2RenderedBlock
+          node={node}
+          graph={graph}
+          pluginNode={resolved.pluginNode}
+          rendererId={resolved.rendererId}
+          viewDefinitionId={resolved.viewDefinitionId}
+          guestId={resolved.guestId}
+          token={resolved.token}
+          fallback={renderNativeFallback(node)}
+        />
+      );
+    }
+    case 'unavailable': {
+      return renderUnavailableInteractiveRenderer();
+    }
+    case 'system': {
+      return resolved.content;
+    }
+  }
 }
 
 export const BlockRenderer: React.FC<BlockRendererProperties> = ({
@@ -166,30 +257,7 @@ export const BlockRenderer: React.FC<BlockRendererProperties> = ({
   // `visited`-set cycle protection above still guards child recursion, and the
   // WASM output is a leaf that never delegates child rendering back into a plugin.
   const resolved = resolveRenderer(node, graph);
-  const content =
-    resolved === null ? (
-      renderNativeFallback(node)
-    ) : resolved.kind === 'wasm' ? (
-      <WasmRenderedBlock
-        node={node}
-        graph={graph}
-        pluginNode={resolved.pluginNode}
-        fallback={renderNativeFallback(node)}
-      />
-    ) : resolved.kind === 'tier2' ? (
-      <Tier2RenderedBlock
-        node={node}
-        graph={graph}
-        pluginNode={resolved.pluginNode}
-        guestId={resolved.guestId}
-        token={resolved.token}
-        fallback={renderNativeFallback(node)}
-      />
-    ) : resolved.kind === 'unavailable' ? (
-      renderUnavailableInteractiveRenderer()
-    ) : (
-      resolved.content
-    );
+  const content = renderResolvedContent(node, graph, resolved);
 
   const hasChildren = children.length > 0;
 

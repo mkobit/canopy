@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import type { Graph, Node } from '@canopy/graph';
+import type { Graph, Node, NodeId } from '@canopy/graph';
 import { createGraphAccessContext } from '@canopy/graph-access';
 import {
   executeSandboxedGuestPluginInWorker,
@@ -18,6 +18,8 @@ export type Tier2RenderedBlockProperties = Readonly<{
   node: Node;
   graph: Graph;
   pluginNode: Node;
+  rendererId: NodeId;
+  viewDefinitionId: NodeId;
   // The worker-guest id resolved for this plugin (the guest the render worker runs).
   guestId: string;
   // Effective granted scope — carries the explicit `render:interactive` grant.
@@ -233,10 +235,17 @@ const Tier2Inner: React.FC<Tier2RenderedBlockProperties & Readonly<{ cacheKey: s
   );
 };
 
-// Parallels `WasmRenderedBlock`: remounted per (node id, content hash) cache key
-// so a superseded render (content changed mid-flight) is discarded via remount —
-// a fresh iframe element (cleared `window.name`/history) with a fresh nonce.
+// Parallels `WasmRenderedBlock`: remounted per (node id, view definition id,
+// renderer id, grant token, content hash) cache key so a superseded render
+// (content or context changed mid-flight) is discarded via remount — a fresh
+// iframe element (cleared `window.name`/history) with a fresh nonce.
 export const Tier2RenderedBlock: React.FC<Tier2RenderedBlockProperties> = (properties) => {
-  const cacheKey = renderCacheKey(properties.node.id, hashContent(properties.node));
+  const cacheKey = renderCacheKey({
+    nodeId: properties.node.id,
+    viewDefinitionId: properties.viewDefinitionId,
+    rendererId: properties.rendererId,
+    grantToken: properties.token,
+    contentHash: hashContent(properties.node),
+  });
   return <Tier2Inner key={cacheKey} cacheKey={cacheKey} {...properties} />;
 };
