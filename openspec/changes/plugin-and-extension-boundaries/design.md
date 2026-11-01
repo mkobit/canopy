@@ -87,37 +87,41 @@ Rules of orthogonality:
 
 ### 2. Four-tier system classification
 
-Canopy categorizes all software components into four architectural tiers:
+Canopy categorizes all software components into four system architecture tiers (distinct from UI render isolation tiers):
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
-│               Tier 3: Ecosystem & 3rd-Party Extensions                 │
+│          System Tier 3: Ecosystem & Third-Party Extensions             │
 │    (Custom visualizers, community workflows, external SaaS sync)       │
 │    Isolation: Sandboxed WASM / Opaque iframe  |  Capability: Scoped    │
 ├────────────────────────────────────────────────────────────────────────┤
-│               Tier 2: Canopy-Maintained Extensions (1P)                │
+│          System Tier 2: Canopy-Maintained Extensions (1P)              │
 │    (Markdown renderer, Kanban view, Node aging, Fleeting note memory)  │
 │    Isolation: Sandboxed WASM / Worker isolate |  Capability: Explicit  │
 ├────────────────────────────────────────────────────────────────────────┤
-│               Tier 1: System Host Services                             │
-│    (Plugin-host runtime, Query engine, Settings cascade, Gateway)      │
+│          System Tier 1: System Host Services                           │
+│    (Plugin host, Query engine, Settings cascade, Storage, API adapters)│
 │    Isolation: Native host process             |  Capability: Broker    │
 ├────────────────────────────────────────────────────────────────────────┤
-│               Tier 0: Graph Kernel Primitives                          │
+│          System Tier 0: Graph Kernel Primitives                        │
 │    (EventLogStore, GraphSession, Type-aware projection, Schemas)       │
 │    Isolation: Pure TypeScript leaf            |  Capability: Invariant │
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
-- **Tier 0: Graph kernel primitives (`@canopy/graph`)**:
+Note: UI render isolation uses Render Tier 1 (sanitized inline shadow DOM) and Render Tier 2 (sandboxed opaque iframe).
+System Tier 2 and Tier 3 extensions share identical sandbox isolation and capability checks.
+Their distinction is repository governance and maintenance provenance.
+
+- **System Tier 0: Graph kernel primitives (`@canopy/graph`)**:
   Contains the irreducible mathematical foundation of Canopy: branded IDs, core graph entities, schemas, `EventLogStore` port, and `GraphSession` projection.
   It has no UI, no network, and no WebAssembly dependencies.
-- **Tier 1: System host services**:
-  Provides platform infrastructure in native host execution: `@canopy/plugin-host` (WASM compilation, instantiation, metering), `@canopy/graph-access` (protocol-neutral operations), `@canopy/queries` (traversal pipelines), and `@canopy/settings` (configuration cascade).
-- **Tier 2: First-party extensions**:
+- **System Tier 1: System host services**:
+  Provides platform infrastructure in native host execution: `@canopy/plugin-host` (WASM compilation, instantiation, metering), `@canopy/graph-access` (protocol-neutral operations), `@canopy/queries` (traversal pipelines), `@canopy/settings` (configuration cascade), storage packages (`@canopy/storage*`), and protocol servers (`@canopy/api-adapter`).
+- **System Tier 2: First-party extensions**:
   Standard domain plugins maintained in the core repository (markdown renderer, kanban view, node aging automations, memory consolidation).
   These plugins execute inside sandboxed WebAssembly guests or terminable worker isolates.
-- **Tier 3: Third-party ecosystem extensions**:
+- **System Tier 3: Third-party ecosystem extensions**:
   Community and external extensions running under strict capability-based isolation with zero ambient privilege.
 
 ### 3. Concrete domain boundary placement
@@ -135,16 +139,18 @@ Canopy categorizes all software components into four architectural tiers:
 ### 4. Durable schema retention and type lifecycle
 
 1. When a plugin registering custom node or edge types is uninstalled or disabled, its `NodeTypeDefinition` and `EdgeTypeDefinition` records remain in the graph.
-2. The host marks uninstalled plugin types as `inactive`, preserving schema structure.
-3. The query engine continues to query and retrieve nodes of inactive types.
-4. Historical event replay succeeds without errors because the schema definitions remain intact.
-5. Deleting a type definition requires an explicit user-confirmed schema deprecation transaction, not a side effect of binary removal.
+2. The host marks uninstalled plugin types as `inactive` (via a `status: 'inactive'` property on definition nodes), preserving schema structure.
+3. The query engine continues to query and retrieve existing nodes and edges of inactive types.
+4. Attempting to create new nodes of an `inactive` type via `createNode` fails with a `TYPE_INACTIVE` validation error.
+5. Deleting existing nodes (`NodeDeleted` tombstoning) of an inactive type remains permitted.
+6. Historical event replay succeeds without errors because the schema definitions remain intact.
+7. Deleting a type definition requires an explicit user-confirmed schema deprecation transaction, not a side effect of binary removal.
 
 ### 5. View resolution fallback cascade
 
 When resolving a view for a node:
-1. The host searches for the active `RendererDefinition` specified by the view.
-2. If the renderer is missing or inactive, the host falls back to the registered format fallback (e.g. Markdown falls back to plain text).
+1. The host searches for the active `Renderer` (historically called `RendererDefinition`) specified by the view.
+2. If the renderer is missing or inactive, the host falls back to the registered format fallback (e.g. Markdown falls back to plain text). Exception: If an interactive renderer authorized for Render Tier 2 lacks a valid worker guest, the host displays a host-owned unavailable indicator and does not execute an alternate guest or downgrade to Render Tier 1.
 3. If no compatible renderer exists, the host falls back to the built-in generic property table inspector.
 4. If a guest renderer throws an error or times out, the host captures the error in a structured error boundary banner with an affordance to view raw node properties.
 5. The host never enters an unhandled error state or empty screen due to renderer failures.
@@ -152,8 +158,8 @@ When resolving a view for a node:
 ### 6. Explicit capability grants for sensitive scopes
 
 1. The capability verification system requires exact literal matches for sensitive permissions.
-2. Sensitive scopes include `render:interactive`, `network:connect`, and `write:*`.
-3. Wildcard tokens (such as `*` or `render:*`) do not grant sensitive scopes.
+2. Sensitive scopes include `render:interactive`, proposed `network:connect`, and write operations (`write:create-node`, `write:update-properties`, `write:delete-node`, `write:create-edge`, `write:delete-edge`).
+3. Wildcard tokens (such as `*`, `render:*`, or `write:*`) do not grant sensitive scopes.
 4. Capability tokens are verified cryptographically or session-bound by host services during every guest invocation.
 
 ## Adversarial review and mitigations
@@ -259,6 +265,17 @@ When resolving a view for a node:
   - A WebAssembly guest triggering an `unreachable` opcode returns an `err(GraphAccessError)`.
   - The host process, event loop, and UI remain completely stable.
 
+#### Risk B5: Excessive schema bloat from repeated plugin registrations
+- **Threat & mechanism**:
+  A rogue or misconfigured plugin repeatedly registers unique `NodeTypeDefinition` nodes during installation loops.
+- **Consequence**:
+  Unbounded growth of type indices and memory consumption during projection.
+- **Actionable mitigation**:
+  1. Enforce type registration limits per plugin namespace.
+  2. Require explicit user confirmation for registering new type definitions.
+- **Verifiable acceptance criteria**:
+  - Registering more than 50 types per plugin namespace requires explicit administrator override.
+
 ### Category C: Security and isolation
 
 #### Risk C1: Wildcard privilege escalation to sensitive capabilities
@@ -279,11 +296,12 @@ When resolving a view for a node:
 - **Consequence**:
   Untrusted guest reads or mutates unauthorized graph data.
 - **Actionable mitigation**:
-  1. The host binds capability tokens cryptographically to the guest session instance upon instantiation.
-  2. Host bindings verify that the token presented matches the session token registered for that guest instance.
+  1. The host binds capability tokens into the guest host-binding closure upon instantiation (`boundToken`).
+  2. Host bindings verify capabilities strictly against the closure-bound token.
+  3. Host bindings reject caller-supplied token overrides across the guest ABI.
 - **Verifiable acceptance criteria**:
-  - Supplying a forged token string to `host-queries` returns `PERMISSION_DENIED`.
-  - Passing an authentic token from another plugin instance returns `FORBIDDEN`.
+  - A guest passing a forged capability token string across the ABI cannot execute ungranted operations.
+  - Omission of a host-bound token fails closed with `PERMISSION_DENIED`.
 
 #### Risk C3: Worker escape via global scope pollution
 - **Threat & mechanism**:
@@ -317,12 +335,25 @@ When resolving a view for a node:
 - **Consequence**:
   Unauthorized exfiltration of private knowledge.
 - **Actionable mitigation**:
-  1. Enforce zero ambient network access in guest sandbox and iframe environments.
-  2. Clamp `performance.now()` timing precision to 10 ms resolution in guest isolates.
-  3. Apply strict Content Security Policy (`default-src 'none'; style-src 'unsafe-inline'`).
+  1. Enforce data minimization: pass only node properties strictly required for rendering that specific node into the iframe.
+  2. Enforce zero ambient network access in guest sandbox and iframe environments.
+  3. Clamp `performance.now()` timing precision to 10 ms resolution in guest isolates.
+  4. Apply strict Content Security Policy (`default-src 'none'; style-src 'unsafe-inline'`).
 - **Verifiable acceptance criteria**:
+  - Render payload passed to guest contains only the target node content.
   - Loading an external resource `<img src="https://example.com/leak">` is blocked by CSP.
   - Zero outgoing network packets detected during guest execution.
+
+#### Risk C6: Transient event bus spoofing and unauthorized eavesdropping
+- **Threat & mechanism**:
+  A Tier 3 plugin subscribes to or publishes events on the in-memory transient event bus, intercepting sensitive user interactions or injecting fake automation triggers.
+- **Consequence**:
+  Privilege escalation across plugins and data leakage.
+- **Actionable mitigation**:
+  1. Namespace transient event topics (e.g. `plugin-id:event-name`).
+  2. Require explicit capability grants (`events:subscribe:<topic>`, `events:publish:<topic>`) for inter-plugin events.
+- **Verifiable acceptance criteria**:
+  - An unauthorized plugin publishing to system event topics returns `PERMISSION_DENIED`.
 
 ### Category D: Migration and data ownership risks
 

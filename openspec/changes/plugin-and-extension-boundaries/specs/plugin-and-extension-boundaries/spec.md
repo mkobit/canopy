@@ -50,6 +50,13 @@ When a plugin is uninstalled, disabled, or removed from a vault, the system SHAL
 - **AND** events reference types registered by a plugin that is no longer installed
 - **THEN** the projection engine SHALL project the events successfully using the persisted type definitions
 
+#### Scenario: Creating a node of an inactive type is rejected
+
+- **WHEN** a user uninstalls a plugin that registered a custom node type
+- **AND** a client attempts to create a new node of that uninstalled type via `createNode`
+- **THEN** validation SHALL fail returning a `TYPE_INACTIVE` error
+- **AND** no event SHALL be committed to the event log
+
 ### Requirement: View resolution fallback cascade
 
 When a required `RendererDefinition` is missing, uninstalled, disabled, or fails during execution, the host UI SHALL fall back to a safe default view.
@@ -66,6 +73,13 @@ When a required `RendererDefinition` is missing, uninstalled, disabled, or fails
 - **THEN** the host UI SHALL display a structured error boundary banner
 - **AND** the host UI SHALL offer a fallback button to inspect raw node properties
 
+#### Scenario: Unavailable interactive renderer fails closed without downgrade
+
+- **WHEN** a view references an interactive renderer authorized for Render Tier 2
+- **AND** the required worker guest cannot be loaded or resolved
+- **THEN** the host UI SHALL display a host-owned unavailable indicator
+- **AND** the host SHALL NOT execute an alternate guest or mount untrusted inline output
+
 ### Requirement: Explicit capability grants for sensitive scopes
 
 Sensitive capabilities, including interactive script rendering (`render:interactive`), write operations, and network egress (`network:connect`), SHALL require explicit, literal capability strings.
@@ -74,6 +88,12 @@ Sensitive capabilities, including interactive script rendering (`render:interact
 
 - **WHEN** a plugin presents a capability token containing a wildcard grant such as `*` or `render:*`
 - **AND** the plugin attempts to invoke an interactive iframe render requiring `render:interactive`
+- **THEN** the capability verification check SHALL fail with permission denied
+
+#### Scenario: Wildcard token rejected for write operation
+
+- **WHEN** a plugin presents a capability token containing a wildcard grant such as `*` or `write:*`
+- **AND** the plugin attempts to execute a write operation requiring `write:create-node`
 - **THEN** the capability verification check SHALL fail with permission denied
 
 #### Scenario: Explicit literal grant accepted
