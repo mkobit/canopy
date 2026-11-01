@@ -41,7 +41,7 @@
   },
   "devDependencies": {
     "@bytecodealliance/jco": "^1.24.6",
-    "@happy-dom/global-registrator": "^20.14.5",
+    "@happy-dom/global-registrator": "^21.0.3",
     "@playwright/test": "^1.62.0",
     "@storybook/react": "^10.5.4",
     "@storybook/react-vite": "^10.5.4",
@@ -50,14 +50,14 @@
     "@testing-library/react": "^16.3.3",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
-    "@vitejs/plugin-react": "^6.1.1",
+    "@vitejs/plugin-react": "^6.1.2",
     "autoprefixer": "^10.6.1",
-    "fake-indexeddb": "^6.2.5",
-    "happy-dom": "^20.4.0",
+    "fake-indexeddb": "^6.2.6",
+    "happy-dom": "^21.0.3",
     "postcss": "^8.5.19",
     "storybook": "^10.5.4",
     "tailwindcss": "^4.2.2",
     "typescript": "6.0.3",
-    "vite": "^8.3.2"
+    "vite": "^8.3.4"
   }
 }
