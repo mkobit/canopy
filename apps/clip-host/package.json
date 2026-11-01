@@ -16,7 +16,7 @@
     "@canopy/api-adapter": "workspace:*",
     "@canopy/graph": "workspace:*",
     "@canopy/graph-access": "workspace:*",
-    "effect": "4.0.3"
+    "effect": "4.0.5"
   },
   "devDependencies": {
     "@canopy/storage": "workspace:*",
