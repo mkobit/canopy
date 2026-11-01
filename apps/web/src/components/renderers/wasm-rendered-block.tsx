@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import type { Graph, Node } from '@canopy/graph';
+import type { Graph, Node, NodeId } from '@canopy/graph';
 import { SanitizedHtmlRenderer } from './sanitized-html-renderer';
 import { executeWasmRender } from './execute-wasm-render';
 import { getCachedRender, hashContent, renderCacheKey, setCachedRender } from './render-cache';
@@ -9,6 +9,9 @@ export type WasmRenderedBlockProperties = Readonly<{
   graph: Graph;
   // The plugin node the resolver located from the renderer's `entryPoint`.
   pluginNode: Node;
+  rendererId: NodeId;
+  viewDefinitionId: NodeId;
+  grantToken: string;
   // Native renderer shown while the plugin render is pending or on failure.
   fallback: React.ReactNode;
 }>;
@@ -69,7 +72,7 @@ const WasmRenderInner: React.FC<WasmRenderedBlockProperties & Readonly<{ cacheKe
     return (): void => {
       cancelled = true;
     };
-    // Keyed by cacheKey (node id + content hash); graph/pluginNode stable within a key.
+    // Keyed by cacheKey (node, view, renderer, grant, and content hash); inputs stable within a key.
     // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed by cacheKey
   }, [cacheKey]);
 
@@ -90,11 +93,18 @@ const WasmRenderInner: React.FC<WasmRenderedBlockProperties & Readonly<{ cacheKe
 
 // Two-phase async WASM render. Plugin execution is a Promise but block rendering
 // is synchronous, so execution is dispatched in an effect keyed by (node id,
-// content hash); the native fallback shows while pending or on failure, and a
-// superseded result (content changed mid-flight) is discarded via remount rather
-// than mounted. The inner component is remounted on cache-key change so per-key
-// state resets cleanly without setting state synchronously inside an effect.
+// view definition id, renderer id, grant token, content hash); the native fallback
+// shows while pending or on failure, and a superseded result (content or context
+// changed mid-flight) is discarded via remount rather than mounted. The inner
+// component is remounted on cache-key change so per-key state resets cleanly
+// without setting state synchronously inside an effect.
 export const WasmRenderedBlock: React.FC<WasmRenderedBlockProperties> = (properties) => {
-  const cacheKey = renderCacheKey(properties.node.id, hashContent(properties.node));
+  const cacheKey = renderCacheKey({
+    nodeId: properties.node.id,
+    viewDefinitionId: properties.viewDefinitionId,
+    rendererId: properties.rendererId,
+    grantToken: properties.grantToken,
+    contentHash: hashContent(properties.node),
+  });
   return <WasmRenderInner key={cacheKey} cacheKey={cacheKey} {...properties} />;
 };

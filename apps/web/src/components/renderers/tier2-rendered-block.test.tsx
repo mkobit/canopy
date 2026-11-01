@@ -12,10 +12,14 @@ import {
   unwrap,
   type Node,
 } from '@canopy/graph';
+import { createGraphAccessContext } from '@canopy/graph-access';
+import { executeSandboxedGuestPluginInWorker } from './execute-wasm-render-worker';
 import { Tier2RenderedBlock } from './tier2-rendered-block';
-import { hashContent, renderCacheKey, setCachedRender } from './render-cache';
+import { clearRenderCache, hashContent, renderCacheKey, setCachedRender } from './render-cache';
 
 const graph = unwrap(createGraph(asGraphId('tier2-test-graph'), 'Tier-2 test graph'));
+const defaultViewId = asNodeId('user:view:tier2-default');
+const defaultRendererId = asNodeId('user:renderer:tier2-default');
 const buildNode = (id: string): Node => ({
   id: asNodeId(id),
   type: asTypeId('user:nodetype:tier2-test'),
@@ -34,8 +38,20 @@ const originalIntersectionObserver = Object.getOwnPropertyDescriptor(
   'IntersectionObserver',
 );
 
-afterEach(() => {
+const ordinaryWorkerState = { pooledCount: 0 };
+
+afterEach(async () => {
   cleanup();
+  clearRenderCache();
+  while (ordinaryWorkerState.pooledCount > 0) {
+    ordinaryWorkerState.pooledCount -= 1;
+    await executeSandboxedGuestPluginInWorker(
+      createGraphAccessContext({ graph }),
+      '',
+      '{}',
+      '__drain__',
+    );
+  }
   if (originalWorker === undefined) Reflect.deleteProperty(globalThis, 'Worker');
   else Object.defineProperty(globalThis, 'Worker', originalWorker);
   if (originalIntersectionObserver === undefined)
@@ -53,6 +69,11 @@ class OrdinaryErrorWorker extends EventTarget {
     ) {
       return;
     }
+    if ('guestId' in message && message.guestId === '__drain__') {
+      queueMicrotask(() => this.dispatchEvent(new MessageEvent('messageerror')));
+      return;
+    }
+    ordinaryWorkerState.pooledCount += 1;
     const requestId = message.requestId;
     queueMicrotask(() => {
       this.dispatchEvent(
@@ -140,6 +161,8 @@ describe.serial('Tier2RenderedBlock unavailable behavior', () => {
         node={node}
         graph={graph}
         pluginNode={node}
+        rendererId={defaultRendererId}
+        viewDefinitionId={defaultViewId}
         guestId=""
         token="render:interactive"
         fallback={<span>static fallback</span>}
@@ -163,6 +186,8 @@ describe.serial('Tier2RenderedBlock unavailable behavior', () => {
         node={transportErrorNode}
         graph={graph}
         pluginNode={transportErrorNode}
+        rendererId={defaultRendererId}
+        viewDefinitionId={defaultViewId}
         guestId="fixture:message-error"
         token="render:interactive"
         fallback={<span>transport error fallback</span>}
@@ -188,6 +213,8 @@ describe.serial('Tier2RenderedBlock unavailable behavior', () => {
         node={errorNode}
         graph={graph}
         pluginNode={errorNode}
+        rendererId={defaultRendererId}
+        viewDefinitionId={defaultViewId}
         guestId="fixture:ordinary-error"
         token="render:interactive"
         fallback={<span>ordinary fallback</span>}
@@ -208,7 +235,13 @@ describe.serial('Tier2RenderedBlock unavailable behavior', () => {
     });
     const offscreenNode = buildNode('user:node:tier2-offscreen');
     setCachedRender(
-      renderCacheKey(offscreenNode.id, hashContent(offscreenNode)),
+      renderCacheKey({
+        nodeId: offscreenNode.id,
+        viewDefinitionId: defaultViewId,
+        rendererId: defaultRendererId,
+        grantToken: 'render:interactive',
+        contentHash: hashContent(offscreenNode),
+      }),
       '<p>cached interactive output</p>',
     );
 
@@ -217,6 +250,8 @@ describe.serial('Tier2RenderedBlock unavailable behavior', () => {
         node={offscreenNode}
         graph={graph}
         pluginNode={offscreenNode}
+        rendererId={defaultRendererId}
+        viewDefinitionId={defaultViewId}
         guestId="fixture:interactive"
         token="render:interactive"
         fallback={<span>off-screen preview</span>}
