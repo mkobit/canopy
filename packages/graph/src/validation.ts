@@ -69,7 +69,10 @@ function extractNamespace(graph: Graph, namespaceProperty: PropertyValue | undef
   return asNamespace('user');
 }
 
-function extractEdgeTypeDefinition(graph: Graph, node: Node): EdgeTypeDefinition | undefined {
+export function extractEdgeTypeDefinition(
+  graph: Graph,
+  node: Node,
+): EdgeTypeDefinition | undefined {
   const name = node.properties.get('name');
   const description = node.properties.get('description');
 
@@ -86,6 +89,9 @@ function extractEdgeTypeDefinition(graph: Graph, node: Node): EdgeTypeDefinition
   const inverseProperty = node.properties.get('inverse');
   const inverse = typeof inverseProperty === 'string' ? asTypeId(inverseProperty) : undefined;
 
+  const statusProperty = node.properties.get('status');
+  const status: 'active' | 'inactive' = statusProperty === 'inactive' ? 'inactive' : 'active';
+
   return {
     id: asTypeId(node.id),
     name: typeof name === 'string' ? name : 'Unknown',
@@ -96,10 +102,11 @@ function extractEdgeTypeDefinition(graph: Graph, node: Node): EdgeTypeDefinition
     targetTypes,
     transitive: isTransitive,
     inverse,
+    status,
   };
 }
 
-function extractNodeTypeDefinition(graph: Graph, node: Node): NodeTypeDefinition {
+export function extractNodeTypeDefinition(graph: Graph, node: Node): NodeTypeDefinition {
   const properties = extractProperties(node);
 
   const name = node.properties.get('name');
@@ -110,6 +117,9 @@ function extractNodeTypeDefinition(graph: Graph, node: Node): NodeTypeDefinition
   const validOutgoingEdges = extractTypeIdList(node.properties.get('validOutgoingEdges'));
   const validIncomingEdges = extractTypeIdList(node.properties.get('validIncomingEdges'));
 
+  const statusProperty = node.properties.get('status');
+  const status: 'active' | 'inactive' = statusProperty === 'inactive' ? 'inactive' : 'active';
+
   return {
     id: asTypeId(node.id),
     name: typeof name === 'string' ? name : 'Unknown',
@@ -118,6 +128,7 @@ function extractNodeTypeDefinition(graph: Graph, node: Node): NodeTypeDefinition
     properties,
     validOutgoingEdges,
     validIncomingEdges,
+    status,
   };
 }
 
@@ -532,6 +543,17 @@ export function validateNode(graph: Graph, node: Node): ValidationResult {
   }
 
   const definition = extractNodeTypeDefinition(graph, definitionNode);
+
+  if (definition.status === 'inactive') {
+    return failure([
+      {
+        path: ['type'],
+        message: `Node type '${node.type}' is inactive (TYPE_INACTIVE)`,
+        expected: 'active',
+        actual: 'inactive',
+      },
+    ]);
+  }
 
   // 2. Validate properties
   const errors = validateProperties(node.properties, definition.properties, graph);
