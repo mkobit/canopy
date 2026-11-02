@@ -1,25 +1,34 @@
 import { describe, it, expect } from 'bun:test';
 import { createGraph } from '../src/create-graph';
-import { addNode } from '../src/ops';
+import { addNode, removeNode } from '../src/ops';
 import {
   validateNode,
   validateEdge,
   matchesCondition,
   isEdgeCompatible,
   validatePropertyByType,
+  extractNodeTypeDefinition,
+  extractEdgeTypeDefinition,
 } from '../src/validation';
-import type { EdgeTypeDefinition, Node, Edge } from '@canopy/graph';
+import { NodeTypeDefinitionSchema, EdgeTypeDefinitionSchema } from '../src/schemas';
+import { projectGraph } from '../src/projection';
+import { getNodesOfType, getNodeType } from '../src/queries';
+import type { EdgeTypeDefinition, Node, Edge, GraphEvent } from '@canopy/graph';
 import { SYSTEM_IDS } from '../src/system';
 import {
   asNodeId,
+  asEdgeId,
   asTypeId,
   createNodeId,
   createGraphId,
   createEdgeId,
+  createEventId,
   PropertyDefinition,
   PropertyValue,
   createInstant,
   unwrap,
+  isErr,
+  isOk,
   asDeviceId,
   asNamespace,
 } from '@canopy/graph';
@@ -723,5 +732,301 @@ describe('isEdgeCompatible', () => {
     const definition = mockDefinition([], []);
     expect(isEdgeCompatible(definition, t1, t2)).toBe(true);
     expect(isEdgeCompatible(definition, t2, t3)).toBe(true);
+  });
+});
+
+describe('durable schema retention and type lifecycle', () => {
+  const deviceId = asDeviceId('00000000-0000-0000-0000-000000000000');
+
+  describe('schema validation with status', () => {
+    it('validates node type definition with active status', () => {
+      const parsed = NodeTypeDefinitionSchema.parse({
+        id: asTypeId('test:node-type'),
+        name: 'TestNode',
+        namespace: asNamespace('user'),
+        properties: [],
+        validOutgoingEdges: [],
+        validIncomingEdges: [],
+        status: 'active',
+      });
+      expect(parsed.status).toBe('active');
+    });
+
+    it('validates node type definition with inactive status', () => {
+      const parsed = NodeTypeDefinitionSchema.parse({
+        id: asTypeId('test:node-type'),
+        name: 'TestNode',
+        namespace: asNamespace('user'),
+        properties: [],
+        validOutgoingEdges: [],
+        validIncomingEdges: [],
+        status: 'inactive',
+      });
+      expect(parsed.status).toBe('inactive');
+    });
+
+    it('validates node type definition with omitted status', () => {
+      const parsed = NodeTypeDefinitionSchema.parse({
+        id: asTypeId('test:node-type'),
+        name: 'TestNode',
+        namespace: asNamespace('user'),
+        properties: [],
+        validOutgoingEdges: [],
+        validIncomingEdges: [],
+      });
+      expect(parsed.status).toBeUndefined();
+    });
+
+    it('validates edge type definition with active status', () => {
+      const parsed = EdgeTypeDefinitionSchema.parse({
+        id: asTypeId('test:edge-type'),
+        name: 'TestEdge',
+        namespace: asNamespace('user'),
+        sourceTypes: [],
+        targetTypes: [],
+        properties: [],
+        transitive: false,
+        status: 'active',
+      });
+      expect(parsed.status).toBe('active');
+    });
+
+    it('validates edge type definition with inactive status', () => {
+      const parsed = EdgeTypeDefinitionSchema.parse({
+        id: asTypeId('test:edge-type'),
+        name: 'TestEdge',
+        namespace: asNamespace('user'),
+        sourceTypes: [],
+        targetTypes: [],
+        properties: [],
+        transitive: false,
+        status: 'inactive',
+      });
+      expect(parsed.status).toBe('inactive');
+    });
+
+    it('validates edge type definition with omitted status', () => {
+      const parsed = EdgeTypeDefinitionSchema.parse({
+        id: asTypeId('test:edge-type'),
+        name: 'TestEdge',
+        namespace: asNamespace('user'),
+        sourceTypes: [],
+        targetTypes: [],
+        properties: [],
+        transitive: false,
+      });
+      expect(parsed.status).toBeUndefined();
+    });
+  });
+
+  describe('extraction helpers with status', () => {
+    it('extracts status defaulting to active when omitted', () => {
+      const g = unwrap(createGraph(createGraphId(), 'Test Graph'));
+      const nodeTypeNode = createNode({
+        id: asNodeId('test-active-type'),
+        type: SYSTEM_IDS.NODE_TYPE,
+        properties: {
+          name: 'ActiveType',
+        },
+      });
+      const nodeType = extractNodeTypeDefinition(g, nodeTypeNode);
+      expect(nodeType.status).toBe('active');
+
+      const edgeTypeNode = createNode({
+        id: asNodeId('test-active-edge-type'),
+        type: SYSTEM_IDS.EDGE_TYPE,
+        properties: {
+          name: 'ActiveEdgeType',
+        },
+      });
+      const edgeType = extractEdgeTypeDefinition(g, edgeTypeNode);
+      expect(edgeType?.status).toBe('active');
+    });
+
+    it('extracts status as inactive when property is inactive', () => {
+      const g = unwrap(createGraph(createGraphId(), 'Test Graph'));
+      const nodeTypeNode = createNode({
+        id: asNodeId('test-inactive-type'),
+        type: SYSTEM_IDS.NODE_TYPE,
+        properties: {
+          name: 'InactiveType',
+          status: 'inactive',
+        },
+      });
+      const nodeType = extractNodeTypeDefinition(g, nodeTypeNode);
+      expect(nodeType.status).toBe('inactive');
+
+      const edgeTypeNode = createNode({
+        id: asNodeId('test-inactive-edge-type'),
+        type: SYSTEM_IDS.EDGE_TYPE,
+        properties: {
+          name: 'InactiveEdgeType',
+          status: 'inactive',
+        },
+      });
+      const edgeType = extractEdgeTypeDefinition(g, edgeTypeNode);
+      expect(edgeType?.status).toBe('inactive');
+    });
+  });
+
+  describe('inactive node type validation and lifecycle', () => {
+    it('rejects validateNode for inactive type with TYPE_INACTIVE error', () => {
+      let g = unwrap(createGraph(createGraphId(), 'Test Graph'));
+      const inactiveTypeNode = createNode({
+        id: asNodeId('type-retired-plugin'),
+        type: SYSTEM_IDS.NODE_TYPE,
+        properties: {
+          name: 'RetiredPluginNode',
+          status: 'inactive',
+        },
+      });
+      g = unwrap(addNode(g, inactiveTypeNode, { deviceId })).graph;
+
+      const candidateNode = createNode({
+        id: asNodeId('candidate-1'),
+        type: asTypeId('type-retired-plugin'),
+        properties: {},
+      });
+
+      const validation = validateNode(g, candidateNode);
+      expect(validation.valid).toBe(false);
+      expect(validation.errors.some((error_) => error_.message.includes('TYPE_INACTIVE'))).toBe(
+        true,
+      );
+      expect(validation.errors[0]?.path).toEqual(['type']);
+      expect(validation.errors[0]?.expected).toBe('active');
+      expect(validation.errors[0]?.actual).toBe('inactive');
+    });
+
+    it('rejects addNode for inactive type with TYPE_INACTIVE error', () => {
+      let g = unwrap(createGraph(createGraphId(), 'Test Graph'));
+      const inactiveTypeNode = createNode({
+        id: asNodeId('type-retired-plugin'),
+        type: SYSTEM_IDS.NODE_TYPE,
+        properties: {
+          name: 'RetiredPluginNode',
+          status: 'inactive',
+        },
+      });
+      g = unwrap(addNode(g, inactiveTypeNode, { deviceId })).graph;
+
+      const candidateNode = createNode({
+        id: asNodeId('candidate-2'),
+        type: asTypeId('type-retired-plugin'),
+        properties: {},
+      });
+
+      const result = addNode(g, candidateNode, { deviceId });
+      expect(isErr(result)).toBe(true);
+      if (!isErr(result)) return;
+      expect(result.error.message).toMatch(/TYPE_INACTIVE/);
+    });
+
+    it('permits query retrieval and deletion of existing nodes with inactive types', () => {
+      let g = unwrap(createGraph(createGraphId(), 'Test Graph'));
+      const typeNode = createNode({
+        id: asNodeId('type-lifecycle-node'),
+        type: SYSTEM_IDS.NODE_TYPE,
+        properties: {
+          name: 'LifecycleNode',
+          status: 'active',
+        },
+      });
+      g = unwrap(addNode(g, typeNode, { deviceId })).graph;
+
+      const existingNode = createNode({
+        id: asNodeId('lifecycle-node-1'),
+        type: asTypeId('type-lifecycle-node'),
+        properties: {
+          title: 'Existing Data',
+        },
+      });
+      g = unwrap(addNode(g, existingNode, { deviceId })).graph;
+
+      const inactiveTypeNode = {
+        ...typeNode,
+        properties: new Map([...typeNode.properties, ['status', 'inactive']]),
+      };
+      g = {
+        ...g,
+        nodes: new Map([...g.nodes, [inactiveTypeNode.id, inactiveTypeNode]]),
+      };
+
+      const retrieved = g.nodes.get(asNodeId('lifecycle-node-1'));
+      expect(retrieved).toBeDefined();
+      expect(retrieved?.id).toBe(asNodeId('lifecycle-node-1'));
+      expect(retrieved?.properties.get('title')).toBe('Existing Data');
+
+      const byType = getNodesOfType(g, asTypeId('type-lifecycle-node'));
+      expect(byType.length).toBe(1);
+      expect(byType[0]?.id).toBe(asNodeId('lifecycle-node-1'));
+
+      const retrievedType = getNodeType(g, 'type-lifecycle-node');
+      expect(retrievedType).toBeDefined();
+
+      const removeResult = removeNode(g, asNodeId('lifecycle-node-1'), { deviceId });
+      expect(isOk(removeResult)).toBe(true);
+      if (!isOk(removeResult)) return;
+      expect(removeResult.value.events.some((event) => event.type === 'NodeDeleted')).toBe(true);
+      expect(removeResult.value.graph.nodes.has(asNodeId('lifecycle-node-1'))).toBe(false);
+    });
+
+    it('replays historical events for inactive types without validation failure', () => {
+      const initial = unwrap(createGraph(createGraphId(), 'Test Graph'));
+      const typeNodeId = asNodeId('type-historical-plugin');
+      const nodeId = asNodeId('historical-node-1');
+      const edgeId = asEdgeId('historical-edge-1');
+
+      const timestamp = createInstant();
+
+      const events: readonly GraphEvent[] = [
+        {
+          type: 'NodeCreated',
+          eventId: createEventId(),
+          id: typeNodeId,
+          nodeType: SYSTEM_IDS.NODE_TYPE,
+          properties: new Map([
+            ['name', 'HistoricalPluginType'],
+            ['status', 'inactive'],
+          ]),
+          timestamp,
+          deviceId,
+        },
+        {
+          type: 'NodeCreated',
+          eventId: createEventId(),
+          id: nodeId,
+          nodeType: asTypeId('type-historical-plugin'),
+          properties: new Map([['title', 'Historical Note']]),
+          timestamp,
+          deviceId,
+        },
+        {
+          type: 'EdgeCreated',
+          eventId: createEventId(),
+          id: edgeId,
+          edgeType: asTypeId('system:references'),
+          source: nodeId,
+          target: typeNodeId,
+          properties: new Map(),
+          timestamp,
+          deviceId,
+        },
+        {
+          type: 'NodeDeleted',
+          eventId: createEventId(),
+          id: nodeId,
+          timestamp,
+          deviceId,
+        },
+      ];
+
+      const projectedResult = projectGraph(events, initial);
+      expect(isOk(projectedResult)).toBe(true);
+      if (!isOk(projectedResult)) return;
+      const projected = projectedResult.value;
+      expect(projected.nodes.has(typeNodeId)).toBe(true);
+      expect(projected.nodes.has(nodeId)).toBe(false);
+    });
   });
 });

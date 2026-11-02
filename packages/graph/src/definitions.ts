@@ -13,6 +13,7 @@ export interface NodeTypeDefinition {
   readonly properties: readonly PropertyDefinition[];
   readonly validOutgoingEdges: readonly TypeId[];
   readonly validIncomingEdges: readonly TypeId[];
+  readonly status?: 'active' | 'inactive' | undefined;
 }
 
 /**
@@ -29,4 +30,5 @@ export interface EdgeTypeDefinition {
   readonly properties: readonly PropertyDefinition[];
   readonly transitive: boolean;
   readonly inverse: TypeId | undefined;
+  readonly status?: 'active' | 'inactive' | undefined;
 }

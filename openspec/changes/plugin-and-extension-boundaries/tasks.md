@@ -8,12 +8,12 @@ Implementation execution requires explicit claim (`bd update <id> --claim`) in a
 
 ## 1. Durable schema retention and type lifecycle in @canopy/graph — canopy-ax6.1
 
-- [ ] 1.1 Add `status?: 'active' | 'inactive'` to `NodeTypeDefinition` and `EdgeTypeDefinition` in `packages/graph/src/definitions.ts`.
-- [ ] 1.2 Update `NodeTypeDefinitionSchema` and `EdgeTypeDefinitionSchema` in `packages/graph/src/schemas.ts` to validate the optional `status` property.
-- [ ] 1.3 Update type extraction helpers in `packages/graph/src/validation.ts` to extract `status`, defaulting to `'active'` when omitted.
-- [ ] 1.4 Add `TYPE_INACTIVE` validation failure to `validateNode` in `packages/graph/src/validation.ts` when a client creates a node of an inactive type.
-- [ ] 1.5 Update node mutation operations in `packages/graph/src/ops/node.ts` to reject node creation for inactive types while permitting node deletion.
-- [ ] 1.6 Add test coverage in `packages/graph/tests/validation.test.ts` verifying `TYPE_INACTIVE` validation, query retrieval for inactive types, and historical event log replay.
+- [x] 1.1 Add `status?: 'active' | 'inactive'` to `NodeTypeDefinition` and `EdgeTypeDefinition` in `packages/graph/src/definitions.ts`.
+- [x] 1.2 Update `NodeTypeDefinitionSchema` and `EdgeTypeDefinitionSchema` in `packages/graph/src/schemas.ts` to validate the optional `status` property.
+- [x] 1.3 Update type extraction helpers in `packages/graph/src/validation.ts` to extract `status`, defaulting to `'active'` when omitted.
+- [x] 1.4 Add `TYPE_INACTIVE` validation failure to `validateNode` in `packages/graph/src/validation.ts` when a client creates a node of an inactive type.
+- [x] 1.5 Update node mutation operations in `packages/graph/src/ops/node.ts` to reject node creation for inactive types while permitting node deletion.
+- [x] 1.6 Add test coverage in `packages/graph/tests/validation.test.ts` verifying `TYPE_INACTIVE` validation, query retrieval for inactive types, and historical event log replay.
 
 ## 2. Explicit capability grants and token binding in @canopy/plugin-host and @canopy/graph-access — canopy-ax6.2
 

@@ -6,7 +6,7 @@ import type { GraphEvent, GraphResult } from '../events';
 import type { PropertyValue } from '../properties';
 import { createInstant, createEventId } from '../factories';
 import { ok, err as error } from '../result';
-import { validateNode } from '../validation';
+import { validateNode, getNodeTypeDefinition, extractNodeTypeDefinition } from '../validation';
 import { isSystemNodeId } from '../system';
 
 export type NodeOperationOptions = Readonly<{
@@ -28,6 +28,18 @@ export function addNode(
 ): Result<GraphResult<Graph>, Error> {
   if (graph.nodes.has(node.id)) {
     return error(new Error(`Node with ID ${node.id} already exists`));
+  }
+
+  const definitionNode = getNodeTypeDefinition(graph, node.type);
+  if (definitionNode) {
+    const definition = extractNodeTypeDefinition(graph, definitionNode);
+    if (definition.status === 'inactive') {
+      return error(
+        new Error(
+          `Node validation failed: type: Node type '${node.type}' is inactive (TYPE_INACTIVE)`,
+        ),
+      );
+    }
   }
 
   if (options.validate) {

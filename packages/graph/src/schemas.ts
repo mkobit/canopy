@@ -165,10 +165,12 @@ export const NodeTypeDefinitionSchema: z.ZodType<NodeTypeDefinition, unknown> = 
     properties: z.array(PropertyDefinitionSchema),
     validOutgoingEdges: z.array(TypeIdSchema),
     validIncomingEdges: z.array(TypeIdSchema),
+    status: z.enum(['active', 'inactive']).optional(),
   })
   .transform((value) => ({
     ...value,
     description: value.description ?? undefined,
+    status: value.status ?? undefined,
   }));
 
 export const EdgeTypeDefinitionSchema: z.ZodType<EdgeTypeDefinition, unknown> = z
@@ -182,11 +184,13 @@ export const EdgeTypeDefinitionSchema: z.ZodType<EdgeTypeDefinition, unknown> = 
     properties: z.array(PropertyDefinitionSchema),
     transitive: z.boolean(),
     inverse: TypeIdSchema.optional(),
+    status: z.enum(['active', 'inactive']).optional(),
   })
   .transform((value) => ({
     ...value,
     description: value.description ?? undefined,
     inverse: value.inverse ?? undefined,
+    status: value.status ?? undefined,
   }));
 
 export const EventIdSchema = z.string().uuid().transform(asEventId);
