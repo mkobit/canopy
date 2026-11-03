@@ -27,16 +27,68 @@ export const createCappedGuestMemory = (
   maximumPages: number = GUEST_MEMORY_MAX_PAGES,
 ): WebAssembly.Memory => new WebAssembly.Memory({ initial: initialPages, maximum: maximumPages });
 
-// Removes the `Worker` constructor from a worker's global scope so a guest
-// running inside the worker cannot spawn a nested worker that outlives
-// `terminate()` of its host worker (design decision 3a / finding 7). Returns
-// whether the constructor was present, so a startup assertion can verify it.
-export const hardenGuestWorkerScope = (scope: object): boolean => {
-  const hadWorker = typeof Reflect.get(scope, 'Worker') === 'function';
-  if (hadWorker) {
-    Reflect.deleteProperty(scope, 'Worker');
+// Ambient constructors, network APIs, and storage interfaces prohibited inside
+// hardened guest worker isolates (design decision 3a / finding 7 / risk C3).
+export const PROHIBITED_WORKER_GLOBALS = [
+  'Worker',
+  'SharedWorker',
+  'fetch',
+  'WebSocket',
+  'XMLHttpRequest',
+  'indexedDB',
+] as const;
+
+export type ProhibitedWorkerGlobal = (typeof PROHIBITED_WORKER_GLOBALS)[number];
+
+const deleteProhibitedNamesFromTarget = (
+  target: object,
+  names: readonly ProhibitedWorkerGlobal[],
+): boolean => {
+  if (names.length === 0) {
+    return false;
   }
-  return hadWorker;
+  const [firstName, ...restNames] = names;
+  const deletedFirst =
+    firstName !== undefined &&
+    Object.prototype.hasOwnProperty.call(target, firstName) &&
+    (Reflect.deleteProperty(target, firstName) ||
+      Reflect.defineProperty(target, firstName, {
+        value: undefined,
+        writable: false,
+        configurable: false,
+      }));
+  const deletedRest = deleteProhibitedNamesFromTarget(target, restNames);
+  return deletedFirst || deletedRest;
+};
+
+const deleteProhibitedGlobalsFromChain = (current: object | null): boolean => {
+  if (current === null) {
+    return false;
+  }
+  const deletedFromCurrent = deleteProhibitedNamesFromTarget(current, PROHIBITED_WORKER_GLOBALS);
+  const deletedFromPrototype = deleteProhibitedGlobalsFromChain(Object.getPrototypeOf(current));
+  return deletedFromCurrent || deletedFromPrototype;
+};
+
+const freezePrototypeChain = (prototype: object | null): boolean => {
+  if (prototype === null || prototype === Object.prototype) {
+    return true;
+  }
+  if (!Object.isFrozen(prototype)) {
+    Object.freeze(prototype);
+  }
+  return freezePrototypeChain(Object.getPrototypeOf(prototype));
+};
+
+// Sanitizes a worker's global scope and prototype chain by deleting prohibited
+// ambient constructors, network APIs, and storage interfaces (Worker, SharedWorker,
+// fetch, WebSocket, XMLHttpRequest, indexedDB), and freezes the prototype chain
+// above the scope to prevent prototype pollution tampering (finding 7 / risk C3).
+// Returns whether any prohibited global was present.
+export const hardenGuestWorkerScope = (scope: object): boolean => {
+  const hadProhibitedGlobal = deleteProhibitedGlobalsFromChain(scope);
+  freezePrototypeChain(Object.getPrototypeOf(scope));
+  return hadProhibitedGlobal;
 };
 
 // A guest execution the host can forcibly stop. `execute` runs the guest and
