@@ -32,7 +32,9 @@ const expectHostSuccess = async (
 describe('WASM WIT Host Import Bindings', () => {
   it('executes createNode and queryNodes over WIT host bindings', async () => {
     const { context } = await setupTestContext();
-    const hostBindings = createWasmHostBindings(context);
+    const hostBindings = createWasmHostBindings(context, {
+      boundToken: 'read:nodes write:create-node',
+    });
 
     const createPayload = JSON.stringify({
       id: 'node-wit-1',
@@ -65,14 +67,16 @@ describe('WASM WIT Host Import Bindings', () => {
 
   it('executes edge creation and deletion mutations via host bindings', async () => {
     const { context } = await setupTestContext();
-    const hostBindings = createWasmHostBindings(context);
+    const hostBindings = createWasmHostBindings(context, {
+      boundToken: 'write:create-node write:create-edge write:delete-edge',
+    });
 
     await hostBindings.mutations.createNode(
-      '*',
+      'write:create-node',
       JSON.stringify({ id: 'n1', type: 'doc', properties: {} }),
     );
     await hostBindings.mutations.createNode(
-      '*',
+      'write:create-node',
       JSON.stringify({ id: 'n2', type: 'doc', properties: {} }),
     );
 
@@ -99,7 +103,10 @@ describe('WASM WIT Host Import Bindings', () => {
 
   it('preserves every query, mutation, and event host operation', async () => {
     const { context } = await setupTestContext();
-    const hostBindings = createWasmHostBindings(context);
+    const hostBindings = createWasmHostBindings(context, {
+      boundToken:
+        'read:nodes read:edges read:properties read:traversal read:events write:create-node write:create-edge write:update-properties write:delete-edge write:delete-node',
+    });
 
     const firstNode = JSON.stringify({
       id: 'operation-node-1',
@@ -111,8 +118,8 @@ describe('WASM WIT Host Import Bindings', () => {
       type: 'doc',
       properties: { title: 'second' },
     });
-    await expectHostSuccess(hostBindings.mutations.createNode('*', firstNode));
-    await expectHostSuccess(hostBindings.mutations.createNode('*', secondNode));
+    await expectHostSuccess(hostBindings.mutations.createNode('write:create-node', firstNode));
+    await expectHostSuccess(hostBindings.mutations.createNode('write:create-node', secondNode));
 
     const edgePayload = JSON.stringify({
       id: 'operation-edge-1',
@@ -171,7 +178,7 @@ describe('WASM WIT Host Import Bindings', () => {
 
   it('rejects calls when capability token does not grant required scope', async () => {
     const { context } = await setupTestContext();
-    const hostBindings = createWasmHostBindings(context);
+    const hostBindings = createWasmHostBindings(context, { boundToken: 'read:edges' });
 
     const result = await hostBindings.queries.queryNodes('read:edges', JSON.stringify({}));
     expect(result.ok).toBe(false);
@@ -204,9 +211,89 @@ describe('WASM WIT Host Import Bindings', () => {
     expect(writeResult.error.message).toContain('write:create-node');
   });
 
+  it('fails closed with PermissionDenied when boundToken is omitted or empty', async () => {
+    const { context } = await setupTestContext();
+    const hostBindingsNoOptions = createWasmHostBindings(context);
+    const queryResult = await hostBindingsNoOptions.queries.queryNodes(
+      'read:nodes',
+      JSON.stringify({}),
+    );
+    expect(queryResult.ok).toBe(false);
+    if (queryResult.ok) return;
+    expect(queryResult.error.code).toBe('PermissionDenied');
+    expect(queryResult.error.message).toContain('bound');
+
+    const hostBindingsEmptyToken = createWasmHostBindings(context, {
+      boundToken: ' '.repeat(3),
+    });
+    const mutationResult = await hostBindingsEmptyToken.mutations.createNode(
+      'write:create-node',
+      JSON.stringify({ id: 'node-empty-token', type: 'doc', properties: {} }),
+    );
+    expect(mutationResult.ok).toBe(false);
+    if (mutationResult.ok) return;
+    expect(mutationResult.error.code).toBe('PermissionDenied');
+    expect(mutationResult.error.message).toContain('bound');
+  });
+
+  it('rejects caller-supplied token overrides across the guest ABI', async () => {
+    const { context } = await setupTestContext();
+    // Host only granted read:nodes in closure-bound token
+    const hostBindings = createWasmHostBindings(context, { boundToken: 'read:nodes' });
+
+    // Guest attempts to forge write:create-node across ABI
+    const forgedResult1 = await hostBindings.mutations.createNode(
+      'write:create-node',
+      JSON.stringify({ id: 'forged-node-1', type: 'doc', properties: {} }),
+    );
+    expect(forgedResult1.ok).toBe(false);
+    if (forgedResult1.ok) return;
+    expect(forgedResult1.error.code).toBe('PermissionDenied');
+    expect(forgedResult1.error.message).toContain('write:create-node');
+
+    // Guest attempts to forge * across ABI
+    const forgedResult2 = await hostBindings.mutations.createNode(
+      '*',
+      JSON.stringify({ id: 'forged-node-2', type: 'doc', properties: {} }),
+    );
+    expect(forgedResult2.ok).toBe(false);
+    if (forgedResult2.ok) return;
+    expect(forgedResult2.error.code).toBe('PermissionDenied');
+    expect(forgedResult2.error.message).toContain('write:create-node');
+  });
+
+  it('rejects wildcard tokens in boundToken for sensitive write capabilities', async () => {
+    const { context } = await setupTestContext();
+    // Bound token has write:*, which does not satisfy sensitive write capabilities
+    const hostBindingsCategoryWildcard = createWasmHostBindings(context, {
+      boundToken: 'write:*',
+    });
+    const writeResult1 = await hostBindingsCategoryWildcard.mutations.createNode(
+      'write:create-node',
+      JSON.stringify({ id: 'blocked-wildcard-1', type: 'doc', properties: {} }),
+    );
+    expect(writeResult1.ok).toBe(false);
+    if (writeResult1.ok) return;
+    expect(writeResult1.error.code).toBe('PermissionDenied');
+    expect(writeResult1.error.message).toContain('write:create-node');
+
+    // Bound token has global *, which also does not satisfy sensitive write capabilities
+    const hostBindingsGlobalWildcard = createWasmHostBindings(context, {
+      boundToken: '*',
+    });
+    const writeResult2 = await hostBindingsGlobalWildcard.mutations.createNode(
+      'write:create-node',
+      JSON.stringify({ id: 'blocked-wildcard-2', type: 'doc', properties: {} }),
+    );
+    expect(writeResult2.ok).toBe(false);
+    if (writeResult2.ok) return;
+    expect(writeResult2.error.code).toBe('PermissionDenied');
+    expect(writeResult2.error.message).toContain('write:create-node');
+  });
+
   it('returns VALIDATION_ERROR when payload is invalid JSON', async () => {
     const { context } = await setupTestContext();
-    const hostBindings = createWasmHostBindings(context);
+    const hostBindings = createWasmHostBindings(context, { boundToken: 'read:nodes' });
 
     const result = await hostBindings.queries.queryNodes('read:nodes', '{ bad json }');
     expect(result.ok).toBe(false);
@@ -222,6 +309,7 @@ describe('WASM WIT Host Import Bindings', () => {
     const { context } = await setupTestContext();
     const fuelMeter = createFuelMeter(150n);
     const hostBindings = createWasmHostBindings(context, {
+      boundToken: 'read:nodes',
       fuelMeter,
       defaultFuelPerImport: 100n,
     });
@@ -243,7 +331,10 @@ describe('WASM WIT Host Import Bindings', () => {
   it('uses 100 fuel units per import by default', async () => {
     const { context } = await setupTestContext();
     const fuelMeter = createFuelMeter(100n);
-    const hostBindings = createWasmHostBindings(context, { fuelMeter });
+    const hostBindings = createWasmHostBindings(context, {
+      boundToken: 'read:nodes',
+      fuelMeter,
+    });
 
     const firstResult = await hostBindings.queries.queryNodes('read:nodes', '{}');
     expect(firstResult.ok).toBe(true);
@@ -256,6 +347,7 @@ describe('WASM WIT Host Import Bindings', () => {
     const { context } = await setupTestContext();
     const fuelMeter = createFuelMeter(50n);
     const hostBindings = createWasmHostBindings(context, {
+      boundToken: 'read:nodes',
       fuelMeter,
       defaultFuelPerImport: 25n,
     });
@@ -272,7 +364,10 @@ describe('WASM WIT Host Import Bindings', () => {
     const { context } = await setupTestContext();
     const reentrancyGuard = createReentrancyGuard();
 
-    const hostBindings = createWasmHostBindings(context, { reentrancyGuard });
+    const hostBindings = createWasmHostBindings(context, {
+      boundToken: 'read:nodes',
+      reentrancyGuard,
+    });
 
     reentrancyGuard.enter();
 

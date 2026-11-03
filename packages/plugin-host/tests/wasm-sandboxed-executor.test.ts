@@ -85,7 +85,7 @@ describe('WASM Sandboxed Execution Boundary', () => {
 
     const result = await executeSandboxedGuestPlugin(
       context,
-      '*',
+      'write:create-node',
       JSON.stringify({ title: 'Sandbox Note' }),
       executeNoteCreationPlugin,
     );

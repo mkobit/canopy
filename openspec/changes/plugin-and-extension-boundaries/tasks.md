@@ -17,12 +17,12 @@ Implementation execution requires explicit claim (`bd update <id> --claim`) in a
 
 ## 2. Explicit capability grants and token binding in @canopy/plugin-host and @canopy/graph-access — canopy-ax6.2
 
-- [ ] 2.1 Define the sensitive capability set in `packages/plugin-host/src/wasm/capabilities.ts` containing `render:interactive`, `network:connect`, and write operations (`write:create-node`, `write:update-properties`, `write:delete-node`, `write:create-edge`, `write:delete-edge`).
-- [ ] 2.2 Update `defaultCapabilityValidator` in `packages/plugin-host/src/wasm/capabilities.ts` to reject wildcard tokens (`*`, `write:*`, `render:*`) for all sensitive capabilities.
-- [ ] 2.3 Require `boundToken` and reject caller-supplied token overrides across the guest ABI in `packages/plugin-host/src/wasm/host-bindings.ts`.
-- [ ] 2.4 Fail closed with `PERMISSION_DENIED` in `packages/plugin-host/src/wasm/host-bindings.ts` when host bindings execute without a verified bound token.
-- [ ] 2.5 Add capability verification tests in `packages/plugin-host/tests/wasm-capabilities.test.ts` for wildcard rejection and literal match enforcement.
-- [ ] 2.6 Add security tests in `packages/plugin-host/tests/wasm-host-bindings.test.ts` verifying token forgery rejection across the guest ABI.
+- [x] 2.1 Define the sensitive capability set in `packages/plugin-host/src/wasm/capabilities.ts` containing `render:interactive`, `network:connect`, and write operations (`write:create-node`, `write:update-properties`, `write:delete-node`, `write:create-edge`, `write:delete-edge`).
+- [x] 2.2 Update `defaultCapabilityValidator` in `packages/plugin-host/src/wasm/capabilities.ts` to reject wildcard tokens (`*`, `write:*`, `render:*`) for all sensitive capabilities.
+- [x] 2.3 Require `boundToken` and reject caller-supplied token overrides across the guest ABI in `packages/plugin-host/src/wasm/host-bindings.ts`.
+- [x] 2.4 Fail closed with `PERMISSION_DENIED` in `packages/plugin-host/src/wasm/host-bindings.ts` when host bindings execute without a verified bound token.
+- [x] 2.5 Add capability verification tests in `packages/plugin-host/tests/wasm-capabilities.test.ts` for wildcard rejection and literal match enforcement.
+- [x] 2.6 Add security tests in `packages/plugin-host/tests/wasm-host-bindings.test.ts` verifying token forgery rejection across the guest ABI.
 
 ## 3. Guest worker isolation hardening in @canopy/plugin-host — canopy-ax6.3
 
