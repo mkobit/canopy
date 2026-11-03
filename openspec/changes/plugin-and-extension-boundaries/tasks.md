@@ -26,11 +26,11 @@ Implementation execution requires explicit claim (`bd update <id> --claim`) in a
 
 ## 3. Guest worker isolation hardening in @canopy/plugin-host — canopy-ax6.3
 
-- [ ] 3.1 Update `hardenGuestWorkerScope` in `packages/plugin-host/src/wasm/terminable-execution.ts` to delete `Worker`, `SharedWorker`, `fetch`, `WebSocket`, `XMLHttpRequest`, and `indexedDB` from the global scope.
-- [ ] 3.2 Freeze the worker global prototype chain in `hardenGuestWorkerScope` to prevent prototype pollution.
-- [ ] 3.3 Verify calling `new Worker()` inside a hardened worker isolate throws a `TypeError`.
-- [ ] 3.4 Enforce the 2000 ms wall-clock deadline in `executeTerminableGuest` and terminate non-responsive worker isolates with a `RESOURCE_EXHAUSTED` error.
-- [ ] 3.5 Add unit tests in `packages/plugin-host/tests/wasm-terminable-execution.test.ts` for ambient global removal, prototype immutability, and deadline termination.
+- [x] 3.1 Update `hardenGuestWorkerScope` in `packages/plugin-host/src/wasm/terminable-execution.ts` to delete `Worker`, `SharedWorker`, `fetch`, `WebSocket`, `XMLHttpRequest`, and `indexedDB` from the global scope.
+- [x] 3.2 Freeze the worker global prototype chain in `hardenGuestWorkerScope` to prevent prototype pollution.
+- [x] 3.3 Verify calling `new Worker()` inside a hardened worker isolate throws a `TypeError`.
+- [x] 3.4 Enforce the 2000 ms wall-clock deadline in `executeTerminableGuest` and terminate non-responsive worker isolates with a `RESOURCE_EXHAUSTED` error.
+- [x] 3.5 Add unit tests in `packages/plugin-host/tests/wasm-terminable-execution.test.ts` for ambient global removal, prototype immutability, and deadline termination.
 
 ## 4. View resolution fallback cascade in UI — canopy-ax6.4
 

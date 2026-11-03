@@ -5,9 +5,11 @@ import { createGraphAccessContext, createGraphAccessError } from '@canopy/graph-
 import { executeSandboxedGuestPlugin } from '../src/wasm/sandboxed-executor';
 import {
   createCappedGuestMemory,
+  DEFAULT_UNTRUSTED_RENDER_TIMEOUT_MS,
   executeTerminableGuest,
   GUEST_MEMORY_MAX_PAGES,
   hardenGuestWorkerScope,
+  PROHIBITED_WORKER_GLOBALS,
   type TerminableGuestRunner,
 } from '../src/wasm/terminable-execution';
 
@@ -42,6 +44,31 @@ describe('executeTerminableGuest (host-enforced wall-clock termination)', () => 
       expect(result.error.message).toContain('terminated');
     }
     expect(terminated).toBe(true);
+  });
+
+  it('enforces the 2000 ms wall-clock deadline by default and terminates non-responsive worker isolates with RESOURCE_EXHAUSTED', async () => {
+    expect(DEFAULT_UNTRUSTED_RENDER_TIMEOUT_MS).toBe(2000);
+    let terminated = false;
+    const runner: TerminableGuestRunner = {
+      execute: () => new Promise<never>(() => undefined),
+      terminate: () => {
+        terminated = true;
+      },
+    };
+
+    const startTime = performance.now();
+    const result = await executeTerminableGuest(runner);
+    const elapsedMs = performance.now() - startTime;
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.category).toBe('RESOURCE_EXHAUSTED');
+      expect(result.error.message).toContain(
+        'Untrusted guest execution exceeded the 2000ms wall-clock deadline and was terminated',
+      );
+    }
+    expect(terminated).toBe(true);
+    expect(elapsedMs).toBeGreaterThanOrEqual(1900);
   });
 
   it('passes a normal completion through without terminating the runner', async () => {
@@ -121,20 +148,185 @@ describe('createCappedGuestMemory (hard linear-memory ceiling)', () => {
   });
 });
 
-describe('hardenGuestWorkerScope (no nested-worker escape)', () => {
-  it('removes the Worker constructor from the worker global scope', () => {
-    const scope: Record<string, unknown> = {
-      Worker: function Worker() {
-        return undefined;
-      },
-    };
-    expect(hardenGuestWorkerScope(scope)).toBe(true);
-    expect(scope.Worker).toBeUndefined();
+interface MockProhibitedScope {
+  readonly Worker?: new () => unknown;
+  readonly SharedWorker?: new () => unknown;
+  readonly fetch?: () => unknown;
+  readonly WebSocket?: new () => unknown;
+  readonly XMLHttpRequest?: new () => unknown;
+  readonly indexedDB?: unknown;
+  readonly customAllowed?: string;
+}
+
+interface MockPrototypeParent {
+  readonly indexedDB?: unknown;
+  readonly fetch?: () => unknown;
+  readonly parentAllowed?: string;
+}
+
+interface MockPrototypeChild extends MockPrototypeParent {
+  readonly WebSocket?: new () => unknown;
+  readonly XMLHttpRequest?: new () => unknown;
+  readonly childAllowed?: string;
+}
+
+interface MockScopeDerived extends MockPrototypeChild {
+  readonly Worker?: new () => unknown;
+  readonly SharedWorker?: new () => unknown;
+  readonly localAllowed?: string;
+}
+
+class MockWorkerConstructor {
+  readonly kind = 'MockWorker';
+}
+
+class MockSharedWorkerConstructor {
+  readonly kind = 'MockSharedWorker';
+}
+
+class MockWebSocketConstructor {
+  readonly kind = 'MockWebSocket';
+}
+
+class MockXMLHttpRequestConstructor {
+  readonly kind = 'MockXMLHttpRequest';
+}
+
+describe('hardenGuestWorkerScope (worker isolation hardening)', () => {
+  it('exports PROHIBITED_WORKER_GLOBALS with all expected sensitive APIs', () => {
+    expect(PROHIBITED_WORKER_GLOBALS).toEqual([
+      'Worker',
+      'SharedWorker',
+      'fetch',
+      'WebSocket',
+      'XMLHttpRequest',
+      'indexedDB',
+    ]);
   });
 
-  it('is a no-op when no Worker constructor is present', () => {
-    const scope: Record<string, unknown> = {};
-    expect(hardenGuestWorkerScope(scope)).toBe(false);
+  it('removes all prohibited globals directly present on the worker global scope', () => {
+    const scope: MockProhibitedScope = {
+      Worker: MockWorkerConstructor,
+      SharedWorker: MockSharedWorkerConstructor,
+      fetch: () => 'network-response',
+      WebSocket: MockWebSocketConstructor,
+      XMLHttpRequest: MockXMLHttpRequestConstructor,
+      indexedDB: { open: () => undefined },
+      customAllowed: 'allowed-scope-property',
+    };
+
+    const wasHardened = hardenGuestWorkerScope(scope);
+
+    expect(wasHardened).toBe(true);
     expect(scope.Worker).toBeUndefined();
+    expect(scope.SharedWorker).toBeUndefined();
+    expect(scope.fetch).toBeUndefined();
+    expect(scope.WebSocket).toBeUndefined();
+    expect(scope.XMLHttpRequest).toBeUndefined();
+    expect(scope.indexedDB).toBeUndefined();
+    expect(scope.customAllowed).toBe('allowed-scope-property');
+
+    for (const globalName of PROHIBITED_WORKER_GLOBALS) {
+      expect(Reflect.has(scope, globalName)).toBe(false);
+    }
+  });
+
+  it('removes prohibited globals distributed across the worker global prototype chain', () => {
+    const parentPrototype: MockPrototypeParent = {
+      indexedDB: { open: () => undefined },
+      fetch: () => 'parent-network',
+      parentAllowed: 'parent-ok',
+    };
+    const childPrototype: MockPrototypeChild = Object.assign(Object.create(parentPrototype), {
+      WebSocket: MockWebSocketConstructor,
+      XMLHttpRequest: MockXMLHttpRequestConstructor,
+      childAllowed: 'child-ok',
+    });
+    const derivedScope: MockScopeDerived = Object.assign(Object.create(childPrototype), {
+      Worker: MockWorkerConstructor,
+      SharedWorker: MockSharedWorkerConstructor,
+      localAllowed: 'local-ok',
+    });
+
+    const wasHardened = hardenGuestWorkerScope(derivedScope);
+
+    expect(wasHardened).toBe(true);
+    expect(derivedScope.Worker).toBeUndefined();
+    expect(derivedScope.SharedWorker).toBeUndefined();
+    expect(derivedScope.WebSocket).toBeUndefined();
+    expect(derivedScope.XMLHttpRequest).toBeUndefined();
+    expect(derivedScope.fetch).toBeUndefined();
+    expect(derivedScope.indexedDB).toBeUndefined();
+
+    for (const globalName of PROHIBITED_WORKER_GLOBALS) {
+      expect(Reflect.has(derivedScope, globalName)).toBe(false);
+    }
+
+    expect(derivedScope.localAllowed).toBe('local-ok');
+    expect(childPrototype.childAllowed).toBe('child-ok');
+    expect(parentPrototype.parentAllowed).toBe('parent-ok');
+  });
+
+  it('freezes the worker global prototype chain above scope rejecting prototype pollution tampering', () => {
+    const parentPrototype: MockPrototypeParent = {
+      parentAllowed: 'parent-ok',
+    };
+    const childPrototype: MockPrototypeChild = Object.assign(Object.create(parentPrototype), {
+      childAllowed: 'child-ok',
+    });
+    const scope: MockScopeDerived = Object.assign(Object.create(childPrototype), {
+      localAllowed: 'local-ok',
+    });
+
+    hardenGuestWorkerScope(scope);
+
+    // The scope itself remains unfrozen to allow normal worker initialization
+    expect(Object.isFrozen(scope)).toBe(false);
+    // All prototypes above scope in the chain are frozen
+    expect(Object.isFrozen(childPrototype)).toBe(true);
+    expect(Object.isFrozen(parentPrototype)).toBe(true);
+
+    // Tampering attempts are rejected
+    expect(Reflect.set(childPrototype, 'polluted', true)).toBe(false);
+    expect(Reflect.set(parentPrototype, 'polluted', true)).toBe(false);
+    expect(Reflect.defineProperty(childPrototype, 'tamper', { value: true })).toBe(false);
+    expect(() => {
+      (childPrototype as unknown as { tamper: unknown }).tamper = true;
+    }).toThrow(TypeError);
+  });
+
+  it('throws TypeError when attempting to invoke new Worker() after hardening on scope', () => {
+    const scope: MockProhibitedScope = {
+      Worker: MockWorkerConstructor,
+    };
+
+    hardenGuestWorkerScope(scope);
+
+    const workerConstructor = scope.Worker;
+    expect(() => new (workerConstructor as unknown as new () => unknown)()).toThrow(TypeError);
+  });
+
+  it('throws TypeError when attempting to invoke new Worker() inherited from prototype after hardening', () => {
+    const prototypeWithWorker: MockProhibitedScope = {
+      Worker: MockWorkerConstructor,
+    };
+    const scope: MockProhibitedScope = Object.create(prototypeWithWorker);
+
+    hardenGuestWorkerScope(scope);
+
+    const workerConstructor = scope.Worker;
+    expect(() => new (workerConstructor as unknown as new () => unknown)()).toThrow(TypeError);
+  });
+
+  it('is a no-op returning false when no prohibited globals are present', () => {
+    const cleanScope: MockProhibitedScope = {
+      customAllowed: 'pure-scope',
+    };
+
+    const wasHardened = hardenGuestWorkerScope(cleanScope);
+
+    expect(wasHardened).toBe(false);
+    expect(cleanScope.customAllowed).toBe('pure-scope');
+    expect(cleanScope.Worker).toBeUndefined();
   });
 });
