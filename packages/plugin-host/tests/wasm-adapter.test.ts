@@ -27,7 +27,7 @@ const executeMessageCreationPlugin = async (
 ): Promise<string> => {
   const input = JSON.parse(inputJson) as { message: string };
   await hostBindings.mutations.createNode(
-    '*',
+    'write:create-node',
     JSON.stringify({
       id: 'adapter-node-1',
       type: 'msg',
@@ -50,7 +50,7 @@ describe('WASM WIT Protocol Adapter', () => {
 
   it('creates adapter with WIT spec, host bindings, and guest plugin runner', async () => {
     const context = await setupTestContext();
-    const adapter = createWasmAdapter(context);
+    const adapter = createWasmAdapter(context, { boundToken: 'read:nodes' });
 
     expect(adapter.witSpec).toContain('package canopy:graph-api@0.1.0;');
     expect(adapter.hostBindings.queries.queryNodes).toBeDefined();
@@ -58,7 +58,7 @@ describe('WASM WIT Protocol Adapter', () => {
     expect(adapter.hostBindings.events.subscribeEvents).toBeDefined();
 
     const pluginResult = await adapter.executeGuestPlugin(
-      '*',
+      'write:create-node',
       JSON.stringify({ message: 'hello' }),
       executeMessageCreationPlugin,
     );

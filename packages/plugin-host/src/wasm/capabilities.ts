@@ -17,6 +17,7 @@ export type WasmCapability =
   | 'render:declarative'
   | 'render:raw-html'
   | 'render:interactive'
+  | 'network:connect'
   | 'wizard'
   | 'read:*'
   | 'write:*'
@@ -37,11 +38,26 @@ export const KNOWN_WASM_CAPABILITIES = [
   'render:declarative',
   'render:raw-html',
   'render:interactive',
+  'network:connect',
   'wizard',
   'read:*',
   'write:*',
   '*',
 ] as const satisfies readonly WasmCapability[];
+
+// Set of sensitive capabilities requiring explicit, literal grants (no wildcard expansion).
+export const SENSITIVE_WASM_CAPABILITIES: ReadonlySet<WasmCapability> = new Set([
+  'render:interactive',
+  'network:connect',
+  'write:create-node',
+  'write:update-properties',
+  'write:delete-node',
+  'write:create-edge',
+  'write:delete-edge',
+]);
+
+export const isSensitiveCapability = (value: string): boolean =>
+  (SENSITIVE_WASM_CAPABILITIES as ReadonlySet<string>).has(value);
 
 // Narrows an arbitrary string to a recognized WasmCapability.
 export const isWasmCapability = (value: string): value is WasmCapability =>
@@ -79,6 +95,7 @@ export const resolveRenderTier = (grantToken: string): RenderTier =>
   grantsCapabilityExplicitly(grantToken, 'render:interactive') ? 'tier2' : 'tier1';
 
 // Validates whether token matches required capability or wildcard.
+// Rejects wildcard tokens (*, write:*, render:*, network:*) for all sensitive capabilities.
 export const defaultCapabilityValidator: CapabilityValidator = (
   token: string,
   requiredCapability: WasmCapability,
@@ -88,6 +105,11 @@ export const defaultCapabilityValidator: CapabilityValidator = (
   }
 
   const scopes = parseTokenScopes(token);
+
+  if (isSensitiveCapability(requiredCapability)) {
+    return scopes.includes(requiredCapability);
+  }
+
   if (scopes.includes('*')) {
     return true;
   }

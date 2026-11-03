@@ -21,6 +21,7 @@ export const RECOGNIZED_WASM_CAPABILITIES: ReadonlySet<string> = new Set([
   'render:declarative',
   'render:raw-html',
   'render:interactive',
+  'network:connect',
   'wizard',
   'read:*',
   'write:*',

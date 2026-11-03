@@ -72,8 +72,10 @@ export type RemoteHostDispatch = (
 
 export type WasmHostBindingsOptions = Readonly<{
   validateCapability?: CapabilityValidator;
-  // Load-time bound capability scope. When present, host imports enforce this
-  // token instead of the guest-supplied argument, preventing token injection.
+  // Load-time bound capability scope required for host import execution.
+  // When omitted or empty, host bindings fail closed with PERMISSION_DENIED.
+  // When present, host imports enforce this closure-bound token and reject
+  // caller-supplied token overrides across the guest ABI.
   boundToken?: string;
   fuelMeter?: FuelMeter;
   reentrancyGuard?: ReentrancyGuard;
@@ -116,10 +118,39 @@ export type WasmHostBindings = Readonly<{
   events: WasmHostEventBindings;
 }>;
 
+// Validates fuel, memory, and capability token guards before host operation execution.
+const checkBindingGuards = (
+  options: WasmHostBindingsOptions,
+  payloadJson: string,
+  fuelPerCall: bigint,
+  boundToken: string,
+  requiredCapability: WasmCapability,
+): Result<string, WitErrorPayload> => {
+  if (options.fuelMeter) {
+    const fuelResult = options.fuelMeter.consume(fuelPerCall);
+    if (!fuelResult.ok) {
+      return err(toWitError(fuelResult.error));
+    }
+  }
+
+  if (options.memoryChecker) {
+    const inputBytes = utf8ByteLength(payloadJson);
+    const memResult = options.memoryChecker.checkBytes(inputBytes);
+    if (!memResult.ok) {
+      return err(toWitError(memResult.error));
+    }
+  }
+
+  // Verify capability strictly against the closure-bound token.
+  // Caller-supplied token overrides across the guest ABI are rejected.
+  const capResult = verifyCapability(boundToken, requiredCapability, options.validateCapability);
+  return capResult.ok ? ok(boundToken) : err(toWitError(capResult.error));
+};
+
 // Executes a host binding call with safety checks and error translation.
 const invokeHostBinding = async <TInput, TOutput>(
   context: GraphAccessContext,
-  token: string,
+  _callerToken: string,
   payloadJson: string,
   requiredCapability: WasmCapability,
   options: WasmHostBindingsOptions,
@@ -129,6 +160,19 @@ const invokeHostBinding = async <TInput, TOutput>(
 ): Promise<Result<string, WitErrorPayload>> => {
   const fuelPerCall = options.defaultFuelPerImport ?? 100n;
 
+  if (options.boundToken === undefined || options.boundToken.trim().length === 0) {
+    return err(
+      toWitError(
+        createGraphAccessError(
+          'FORBIDDEN',
+          'Host bindings require a verified bound capability token',
+        ),
+      ),
+    );
+  }
+
+  const boundToken = options.boundToken;
+
   if (options.reentrancyGuard) {
     const guardResult = options.reentrancyGuard.enter();
     if (!guardResult.ok) {
@@ -137,32 +181,17 @@ const invokeHostBinding = async <TInput, TOutput>(
   }
 
   const runBinding = async (): Promise<Result<string, WitErrorPayload>> => {
-    if (options.fuelMeter) {
-      const fuelResult = options.fuelMeter.consume(fuelPerCall);
-      if (!fuelResult.ok) {
-        return err(toWitError(fuelResult.error));
-      }
-    }
-
-    if (options.memoryChecker) {
-      const inputBytes = utf8ByteLength(payloadJson);
-      const memResult = options.memoryChecker.checkBytes(inputBytes);
-      if (!memResult.ok) {
-        return err(toWitError(memResult.error));
-      }
-    }
-
-    // Prefer the load-time bound token; fall back to the caller-supplied token
-    // for backward compatibility when no bound token is configured.
-    const effectiveToken = options.boundToken ?? token;
-    const capResult = verifyCapability(
-      effectiveToken,
+    const guardOutcome = checkBindingGuards(
+      options,
+      payloadJson,
+      fuelPerCall,
+      boundToken,
       requiredCapability,
-      options.validateCapability,
     );
-    if (!capResult.ok) {
-      return err(toWitError(capResult.error));
+    if (!guardOutcome.ok) {
+      return guardOutcome;
     }
+    const effectiveToken = guardOutcome.value;
 
     // Worker-isolated path: marshal to the main-thread graph after the in-worker
     // guards have passed. The remote side re-checks the capability against its
