@@ -34,12 +34,12 @@ Implementation execution requires explicit claim (`bd update <id> --claim`) in a
 
 ## 4. View resolution fallback cascade in UI — canopy-ax6.4
 
-- [ ] 4.1 Implement the generic property table inspector fallback component in `apps/web/src/components/renderers/`.
-- [ ] 4.2 Update `resolveRenderer` in `apps/web/src/components/renderers/block-renderer.tsx` to cascade to the generic property table inspector when a custom renderer is unavailable, uninstalled, or inactive.
-- [ ] 4.3 Preserve host-owned unavailable state for missing or unresolvable Tier 2 interactive renderers in `apps/web/src/components/renderers/block-renderer.tsx` without downgrading to inline render.
-- [ ] 4.4 Implement a structured error boundary banner in `apps/web/src/components/renderers/` for guest execution errors, panics, and deadline terminations.
-- [ ] 4.5 Add an affordance to the error boundary banner to inspect raw node properties using the generic property table inspector.
-- [ ] 4.6 Add tests in `apps/web/src/components/renderers/--tests--/block-renderer.test.tsx` verifying fallback cascade, fail-closed interactive state, and error banner display.
+- [x] 4.1 Implement the generic property table inspector fallback component in `apps/web/src/components/renderers/`.
+- [x] 4.2 Update `resolveRenderer` in `apps/web/src/components/renderers/block-renderer.tsx` to cascade to the generic property table inspector when a custom renderer is unavailable, uninstalled, or inactive.
+- [x] 4.3 Preserve host-owned unavailable state for missing or unresolvable Tier 2 interactive renderers in `apps/web/src/components/renderers/block-renderer.tsx` without downgrading to inline render.
+- [x] 4.4 Implement a structured error boundary banner in `apps/web/src/components/renderers/` for guest execution errors, panics, and deadline terminations.
+- [x] 4.5 Add an affordance to the error boundary banner to inspect raw node properties using the generic property table inspector.
+- [x] 4.6 Add tests in `apps/web/src/components/renderers/--tests--/block-renderer.test.tsx` verifying fallback cascade, fail-closed interactive state, and error banner display.
 
 ## 5. Verification and quality gates — canopy-ax6.5
 

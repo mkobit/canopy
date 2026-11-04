@@ -19,6 +19,7 @@ import { WasmRenderedBlock } from './wasm-rendered-block';
 import { Tier2RenderedBlock } from './tier2-rendered-block';
 import { resolveRenderGrant } from './render-grants';
 import { resolveWasmRenderDispatch } from './render-tier';
+import { GenericPropertyTableInspector } from './generic-property-table-inspector';
 
 export interface BlockRendererProperties {
   readonly node: Node;
@@ -45,6 +46,7 @@ type ResolvedRenderer =
       token: string;
     }>
   | Readonly<{ kind: 'unavailable' }>
+  | Readonly<{ kind: 'property-table' }>
   | null;
 
 const manifestSchema = z.object({ capabilities: z.array(z.string()) });
@@ -79,7 +81,7 @@ function renderNativeFallback(node: Node): React.ReactNode {
       return <MarkdownRenderer node={node} />;
     }
     default: {
-      return <div className="text-gray-400 italic">Unknown block type: {node.type}</div>;
+      return <GenericPropertyTableInspector node={node} />;
     }
   }
 }
@@ -112,15 +114,15 @@ function resolveRenderer(node: Node, graph: Graph): ResolvedRenderer {
   const rendererNode = graph.nodes.get(rendererId);
   if (!rendererNode) {
     console.warn(`Renderer node not found: ${rendererId}`);
-    return null;
+    return { kind: 'property-table' };
   }
   const entryPoint = rendererNode.properties.get('entryPoint');
   if (typeof entryPoint !== 'string') {
-    return null;
+    return { kind: 'property-table' };
   }
 
   // WASM renderer: `entryPoint` is the plugin node id. Resolution failure
-  // (missing plugin node) degrades to the native fallback. The render tier is
+  // (missing plugin node) cascades to the generic property inspector. The render tier is
   // resolved from the plugin's effective granted scope: an explicit
   // `render:interactive` grant routes to the Tier-2 sandboxed-iframe engine,
   // everything else to the Tier-1 sanitized-inline path (decision 2).
@@ -128,10 +130,16 @@ function resolveRenderer(node: Node, graph: Graph): ResolvedRenderer {
     const pluginNode = graph.nodes.get(asNodeId(entryPoint));
     if (!pluginNode) {
       console.warn(`WASM renderer plugin node not found: ${entryPoint}`);
-      return null;
+      return { kind: 'property-table' };
     }
     const dispatch = resolveWasmRenderDispatch(pluginNode);
     if (dispatch.tier === 'tier2') {
+      if (
+        rendererNode.properties.get('status') === 'inactive' ||
+        pluginNode.properties.get('status') === 'inactive'
+      ) {
+        return { kind: 'unavailable' };
+      }
       return {
         kind: 'tier2',
         pluginNode,
@@ -141,23 +149,34 @@ function resolveRenderer(node: Node, graph: Graph): ResolvedRenderer {
         token: dispatch.token,
       };
     }
-    return dispatch.tier === 'unavailable'
-      ? { kind: 'unavailable' }
-      : {
-          kind: 'wasm',
-          pluginNode,
-          rendererId,
-          viewDefinitionId: viewDefinitionNode.id,
-          grantToken: resolveTier1GrantToken(pluginNode),
-        };
+    if (dispatch.tier === 'unavailable') {
+      return { kind: 'unavailable' };
+    }
+    if (
+      rendererNode.properties.get('status') === 'inactive' ||
+      pluginNode.properties.get('status') === 'inactive'
+    ) {
+      return { kind: 'property-table' };
+    }
+    return {
+      kind: 'wasm',
+      pluginNode,
+      rendererId,
+      viewDefinitionId: viewDefinitionNode.id,
+      grantToken: resolveTier1GrantToken(pluginNode),
+    };
+  }
+
+  if (rendererNode.properties.get('status') === 'inactive') {
+    return { kind: 'property-table' };
   }
 
   if (!isSystemRendererEntryPoint(entryPoint)) {
-    return null;
+    return { kind: 'property-table' };
   }
   const rendererComponent = RENDERER_REGISTRY.get(entryPoint);
   if (!rendererComponent) {
-    return null;
+    return { kind: 'property-table' };
   }
   return {
     kind: 'system',
@@ -178,6 +197,9 @@ function renderResolvedContent(
     return renderNativeFallback(node);
   }
   switch (resolved.kind) {
+    case 'property-table': {
+      return <GenericPropertyTableInspector node={node} />;
+    }
     case 'wasm': {
       return (
         <WasmRenderedBlock

@@ -32,8 +32,11 @@ type ReadonlyManifest = Readonly<{
   name?: string | undefined;
 }>;
 
+export type WasmRenderErrorKind = 'unavailable' | 'execution-error';
+
 export type WasmRenderResult =
-  Readonly<{ ok: true; html: string }> | Readonly<{ ok: false; error: string }>;
+  | Readonly<{ ok: true; html: string }>
+  | Readonly<{ ok: false; error: string; errorKind?: WasmRenderErrorKind }>;
 
 export type Tier1GuestLoader = () => Promise<WasmGuestPlugin> | WasmGuestPlugin;
 
@@ -131,27 +134,27 @@ export const executeWasmRender = async (
 ): Promise<WasmRenderResult> => {
   const manifestRaw = pluginNode.properties.get('manifest');
   if (typeof manifestRaw !== 'string') {
-    return { ok: false, error: 'plugin node is missing a manifest' };
+    return { ok: false, error: 'plugin node is missing a manifest', errorKind: 'unavailable' };
   }
 
   const decodedManifest = fromThrowable<unknown>(() => JSON.parse(manifestRaw));
   if (!decodedManifest.ok) {
-    return { ok: false, error: 'plugin manifest is malformed' };
+    return { ok: false, error: 'plugin manifest is malformed', errorKind: 'unavailable' };
   }
 
   const manifestParse = manifestSchema.safeParse(decodedManifest.value);
   if (!manifestParse.success) {
-    return { ok: false, error: 'plugin manifest is malformed' };
+    return { ok: false, error: 'plugin manifest is malformed', errorKind: 'unavailable' };
   }
 
   const token = intersectCapabilities(manifestParse.data.capabilities, SYSTEM_RENDER_GRANT);
   if (token.length === 0) {
-    return { ok: false, error: 'plugin declares no render capability' };
+    return { ok: false, error: 'plugin declares no render capability', errorKind: 'unavailable' };
   }
 
   const guestLoader = resolveTier1GuestLoader(pluginNode, manifestParse.data, options);
   if (guestLoader === undefined) {
-    return { ok: false, error: 'plugin guest is unavailable' };
+    return { ok: false, error: 'plugin guest is unavailable', errorKind: 'unavailable' };
   }
 
   // Dynamic import + component instantiation can throw (module load, WASM
@@ -170,14 +173,22 @@ export const executeWasmRender = async (
     );
 
     if (!executionResult.ok) {
-      return { ok: false, error: executionResult.error.message };
+      return { ok: false, error: executionResult.error.message, errorKind: 'execution-error' };
     }
 
     const outputParse = renderOutputSchema.safeParse(JSON.parse(executionResult.value));
     return !outputParse.success || outputParse.data.html.length === 0
-      ? { ok: false, error: 'plugin returned invalid or empty render output' }
+      ? {
+          ok: false,
+          error: 'plugin returned invalid or empty render output',
+          errorKind: 'execution-error',
+        }
       : { ok: true, html: outputParse.data.html };
   } catch (error) {
-    return { ok: false, error: error instanceof Error ? error.message : String(error) };
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : String(error),
+      errorKind: 'execution-error',
+    };
   }
 };
