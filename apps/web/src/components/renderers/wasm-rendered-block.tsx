@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import type { Graph, Node, NodeId } from '@canopy/graph';
 import { SanitizedHtmlRenderer } from './sanitized-html-renderer';
-import { executeWasmRender } from './execute-wasm-render';
+import { executeWasmRender, type WasmRenderErrorKind } from './execute-wasm-render';
+import { RendererErrorBanner } from './renderer-error-banner';
 import { getCachedRender, hashContent, renderCacheKey, setCachedRender } from './render-cache';
 
 export type WasmRenderedBlockProperties = Readonly<{
@@ -19,7 +20,7 @@ export type WasmRenderedBlockProperties = Readonly<{
 type RenderState =
   | Readonly<{ status: 'pending' }>
   | Readonly<{ status: 'ok'; html: string }>
-  | Readonly<{ status: 'error' }>;
+  | Readonly<{ status: 'error'; error: string; errorKind: WasmRenderErrorKind }>;
 
 // De-duplicate failure logging so a broken plugin logs once per key, not per frame.
 const loggedFailures = new Set<string>();
@@ -65,7 +66,11 @@ const WasmRenderInner: React.FC<WasmRenderedBlockProperties & Readonly<{ cacheKe
         setState({ status: 'ok', html: result.html });
       } else {
         logRenderFailureOnce(cacheKey, result.error);
-        setState({ status: 'error' });
+        setState({
+          status: 'error',
+          error: result.error,
+          errorKind: result.errorKind ?? 'execution-error',
+        });
       }
     })();
 
@@ -83,8 +88,10 @@ const WasmRenderInner: React.FC<WasmRenderedBlockProperties & Readonly<{ cacheKe
     <div data-testid="wasm-rendered-block" data-render-status={state.status}>
       {state.status === 'ok' ? (
         <SanitizedHtmlRenderer html={state.html} />
+      ) : state.status === 'error' && state.errorKind === 'execution-error' ? (
+        <RendererErrorBanner node={node} error={state.error} />
       ) : (
-        // Pending and error both render the native fallback (never unvalidated output).
+        // Pending and unavailable guest both render the native fallback (never unvalidated output).
         fallback
       )}
     </div>

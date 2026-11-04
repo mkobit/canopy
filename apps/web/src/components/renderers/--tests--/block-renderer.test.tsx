@@ -1,7 +1,7 @@
 import '../../../test/setup';
 import { afterEach, describe, it, expect } from 'bun:test';
 import React from 'react';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { BlockRenderer } from '../block-renderer';
 import { setRenderGrantForPlugin } from '../render-grants';
 import { clearTier1GuestsForTest, setTier1GuestForPlugin } from '../execute-wasm-render';
@@ -29,6 +29,10 @@ const dynamicTier1Guest: WasmGuestPlugin = (_bindings, inputJson) => {
       ? String(parsed.content)
       : '';
   return JSON.stringify({ html: `<div data-testid="custom-tier1-output">${text}</div>` });
+};
+
+const panickingGuest: WasmGuestPlugin = () => {
+  throw new Error('WASM memory limit exceeded');
 };
 
 afterEach(() => {
@@ -414,5 +418,451 @@ describe('BlockRenderer', () => {
     });
 
     expect(screen.queryByText('Native Fallback Expected')).not.toBeNull();
+  });
+
+  it('cascades to generic property table inspector when custom node type has no compatible renderer', () => {
+    const graph = unwrap(
+      createGraph(asGraphId('test-custom-node-graph'), 'Test custom node graph'),
+    );
+    const customNode: Node = {
+      id: asNodeId('user:node:book-1'),
+      type: asTypeId('user:nodetype:book'),
+      properties: new Map([
+        ['title', 'The Hobbit'],
+        ['author', 'J.R.R. Tolkien'],
+      ]),
+      metadata: {
+        created: createInstant(),
+        modified: createInstant(),
+        modifiedBy: SYSTEM_DEVICE_ID,
+      },
+    };
+
+    render(<BlockRenderer node={customNode} graph={graph} />);
+
+    expect(screen.getByTestId('generic-property-table-inspector')).not.toBeNull();
+    expect(screen.queryByText('The Hobbit')).not.toBeNull();
+    expect(screen.queryByText('author')).not.toBeNull();
+    expect(screen.queryByText('user:nodetype:book')).not.toBeNull();
+  });
+
+  it('cascades to generic property table inspector when custom renderer definition is missing', () => {
+    let graph = unwrap(
+      createGraph(asGraphId('test-missing-renderer-graph'), 'Test missing renderer'),
+    );
+    const nodeId = asNodeId('user:node:missing-renderer-target');
+    const viewNodeId = asNodeId('user:view:missing-renderer-view');
+    const missingRendererId = asNodeId('user:renderer:nonexistent');
+
+    const metadata = {
+      created: createInstant(),
+      modified: createInstant(),
+      modifiedBy: SYSTEM_DEVICE_ID,
+    };
+    const add = (nextGraph: typeof graph, nextNode: Node): typeof graph =>
+      unwrap(addNode(nextGraph, nextNode, { deviceId: SYSTEM_DEVICE_ID })).graph;
+
+    const targetNode: Node = {
+      id: nodeId,
+      type: asTypeId('user:nodetype:custom-block'),
+      properties: new Map([['content', 'Cascade to inspector expected']]),
+      metadata,
+    };
+    graph = add(graph, targetNode);
+    graph = add(graph, {
+      id: viewNodeId,
+      type: SYSTEM_IDS.VIEW_DEFINITION,
+      properties: new Map([['name', 'View with missing renderer']]),
+      metadata,
+    });
+    graph = unwrap(
+      addEdge(
+        graph,
+        {
+          id: asEdgeId('user:edge:missing-rend-override'),
+          type: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
+          source: nodeId,
+          target: viewNodeId,
+          properties: new Map(),
+          metadata,
+        },
+        { deviceId: SYSTEM_DEVICE_ID },
+      ),
+    ).graph;
+
+    // Manually attach USES_RENDERER edge referencing the missing renderer ID to simulate uninstalled renderer
+    const graphWithDanglingEdge: typeof graph = {
+      ...graph,
+      edges: new Map([
+        ...graph.edges,
+        [
+          asEdgeId('user:edge:missing-rend-uses'),
+          {
+            id: asEdgeId('user:edge:missing-rend-uses'),
+            type: SYSTEM_EDGE_TYPES.USES_RENDERER,
+            source: viewNodeId,
+            target: missingRendererId,
+            properties: new Map(),
+            metadata,
+          },
+        ],
+      ]),
+    };
+
+    render(<BlockRenderer node={targetNode} graph={graphWithDanglingEdge} />);
+
+    expect(screen.getByTestId('generic-property-table-inspector')).not.toBeNull();
+    expect(screen.queryByText('Cascade to inspector expected')).not.toBeNull();
+  });
+
+  it('cascades to generic property table inspector when custom renderer is marked inactive', () => {
+    let graph = unwrap(
+      createGraph(asGraphId('test-inactive-renderer-graph'), 'Test inactive renderer'),
+    );
+    const nodeId = asNodeId('user:node:inactive-renderer-target');
+    const viewNodeId = asNodeId('user:view:inactive-renderer-view');
+    const rendererNodeId = asNodeId('user:renderer:inactive-renderer');
+
+    const metadata = {
+      created: createInstant(),
+      modified: createInstant(),
+      modifiedBy: SYSTEM_DEVICE_ID,
+    };
+    const add = (nextGraph: typeof graph, nextNode: Node): typeof graph =>
+      unwrap(addNode(nextGraph, nextNode, { deviceId: SYSTEM_DEVICE_ID })).graph;
+
+    const targetNode: Node = {
+      id: nodeId,
+      type: asTypeId('user:nodetype:custom-item'),
+      properties: new Map([['description', 'Inactive renderer cascade item']]),
+      metadata,
+    };
+    graph = add(graph, targetNode);
+    graph = add(graph, {
+      id: viewNodeId,
+      type: SYSTEM_IDS.VIEW_DEFINITION,
+      properties: new Map([['name', 'View with inactive renderer']]),
+      metadata,
+    });
+    graph = add(graph, {
+      id: rendererNodeId,
+      type: SYSTEM_IDS.RENDERER,
+      properties: new Map([
+        ['status', 'inactive'],
+        ['entryPoint', 'custom:inactive:entrypoint'],
+      ]),
+      metadata,
+    });
+    graph = unwrap(
+      addEdge(
+        graph,
+        {
+          id: asEdgeId('user:edge:inactive-rend-override'),
+          type: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
+          source: nodeId,
+          target: viewNodeId,
+          properties: new Map(),
+          metadata,
+        },
+        { deviceId: SYSTEM_DEVICE_ID },
+      ),
+    ).graph;
+    graph = unwrap(
+      addEdge(
+        graph,
+        {
+          id: asEdgeId('user:edge:inactive-rend-uses'),
+          type: SYSTEM_EDGE_TYPES.USES_RENDERER,
+          source: viewNodeId,
+          target: rendererNodeId,
+          properties: new Map(),
+          metadata,
+        },
+        { deviceId: SYSTEM_DEVICE_ID },
+      ),
+    ).graph;
+
+    render(<BlockRenderer node={targetNode} graph={graph} />);
+
+    expect(screen.getByTestId('generic-property-table-inspector')).not.toBeNull();
+    expect(screen.queryByText('Inactive renderer cascade item')).not.toBeNull();
+  });
+
+  it('cascades to generic property table inspector when custom WASM plugin is marked inactive', () => {
+    let graph = unwrap(
+      createGraph(asGraphId('test-inactive-plugin-graph'), 'Test inactive plugin'),
+    );
+    const nodeId = asNodeId('user:node:inactive-plugin-target');
+    const viewNodeId = asNodeId('user:view:inactive-plugin-view');
+    const rendererNodeId = asNodeId('user:renderer:inactive-plugin-renderer');
+    const pluginNodeId = asNodeId('plugin:inactive-tier1');
+
+    const metadata = {
+      created: createInstant(),
+      modified: createInstant(),
+      modifiedBy: SYSTEM_DEVICE_ID,
+    };
+    const add = (nextGraph: typeof graph, nextNode: Node): typeof graph =>
+      unwrap(addNode(nextGraph, nextNode, { deviceId: SYSTEM_DEVICE_ID })).graph;
+
+    const targetNode: Node = {
+      id: nodeId,
+      type: asTypeId('user:nodetype:inactive-plugin-type'),
+      properties: new Map([['summary', 'Inactive plugin item']]),
+      metadata,
+    };
+    graph = add(graph, targetNode);
+    graph = add(graph, {
+      id: viewNodeId,
+      type: SYSTEM_IDS.VIEW_DEFINITION,
+      properties: new Map([['name', 'View with inactive plugin']]),
+      metadata,
+    });
+    graph = add(graph, {
+      id: rendererNodeId,
+      type: SYSTEM_IDS.RENDERER,
+      properties: new Map([
+        ['rendererKind', 'wasm'],
+        ['entryPoint', pluginNodeId],
+      ]),
+      metadata,
+    });
+    graph = add(graph, {
+      id: pluginNodeId,
+      type: asTypeId('canopy:system/plugin'),
+      properties: new Map([
+        ['status', 'inactive'],
+        ['manifest', JSON.stringify({ capabilities: ['render:raw-html'] })],
+      ]),
+      metadata,
+    });
+    graph = unwrap(
+      addEdge(
+        graph,
+        {
+          id: asEdgeId('user:edge:inactive-plug-override'),
+          type: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
+          source: nodeId,
+          target: viewNodeId,
+          properties: new Map(),
+          metadata,
+        },
+        { deviceId: SYSTEM_DEVICE_ID },
+      ),
+    ).graph;
+    graph = unwrap(
+      addEdge(
+        graph,
+        {
+          id: asEdgeId('user:edge:inactive-plug-uses'),
+          type: SYSTEM_EDGE_TYPES.USES_RENDERER,
+          source: viewNodeId,
+          target: rendererNodeId,
+          properties: new Map(),
+          metadata,
+        },
+        { deviceId: SYSTEM_DEVICE_ID },
+      ),
+    ).graph;
+
+    render(<BlockRenderer node={targetNode} graph={graph} />);
+
+    expect(screen.getByTestId('generic-property-table-inspector')).not.toBeNull();
+    expect(screen.queryByText('Inactive plugin item')).not.toBeNull();
+  });
+
+  it('fails closed to unavailable indicator when Tier 2 interactive renderer is marked inactive', () => {
+    let graph = unwrap(createGraph(asGraphId('test-inactive-tier2-graph'), 'Test inactive tier2'));
+    const nodeId = asNodeId('user:node:inactive-tier2-target');
+    const viewNodeId = asNodeId('user:view:inactive-tier2-view');
+    const rendererNodeId = asNodeId('user:renderer:inactive-tier2-renderer');
+    const pluginNodeId = asNodeId('plugin:inactive-tier2');
+
+    const metadata = {
+      created: createInstant(),
+      modified: createInstant(),
+      modifiedBy: SYSTEM_DEVICE_ID,
+    };
+    const add = (nextGraph: typeof graph, nextNode: Node): typeof graph =>
+      unwrap(addNode(nextGraph, nextNode, { deviceId: SYSTEM_DEVICE_ID })).graph;
+
+    const targetNode: Node = {
+      id: nodeId,
+      type: asTypeId('user:nodetype:tier2-type'),
+      properties: new Map([['content', 'Tier 2 secret content']]),
+      metadata,
+    };
+    graph = add(graph, targetNode);
+    graph = add(graph, {
+      id: viewNodeId,
+      type: SYSTEM_IDS.VIEW_DEFINITION,
+      properties: new Map([['name', 'Inactive Tier 2 View']]),
+      metadata,
+    });
+    graph = add(graph, {
+      id: rendererNodeId,
+      type: SYSTEM_IDS.RENDERER,
+      properties: new Map([
+        ['rendererKind', 'wasm'],
+        ['entryPoint', pluginNodeId],
+      ]),
+      metadata,
+    });
+    graph = add(graph, {
+      id: pluginNodeId,
+      type: asTypeId('canopy:system/plugin'),
+      properties: new Map([
+        ['status', 'inactive'],
+        ['manifest', JSON.stringify({ capabilities: ['render:interactive'] })],
+      ]),
+      metadata,
+    });
+    graph = unwrap(
+      addEdge(
+        graph,
+        {
+          id: asEdgeId('user:edge:inactive-tier2-override'),
+          type: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
+          source: nodeId,
+          target: viewNodeId,
+          properties: new Map(),
+          metadata,
+        },
+        { deviceId: SYSTEM_DEVICE_ID },
+      ),
+    ).graph;
+    graph = unwrap(
+      addEdge(
+        graph,
+        {
+          id: asEdgeId('user:edge:inactive-tier2-uses'),
+          type: SYSTEM_EDGE_TYPES.USES_RENDERER,
+          source: viewNodeId,
+          target: rendererNodeId,
+          properties: new Map(),
+          metadata,
+        },
+        { deviceId: SYSTEM_DEVICE_ID },
+      ),
+    ).graph;
+
+    setRenderGrantForPlugin('plugin:inactive-tier2', 'render:interactive');
+    render(<BlockRenderer node={targetNode} graph={graph} />);
+
+    expect(screen.getByTestId('renderer-unavailable')).not.toBeNull();
+    expect(screen.queryByTestId('generic-property-table-inspector')).toBeNull();
+    expect(screen.queryByText('Tier 2 secret content')).toBeNull();
+  });
+
+  it('displays structured error boundary banner on guest execution failure and toggles property inspector', async () => {
+    let graph = unwrap(createGraph(asGraphId('test-panic-graph'), 'Test panic graph'));
+    const nodeId = asNodeId('user:node:panic-target');
+    const viewNodeId = asNodeId('user:view:panic-view');
+    const rendererNodeId = asNodeId('user:renderer:panic-renderer');
+    const pluginNodeId = asNodeId('plugin:panic-plugin');
+
+    const metadata = {
+      created: createInstant(),
+      modified: createInstant(),
+      modifiedBy: SYSTEM_DEVICE_ID,
+    };
+    const add = (nextGraph: typeof graph, nextNode: Node): typeof graph =>
+      unwrap(addNode(nextGraph, nextNode, { deviceId: SYSTEM_DEVICE_ID })).graph;
+
+    const targetNode: Node = {
+      id: nodeId,
+      type: asTypeId('user:nodetype:panicking'),
+      properties: new Map([
+        ['fieldA', 'valA'],
+        ['fieldB', 'valB'],
+      ]),
+      metadata,
+    };
+    graph = add(graph, targetNode);
+    graph = add(graph, {
+      id: viewNodeId,
+      type: SYSTEM_IDS.VIEW_DEFINITION,
+      properties: new Map([['name', 'Panicking View']]),
+      metadata,
+    });
+    graph = add(graph, {
+      id: rendererNodeId,
+      type: SYSTEM_IDS.RENDERER,
+      properties: new Map([
+        ['rendererKind', 'wasm'],
+        ['entryPoint', pluginNodeId],
+      ]),
+      metadata,
+    });
+    graph = add(graph, {
+      id: pluginNodeId,
+      type: asTypeId('canopy:system/plugin'),
+      properties: new Map([
+        [
+          'manifest',
+          JSON.stringify({
+            capabilities: ['render:raw-html'],
+            entrypoint: 'custom:panicking:guest',
+          }),
+        ],
+      ]),
+      metadata,
+    });
+    graph = unwrap(
+      addEdge(
+        graph,
+        {
+          id: asEdgeId('user:edge:panic-override'),
+          type: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
+          source: nodeId,
+          target: viewNodeId,
+          properties: new Map(),
+          metadata,
+        },
+        { deviceId: SYSTEM_DEVICE_ID },
+      ),
+    ).graph;
+    graph = unwrap(
+      addEdge(
+        graph,
+        {
+          id: asEdgeId('user:edge:panic-uses'),
+          type: SYSTEM_EDGE_TYPES.USES_RENDERER,
+          source: viewNodeId,
+          target: rendererNodeId,
+          properties: new Map(),
+          metadata,
+        },
+        { deviceId: SYSTEM_DEVICE_ID },
+      ),
+    ).graph;
+
+    setTier1GuestForPlugin('custom:panicking:guest', () => panickingGuest);
+
+    render(<BlockRenderer node={targetNode} graph={graph} />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('wasm-rendered-block').dataset.renderStatus).toBe('error');
+    });
+
+    expect(screen.getByTestId('renderer-error-banner')).not.toBeNull();
+    expect(screen.queryByText('Renderer execution failed')).not.toBeNull();
+    expect(screen.queryByText(/WASM memory limit exceeded/)).not.toBeNull();
+
+    // Property table should not be visible before clicking inspect button
+    expect(screen.queryByTestId('generic-property-table-inspector')).toBeNull();
+
+    // Click inspect button
+    const inspectButton = screen.getByTestId('inspect-properties-button');
+    fireEvent.click(inspectButton);
+
+    // Property table should now be rendered inside the banner
+    expect(screen.getByTestId('generic-property-table-inspector')).not.toBeNull();
+    expect(screen.queryByText('fieldA')).not.toBeNull();
+    expect(screen.queryByText('valA')).not.toBeNull();
+
+    // Click again to toggle hide
+    fireEvent.click(inspectButton);
+    expect(screen.queryByTestId('generic-property-table-inspector')).toBeNull();
   });
 });
