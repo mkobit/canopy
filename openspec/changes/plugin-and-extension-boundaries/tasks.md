@@ -43,12 +43,12 @@ Implementation execution requires explicit claim (`bd update <id> --claim`) in a
 
 ## 5. Verification and quality gates — canopy-ax6.5
 
-- [ ] 5.1 Run test suites across `@canopy/graph`, `@canopy/plugin-host`, `@canopy/graph-access`, and `apps/web`.
-- [ ] 5.2 Run the full project build gate with `bun run build`.
-- [ ] 5.3 Run the linter gate with `bun run lint`.
-- [ ] 5.4 Run the typecheck gate with `bun run typecheck`.
-- [ ] 5.5 Validate OpenSpec compliance with `bunx openspec validate --all`.
-- [ ] 5.6 Verify Beads issue conventions with `bd lint` and `bd doctor --check=conventions`.
+- [x] 5.1 Run test suites across `@canopy/graph`, `@canopy/plugin-host`, `@canopy/graph-access`, and `apps/web`.
+- [x] 5.2 Run the full project build gate with `bun run build`.
+- [x] 5.3 Run the linter gate with `bun run lint`.
+- [x] 5.4 Run the typecheck gate with `bun run typecheck`.
+- [x] 5.5 Validate OpenSpec compliance with `bunx openspec validate --all`.
+- [x] 5.6 Verify Beads issue conventions with `bd lint` and `bd doctor --check=conventions`.
 
 ## Dependencies and execution sequence
 
