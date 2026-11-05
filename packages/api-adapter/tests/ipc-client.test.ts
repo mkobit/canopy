@@ -232,18 +232,30 @@ describe('IpcClient integration with IpcServer', () => {
     expect(secondResult._tag).toBe('Success');
     peer.respond(0, { id: 'late' });
 
+    const validWireEvent = {
+      type: 'NodeCreated',
+      eventId: '00000000-0000-4000-8000-000000000001',
+      id: 'node-1',
+      nodeType: 'task',
+      properties: { title: 'Task 1' },
+      timestamp: '2026-11-04T00:00:00.000Z',
+      deviceId: '00000000-0000-4000-8000-000000000002',
+    } as const;
     const events = { current: [] as unknown[] };
+    const { promise: eventDelivered, resolve: onEventDelivered } = Promise.withResolvers<unknown>();
     const subscription = Effect.runPromise(
       client.subscribe({}, (event) => {
         events.current = [...events.current, event];
+        onEventDelivered(undefined);
       }),
     );
     await peer.waitForRequests(3);
     peer.respond(2, { subscriptionId: 'sub-1' });
     await subscription;
     peer.notify(0, 'sub-1', { sequence: 1 });
-    await new Promise<void>((resolve) => setTimeout(resolve, 0));
-    expect(events.current).toEqual([{ sequence: 1 }]);
+    peer.notify(0, 'sub-1', validWireEvent);
+    await eventDelivered;
+    expect(events.current).toEqual([validWireEvent]);
 
     const unrelatedClient = await Effect.runPromise(makeIpcClient(socketPath));
     const unrelatedRequest = Effect.runPromise(Effect.result(unrelatedClient.handshake()));
@@ -361,6 +373,20 @@ describe('IpcClient integration with IpcServer', () => {
     const socketPath = `/tmp/canopy-ipc-${process.pid}-${Math.random().toString(36).slice(2, 7)}.sock`;
     const peer = await createRawPeer(socketPath);
     const client = await Effect.runPromise(makeIpcClient(socketPath));
+    const validCloseEvent1 = {
+      type: 'NodeDeleted',
+      eventId: '00000000-0000-4000-8000-000000000011',
+      id: 'node-close-1',
+      timestamp: '2026-11-04T00:00:00.000Z',
+      deviceId: '00000000-0000-4000-8000-000000000012',
+    } as const;
+    const validCloseEvent2 = {
+      type: 'NodeDeleted',
+      eventId: '00000000-0000-4000-8000-000000000013',
+      id: 'node-close-2',
+      timestamp: '2026-11-04T00:00:00.000Z',
+      deviceId: '00000000-0000-4000-8000-000000000012',
+    } as const;
     const events = { current: [] as unknown[] };
     const { promise: eventDelivered, resolve: onEventDelivered } = Promise.withResolvers<unknown>();
     const subscribed = Effect.runPromise(
@@ -372,9 +398,9 @@ describe('IpcClient integration with IpcServer', () => {
     await peer.waitForRequests(1);
     peer.respond(0, { subscriptionId: 'sub-close' });
     await subscribed;
-    peer.notify(0, 'sub-close', { sequence: 1 });
+    peer.notify(0, 'sub-close', validCloseEvent1);
     await eventDelivered;
-    expect(events.current).toEqual([{ sequence: 1 }]);
+    expect(events.current).toEqual([validCloseEvent1]);
     const first = Effect.runPromise(Effect.result(client.getNode('first')));
     const second = Effect.runPromise(Effect.result(client.getNode('second')));
     await peer.waitForRequests(3);
@@ -394,8 +420,8 @@ describe('IpcClient integration with IpcServer', () => {
       },
     ]);
     await peer.waitForClosedConnections(1);
-    peer.notify(0, 'sub-close', { sequence: 2 });
-    expect(events.current).toEqual([{ sequence: 1 }]);
+    peer.notify(0, 'sub-close', validCloseEvent2);
+    expect(events.current).toEqual([validCloseEvent1]);
 
     const unrelatedClient = await Effect.runPromise(makeIpcClient(socketPath));
     const unrelatedRequest = Effect.runPromise(Effect.result(unrelatedClient.handshake()));
@@ -403,7 +429,7 @@ describe('IpcClient integration with IpcServer', () => {
     peer.respond(3, { apiVersion: 'v1' });
     const unrelatedResult = await unrelatedRequest;
     expect(unrelatedResult._tag).toBe('Success');
-    expect(events.current).toEqual([{ sequence: 1 }]);
+    expect(events.current).toEqual([validCloseEvent1]);
     await Effect.runPromise(unrelatedClient.close());
     await peer.waitForClosedConnections(2);
     await peer.close();
