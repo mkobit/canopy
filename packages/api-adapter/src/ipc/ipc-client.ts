@@ -17,6 +17,7 @@ import type {
   GetEdgesParams as GetEdgesParameters,
   GetNodesParams as GetNodesParameters,
   HandshakeResult,
+  IpcGraphEvent,
   JsonRpcId,
   JsonRpcResponse,
   SubscribeParams as SubscribeParameters,
@@ -24,7 +25,11 @@ import type {
   UnsubscribeResult,
   UpdateNodePropertiesParams as UpdateNodePropertiesParameters,
 } from './ipc-schema';
-import { IPC_METHODS, JSON_RPC_ERROR_CODES } from './ipc-schema';
+import {
+  EventNotificationParamsSchema as EventNotificationParametersSchema,
+  IPC_METHODS,
+  JSON_RPC_ERROR_CODES,
+} from './ipc-schema';
 import { Effect } from 'effect';
 
 export type IpcClientError = Readonly<{
@@ -83,7 +88,7 @@ export interface IpcClient {
   ) => Effect.Effect<Readonly<{ id: string }>, IpcClientError>;
   readonly subscribe: (
     parameters?: Readonly<SubscribeParameters>,
-    onEvent?: (event: unknown) => unknown,
+    onEvent?: (event: IpcGraphEvent) => unknown,
   ) => Effect.Effect<SubscribeResult, IpcClientError>;
   readonly unsubscribe: (
     subscriptionId: string,
@@ -122,9 +127,9 @@ export const makeIpcClient = (socketPath: string): Effect.Effect<IpcClient, IpcC
       >,
     };
     const subscriptionCallbacks = {
-      current: new Map<string, (event: unknown) => unknown>() as ReadonlyMap<
+      current: new Map<string, (event: IpcGraphEvent) => unknown>() as ReadonlyMap<
         string,
-        (event: unknown) => unknown
+        (event: IpcGraphEvent) => unknown
       >,
     };
     const requestCounter = { current: 0 };
@@ -329,8 +334,10 @@ export const makeIpcClient = (socketPath: string): Effect.Effect<IpcClient, IpcC
       >(line.trim());
       if (response) {
         if (response.method === IPC_METHODS.EVENT_STREAM_EVENT && response.params) {
-          const { subscriptionId, event } = response.params;
-          if (subscriptionId) subscriptionCallbacks.current.get(subscriptionId)?.(event);
+          const parsed = EventNotificationParametersSchema.safeParse(response.params);
+          if (parsed.success) {
+            subscriptionCallbacks.current.get(parsed.data.subscriptionId)?.(parsed.data.event);
+          }
         } else if (response.id !== undefined && response.id !== null) {
           const settle = pendingRequests.current.get(response.id);
           if (settle) {

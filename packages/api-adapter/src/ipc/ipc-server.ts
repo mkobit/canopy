@@ -13,6 +13,7 @@ import {
   JSON_RPC_ERROR_CODES,
   createIpcProtocolError,
   createIpcSocketInUseError,
+  serializeGraphEventForIpc,
 } from './ipc-schema';
 
 export type IpcServerOptions = Readonly<{
@@ -271,7 +272,10 @@ export const createIpcServer = (options: IpcServerOptions): IpcServer => {
                     JSON.stringify({
                       jsonrpc: '2.0',
                       method: IPC_METHODS.EVENT_STREAM_EVENT,
-                      params: { subscriptionId, event: message.event },
+                      params: {
+                        subscriptionId,
+                        event: serializeGraphEventForIpc(message.event),
+                      },
                     }),
                   );
                   return true;

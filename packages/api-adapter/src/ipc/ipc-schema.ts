@@ -1,7 +1,7 @@
 /* eslint-disable unicorn/name-replacements -- Params* names are consumed by apps/cli/src/ipc/ipc-client.ts and tests/ipc-schema.test.ts, outside this batch's scope */
 import { z } from 'zod';
-import type { Result } from '@canopy/graph';
-import { GraphEventSchema } from '@canopy/graph';
+import type { GraphEvent, PropertyValue, Result } from '@canopy/graph';
+import { GraphEventSchema, PropertyValueSchema, err, ok } from '@canopy/graph';
 
 // Standard JSON-RPC 2.0 error codes.
 export const JSON_RPC_ERROR_CODES = {
@@ -311,11 +311,297 @@ export const UnsubscribeResultSchema = z
 
 export type UnsubscribeResult = z.infer<typeof UnsubscribeResultSchema>;
 
+const PROTO_KEY_SENTINEL_REGEX = /^__canopy_proto___*$/;
+
+const isPlainRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value) && !(value instanceof Map);
+
+const escapeProtoPropertyKey = (input: unknown): unknown =>
+  isPlainRecord(input)
+    ? Object.fromEntries(
+        Object.entries(input).map(([key, value]) => [
+          key === '__proto__'
+            ? '__canopy_proto__'
+            : PROTO_KEY_SENTINEL_REGEX.test(key)
+              ? `${key}_`
+              : key,
+          value,
+        ]),
+      )
+    : input;
+
+const unescapeProtoPropertyKey = (
+  record: Readonly<Record<string, PropertyValue>>,
+): Readonly<Record<string, PropertyValue>> =>
+  Object.fromEntries(
+    Object.entries(record).map(([key, value]) => [
+      key === '__canopy_proto__'
+        ? '__proto__'
+        : PROTO_KEY_SENTINEL_REGEX.test(key)
+          ? key.slice(0, -1)
+          : key,
+      value,
+    ]),
+  );
+
+// Wire-level property map schema for IPC JSON-RPC payloads.
+export const IpcPropertyMapSchema = z
+  .preprocess(escapeProtoPropertyKey, z.record(z.string(), PropertyValueSchema))
+  .transform(unescapeProtoPropertyKey)
+  .readonly();
+
+export const IpcNodeCreatedEventSchema = z
+  .object({
+    type: z.literal('NodeCreated'),
+    eventId: z.string().min(1),
+    id: z.string().min(1),
+    nodeType: z.string().min(1),
+    properties: IpcPropertyMapSchema,
+    timestamp: z.string().datetime({ offset: true }),
+    deviceId: z.string().min(1),
+    batchId: z.string().optional(),
+    migrationId: z.string().optional(),
+  })
+  .passthrough();
+
+export const IpcNodePropertiesUpdatedEventSchema = z
+  .object({
+    type: z.literal('NodePropertiesUpdated'),
+    eventId: z.string().min(1),
+    id: z.string().min(1),
+    changes: IpcPropertyMapSchema,
+    timestamp: z.string().datetime({ offset: true }),
+    deviceId: z.string().min(1),
+    batchId: z.string().optional(),
+    migrationId: z.string().optional(),
+  })
+  .passthrough();
+
+export const IpcNodeDeletedEventSchema = z
+  .object({
+    type: z.literal('NodeDeleted'),
+    eventId: z.string().min(1),
+    id: z.string().min(1),
+    timestamp: z.string().datetime({ offset: true }),
+    deviceId: z.string().min(1),
+    batchId: z.string().optional(),
+    migrationId: z.string().optional(),
+  })
+  .passthrough();
+
+export const IpcEdgeCreatedEventSchema = z
+  .object({
+    type: z.literal('EdgeCreated'),
+    eventId: z.string().min(1),
+    id: z.string().min(1),
+    edgeType: z.string().min(1),
+    source: z.string().min(1),
+    target: z.string().min(1),
+    properties: IpcPropertyMapSchema,
+    timestamp: z.string().datetime({ offset: true }),
+    deviceId: z.string().min(1),
+    batchId: z.string().optional(),
+    migrationId: z.string().optional(),
+  })
+  .passthrough();
+
+export const IpcEdgePropertiesUpdatedEventSchema = z
+  .object({
+    type: z.literal('EdgePropertiesUpdated'),
+    eventId: z.string().min(1),
+    id: z.string().min(1),
+    changes: IpcPropertyMapSchema,
+    timestamp: z.string().datetime({ offset: true }),
+    deviceId: z.string().min(1),
+    batchId: z.string().optional(),
+    migrationId: z.string().optional(),
+  })
+  .passthrough();
+
+export const IpcEdgeDeletedEventSchema = z
+  .object({
+    type: z.literal('EdgeDeleted'),
+    eventId: z.string().min(1),
+    id: z.string().min(1),
+    timestamp: z.string().datetime({ offset: true }),
+    deviceId: z.string().min(1),
+    batchId: z.string().optional(),
+    migrationId: z.string().optional(),
+  })
+  .passthrough();
+
+export const IpcWorkflowStartedEventSchema = z
+  .object({
+    type: z.literal('WorkflowStarted'),
+    eventId: z.string().min(1),
+    workflowId: z.string().min(1),
+    triggerId: z.string().min(1),
+    timestamp: z.string().datetime({ offset: true }),
+    deviceId: z.string().min(1),
+    batchId: z.string().optional(),
+  })
+  .passthrough();
+
+export const IpcWorkflowCompletedEventSchema = z
+  .object({
+    type: z.literal('WorkflowCompleted'),
+    eventId: z.string().min(1),
+    executionId: z.string().min(1),
+    timestamp: z.string().datetime({ offset: true }),
+    deviceId: z.string().min(1),
+    batchId: z.string().optional(),
+  })
+  .passthrough();
+
+export const IpcGraphEventSchema = z.discriminatedUnion('type', [
+  IpcNodeCreatedEventSchema,
+  IpcNodePropertiesUpdatedEventSchema,
+  IpcNodeDeletedEventSchema,
+  IpcEdgeCreatedEventSchema,
+  IpcEdgePropertiesUpdatedEventSchema,
+  IpcEdgeDeletedEventSchema,
+  IpcWorkflowStartedEventSchema,
+  IpcWorkflowCompletedEventSchema,
+]);
+
+export type IpcGraphEvent = Readonly<z.infer<typeof IpcGraphEventSchema>>;
+
+const serializePropertyMap = (
+  properties: ReadonlyMap<string, PropertyValue>,
+): Readonly<Record<string, PropertyValue>> => Object.fromEntries(properties);
+
+const serializeOptionalBatchAndMigration = (
+  event: Readonly<{ batchId?: string | undefined; migrationId?: string | undefined }>,
+): Readonly<{ batchId?: string; migrationId?: string }> => ({
+  ...(event.batchId && { batchId: event.batchId }),
+  ...(event.migrationId && { migrationId: event.migrationId }),
+});
+
+// Converts an in-memory domain GraphEvent into a pure-JSON wire IpcGraphEvent.
+export const serializeGraphEventForIpc = (event: GraphEvent): IpcGraphEvent => {
+  switch (event.type) {
+    case 'NodeCreated': {
+      return {
+        type: 'NodeCreated',
+        eventId: event.eventId,
+        id: event.id,
+        nodeType: event.nodeType,
+        properties: serializePropertyMap(event.properties),
+        timestamp: event.timestamp,
+        deviceId: event.deviceId,
+        ...serializeOptionalBatchAndMigration(event),
+      };
+    }
+    case 'NodePropertiesUpdated': {
+      return {
+        type: 'NodePropertiesUpdated',
+        eventId: event.eventId,
+        id: event.id,
+        changes: serializePropertyMap(event.changes),
+        timestamp: event.timestamp,
+        deviceId: event.deviceId,
+        ...serializeOptionalBatchAndMigration(event),
+      };
+    }
+    case 'NodeDeleted': {
+      return {
+        type: 'NodeDeleted',
+        eventId: event.eventId,
+        id: event.id,
+        timestamp: event.timestamp,
+        deviceId: event.deviceId,
+        ...serializeOptionalBatchAndMigration(event),
+      };
+    }
+    case 'EdgeCreated': {
+      return {
+        type: 'EdgeCreated',
+        eventId: event.eventId,
+        id: event.id,
+        edgeType: event.edgeType,
+        source: event.source,
+        target: event.target,
+        properties: serializePropertyMap(event.properties),
+        timestamp: event.timestamp,
+        deviceId: event.deviceId,
+        ...serializeOptionalBatchAndMigration(event),
+      };
+    }
+    case 'EdgePropertiesUpdated': {
+      return {
+        type: 'EdgePropertiesUpdated',
+        eventId: event.eventId,
+        id: event.id,
+        changes: serializePropertyMap(event.changes),
+        timestamp: event.timestamp,
+        deviceId: event.deviceId,
+        ...serializeOptionalBatchAndMigration(event),
+      };
+    }
+    case 'EdgeDeleted': {
+      return {
+        type: 'EdgeDeleted',
+        eventId: event.eventId,
+        id: event.id,
+        timestamp: event.timestamp,
+        deviceId: event.deviceId,
+        ...serializeOptionalBatchAndMigration(event),
+      };
+    }
+    case 'WorkflowStarted': {
+      return {
+        type: 'WorkflowStarted',
+        eventId: event.eventId,
+        workflowId: event.workflowId,
+        triggerId: event.triggerId,
+        timestamp: event.timestamp,
+        deviceId: event.deviceId,
+        ...(event.batchId && { batchId: event.batchId }),
+      };
+    }
+    case 'WorkflowCompleted': {
+      return {
+        type: 'WorkflowCompleted',
+        eventId: event.eventId,
+        executionId: event.executionId,
+        timestamp: event.timestamp,
+        deviceId: event.deviceId,
+        ...(event.batchId && { batchId: event.batchId }),
+      };
+    }
+  }
+};
+
+const convertWireEventMapsForDomainParse = (event: unknown): unknown => {
+  if (!isPlainRecord(event)) {
+    return event;
+  }
+  const withProperties = isPlainRecord(event.properties)
+    ? { ...event, properties: new Map(Object.entries(event.properties)) }
+    : event;
+  return isPlainRecord(withProperties.changes)
+    ? { ...withProperties, changes: new Map(Object.entries(withProperties.changes)) }
+    : withProperties;
+};
+
+// Validates and transforms an IPC wire event back into a canonical domain GraphEvent.
+export const deserializeIpcGraphEvent = (event: unknown): Result<GraphEvent, IpcProtocolError> => {
+  const parsed = GraphEventSchema.safeParse(convertWireEventMapsForDomainParse(event));
+  return parsed.success
+    ? ok(parsed.data)
+    : err(
+        createIpcProtocolError(
+          JSON_RPC_ERROR_CODES.INVALID_PARAMS,
+          `Invalid IPC graph event payload: ${parsed.error.message}`,
+        ),
+      );
+};
+
 // EventStream notification parameters schema emitted from server.
 export const EventNotificationParamsSchema = z
   .object({
     subscriptionId: z.string(),
-    event: z.record(z.string(), z.unknown()),
+    event: IpcGraphEventSchema,
   })
   .passthrough();
 
