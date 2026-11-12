@@ -18,11 +18,8 @@ export const sanitizeStyleValue = (style: string): string =>
     .filter((declaration) => declaration.length > 0)
     .filter((declaration) => {
       const property = declaration.split(':', 1)[0]?.trim().toLowerCase() ?? '';
-      if (BLOCKED_STYLE_PROPERTIES.has(property)) {
-        return false;
-      }
       // Reject any external resource reference regardless of property.
-      return !/url\s*\(/i.test(declaration);
+      return !BLOCKED_STYLE_PROPERTIES.has(property) && !/url\s*\(/i.test(declaration);
     })
     .join('; ');
 

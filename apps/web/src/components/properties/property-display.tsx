@@ -107,9 +107,9 @@ const ScalarDisplay: React.FC<Readonly<{ value: ScalarValue; kind?: PropertyValu
 function inferKind(value: ScalarValue): PropertyValueKind {
   if (typeof value === 'boolean') return 'boolean';
   if (typeof value === 'number') return 'number';
-  if (typeof value === 'object' && value !== null && 'graph' in value) return 'external-reference';
-  // String is ambiguous, default to text
-  return 'text';
+  return typeof value === 'object' && value !== null && 'graph' in value
+    ? 'external-reference'
+    : 'text';
 }
 
 function tryFormatInstant(value: string): string {

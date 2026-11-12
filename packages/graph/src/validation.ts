@@ -682,8 +682,11 @@ function validateNodeTypeEdgeConstraints(graph: Graph, edge: Edge): readonly Val
     const sourceTypeDefinition = getNodeTypeDefinition(graph, sourceNode.type);
     if (!sourceTypeDefinition) return [];
     const sourceDefinition = extractNodeTypeDefinition(graph, sourceTypeDefinition);
-    if (sourceDefinition.validOutgoingEdges.length === 0) return [];
-    if (sourceDefinition.validOutgoingEdges.includes(edge.type)) return [];
+    if (
+      sourceDefinition.validOutgoingEdges.length === 0 ||
+      sourceDefinition.validOutgoingEdges.includes(edge.type)
+    )
+      return [];
     return [
       {
         path: ['source'],
@@ -699,8 +702,11 @@ function validateNodeTypeEdgeConstraints(graph: Graph, edge: Edge): readonly Val
     const targetTypeDefinition = getNodeTypeDefinition(graph, targetNode.type);
     if (!targetTypeDefinition) return [];
     const targetDefinition = extractNodeTypeDefinition(graph, targetTypeDefinition);
-    if (targetDefinition.validIncomingEdges.length === 0) return [];
-    if (targetDefinition.validIncomingEdges.includes(edge.type)) return [];
+    if (
+      targetDefinition.validIncomingEdges.length === 0 ||
+      targetDefinition.validIncomingEdges.includes(edge.type)
+    )
+      return [];
     return [
       {
         path: ['target'],

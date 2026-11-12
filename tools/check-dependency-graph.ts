@@ -242,7 +242,7 @@ export function resolveMermaidGraph(
     .map((edge) => {
       const from = idToWorkspace.get(edge.from);
       const to = idToWorkspace.get(edge.to);
-      return from !== undefined && to !== undefined ? { from: from.name, to: to.name } : undefined;
+      return from === undefined || to === undefined ? undefined : { from: from.name, to: to.name };
     })
     .filter((edge): edge is Edge => edge !== undefined);
 

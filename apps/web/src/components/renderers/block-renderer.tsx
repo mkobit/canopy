@@ -167,11 +167,10 @@ function resolveRenderer(node: Node, graph: Graph): ResolvedRenderer {
     };
   }
 
-  if (rendererNode.properties.get('status') === 'inactive') {
-    return { kind: 'property-table' };
-  }
-
-  if (!isSystemRendererEntryPoint(entryPoint)) {
+  if (
+    rendererNode.properties.get('status') === 'inactive' ||
+    !isSystemRendererEntryPoint(entryPoint)
+  ) {
     return { kind: 'property-table' };
   }
   const rendererComponent = RENDERER_REGISTRY.get(entryPoint);

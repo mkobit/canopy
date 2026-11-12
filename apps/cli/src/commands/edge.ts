@@ -121,13 +121,11 @@ const edgeCreateCommand = Command.make(
       });
       yield* client.close();
 
-      if (json) {
-        yield* Console.log(JSON.stringify(createdEdge, undefined, 2));
-      } else {
-        yield* Console.log(
-          `Successfully created edge [${createdEdge.id}] (type: ${createdEdge.type}, ${createdEdge.source} -> ${createdEdge.target})`,
-        );
-      }
+      yield* Console.log(
+        json
+          ? JSON.stringify(createdEdge, undefined, 2)
+          : `Successfully created edge [${createdEdge.id}] (type: ${createdEdge.type}, ${createdEdge.source} -> ${createdEdge.target})`,
+      );
     }),
 ).pipe(Command.withDescription('Create a new edge between nodes'));
 
@@ -144,11 +142,9 @@ const edgeDeleteCommand = Command.make(
       const result = yield* client.deleteEdge({ id });
       yield* client.close();
 
-      if (json) {
-        yield* Console.log(JSON.stringify(result, undefined, 2));
-      } else {
-        yield* Console.log(`Successfully deleted edge [${result.id}]`);
-      }
+      yield* Console.log(
+        json ? JSON.stringify(result, undefined, 2) : `Successfully deleted edge [${result.id}]`,
+      );
     }),
 ).pipe(Command.withDescription('Delete edge by ID'));
 

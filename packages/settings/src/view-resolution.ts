@@ -31,10 +31,8 @@ export function resolveViewDefinition(
 
   // 3. Look for a default view in the pre-indexed default views.
   const defaultTarget = indexes.defaultViews.get(nodeType);
-  if (defaultTarget) {
-    return ok(defaultTarget);
-  }
-
-  // 4. If none of these succeed, return a failed Result.
-  return err(new Error(`Could not resolve view definition for node: ${nodeId}`));
+  return defaultTarget
+    ? ok(defaultTarget)
+    : // 4. If none of these succeed, return a failed Result.
+      err(new Error(`Could not resolve view definition for node: ${nodeId}`));
 }
