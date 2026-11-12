@@ -278,16 +278,16 @@ export function validatePluginManifestProperty(
                   ]
                 : [];
             const itemShortcutError =
-              itemRec.shortcut !== undefined && typeof itemRec.shortcut !== 'string'
-                ? [
+              itemRec.shortcut === undefined || typeof itemRec.shortcut === 'string'
+                ? []
+                : [
                     {
                       path: [propertyName, 'menuItems', String(index), 'shortcut'],
                       message: "Menu item 'shortcut' must be a string if defined",
                       expected: 'string',
                       actual: typeof itemRec.shortcut,
                     },
-                  ]
-                : [];
+                  ];
             return [...itemLabelError, ...itemCommandError, ...itemShortcutError];
           })
         : [
@@ -338,16 +338,16 @@ export function validatePluginManifestProperty(
                   ]
                 : [];
             const commandCategoryError =
-              commandRec.category !== undefined && typeof commandRec.category !== 'string'
-                ? [
+              commandRec.category === undefined || typeof commandRec.category === 'string'
+                ? []
+                : [
                     {
                       path: [propertyName, 'commands', String(index), 'category'],
                       message: "Command 'category' must be a string if defined",
                       expected: 'string',
                       actual: typeof commandRec.category,
                     },
-                  ]
-                : [];
+                  ];
             return [...commandIdError, ...commandTitleError, ...commandCategoryError];
           })
         : [

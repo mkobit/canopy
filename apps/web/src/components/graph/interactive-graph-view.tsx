@@ -96,11 +96,7 @@ export const InteractiveGraphView = () => {
   const handleSelectNode = useCallback(
     (nodeId: string | undefined) => {
       setSelectedNodeId(nodeId);
-      if (nodeId) {
-        announce(`Selected node ${nodeId}`);
-      } else {
-        announce('Node selection cleared');
-      }
+      announce(nodeId ? `Selected node ${nodeId}` : 'Node selection cleared');
     },
     [announce],
   );

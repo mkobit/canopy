@@ -81,8 +81,7 @@ export const NodePage = () => {
   };
 
   const handleDelete = async () => {
-    if (!currentNode) return undefined;
-    if (!showConfirm('Delete this node?')) return undefined;
+    if (!currentNode || !showConfirm('Delete this node?')) return undefined;
 
     return withResultAlert(
       () => deleteNode(currentNode.id),
@@ -96,12 +95,12 @@ export const NodePage = () => {
 
   // Find connected edges
   const connectedEdges = useMemo(() => {
-    return !graph || !currentNode
-      ? []
-      : filter(
+    return graph && currentNode
+      ? filter(
           [...graph.edges.values()],
           (edge) => edge.source === currentNode.id || edge.target === currentNode.id,
-        );
+        )
+      : [];
   }, [graph, currentNode]);
 
   if (!currentNode || !graph) {

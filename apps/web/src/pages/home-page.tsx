@@ -56,8 +56,9 @@ export const HomePage = () => {
 
   const handleDeleteGraph = async (id: string, event_: React.MouseEvent) => {
     event_.stopPropagation();
-    if (!registry) return undefined;
-    if (!showConfirm('Are you sure you want to delete this graph?')) return undefined;
+    if (!registry || !showConfirm('Are you sure you want to delete this graph?')) {
+      return undefined;
+    }
 
     const result = await registry.delete(id);
     if (result.ok) {

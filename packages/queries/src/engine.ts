@@ -413,22 +413,20 @@ function compare(a: unknown, b: unknown): number {
 
 function unwrapValue(property: PropertyValue | undefined): unknown {
   if (property === undefined) return undefined;
-  if (Array.isArray(property)) {
-    return property.map(unwrapScalar);
-  }
-  // Explicitly tell TS that prop is ScalarValue here
-  return unwrapScalar(property as ScalarValue);
+  return Array.isArray(property)
+    ? property.map(unwrapScalar)
+    : // Explicitly tell TS that prop is ScalarValue here
+      unwrapScalar(property as ScalarValue);
 }
 
 function unwrapScalar(scalar: ScalarValue): unknown {
   if (scalar === null) return undefined;
   if (typeof scalar === 'object') {
     // ExternalReferenceValue check
-    if ('graph' in scalar && 'target' in scalar) {
-      return `${scalar.graph}://${scalar.target}`;
-    }
-    // Any other object? No other objects in ScalarValue union.
-    return scalar;
+    return 'graph' in scalar && 'target' in scalar
+      ? `${scalar.graph}://${scalar.target}`
+      : // Any other object? No other objects in ScalarValue union.
+        scalar;
   }
   return scalar;
 }

@@ -47,11 +47,9 @@ const eventsTailEffect = (
 
     const subscribeResult = yield* Effect.result(
       client.subscribe(parameters, (event) => {
-        if (json) {
-          Effect.runSync(Console.log(JSON.stringify(event)));
-        } else {
-          Effect.runSync(Console.log(`[event] ${JSON.stringify(event)}`));
-        }
+        Effect.runSync(
+          Console.log(json ? JSON.stringify(event) : `[event] ${JSON.stringify(event)}`),
+        );
         return undefined;
       }),
     );

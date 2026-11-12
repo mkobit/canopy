@@ -19,10 +19,10 @@ export function lwwWins(
   currentTimestamp: Instant,
   currentDeviceId: DeviceId,
 ): boolean {
-  if (incomingTimestamp > currentTimestamp) return true;
-  if (incomingTimestamp < currentTimestamp) return false;
   // Equal timestamps: use deviceId as tiebreaker
-  return incomingDeviceId >= currentDeviceId;
+  return incomingTimestamp === currentTimestamp
+    ? incomingDeviceId >= currentDeviceId
+    : incomingTimestamp > currentTimestamp;
 }
 
 /**

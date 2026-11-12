@@ -115,7 +115,9 @@ export const defaultCapabilityValidator: CapabilityValidator = (
   }
 
   const [category] = requiredCapability.split(':', 1);
-  return category && scopes.includes(`${category}:*`) ? true : scopes.includes(requiredCapability);
+  return (
+    Boolean(category && scopes.includes(`${category}:*`)) || scopes.includes(requiredCapability)
+  );
 };
 
 // Verifies capability token against required capability scope.

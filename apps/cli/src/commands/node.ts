@@ -102,13 +102,11 @@ const nodeCreateCommand = Command.make(
       });
       yield* client.close();
 
-      if (json) {
-        yield* Console.log(JSON.stringify(createdNode, undefined, 2));
-      } else {
-        yield* Console.log(
-          `Successfully created node [${createdNode.id}] (type: ${createdNode.type})`,
-        );
-      }
+      yield* Console.log(
+        json
+          ? JSON.stringify(createdNode, undefined, 2)
+          : `Successfully created node [${createdNode.id}] (type: ${createdNode.type})`,
+      );
     }),
 ).pipe(Command.withDescription('Create a new node'));
 
@@ -133,11 +131,11 @@ const nodeUpdateCommand = Command.make(
       });
       yield* client.close();
 
-      if (json) {
-        yield* Console.log(JSON.stringify(updatedNode, undefined, 2));
-      } else {
-        yield* Console.log(`Successfully updated properties for node [${updatedNode.id}]`);
-      }
+      yield* Console.log(
+        json
+          ? JSON.stringify(updatedNode, undefined, 2)
+          : `Successfully updated properties for node [${updatedNode.id}]`,
+      );
     }),
 ).pipe(Command.withDescription('Update properties for an existing node'));
 
@@ -154,11 +152,9 @@ const nodeDeleteCommand = Command.make(
       const result = yield* client.deleteNode({ id });
       yield* client.close();
 
-      if (json) {
-        yield* Console.log(JSON.stringify(result, undefined, 2));
-      } else {
-        yield* Console.log(`Successfully deleted node [${result.id}]`);
-      }
+      yield* Console.log(
+        json ? JSON.stringify(result, undefined, 2) : `Successfully deleted node [${result.id}]`,
+      );
     }),
 ).pipe(Command.withDescription('Delete node by ID'));
 

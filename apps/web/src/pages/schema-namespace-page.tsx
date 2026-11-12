@@ -91,7 +91,7 @@ export const SchemaNamespacePage = () => {
     () => (graph ? listNamespaces(graph).find((ns) => ns.name === namespaceName) : undefined),
     [graph, namespaceName],
   );
-  const isRestricted = namespaceInfo ? RESTRICTED_NAMESPACE_KINDS.has(namespaceInfo.kind) : false;
+  const isRestricted = Boolean(namespaceInfo && RESTRICTED_NAMESPACE_KINDS.has(namespaceInfo.kind));
 
   const nodeTypes = useMemo(
     () => (graph ? listNodeTypesIn(graph, namespaceName) : []),
