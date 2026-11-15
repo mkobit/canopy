@@ -1,0 +1,37 @@
+# Canopy graph kernel
+
+## Overview
+
+This directory implements the `@canopy/graph` core domain kernel: branded identifiers, temporal wrappers, immutable `Node`/`Edge`/`Graph` structures, Zod schemas, `Result` error handling, `EventLogStore`/`ReadModelPort` ports, system bootstrap definitions, LWW and order-independent incremental projection, read-model indexes, time-travel queries, `GraphSession`/`DraftSession`/`EventBus` orchestration, schema/WASM plugin validation, and workflow action execution.
+
+## Interface
+
+- `[index.ts:*]` Barrel re-exports for core types, schemas, factories, queries, bootstrap, projection, incremental projection, indexes, history, revision, sessions, validation, plugin validation, workflow engine, and `./ops`.
+- `[identifiers.ts]`, `[temporal.ts]`, `[scalars.ts]`, `[properties.ts]`, `[property-map.ts]`, `[node.ts]`, `[edge.ts]`, `[graph.ts]`, `[definitions.ts]`, `[events.ts]`, `[schemas.ts]`, `[constructors.ts]`, `[factories.ts]`, `[guards.ts]`, `[result.ts]`, `[system.ts]`, `[namespace.ts]`, `[create-graph.ts]`, `[event-log.ts]`, `[read-model.ts]`, `[query.ts]`, `[utilities.ts]`, `[validation-types.ts]` Branded domain types, Zod schemas, `Result` helpers, `EventLogStore`/`ReadModelPort` ports, and `SYSTEM_IDS`.
+- `[bootstrap-definitions.ts]`, `[bootstrap.ts:bootstrap]`, `[resolve-namespace.ts:parseNamespace, getNodesInNamespace, resolveNamespace]` Idempotent system schema/seed bootstrap and namespace resolution.
+- `[projection.ts:lwwWins, applyEvent, projectGraph]`, `[incremental-projection.ts:createMergeState, mergeEvents, projectDraftOverlay, applyDraftEvents, epochMsFromEventId]` Event-sourced projection and order-independent incremental merging with dependency parking and tombstones.
+- `[indexes.ts:buildGraphIndexes, getGraphIndexes, incrementalUpdateIndexes, createIndexedReadModel, verifyIndexes]`, `[queries.ts:getNodeTypes, getEdgeTypes, getNodeType, getEdgeType, getNodesOfType, getEdgesOfType, getEdgesFrom, findInverseEdgeType]`, `[history.ts:getGraphAt, maxEventIdForTimestamp, incrementEventId]`, `[revision.ts:zeroRevision, accumulateRevision, maxRevision]` Indexing, read-only queries, time-travel reconstruction, and commutative 122-bit revision hashing.
+- `[draft-session.ts:createDraftSession]`, `[event-bus.ts:createEventBus, onNodeCreated]`, `[graph-session.ts:createGraphSession]` Stateful session, draft overlay, and event-bus orchestration.
+- `[plugin-validation.ts:RECOGNIZED_WASM_CAPABILITIES, validateWasmBinaryProperty, validatePluginManifestProperty]`, `[validation.ts:validateNode, validateEdge, validatePropertyByType, isEdgeCompatible]`, `[workflow-engine.ts:executeWorkflowAction, createWorkflowEngine, createWorkflowTriggerRegistry]` Schema/WASM validation and workflow triggers/actions.
+- Subdirectory: [ops](./ops/README.md) — Pure, event-emitting node, edge, fractional-indexed block, and type-authoring operations.
+
+## Invariants
+
+- Domain IDs (`NodeId`, `EdgeId`, `TypeId`, `GraphId`, `EventId`, `DeviceId`, `Namespace`, `Revision`) and temporal primitives (`Instant`, `PlainDate`) are branded with unique symbols; core entities and collections use `Readonly`/`ReadonlyMap`/`readonly`.
+- `[bootstrap.ts:bootstrap]` Is idempotent across node and edge steps, attributes authorship to `SYSTEM_DEVICE_ID` (`00000000-0000-0000-0000-000000000000`), and short-circuits on the first `Err`.
+- `[projection.ts:lwwWins]` Orders writes by `(timestamp, deviceId)`; `[incremental-projection.ts:mergeEvents]` converges to `projectGraph(sort(E), initialGraph)` regardless of arrival order, parking unmet dependencies atomically by `batchId` and permanently tombstoning deleted entities.
+- `[indexes.ts:incrementalUpdateIndexes]` Maintains read-model indexes in O(delta) for normal events and triggers a full `buildGraphIndexes` rebuild on config-mutating events (`VIEW_OVERRIDE`, `DEFAULT_VIEW`, `SETTINGS_SCHEMA`, `USER_SETTING`).
+- `[revision.ts:accumulateRevision]` Performs commutative modular addition over 122-bit hashes so revision advances identically regardless of event order.
+- `[graph-session.ts:validateCommit]` Rejects `NodeDeleted` on system nodes (`isSystemNodeId`), dry-run projects, and validates touched nodes/edges before appending to `EventLogStore`; `[draft-session.ts:createDraftSession]` enforces optimistic concurrency on `parentSession.graph().revision`.
+- `[plugin-validation.ts:RECOGNIZED_WASM_CAPABILITIES]` Must stay identical to `KNOWN_WASM_CAPABILITIES` in `@canopy/plugin-host`; `[validation.ts:validateValue]` enforces 8192-char regex bounds, cardinality, and `TYPE_INACTIVE` checks.
+
+## Side Effects
+
+- `[factories.ts]`, `[constructors.ts]`, `[bootstrap-definitions.ts]`, `[bootstrap.ts]`, `[create-graph.ts]`, `[workflow-engine.ts]` Read system randomness (`uuidv7`) and wall-clock time (`Temporal.Now.instant()`).
+- `[indexes.ts:getGraphIndexes]` Inserts computed indexes into the module-level `graphCache` `WeakMap`, mutates `graph._indexes`, and deep-freezes parsed `userSettings` values.
+- `[graph-session.ts:createGraphSession]`, `[draft-session.ts:createDraftSession]`, `[event-bus.ts:createEventBus]`, `[workflow-engine.ts:createWorkflowTriggerRegistry]` Mutate internal closure state cells, call `EventLogStore` async methods (`getEvents`, `appendEvents`), and synchronously invoke subscriber callbacks.
+- `[plugin-validation.ts:brotliDecompressSync]` Attempts module-load-time `require('node:zlib')`; `[result.ts:unwrap]` throws `result.error` when `!result.ok`.
+
+## Verification
+
+- Run: `bun test`
