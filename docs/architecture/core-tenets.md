@@ -1,6 +1,8 @@
 # Core tenets
 
-This document records Canopy's product and architectural intent.
+> **Reshape target (`canopy.v0`):** The [Canopy v0 architecture and product breakdown](canopy-v0-architecture.md) defines the active target architecture — server-first deployment, single-source TypeSpec `canopy.v0` APIs, open vs. single-`Shape` typing, `RenderSelector` view resolution, `hlcTimestamp`/`commitSeq` + Entity CAS consistency, and EGM specification authority — superseding legacy OpenSpec and multi-protocol (`Connect`, `GraphQL`, bespoke `IPC`) assumptions.
+
+This document records Canopy's foundational product and architectural intent.
 It guides design interpretation; it does not assert that every capability is implemented or approve unresolved designs.
 The [core data model](../design/2026-02-06-core-data-model.md) defines structural primitives, and the [bounded-context map](bounded-contexts.md) defines current package ownership.
 
