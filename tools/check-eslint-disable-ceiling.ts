@@ -40,7 +40,6 @@ const EXCLUSION_PATTERNS: readonly RegExp[] = [
   /^apps\/web\/src\/plugin\/markdown\/guest\.ts$/, // ignores: guest.ts (WASM guest source)
   /^apps\/web\/src\/plugin\/mock\//, // ignores: 'apps/web/src/plugin/mock/**/*'
   /^apps\/web\/src\/plugin\/draft-session-shim\.ts$/, // ignores: draft-session-shim.ts
-  /^apps\/extension\/scripts\//, // ignores: 'apps/extension/scripts/**/*'
   /^apps\/web\/scripts\//, // ignores: 'apps/web/scripts/**/*'
   /^packages\/graph\/scripts\//, // ignores: 'packages/graph/scripts/**/*'
 ];

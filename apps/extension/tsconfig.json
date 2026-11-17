@@ -1,9 +1,0 @@
-{
-  "extends": "./tsconfig.build.json",
-  "compilerOptions": {
-    "noEmit": true,
-    "rootDir": ".",
-    "types": ["chrome", "temporal-polyfill/types/global", "bun-types"]
-  },
-  "include": ["src/**/*", "tests/**/*"]
-}

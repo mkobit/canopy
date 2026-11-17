@@ -4,9 +4,9 @@ Canopy is a graph-based personal knowledge management system.
 
 ## Design documentation
 
-Read [Core tenets](docs/architecture/core-tenets.md) for product intent and design interpretation.
-The canonical core data model is [Core data model and type system](docs/design/2026-02-06-core-data-model.md).
-The [original design](docs/design/2025-01-21-canopy-design-v0.1.md) provides historical context; later domain designs and accepted specifications supersede conflicting details.
+Read [Canopy v0 architecture](docs/architecture/canopy-v0-architecture.md) for the target `canopy.v0` server-first architecture, TypeSpec API contracts, and domain model.
+Read [Core tenets](docs/architecture/core-tenets.md) for overarching product intent and [Core data model and type system](docs/design/2026-02-06-core-data-model.md) for the initial kernel foundation.
+The [original design](docs/design/2025-01-21-canopy-design-v0.1.md) provides historical context; `docs/architecture/canopy-v0-architecture.md` and current EGM `README.md` contracts supersede conflicting details.
 
 Canopy is intended to become a suite of products for PKMS, remote memory, graph knowledge database access, and a secure plugin ecosystem, sharing one core domain model.
 Graph-defined types, queries, views, and renderers are foundational; rendering applications resolve these definitions to supported native or WASM components.
@@ -131,19 +131,11 @@ Key commands: `bd ready` (unblocked work), `bd create "Title" --type task` (new 
 Task beads must not be created or set to `in_progress` until the corresponding design proposal has successfully passed the adversarial review phase.
 All git worktrees share one embedded bd database, so grab work only with `bd update <id> --claim` (atomic and conflict-checked) — never a manual status set — and parallel worktree sessions stay safe.
 
-## Specs
+## Specs and EGM contracts
 
-This project uses OpenSpec for spec-driven development.
-Run `bunx openspec list` to see current changes and their status.
-Note that `bunx openspec validate --all` runs as a PR check on changes under `openspec/**`.
-Use `/opsx:propose`, `/opsx:apply`, `/opsx:archive` slash commands to work with specs.
-Specs live in `openspec/changes/` and follow the `proposal → design → tasks` artifact flow.
-All design proposals must undergo a mandatory adversarial review phase prior to staging implementation tasks.
-This phase occurs after drafting the `design.md` artifact but before creating `tasks.md` or staging beads issues.
-The design proposal must include a dedicated `## Adversarial review and mitigations` section.
-This section must systematically analyze resource and performance overhead, failure modes and edge cases, security and isolation, and migration/backward compatibility risks.
-For every identified risk, the design must document a concrete, actionable mitigation.
-Implementation tasks and beads issues must not be created, claimed, or executed until the adversarial review is complete and all mitigations are approved.
+`docs/architecture/` documents and bottom-up EGM `README.md` files in each package/app directory are the sole specification system.
+Every package and app directory maintains a `README.md` with `Overview`, `Interface`, `Invariants`, `Side Effects`, and `Verification` sections that reflect its actual exported API and behavior.
+Update the owning `README.md` contract whenever a change alters public interfaces, invariants, or side effects, and verify zero EGM drift before closing work.
 
 ## Jules agents
 
@@ -152,60 +144,17 @@ Check existing tooling and `.jules/` prompt files before adding a new automation
 
 ## Bounded agent delivery
 
-Follow the [delivery design](openspec/changes/agent-delivery-boundaries/design.md) and [requirements](openspec/changes/agent-delivery-boundaries/specs/bounded-agent-delivery/spec.md), approved through [PR #542](https://github.com/mkobit/canopy/pull/542) at `c19969800553819a91bbee1e297450de2832e26e`.
-Their historical pending-approval text predates that merge; the approval covers this delivery protocol, not unresolved product designs or pilot execution.
-
-Before staging `tasks.md` or implementation Beads, manually verify the corresponding merged design PR, adversarial review, and approved mitigations.
-Before dispatch, also verify completed prerequisites, current contracts, ownership, isolation, and acceptance evidence.
-`bd ready`, OpenSpec artifact availability, `instructions apply` state, and structural validation do not establish approval.
-These checks remain manual for every workflow, including stock schemas and blocked or all-done apply output.
-An all-done or archive recommendation does not establish integrated acceptance or permission to archive.
-Read-only discovery and design review may proceed before approval.
-
-Keep each context's purpose, boundary, provided/consumed contracts, invariants, observable examples, owner, and status in its owning design, linking authoritative sources.
-Distinguish current implementation, approved but unimplemented contracts, and exploratory product intent.
-Do not turn brainstorming epics into implementation assignments.
-
-Put the completed [handoff packet](openspec/changes/agent-delivery-boundaries/handoff-template.md) in the Beads task before claiming implementation.
-Pin the base and approved contract revisions, exact requirement scenarios, outcome, editable files, reserved shared files, non-goals, isolation, integration owner, independent reviewer, and verified checks.
-Return packets with unresolved placeholders or no observable acceptance oracle to preparation.
-State who may update issues, commit, push, create a PR, merge, and close; worker success grants none of those actions.
-Existing repository publication rules apply to the assigned integration owner, not automatically to every delegate.
+Before staging or claiming implementation Beads, verify completed prerequisites, current `docs/architecture/` and EGM `README.md` contracts, file ownership, isolation, and acceptance evidence.
+Distinguish current implementation, approved `canopy.v0` contracts, and exploratory product intent; do not turn brainstorming epics into implementation assignments.
 
 With authoritative local Beads access, claim atomically using `bd update <id> --claim`.
-For remote implementation, the dispatcher claims locally and supplies the full packet; the worker returns evidence without claiming or updating a copied database.
-The dispatcher reconciles the result after review.
-Jules recurring maintenance retains only its prompt-specific authority; it does not confer implementation ownership.
-
-Tell every delegate that others may be editing and that they must preserve those edits.
 Prefer isolated worktrees or sandboxes; use read-only scouts until isolation and ownership are established.
-Concurrent write scopes must be disjoint and consume compatible pinned contracts.
+Concurrent write scopes must be disjoint and consume compatible contracts.
 Give shared generated files and manifests one writer, and keep coupled contract/consumer changes with one integration owner until a building baseline allows independent work.
 
-Stop dependent work when a contract is missing, contradictory, or requires an unapproved observable change.
-Report the mismatch, affected scenario, and minimal options to the contract owner; do not weaken tests, permissions, or add speculative compatibility layers.
-The owner routes missing or incompatible contracts through design review and approval, then updates or withdraws affected packets.
-Re-check the packet and pinned contracts before handoff.
-A material contract or integration-baseline change invalidates affected checks and reviewer approval; renew both against the resulting revision, retaining unaffected evidence only with an explicit rationale.
-
-Return revision identity, changed files, scenario evidence, exact check outcomes, and unresolved concerns.
+Stop dependent work when a contract is missing, contradictory, or requires an unapproved observable change, and report the mismatch to the contract owner.
 Exercise real persistence, transport, or isolation boundaries where affected; stub success alone is insufficient.
-The independent reviewer checks the approved contract and evidence; the integration owner verifies the combined result and applicable integration/performance checks plus `mise run check` before landing implementation.
-
-### OpenSpec instruction ownership
-
-Project context and artifact rules live in `openspec/config.yaml`.
-The opt-in `canopy-bounded-delivery` schema carries ready-state `apply.instruction`; project context/rules do not reach apply output.
-Only the delivery change selects this schema initially; keep the project default `spec-driven` and do not bulk migrate existing or archived changes.
-An owner must explicitly select the schema in a new or revised packet and renew affected evidence before migrating a change.
-Stock-schema apply, blocked/all-done output, explore, and archive still require the manual checks above; do not assume Gemini loads root guidance without verifying the consumer or supplying it in the dispatch packet.
-
-Use the installed OpenSpec `1.6.0` supported `bunx openspec update --force` workflow with profile `custom`, delivery `both`, and workflows `propose`, `explore`, `apply`, `archive`.
-Inspect `bunx openspec config list --json` first; preserve the user's configuration and stop if it differs from the packet.
-One writer regenerates all 24 Claude, Gemini, and OpenCode skills and command counterparts, then verifies repeated generation is byte-identical and project instructions still reach the intended consumers.
-Do not patch or format generated copies independently, alter installed templates, or add workflows to compensate for stock references.
-Schema upgrades require an explicit comparison with the installed stock schema/templates and renewed instruction/scenario evidence; regeneration does not upgrade the project-owned fork.
-Unsupported customization, new approval engines, or orchestration requirements return to design.
+The integration owner verifies the combined result, EGM `README.md` alignment, and `mise run check` before landing implementation.
 
 ## Docker Sandbox execution
 

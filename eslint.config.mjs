@@ -33,7 +33,6 @@ export default tseslint.config(
       'apps/web/src/plugin/markdown/guest.js',
       'apps/web/src/plugin/markdown/plugin-node.json',
       'apps/web/src/plugin/draft-session-shim.ts',
-      'apps/extension/scripts/**/*',
       'apps/web/scripts/**/*',
       'packages/graph/scripts/**/*',
       'packages/queries/scripts/**/*',
@@ -460,30 +459,6 @@ export default tseslint.config(
       'functional/no-expression-statements': 'off',
       'functional/no-return-void': 'off',
       'functional/no-mixed-types': 'off',
-    },
-  },
-  // apps/extension: plain browser-loaded scripts with no bundler (see AGENTS.md) --
-  // chrome.* callback APIs are inherently void-returning/effectful, and tsc emits
-  // relative imports verbatim, so a `.js` extension is required for the browser to
-  // resolve them (unlike every other package here, which is bundled or run by Bun/Node).
-  {
-    files: ['apps/extension/src/**/*.ts'],
-    languageOptions: {
-      globals: {
-        chrome: 'readonly',
-      },
-    },
-    rules: {
-      'import/extensions': 'off',
-      'functional/no-return-void': 'off',
-    },
-  },
-  // popup.ts is a thin DOM-manipulation adapter (no React); direct element mutation
-  // is the point, mirroring the storage-adapter exception below.
-  {
-    files: ['apps/extension/src/popup/**/*.ts'],
-    rules: {
-      'functional/immutable-data': 'off',
     },
   },
   // Workaround for crashing rule in typescript-eslint v8.54.0

@@ -4,12 +4,10 @@ This document defines the backward compatibility, deprecation lifecycle, and CI 
 
 ## Scope and protocol surfaces
 
-Canopy exposes graph capabilities across four distinct protocol transports hosted in `@canopy/api-adapter`:
+Canopy is transitioning from legacy multi-protocol adapters in `@canopy/api-adapter` to single-source versioned **TypeSpec** contracts under `canopy.v0` (see [Canopy v0 architecture](canopy-v0-architecture.md)):
 
-1. GraphQL SDL (`GRAPHQL_SDL_SCHEMA`) for web clients and rich query consumers.
-2. Connect-Web and gRPC Protobuf SDL (`PROTO_SERVICES_SDL`) for microservice and RPC integrations.
-3. WebAssembly Interface Type (WIT) specifications (`CANOPY_WIT_SPECIFICATION`) for sandboxed guest plugin host bindings.
-4. JSON-RPC 2.0 IPC specifications (`JSON_RPC_IPC_SPECIFICATION`) for native desktop IPC clients.
+1. TypeSpec `canopy.v0` HTTP/RPC service contracts generating server routes and TypeScript client SDKs.
+2. WebAssembly Interface Type (WIT) specifications for sandboxed guest plugin host bindings (moving toward unified generation from TypeSpec).
 
 All protocol surfaces map to single-source kernel semantics provided by `@canopy/graph` and `@canopy/queries`.
 

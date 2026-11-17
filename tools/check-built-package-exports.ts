@@ -13,11 +13,11 @@ const required = [
   [pluginHost, 'executeSandboxedGuestPlugin'],
   [pluginHost, 'CANOPY_WIT_SPECIFICATION'],
   [apiAdapter, 'createIpcServer'],
-  [apiAdapter, 'buildGraphQLSchema'],
-  [apiAdapter, 'toGrpcStatus'],
 ] as const;
 
 const removedApiAdapterExports = [
+  'buildGraphQLSchema',
+  'toGrpcStatus',
   'createGraphAccessContext',
   'createGraphAccessRequest',
   'executeQuery',

@@ -1,115 +1,36 @@
 import { describe, expect, test } from 'bun:test';
 import { checkApiCompatibility } from '../../../tools/lib/api-compatibility-checker';
-import { GRAPHQL_SDL_SCHEMA, JSON_RPC_IPC_SPECIFICATION, PROTO_SERVICES_SDL } from '../src';
+import { JSON_RPC_IPC_SPECIFICATION } from '../src';
 
 describe('API Compatibility Checker Engine', () => {
   test('passes clean verification against unchanged baselines', () => {
     const results = [
-      checkApiCompatibility({ target: 'graphql', currentGql: GRAPHQL_SDL_SCHEMA }),
-      checkApiCompatibility({ target: 'connect', currentProto: PROTO_SERVICES_SDL }),
       checkApiCompatibility({ target: 'ipc', currentIpc: JSON_RPC_IPC_SPECIFICATION }),
     ];
     expect(results.every((result) => result.success)).toBe(true);
     expect(results.flatMap((result) => result.violations)).toEqual([]);
   });
 
-  test('detects breaking GraphQL field removal', () => {
-    const modifiedGql = `
-      type Query {
-        node(id: ID!): NodePayload
-      }
-    `;
-    const result = checkApiCompatibility({
-      target: 'graphql',
-      overrideGql: modifiedGql,
-    });
-    expect(result.success).toBe(false);
-    expect(result.violations.some((v) => v.protocol === 'graphql')).toBe(true);
-  });
-
-  test('detects GraphQL output non-null relaxation', () => {
-    const modifiedGql = `
-      type Query {
-        node(id: ID!): NodePayload
-        nodes(type: ID, first: Int, after: String, last: Int, before: String): NodeConnection
-      }
-    `;
-    const result = checkApiCompatibility({
-      target: 'graphql',
-      overrideGql: modifiedGql,
-    });
-    expect(result.success).toBe(false);
-    expect(
-      result.violations.some(
-        (v) => v.protocol === 'graphql' && v.changeType === 'NON_NULL_RELAXATION',
-      ),
-    ).toBe(true);
-  });
-
-  test('detects input argument non-null tightening', () => {
-    const modifiedGql = `
-      type Query {
-        nodes(type: ID!, first: Int, after: String, last: Int, before: String): NodeConnection!
-      }
-    `;
-    const result = checkApiCompatibility({
-      target: 'graphql',
-      overrideGql: modifiedGql,
-    });
-    expect(result.success).toBe(false);
-    expect(
-      result.violations.some(
-        (v) => v.protocol === 'graphql' && v.changeType === 'NON_NULL_TIGHTENING',
-      ),
-    ).toBe(true);
-  });
-
-  test('detects Protobuf field removal', () => {
-    const modifiedPrototype = `
-      message NodeResponse {
-        bool success = 1;
-        string id = 2;
-      }
-    `;
-    const result = checkApiCompatibility({
-      target: 'connect',
-      overrideProto: modifiedPrototype,
-    });
-    expect(result.success).toBe(false);
-    expect(
-      result.violations.some((v) => v.protocol === 'connect' && v.changeType === 'FIELD_REMOVAL'),
-    ).toBe(true);
-  });
-
-  test('detects Protobuf tag shift', () => {
-    const modifiedPrototype = `
-      message NodeResponse {
-        bool success = 2;
-        string id = 1;
-      }
-    `;
-    const result = checkApiCompatibility({
-      target: 'connect',
-      overrideProto: modifiedPrototype,
-    });
-    expect(result.success).toBe(false);
-    expect(
-      result.violations.some((v) => v.protocol === 'connect' && v.changeType === 'TAG_SHIFT'),
-    ).toBe(true);
-  });
-
   test('accepts approved breaking change with valid waiver', () => {
-    const modifiedGql = `
-      type Query {
-        node(id: ID!): NodePayload
-      }
-    `;
+    const modifiedIpc = JSON.stringify({
+      openrpc: '1.3.2',
+      info: { title: 'Canopy IPC Protocol Specification', version: '0.1.0' },
+      methods: [],
+      errors: [
+        { code: -32_700, message: 'PARSE_ERROR' },
+        { code: -32_600, message: 'INVALID_REQUEST' },
+        { code: -32_601, message: 'METHOD_NOT_FOUND' },
+        { code: -32_602, message: 'INVALID_PARAMS' },
+        { code: -32_603, message: 'INTERNAL_ERROR' },
+        { code: -32_000, message: 'CANOPY_DOMAIN_ERROR' },
+      ],
+    });
     const waivers = [
       {
         id: 'WAIVER-001',
-        protocol: 'graphql' as const,
-        path: 'Query.nodes',
-        changeType: 'REMOVAL',
+        protocol: 'ipc' as const,
+        path: 'canopy.v1.handshake',
+        changeType: 'METHOD_REMOVAL',
         reason: 'Testing waiver approval',
         author: '@test',
         expiresAt: '2099-01-01',
@@ -117,25 +38,26 @@ describe('API Compatibility Checker Engine', () => {
       },
     ];
     const result = checkApiCompatibility({
-      target: 'graphql',
-      overrideGql: modifiedGql,
+      target: 'ipc',
+      overrideIpc: modifiedIpc,
       overrideWaivers: waivers,
     });
     expect(result.approvedWaivers.length).toBeGreaterThan(0);
   });
 
   test('fails if waiver is expired', () => {
-    const modifiedGql = `
-      type Query {
-        node(id: ID!): NodePayload
-      }
-    `;
+    const modifiedIpc = JSON.stringify({
+      openrpc: '1.3.2',
+      info: { title: 'Canopy IPC Protocol Specification', version: '0.1.0' },
+      methods: [],
+      errors: [],
+    });
     const waivers = [
       {
         id: 'WAIVER-EXPIRED',
-        protocol: 'graphql' as const,
-        path: 'Query.nodes',
-        changeType: 'REMOVAL',
+        protocol: 'ipc' as const,
+        path: 'canopy.v1.handshake',
+        changeType: 'METHOD_REMOVAL',
         reason: 'Expired waiver test',
         author: '@test',
         expiresAt: '2020-01-01',
@@ -143,8 +65,8 @@ describe('API Compatibility Checker Engine', () => {
       },
     ];
     const result = checkApiCompatibility({
-      target: 'graphql',
-      overrideGql: modifiedGql,
+      target: 'ipc',
+      overrideIpc: modifiedIpc,
       overrideWaivers: waivers,
     });
     expect(result.success).toBe(false);
@@ -155,9 +77,9 @@ describe('API Compatibility Checker Engine', () => {
     const waivers = [
       {
         id: 'WAIVER-STALE',
-        protocol: 'graphql' as const,
-        path: 'Query.someOldField',
-        changeType: 'REMOVAL',
+        protocol: 'ipc' as const,
+        path: 'canopy.v1.someOldMethod',
+        changeType: 'METHOD_REMOVAL',
         reason: 'Stale waiver test',
         author: '@test',
         expiresAt: '2099-01-01',
@@ -165,9 +87,9 @@ describe('API Compatibility Checker Engine', () => {
       },
     ];
     const result = checkApiCompatibility({
-      target: 'graphql',
+      target: 'ipc',
       overrideWaivers: waivers,
-      currentGql: GRAPHQL_SDL_SCHEMA,
+      currentIpc: JSON_RPC_IPC_SPECIFICATION,
     });
     expect(result.success).toBe(false);
     expect(result.staleWaivers.length).toBeGreaterThan(0);

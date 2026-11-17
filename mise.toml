@@ -37,20 +37,9 @@ description = "Check for unused files, exports, and dependencies with Knip"
 run = "sbx kit validate .sbx/kit && sbx env plan .sbx/sbxenv.yaml && sbx env plan .sbx/sbxenv.agy.yaml && sbx env plan .sbx/sbxenv.claude.yaml && bun run check:sbx-env"
 description = "Validate Docker Sandbox kit, environments, and toolchain parity"
 
-# OpenSpec Tools
-
-[tasks.spec-list]
-run = "bunx openspec list"
-description = "List OpenSpec changes (openspec stays bunx; no mise shim configured)"
-
-[tasks.spec-validate]
-depends = ["test"]
-run = "bunx openspec validate --all --strict"
-description = "Validate OpenSpec changes strictly (openspec stays bunx; no mise shim configured)"
-
 [tasks.check]
-depends = ["spec-validate"]
-description = "Run quality gates in CI order (build -> lint -> typecheck -> test -> spec-validate)"
+depends = ["test"]
+description = "Run quality gates in CI order (build -> lint -> typecheck -> test)"
 
 # Beads Issue Tracker Integration
 

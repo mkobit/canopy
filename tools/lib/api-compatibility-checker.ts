@@ -3,7 +3,7 @@ import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export interface Violation {
-  readonly protocol: 'graphql' | 'connect' | 'wit' | 'ipc';
+  readonly protocol: 'wit' | 'ipc';
   readonly changeType: string;
   readonly path: string;
   readonly description: string;
@@ -13,7 +13,7 @@ export interface Violation {
 
 export interface Waiver {
   readonly id: string;
-  readonly protocol: 'graphql' | 'connect' | 'wit' | 'ipc' | 'all';
+  readonly protocol: 'wit' | 'ipc' | 'all';
   readonly path: string;
   readonly changeType: string;
   readonly reason: string;
@@ -32,101 +32,13 @@ interface CompatibilityResult {
 }
 
 export interface CheckOptions {
-  readonly target?: 'graphql' | 'connect' | 'wit' | 'ipc' | 'all';
-  readonly currentGql?: string;
-  readonly currentProto?: string;
+  readonly target?: 'wit' | 'ipc' | 'all';
   readonly currentWit?: string;
   readonly currentIpc?: string;
-  readonly overrideGql?: string;
-  readonly overrideProto?: string;
   readonly overrideWit?: string;
   readonly overrideIpc?: string;
   readonly overrideWaivers?: readonly Waiver[];
 }
-
-const checkGql = (liveSchema: string, baselineSchema?: string): readonly Violation[] => {
-  if (!baselineSchema) return [];
-
-  const violations1: readonly Violation[] =
-    baselineSchema.includes('type Query {') &&
-    baselineSchema.includes('nodes(') &&
-    !liveSchema.includes('nodes(') &&
-    !liveSchema.includes('nodes (')
-      ? [
-          {
-            protocol: 'graphql',
-            changeType: 'REMOVAL',
-            path: 'Query.nodes',
-            description: 'Field nodes removed from Query',
-            snippet:
-              '-  nodes(type: ID, first: Int, after: String, last: Int, before: String): NodeConnection\n',
-          },
-        ]
-      : [];
-
-  const violations2: readonly Violation[] =
-    baselineSchema.includes('NodeConnection!') && !liveSchema.includes('NodeConnection!')
-      ? [
-          {
-            protocol: 'graphql',
-            changeType: 'NON_NULL_RELAXATION',
-            path: 'Query.nodes',
-            description: 'Output type non-null relaxation',
-            snippet: '-  nodes: NodeConnection!\n+  nodes: NodeConnection\n',
-          },
-        ]
-      : [];
-
-  const violations3: readonly Violation[] =
-    !baselineSchema.includes('nodes(type: ID!') && liveSchema.includes('nodes(type: ID!')
-      ? [
-          {
-            protocol: 'graphql',
-            changeType: 'NON_NULL_TIGHTENING',
-            path: 'Query.nodes.type',
-            description: 'Input argument non-null tightening',
-            snippet:
-              '-  nodes(type: ID, first: Int, after: String, last: Int, before: String): NodeConnection\n+  nodes(type: ID!, first: Int, after: String, last: Int, before: String): NodeConnection\n',
-          },
-        ]
-      : [];
-
-  return [...violations1, ...violations2, ...violations3];
-};
-
-const checkPrototype = (liveSchema: string, baselineSchema?: string): readonly Violation[] => {
-  if (!baselineSchema) return [];
-
-  const violations1: readonly Violation[] =
-    baselineSchema.includes('string type_id = 3') &&
-    !liveSchema.includes('string type_id = 3') &&
-    !liveSchema.includes('type_id = 3')
-      ? [
-          {
-            protocol: 'connect',
-            changeType: 'FIELD_REMOVAL',
-            path: 'NodeResponse.type_id',
-            description: 'Field type_id removed',
-            snippet: '-  string type_id = 3;\n',
-          },
-        ]
-      : [];
-
-  const violations2: readonly Violation[] =
-    baselineSchema.includes('bool success = 1;') && liveSchema.includes('bool success = 2;')
-      ? [
-          {
-            protocol: 'connect',
-            changeType: 'TAG_SHIFT',
-            path: 'NodeResponse.success',
-            description: 'Tag shifted for success',
-            snippet: '-  bool success = 1;\n+  bool success = 2;\n',
-          },
-        ]
-      : [];
-
-  return [...violations1, ...violations2];
-};
 
 const checkWit = (liveSchema: string, baselineSchema?: string): readonly Violation[] => {
   if (!baselineSchema) return [];
@@ -338,28 +250,18 @@ export const checkApiCompatibility = (options?: CheckOptions): CompatibilityResu
   const target = options?.target ?? 'all';
   const now = '2026-07-25';
 
-  const gqlLive = options?.overrideGql ?? options?.currentGql ?? '';
-  const prototypeLive = options?.overrideProto ?? options?.currentProto ?? '';
   const witLive = options?.overrideWit ?? options?.currentWit ?? '';
   const ipcLive = options?.overrideIpc ?? options?.currentIpc ?? '';
 
-  const gqlBaseline = readBaseline('graphql.graphql');
-  const prototypeBaseline = readBaseline('connect.proto');
   const witBaseline =
     target === 'all' || target === 'wit'
       ? fs.readFileSync(path.join(PLUGIN_HOST_BASELINES_DIR, 'plugin.wit'), 'utf8')
       : undefined;
   const ipcBaseline = readBaseline('ipc-openrpc.json');
 
-  const violations1 =
-    target === 'all' || target === 'graphql' ? checkGql(gqlLive, gqlBaseline) : [];
-  const violations2 =
-    target === 'all' || target === 'connect'
-      ? checkPrototype(prototypeLive, prototypeBaseline)
-      : [];
   const violations3 = target === 'all' || target === 'wit' ? checkWit(witLive, witBaseline) : [];
   const violations4 = target === 'all' || target === 'ipc' ? checkIpc(ipcLive, ipcBaseline) : [];
-  const violations = [...violations1, ...violations2, ...violations3, ...violations4];
+  const violations = [...violations3, ...violations4];
 
   const expiredWaivers = waivers.filter((w) => w.expiresAt < now);
 
