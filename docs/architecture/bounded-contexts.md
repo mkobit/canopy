@@ -22,8 +22,6 @@ graph TD
   web[apps/web]
   cli[apps/cli]
   daemon[apps/daemon]
-  clipHost[apps/clip-host]
-  extension[apps/extension]
 
   queries --> graph
   settings --> graph
@@ -54,12 +52,7 @@ graph TD
   daemon --> storageSqlite
   daemon --> apiAdapter
   daemon --> graphAccess
-  clipHost --> graph
-  clipHost --> apiAdapter
-  clipHost --> graphAccess
 ```
-
-`apps/extension` has no `@canopy/*` dependencies (zero-dependency browser code, no bundler -- see `apps/extension/AGENTS.md`) and so has no outgoing edges above; it talks to `apps/clip-host` over native-messaging stdio, not an import.
 
 `@canopy/graph` is the leaf and has no internal dependencies.
 All other packages depend on it.
@@ -125,8 +118,8 @@ Owns host bindings, capability validation, sandbox execution, fuel and memory li
 ### @canopy/api-adapter
 
 The transport and protocol adapter layer over `@canopy/graph-access` and `@canopy/graph`.
-Hosts Connect, GraphQL, and the Unix-socket JSON-RPC IPC server (`createIpcServer`), including the `canopy.v1.draft.*` family that wraps `DraftSession`.
-Owns protocol-specific error translation and is consumed by `apps/cli`, `apps/daemon`, and `apps/clip-host`.
+Hosts the Unix-socket JSON-RPC IPC server (`createIpcServer`), including the `canopy.v1.draft.*` family that wraps `DraftSession` (Connect and GraphQL adapters purged; TypeSpec `canopy.v0` pending in Track B).
+Owns protocol-specific error translation and is consumed by `apps/cli` and `apps/daemon`.
 
 ## Cross-context ports
 
@@ -157,4 +150,3 @@ Owns protocol-specific error translation and is consumed by `apps/cli`, `apps/da
 - Event log migration design: `docs/design/2026-07-03-event-log-storage-and-sync.md`.
 - Query interfaces: `docs/design/2026-02-08-query-engine.md`.
 - Extensions and plugin host (deferred design): `docs/design/2026-02-08-extension-and-execution-model.md`.
-- Browser extension web clipper (`apps/extension` + `apps/clip-host`): `openspec/changes/browser-extension-web-clipper/design.md`.

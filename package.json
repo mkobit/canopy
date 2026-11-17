@@ -14,9 +14,7 @@
     "build": "tsc -b && bun --filter './apps/*' build",
     "check:api-compatibility": "bun tools/check-api-compatibility.ts",
     "check:versions": "bun tools/verify-versions.ts",
-    "check:openspec-changes": "bun tools/check-openspec-changes.ts",
     "check:sbx-env": "bun scripts/check-sbx-env.ts",
-    "openspec:validate": "bunx openspec validate --all",
     "check:unused": "knip",
     "check:eslint-disable-ceiling": "bun tools/check-eslint-disable-ceiling.ts",
     "check:dependency-graph": "bun tools/check-dependency-graph.ts",
@@ -39,7 +37,6 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@fission-ai/openspec": "^1.6.0",
     "@stylistic/eslint-plugin": "^5.10.0",
     "@types/node": "^26.6.6",
     "@types/react": "^19.3.0",

@@ -2,11 +2,11 @@
 
 ## Overview
 
-This directory contains CLI release audits, CI and pre-commit quality gates, dependency graph checks, ESLint disable ratcheting, OpenSpec validation, API baseline compatibility checks, and TypeScript refactoring scripts, rolling up `./hooks` and `./lib`.
+This directory contains CLI release audits, CI and pre-commit quality gates, dependency graph checks, ESLint disable ratcheting, API baseline compatibility checks, and TypeScript refactoring scripts, rolling up `./hooks` and `./lib`.
 
 ## Interface
 
-- `[audit-ai-tool-releases.ts:main]` Standalone CLI auditing `@fission-ai/openspec` and `beads` versions against upstream releases.
+- `[audit-ai-tool-releases.ts:main]` Standalone CLI auditing `beads` versions against upstream releases.
 - `[audit-beads-conventions.ts]` CLI (`--check-issue`, `--report`) auditing Beads lint, labels, orphan issues, and closed-issue commit reachability.
 - `[check-api-compatibility.ts]` CLI (`--target`, `--update-baselines`, `--allow-breaking`, `--add-waiver`, `--protocol`, `--path`, `--reason`, `--ticket`, `--expires-at`, `--change-type`) checking GraphQL, Connect, WIT, and OpenRPC schema baselines.
 - `[check-built-package-exports.ts]` Standalone CLI verifying built `@canopy/graph-access`, `@canopy/plugin-host`, and `@canopy/api-adapter` exports.
@@ -14,14 +14,13 @@ This directory contains CLI release audits, CI and pre-commit quality gates, dep
 - `[check-commands.ts]` Standalone CLI forbidding `npm`, `npx`, and `node` in `package.json` scripts (excluding `preinstall`) and `.husky/*`.
 - `[check-dependency-graph.ts:readWorkspaces, deriveRuntimeEdges, deriveAllEdges, checkLeaf, checkCycle, extractMermaidBlock, parseMermaidGraph, resolveMermaidGraph, checkDocumentParity]` Workspace DAG, leaf-package, import-boundary, and `docs/architecture/bounded-contexts.md` parity checker.
 - `[check-eslint-disable-ceiling.ts:isExcludedPath, countDirectives, countTrackedDirectives]` (`--update`) ESLint disable directive ratchet against `tools/eslint-disable-baseline.json`.
-- `[check-openspec-changes.ts]` Standalone CLI validating staged OpenSpec changes.
 - `[check-plugin-artifacts.ts:PluginArtifactCheckResult, checkPluginArtifacts]` Verifies `apps/web/dist` main/worker module metadata isolation.
 - `[lint-workspaces.ts]` Runs `eslint --cache` sequentially per workspace and for `tools/scripts/eslint.config.mjs`.
 - `[refactor-ts.ts]` CLI (`--fix`, `--check`, `--dry-run`) running AST duplicate-type and unindexed-import analysis/rewriting.
 - `[verify-versions.ts]` Verifies `engines.bun` vs `mise.toml` and dependency version uniformity across manifests.
 - Subdirectories:
-  - [hooks](./hooks/README.md) — `PostToolUse` Bun hooks for formatting/linting and OpenSpec change validation.
-  - [lib](./lib/README.md) — Reusable TypeScript utilities for API compatibility, Beads audits, OpenSpec validation, import boundaries, and AST refactoring.
+  - [hooks](./hooks/README.md) — `PostToolUse` Bun hook for formatting and linting.
+  - [lib](./lib/README.md) — Reusable TypeScript utilities for API compatibility, Beads audits, import boundaries, and AST refactoring.
 
 ## Invariants
 
@@ -37,7 +36,7 @@ This directory contains CLI release audits, CI and pre-commit quality gates, dep
 - `[audit-beads-conventions.ts]` Spawns `git`, `bd`, and (with `--report`) `gh` subprocesses.
 - `[check-api-compatibility.ts]` Writes `approved-breaking-changes.json` (`--add-waiver`) and baseline schema files (`--update-baselines`).
 - `[check-eslint-disable-ceiling.ts]`, `[refactor-ts.ts]` Mutate `tools/eslint-disable-baseline.json` (`--update`) or TypeScript source files (`--fix`).
-- `[check-ci-tooling.ts]`, `[check-openspec-changes.ts]`, `[lint-workspaces.ts]` Spawn `git` and `eslint` subprocesses and exit `1` on violations.
+- `[check-ci-tooling.ts]`, `[lint-workspaces.ts]` Spawn `git` and `eslint` subprocesses and exit `1` on violations.
 
 ## Verification
 

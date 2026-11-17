@@ -41,9 +41,7 @@ Those definitions can resolve to supported WASM plugin components or application
 Content remains independent of the selected presentation, so different queries and views can present the same knowledge differently.
 A review dashboard can therefore be a query-driven view rather than a new core feature for each dashboard variation.
 
-The existing [view-rendering specification](../../openspec/specs/view-rendering/spec.md) defines the view resolution cascade, native and WASM dispatch, and recursive delegation.
-The [content-rendering specification](../../openspec/specs/content-rendering-plugin/spec.md) defines graph-resident plugin lookup and execution.
-The [sandboxed rendering specification](../../openspec/specs/sandboxed-iframe-rendering/spec.md) defines interactive isolation.
+View resolution cascades, native and WASM dispatch, recursive delegation, graph-resident plugin lookup, and interactive iframe isolation are governed by `docs/architecture/canopy-v0-architecture.md` and the owning package `README.md` contracts.
 Graph-defined behavior does not bypass host capability checks or sandbox boundaries.
 The extent of graph-defined application composition, supported component kinds, and the remaining application shell are design questions; these specifications do not establish that every UI element is already graph-defined.
 
@@ -89,7 +87,7 @@ Explain relevant write/read paths, historical behavior, concurrent behavior, and
 Link to authoritative specifications instead of copying their requirements into every design.
 When sources disagree, identify the conflict explicitly; do not silently turn a client implementation or historical proposal into a core invariant.
 Historical archived designs remain records of their decisions.
-Changes to normative behavior require the project's OpenSpec proposal and adversarial-review process.
+Changes to normative behavior are tracked through `docs/architecture/`, EGM `README.md` contracts, and Beads issues.
 
 ## Concrete interpretation examples
 
@@ -99,7 +97,7 @@ A user selects a view for a node or its type.
 The rendering application resolves the graph's view and renderer definitions and invokes the supported native or WASM renderer.
 Child content can resolve its own presentation through the same mechanism.
 The model supports extending presentation through definitions and plugins without adding a hardcoded content-type branch for each new format.
-See the [view-rendering specification](../../openspec/specs/view-rendering/spec.md) for the current contract.
+See `docs/architecture/canopy-v0-architecture.md` and the owning package `README.md` contracts for the current view-rendering contract.
 
 ### An agent proposes knowledge
 
@@ -107,7 +105,7 @@ An agent uses an access surface to submit domain operations.
 The operations retain the same validation, event-log, and projection semantics used by other clients.
 Whether the agent works in a separate graph, a draft, or a staging projection is unresolved.
 An approval policy could route proposed additions for review, but its interception point and publication semantics require design.
-Existing [draft sessions](../../openspec/specs/draft-session/spec.md) are a relevant contract to assess, not proof that the broader graph-sharing model is settled.
+Existing draft sessions are a relevant contract to assess, not proof that the broader graph-sharing model is settled.
 
 ### A review dashboard
 
@@ -143,14 +141,12 @@ CRDT exploration motivates revisiting concurrency semantics, but does not overri
 
 ## Design consistency follow-up
 
-The active-design audit covered all 20 non-archived design artifacts present during this documentation pass.
-Existing core/client separation is particularly clear in [graph API access](../../openspec/specs/graph-api-access/spec.md), [indexed reads](../../openspec/specs/indexed-read-model/spec.md), and [runtime WebClip type authoring](../../openspec/specs/web-clip-capture/spec.md).
-The following discrepancies require contract review, not editorial assumptions:
+The following architectural discrepancies remain under Track C/D review, not editorial assumptions:
 
-- [View rendering](../../openspec/specs/view-rendering/spec.md) selects render tiers using declared capability, while [content rendering](../../openspec/specs/content-rendering-plugin/spec.md) requires effective granted capability
-- Rendering specifications use both `Renderer` and `RendererDefinition` without consistently explaining the distinction
-- [Draft sessions](../../openspec/specs/draft-session/spec.md) require distinct revisions for distinct states while defining the revision as maximum event ID; different event sets can share that maximum
-- [Type authoring](../../openspec/specs/type-authoring/spec.md) uses singular event-return wording while the [default-view design](../../openspec/changes/auto-default-view-on-type-creation/design.md) describes plural `GraphResult.events`; change lifecycle must be checked before reconciling them
+- View rendering tier selection vs. effective granted capability
+- Consistent distinction between `View` and `Plugin` / renderer definitions
+- Draft session revision identity vs. `hlcTimestamp` / `commitSeq`
+- Type/Shape authoring event-return semantics
 
 Archived designs retain their historical meaning.
 Broader application composition, time-travel dimensions, virtual graphs, and complete memory semantics remain design work rather than implemented guarantees.

@@ -3,12 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const packageJsonPath = path.join(__dirname, '../package.json');
 const miseTomlPath = path.join(__dirname, '../mise.toml');
-
-type PackageJson = Readonly<{
-  devDependencies?: Readonly<Record<string, string>>;
-}>;
 
 type ToolAuditResult = Readonly<{
   name: string;
@@ -21,31 +16,18 @@ type ToolAuditResult = Readonly<{
 const cleanVersion = (version: string): string => version.replace(/^[v^~]/, '');
 
 function readConfiguredVersions(): Readonly<{
-  openSpec: string;
   beads: string;
 }> {
-  const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8')) as PackageJson;
   const miseToml = fs.readFileSync(miseTomlPath, 'utf8');
 
-  const openSpecVersion = packageJson.devDependencies?.['@fission-ai/openspec'] ?? 'unknown';
   const miseBeadsMatch = miseToml.match(
     /["']?(?:github:gastownhall\/)?beads["']?\s*=\s*["']?([^"'\n]+)["']?/,
   );
   const beadsVersion = miseBeadsMatch?.[1] ?? 'unknown';
 
   return {
-    openSpec: cleanVersion(openSpecVersion),
     beads: cleanVersion(beadsVersion),
   };
-}
-
-async function fetchLatestOpenSpecVersion(): Promise<string> {
-  const response = await fetch('https://registry.npmjs.org/@fission-ai/openspec/latest');
-  if (!response.ok) {
-    throw new Error(`Failed to fetch OpenSpec version: ${response.statusText}`);
-  }
-  const data = (await response.json()) as Readonly<{ version?: string }>;
-  return data.version ? cleanVersion(data.version) : 'unknown';
 }
 
 async function fetchLatestBeadsVersion(): Promise<string> {
@@ -100,18 +82,13 @@ async function main(): Promise<boolean> {
 
   const configured = readConfiguredVersions();
 
-  const openSpecResult = await auditTool(
-    'OpenSpec (@fission-ai/openspec)',
-    configured.openSpec,
-    fetchLatestOpenSpecVersion,
-  );
   const beadsResult = await auditTool(
     'Beads (gastownhall/beads)',
     configured.beads,
     fetchLatestBeadsVersion,
   );
 
-  const results: readonly ToolAuditResult[] = [openSpecResult, beadsResult];
+  const results: readonly ToolAuditResult[] = [beadsResult];
   const lines = results.map(formatResult);
 
   // eslint-disable-next-line functional/no-loop-statements -- logging output lines
