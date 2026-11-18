@@ -118,32 +118,26 @@ describe('Mutation payload types', () => {
       id: asNodeId('node-1'),
       type: asTypeId('doc'),
       properties: { title: 'Test Node' },
-      expectedSequence: 1,
     };
     expect(payload.id).toBe(asNodeId('node-1'));
     expect(payload.type).toBe(asTypeId('doc'));
     expect(payload.properties.title).toBe('Test Node');
-    expect(payload.expectedSequence).toBe(1);
   });
 
   test('constructs valid NodeUpdatePropertiesPayload', () => {
     const payload: NodeUpdatePropertiesPayload = {
       id: asNodeId('node-1'),
       properties: { title: 'Updated Title' },
-      expectedSequence: 2,
     };
     expect(payload.id).toBe(asNodeId('node-1'));
     expect(payload.properties.title).toBe('Updated Title');
-    expect(payload.expectedSequence).toBe(2);
   });
 
   test('constructs valid NodeDeletePayload', () => {
     const payload: NodeDeletePayload = {
       id: asNodeId('node-1'),
-      expectedSequence: 3,
     };
     expect(payload.id).toBe(asNodeId('node-1'));
-    expect(payload.expectedSequence).toBe(3);
   });
 
   test('constructs valid EdgeCreatePayload', () => {
@@ -153,23 +147,19 @@ describe('Mutation payload types', () => {
       source: asNodeId('node-1'),
       target: asNodeId('node-2'),
       properties: { weight: 1 },
-      expectedSequence: 1,
     };
     expect(payload.id).toBe(asEdgeId('edge-1'));
     expect(payload.type).toBe(asTypeId('references'));
     expect(payload.source).toBe(asNodeId('node-1'));
     expect(payload.target).toBe(asNodeId('node-2'));
     expect(payload.properties?.weight).toBe(1);
-    expect(payload.expectedSequence).toBe(1);
   });
 
   test('constructs valid EdgeDeletePayload', () => {
     const payload: EdgeDeletePayload = {
       id: asEdgeId('edge-1'),
-      expectedSequence: 4,
     };
     expect(payload.id).toBe(asEdgeId('edge-1'));
-    expect(payload.expectedSequence).toBe(4);
   });
 
   test('constructs valid MutationResultPayload', () => {
@@ -225,12 +215,11 @@ describe('Event Streaming Payload Definitions', () => {
       maxReplayCount: 50,
     };
     const replayPayload: ReplayRequestPayload = {
-      tenantId: 'tenant-1',
       graphId: 'graph-1',
       lastSeenEventId: 'evt-10',
       maxReplayCount: 20,
     };
     expect(options.bufferCapacity).toBe(100);
-    expect(replayPayload.tenantId).toBe('tenant-1');
+    expect(replayPayload.graphId).toBe('graph-1');
   });
 });

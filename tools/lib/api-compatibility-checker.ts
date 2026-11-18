@@ -3,7 +3,7 @@ import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export interface Violation {
-  readonly protocol: 'wit' | 'ipc';
+  readonly protocol: 'wit';
   readonly changeType: string;
   readonly path: string;
   readonly description: string;
@@ -13,7 +13,7 @@ export interface Violation {
 
 export interface Waiver {
   readonly id: string;
-  readonly protocol: 'wit' | 'ipc' | 'all';
+  readonly protocol: 'wit' | 'all';
   readonly path: string;
   readonly changeType: string;
   readonly reason: string;
@@ -32,11 +32,9 @@ interface CompatibilityResult {
 }
 
 export interface CheckOptions {
-  readonly target?: 'wit' | 'ipc' | 'all';
+  readonly target?: 'wit' | 'all';
   readonly currentWit?: string;
-  readonly currentIpc?: string;
   readonly overrideWit?: string;
-  readonly overrideIpc?: string;
   readonly overrideWaivers?: readonly Waiver[];
 }
 
@@ -75,175 +73,11 @@ const checkWit = (liveSchema: string, baselineSchema?: string): readonly Violati
   return [...violations1, ...violations2];
 };
 
-interface OpenRpcParameter {
-  readonly name: string;
-  readonly required?: boolean;
-  readonly schema?: unknown;
-}
-
-interface OpenRpcResultSchema {
-  readonly properties?: Readonly<Record<string, unknown>>;
-  readonly required?: readonly string[];
-  readonly type?: string;
-}
-
-interface OpenRpcResult {
-  readonly name?: string;
-  readonly schema?: OpenRpcResultSchema;
-}
-
-interface OpenRpcMethod {
-  readonly name: string;
-  readonly params?: readonly OpenRpcParameter[];
-  readonly result?: OpenRpcResult;
-  readonly paramStructure?: string;
-}
-
-interface OpenRpcError {
-  readonly code: number;
-  readonly message: string;
-}
-
-interface OpenRpcSpec {
-  readonly openrpc?: string;
-  readonly info?: Readonly<{ title?: string; version?: string }>;
-  readonly methods?: readonly OpenRpcMethod[];
-  readonly errors?: readonly OpenRpcError[];
-}
-
-const parseOpenRpc = (jsonString: string): OpenRpcSpec | undefined => {
-  // eslint-disable-next-line functional/no-try-statements -- Safe JSON parsing fallback for OpenRPC specifications
-  try {
-    const cleaned = jsonString.replace(/^\/\*[\s\S]*?\*\/\s*/, '');
-    return JSON.parse(cleaned) as OpenRpcSpec;
-  } catch {
-    return undefined;
-  }
-};
-
-const checkIpcMethodParameters = (bm: OpenRpcMethod, lm: OpenRpcMethod): readonly Violation[] => {
-  const baselineParameters = bm.params ?? [];
-  const liveParameters = lm.params ?? [];
-
-  return baselineParameters.flatMap((bp): readonly Violation[] => {
-    const lp = liveParameters.find((p) => p.name === bp.name);
-    if (!lp) {
-      return [
-        {
-          protocol: 'ipc',
-          changeType: 'PARAM_REMOVAL',
-          path: `${bm.name}.${bp.name}`,
-          description: `Parameter ${bp.name} removed from method ${bm.name}`,
-          snippet: `-  ${bm.name}(${bp.name})\n`,
-        },
-      ];
-    }
-    if (!bp.required && lp.required) {
-      return [
-        {
-          protocol: 'ipc',
-          changeType: 'PARAM_TIGHTENING',
-          path: `${bm.name}.${bp.name}`,
-          description: `Parameter ${bp.name} in method ${bm.name} changed from optional to required`,
-          snippet: `-  ${bp.name}: optional\n+  ${bp.name}: required\n`,
-        },
-      ];
-    }
-    return [];
-  });
-};
-
-const checkIpcMethodResult = (bm: OpenRpcMethod, lm: OpenRpcMethod): readonly Violation[] => {
-  const bmProperties = bm.result?.schema?.properties;
-  if (!bmProperties) return [];
-
-  const lmProperties = lm.result?.schema?.properties ?? {};
-  return Object.keys(bmProperties).flatMap((propertyKey): readonly Violation[] => {
-    if (!Object.prototype.hasOwnProperty.call(lmProperties, propertyKey)) {
-      return [
-        {
-          protocol: 'ipc',
-          changeType: 'RESULT_PROPERTY_REMOVAL',
-          path: `${bm.name}.result.${propertyKey}`,
-          description: `Result property ${propertyKey} removed from method ${bm.name}`,
-          snippet: `-  ${bm.name}.result.${propertyKey}\n`,
-        },
-      ];
-    }
-    return [];
-  });
-};
-
-const checkIpcMethods = (
-  baselineMethods: readonly OpenRpcMethod[],
-  liveMethods: readonly OpenRpcMethod[],
-): readonly Violation[] => {
-  return baselineMethods.flatMap((bm): readonly Violation[] => {
-    const lm = liveMethods.find((m) => m.name === bm.name);
-    if (!lm) {
-      return [
-        {
-          protocol: 'ipc',
-          changeType: 'METHOD_REMOVAL',
-          path: bm.name,
-          description: `Method ${bm.name} removed from IPC schema`,
-          snippet: `-  ${bm.name}\n`,
-        },
-      ];
-    }
-
-    const parameterViolations = checkIpcMethodParameters(bm, lm);
-    const resultViolations = checkIpcMethodResult(bm, lm);
-    return [...parameterViolations, ...resultViolations];
-  });
-};
-
-const checkIpcErrors = (
-  baselineErrors: readonly OpenRpcError[],
-  liveErrors: readonly OpenRpcError[],
-): readonly Violation[] => {
-  return baselineErrors.flatMap((be): readonly Violation[] => {
-    const hasError = liveErrors.some((errorItem) => errorItem.code === be.code);
-    if (!hasError) {
-      return [
-        {
-          protocol: 'ipc',
-          changeType: 'ERROR_CODE_REMOVAL',
-          path: `Error.${be.code}`,
-          description: `Error code ${be.code} (${be.message}) removed from IPC schema`,
-          snippet: `-  ${be.code}: ${be.message}\n`,
-        },
-      ];
-    }
-    return [];
-  });
-};
-
-export const checkIpc = (liveSchema: string, baselineSchema?: string): readonly Violation[] => {
-  if (!baselineSchema) return [];
-
-  const baseline = parseOpenRpc(baselineSchema);
-  const live = parseOpenRpc(liveSchema);
-
-  if (!baseline || !live) return [];
-
-  const methodViolations = checkIpcMethods(baseline.methods ?? [], live.methods ?? []);
-  const errorViolations = checkIpcErrors(baseline.errors ?? [], live.errors ?? []);
-
-  return [...methodViolations, ...errorViolations];
-};
-
 const checkerDirectory = path.dirname(fileURLToPath(import.meta.url));
-const BASELINES_DIR = path.resolve(checkerDirectory, '../../packages/api-adapter/schema-baselines');
 const PLUGIN_HOST_BASELINES_DIR = path.resolve(
   checkerDirectory,
   '../../packages/plugin-host/schema-baselines',
 );
-
-const readBaseline = (filename: string): string | undefined => {
-  const baselinePath = path.join(BASELINES_DIR, filename);
-  return fs.existsSync(baselinePath) ? fs.readFileSync(baselinePath, 'utf8') : undefined;
-};
 
 export const checkApiCompatibility = (options?: CheckOptions): CompatibilityResult => {
   const waivers = options?.overrideWaivers ?? [];
@@ -251,17 +85,13 @@ export const checkApiCompatibility = (options?: CheckOptions): CompatibilityResu
   const now = '2026-07-25';
 
   const witLive = options?.overrideWit ?? options?.currentWit ?? '';
-  const ipcLive = options?.overrideIpc ?? options?.currentIpc ?? '';
 
   const witBaseline =
     target === 'all' || target === 'wit'
       ? fs.readFileSync(path.join(PLUGIN_HOST_BASELINES_DIR, 'plugin.wit'), 'utf8')
       : undefined;
-  const ipcBaseline = readBaseline('ipc-openrpc.json');
 
-  const violations3 = target === 'all' || target === 'wit' ? checkWit(witLive, witBaseline) : [];
-  const violations4 = target === 'all' || target === 'ipc' ? checkIpc(ipcLive, ipcBaseline) : [];
-  const violations = [...violations3, ...violations4];
+  const violations = target === 'all' || target === 'wit' ? checkWit(witLive, witBaseline) : [];
 
   const expiredWaivers = waivers.filter((w) => w.expiresAt < now);
 

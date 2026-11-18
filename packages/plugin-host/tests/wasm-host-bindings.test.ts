@@ -148,7 +148,6 @@ describe('WASM WIT Host Import Bindings', () => {
       hostBindings.events.replayEvents(
         'read:events',
         JSON.stringify({
-          tenantId: '',
           graphId,
           lastSeenEventId: '',
           maxReplayCount: 100,

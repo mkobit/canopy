@@ -2,7 +2,7 @@
 
 ## Overview
 
-The `@canopy/graph-access` package provides the typed request/response contracts, tenant-isolated query/traversal/mutation handlers, and live/replay event stream handlers over `@canopy/graph` and `@canopy/queries`.
+The `@canopy/graph-access` package provides the typed request/response contracts, bounded query/traversal/mutation handlers, and live/replay event stream handlers over `@canopy/graph` and `@canopy/queries`.
 
 ## Subdirectories & Boundaries
 

@@ -55,7 +55,7 @@ describe('Mutation execution handlers', () => {
     const request = createGraphAccessRequest('req-2', context, {
       id: asNodeId('n1'),
       type: asTypeId('doc'),
-      properties: { title: 'My Document', tenantId: 't1' },
+      properties: { title: 'My Document' },
     });
 
     const result = await executeCreateNode(request);
@@ -65,46 +65,6 @@ describe('Mutation execution handlers', () => {
       expect(result.value.properties.title).toBe('My Document');
     }
     expect(session.graph().nodes.has(asNodeId('n1'))).toBe(true);
-  });
-
-  test('executeCreateNode enforces tenantId match when authContext is set', async () => {
-    const { session } = await setupSessionContext();
-    const context = createGraphAccessContext({
-      graph: session.graph(),
-      session,
-      authContext: { tenantId: 't1' },
-    });
-    const request = createGraphAccessRequest('req-3', context, {
-      id: asNodeId('n2'),
-      type: asTypeId('doc'),
-      properties: { title: 'Doc', tenantId: 't2' },
-    });
-
-    const result = await executeCreateNode(request);
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.error.category).toBe('FORBIDDEN');
-    }
-  });
-
-  test('executeCreateNode automatically attaches tenantId when authContext is active', async () => {
-    const { session } = await setupSessionContext();
-    const context = createGraphAccessContext({
-      graph: session.graph(),
-      session,
-      authContext: { tenantId: 't1' },
-    });
-    const request = createGraphAccessRequest('req-3b', context, {
-      id: asNodeId('n2b'),
-      type: asTypeId('doc'),
-      properties: { title: 'Doc' },
-    });
-
-    const result = await executeCreateNode(request);
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.value.properties.tenantId).toBe('t1');
-    }
   });
 
   test('executeCreateNode rejects duplicate node ID with CONCURRENCY_CONFLICT', async () => {
@@ -172,41 +132,6 @@ describe('Mutation execution handlers', () => {
     }
   });
 
-  test('executeUpdateNodeProperties fails with NOT_FOUND when tenantId does not match', async () => {
-    const { session } = await setupSessionContext();
-    const context1 = createGraphAccessContext({
-      graph: session.graph(),
-      session,
-      authContext: { tenantId: 't1' },
-    });
-
-    await executeCreateNode(
-      createGraphAccessRequest('req-tenant-setup', context1, {
-        id: asNodeId('tenant-node'),
-        type: asTypeId('doc'),
-        properties: { title: 'Title' },
-      }),
-    );
-
-    const context2 = createGraphAccessContext({
-      graph: session.graph(),
-      session,
-      authContext: { tenantId: 't2' },
-    });
-
-    const result = await executeUpdateNodeProperties(
-      createGraphAccessRequest('req-tenant-update', context2, {
-        id: asNodeId('tenant-node'),
-        properties: { title: 'Hacked Title' },
-      }),
-    );
-
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.error.category).toBe('NOT_FOUND');
-    }
-  });
-
   test('executeCreateEdge connects source and target nodes', async () => {
     const { session } = await setupSessionContext();
     const context = createGraphAccessContext({ graph: session.graph(), session });
@@ -259,50 +184,6 @@ describe('Mutation execution handlers', () => {
     expect(resultEdge.ok).toBe(false);
     if (!resultEdge.ok) {
       expect(resultEdge.error.category).toBe('NOT_FOUND');
-    }
-  });
-
-  test('executeCreateEdge fails if tenantId does not match source or target node', async () => {
-    const { session } = await setupSessionContext();
-    const contextT1 = createGraphAccessContext({
-      graph: session.graph(),
-      session,
-      authContext: { tenantId: 't1' },
-    });
-
-    await executeCreateNode(
-      createGraphAccessRequest('req-edge-t1', contextT1, {
-        id: asNodeId('src-t1'),
-        type: asTypeId('doc'),
-        properties: {},
-      }),
-    );
-
-    const contextT2 = createGraphAccessContext({
-      graph: session.graph(),
-      session,
-      authContext: { tenantId: 't2' },
-    });
-
-    await executeCreateNode(
-      createGraphAccessRequest('req-edge-t2', contextT2, {
-        id: asNodeId('tgt-t2'),
-        type: asTypeId('doc'),
-        properties: {},
-      }),
-    );
-
-    const resultCross = await executeCreateEdge(
-      createGraphAccessRequest('req-edge-cross', contextT1, {
-        type: asTypeId('links'),
-        source: asNodeId('src-t1'),
-        target: asNodeId('tgt-t2'),
-      }),
-    );
-
-    expect(resultCross.ok).toBe(false);
-    if (!resultCross.ok) {
-      expect(resultCross.error.category).toBe('NOT_FOUND');
     }
   });
 

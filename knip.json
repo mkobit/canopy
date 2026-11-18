@@ -22,9 +22,6 @@
     },
     "apps/cli": {
       "project": ["src/**/*.ts"]
-    },
-    "apps/daemon": {
-      "project": ["src/**/*.ts"]
     }
   }
 }

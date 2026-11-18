@@ -51,18 +51,15 @@ export type NodeCreatePayload = Readonly<{
   id?: NodeId;
   type: TypeId;
   properties: Readonly<Record<string, PropertyValue>>;
-  expectedSequence?: number;
 }>;
 
 export type NodeUpdatePropertiesPayload = Readonly<{
   id: NodeId;
   properties: Readonly<Record<string, PropertyValue>>;
-  expectedSequence?: number;
 }>;
 
 export type NodeDeletePayload = Readonly<{
   id: NodeId;
-  expectedSequence?: number;
 }>;
 
 export type EdgeCreatePayload = Readonly<{
@@ -71,12 +68,10 @@ export type EdgeCreatePayload = Readonly<{
   source: NodeId;
   target: NodeId;
   properties?: Readonly<Record<string, PropertyValue>>;
-  expectedSequence?: number;
 }>;
 
 export type EdgeDeletePayload = Readonly<{
   id: EdgeId;
-  expectedSequence?: number;
 }>;
 
 export type MutationResultPayload = Readonly<{
@@ -132,7 +127,6 @@ export interface EventStreamOptions {
 }
 
 export interface ReplayRequestPayload {
-  readonly tenantId: string;
   readonly graphId: string;
   readonly lastSeenEventId: string;
   readonly maxReplayCount?: number;

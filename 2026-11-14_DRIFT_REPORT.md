@@ -1,8 +1,4 @@
-# EGM drift report (2026-11-14)
-
-## apps/web/src/components/graph/README.md
-
-No drift detected.
+# EGM drift report (2026-11-17)
 
 ## README.md
 
@@ -17,54 +13,6 @@ No drift detected.
 No drift detected.
 
 ## apps/cli/src/README.md
-
-No drift detected.
-
-## apps/cli/src/commands/README.md
-
-No drift detected.
-
-## apps/clip-host/README.md
-
-No drift detected.
-
-## apps/clip-host/src/README.md
-
-No drift detected.
-
-## apps/daemon/README.md
-
-No drift detected.
-
-## apps/daemon/src/README.md
-
-No drift detected.
-
-## apps/extension/README.md
-
-No drift detected.
-
-## apps/extension/scripts/README.md
-
-No drift detected.
-
-## apps/extension/src/README.md
-
-No drift detected.
-
-## apps/extension/src/background/README.md
-
-No drift detected.
-
-## apps/extension/src/content/README.md
-
-No drift detected.
-
-## apps/extension/src/popup/README.md
-
-No drift detected.
-
-## apps/extension/src/shared/README.md
 
 No drift detected.
 
@@ -89,6 +37,10 @@ No drift detected.
 No drift detected.
 
 ## apps/web/src/components/explorer/README.md
+
+No drift detected.
+
+## apps/web/src/components/graph/README.md
 
 No drift detected.
 
@@ -153,34 +105,6 @@ No drift detected.
 No drift detected.
 
 ## packages/README.md
-
-No drift detected.
-
-## packages/api-adapter/README.md
-
-No drift detected.
-
-## packages/api-adapter/src/README.md
-
-No drift detected.
-
-## packages/api-adapter/src/connect/README.md
-
-No drift detected.
-
-## packages/api-adapter/src/connect/handlers/README.md
-
-No drift detected.
-
-## packages/api-adapter/src/graphql/README.md
-
-No drift detected.
-
-## packages/api-adapter/src/graphql/resolvers/README.md
-
-No drift detected.
-
-## packages/api-adapter/src/ipc/README.md
 
 No drift detected.
 

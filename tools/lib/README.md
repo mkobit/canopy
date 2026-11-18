@@ -6,7 +6,7 @@ This directory contains five TypeScript utility modules supporting repository ch
 
 ## Interface
 
-- `[api-compatibility-checker.ts:Violation, Waiver, CheckOptions, checkIpc, checkApiCompatibility]` API baseline compatibility checker for Connect, GraphQL, OpenRPC, and WIT schemas.
+- `[api-compatibility-checker.ts:Violation, Waiver, CheckOptions, checkApiCompatibility]` API baseline compatibility checker for WASM WIT schemas.
 - `[beads-audit.ts:LintFinding, parseLintOutput, QueryIssueSummary, parseQueryOutput, parseIssueNumbers, FindingCheck, Finding, lintFindingsToReportFindings, queryFindingsToReportFindings, AuditResult, buildAuditResult, formatReportBody]` Beads audit parser and report builder.
 - `[beads-merge-check.ts:ClosedIssue, isCheckable, issueIdPattern, isReachable, DriftedIssue, findDriftedIssues, parseCommitMessages, parseClosedIssues]` Closed-bead commit reachability checker.
 - `[source-import-boundaries.ts:SourceAlias, SourceImportBoundary, SourceImportViolation, findForbiddenImportsInSource, readTypescriptAliases, checkSourceImportBoundaries]` Production source import boundary checker.
