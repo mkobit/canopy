@@ -1,24 +1,9 @@
 import { Command } from 'effect/cli';
 import { NodeRuntime, NodeServices } from '@effect/platform-node';
 import { Cause, Effect, Exit, Runtime } from 'effect';
-import { edgeCommand } from './commands/edge';
-import { eventsCommand } from './commands/events';
-import { nodeCommand } from './commands/node';
-import { queryCommand } from './commands/query';
-import { statusCommand } from './commands/status';
-import { typesCommand } from './commands/types';
 import { cliOutputLayer, runWithCliOutput, withExecutableErrorReporting } from './cli-output';
 
-export const rootCommand = Command.make('canopy').pipe(
-  Command.withSubcommands([
-    statusCommand,
-    nodeCommand,
-    edgeCommand,
-    typesCommand,
-    queryCommand,
-    eventsCommand,
-  ]),
-);
+export const rootCommand = Command.make('canopy');
 
 export const run = Command.run(rootCommand, {
   version: '0.1.0',

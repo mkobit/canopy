@@ -2,7 +2,7 @@
 
 ## Overview
 
-This directory implements the typed request/response contracts, error mapping, query/traversal handlers, session-backed mutation handlers, and live/replay event stream handlers for accessing Canopy graphs. It enforces tenant isolation, query depth/cost/limit bounds, and `Result`-based error handling across all operations.
+This directory implements the typed request/response contracts, error mapping, query/traversal handlers, session-backed mutation handlers, and live/replay event stream handlers for accessing Canopy graphs. It enforces query depth/cost/limit bounds and `Result`-based error handling across all operations.
 
 ## Interface
 
@@ -18,9 +18,9 @@ This directory implements the typed request/response contracts, error mapping, q
 
 - `[graph-access-context.ts:defaultGraphAccessLimits]` Defaults to `maxQueryDepth=10`, `maxQueryCost=1000`, `maxStreamBuffer=1000`.
 - `[event-stream-handlers.ts:createEventStreamSubscriber]` Defaults `bufferCapacity` to `100`, emits `'overflow_disconnect'` and closes on overflow, and emits `'end'` once on `close()`.
-- `[event-stream-handlers.ts:executeReplayEventStream]` Enforces `authContext.tenantId`, requires `eventLogStore` (`'VALIDATION_ERROR'`), defaults `maxReplayCount` to `1000`, and emits `'gap'` when unacknowledged events exceed `maxReplay`.
-- `[mutation-handlers.ts:*]` Require `context.session` (`'VALIDATION_ERROR'`), enforce `authContext.tenantId` isolation, reject duplicate IDs (`'CONCURRENCY_CONFLICT'`), and cascade `EdgeDeleted` events on `executeDeleteNode`.
-- `[query-handlers.ts:*]` Enforce `authContext.tenantId` on reads, cap `executeEdgeQuery` at `1000` edges, and clamp `executeGraphTraversal` to `maxQueryDepth` / `maxQueryCost` (`'RESOURCE_EXHAUSTED'` on cost overflow).
+- `[event-stream-handlers.ts:executeReplayEventStream]` Requires `eventLogStore` (`'VALIDATION_ERROR'`), defaults `maxReplayCount` to `1000`, and emits `'gap'` when unacknowledged events exceed `maxReplay`.
+- `[mutation-handlers.ts:*]` Require `context.session` (`'VALIDATION_ERROR'`), reject duplicate IDs (`'CONCURRENCY_CONFLICT'`), and cascade `EdgeDeleted` events on `executeDeleteNode`.
+- `[query-handlers.ts:*]` Cap `executeEdgeQuery` at `1000` edges, and clamp `executeGraphTraversal` to `maxQueryDepth` / `maxQueryCost` (`'RESOURCE_EXHAUSTED'` on cost overflow).
 
 ## Side Effects
 

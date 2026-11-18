@@ -2,7 +2,6 @@ const hasExport = (module: object, name: string): boolean => Object.hasOwn(modul
 
 const graphAccess = await import('@canopy/graph-access');
 const pluginHost = await import('@canopy/plugin-host');
-const apiAdapter = await import('@canopy/api-adapter');
 
 const required = [
   [graphAccess, 'createGraphAccessContext'],
@@ -12,34 +11,15 @@ const required = [
   [pluginHost, 'createWasmAdapter'],
   [pluginHost, 'executeSandboxedGuestPlugin'],
   [pluginHost, 'CANOPY_WIT_SPECIFICATION'],
-  [apiAdapter, 'createIpcServer'],
 ] as const;
 
-const removedApiAdapterExports = [
-  'buildGraphQLSchema',
-  'toGrpcStatus',
-  'createGraphAccessContext',
-  'createGraphAccessRequest',
-  'executeQuery',
-  'createWasmAdapter',
-  'executeSandboxedGuestPlugin',
-  'CANOPY_WIT_SPECIFICATION',
-] as const;
-
-const errors = [
-  ...required
-    .filter(([module, name]) => !hasExport(module, name))
-    .map(([, name]) => `Missing built public export ${name}`),
-  ...removedApiAdapterExports
-    .filter((name) => hasExport(apiAdapter, name))
-    .map((name) => `Removed export ${name} is still available from @canopy/api-adapter`),
-];
+const errors = required
+  .filter(([module, name]) => !hasExport(module, name))
+  .map(([, name]) => `Missing built public export ${name}`);
 
 if (errors.length > 0) {
   process.stderr.write(`${errors.join('\n')}\n`);
   process.exit(1);
 }
 
-process.stdout.write(
-  'Built graph-access, plugin-host, and api-adapter public exports resolve correctly.\n',
-);
+process.stdout.write('Built graph-access and plugin-host public exports resolve correctly.\n');

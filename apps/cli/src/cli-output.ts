@@ -15,29 +15,7 @@ interface CommandRow {
   readonly description: string;
 }
 
-const synopsisByPath: Readonly<Record<string, string>> = {
-  status: '[--socket-path text] [--json]',
-  node: '',
-  'node get': '[--socket-path text] [--json] --id text',
-  'node list': '[--socket-path text] [--json] [--type text] [--limit integer]',
-  'node create': '[--socket-path text] [--json] [--id text] --type text [--properties text]',
-  'node update': '[--socket-path text] [--json] --id text --properties text',
-  'node delete': '[--socket-path text] [--json] --id text',
-  edge: '',
-  'edge get': '[--socket-path text] [--json] --id text',
-  'edge list':
-    '[--socket-path text] [--json] [--type text] [--source text] [--target text] [--limit integer]',
-  'edge create':
-    '[--socket-path text] [--json] [--id text] --type text --source text --target text [--properties text]',
-  'edge delete': '[--socket-path text] [--json] --id text',
-  types: '',
-  'types list': '[--socket-path text] [--json] [--kind node | edge | all]',
-  'types get': '[--socket-path text] [--json] --id text',
-  query: '',
-  'query execute': '[--socket-path text] [--json] [--query text] [--steps text]',
-  events: '',
-  'events tail': '[--socket-path text] [--json] [--graph-id text] [--from-sequence integer]',
-};
+const synopsisByPath: Readonly<Record<string, string>> = {};
 
 const globalOptions = [
   {

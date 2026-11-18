@@ -105,7 +105,6 @@ describe('Event Catch-Up Replay Handler', () => {
     const firstEventId = allEvents[0]?.eventId ?? '';
 
     const replayResult = await executeReplayEventStream(context, {
-      tenantId: context.authContext?.tenantId ?? '',
       graphId: 'g1',
       lastSeenEventId: firstEventId,
     });
@@ -133,7 +132,6 @@ describe('Event Catch-Up Replay Handler', () => {
     }
 
     const replayResult = await executeReplayEventStream(context, {
-      tenantId: context.authContext?.tenantId ?? '',
       graphId: 'g1',
       lastSeenEventId: '00000000-0000-0000-0000-000000000000',
       maxReplayCount: 5,
@@ -147,26 +145,5 @@ describe('Event Catch-Up Replay Handler', () => {
     expect(replayResult.value).toHaveLength(1);
     expect(replayResult.value[0]?.kind).toBe('gap');
     expect(replayResult.value[0]?.reason).toContain('exceeds maximum replay threshold of 5');
-  });
-
-  it('rejects replay request if tenant boundary validation fails', async () => {
-    const { context, eventLogStore } = await setupSessionContext();
-    const contextWithTenant = createGraphAccessContext({
-      graph: context.graph,
-      ...(context.session && { session: context.session }),
-      eventLogStore,
-      authContext: { tenantId: 'tenant-a' },
-    });
-
-    const replayResult = await executeReplayEventStream(contextWithTenant, {
-      tenantId: 'tenant-b',
-      graphId: 'g1',
-      lastSeenEventId: 'evt-0',
-    });
-
-    expect(replayResult.ok).toBe(false);
-    if (!replayResult.ok) {
-      expect(replayResult.error.category).toBe('FORBIDDEN');
-    }
   });
 });

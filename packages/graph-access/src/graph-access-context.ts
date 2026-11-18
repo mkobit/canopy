@@ -1,7 +1,6 @@
 import type { EventLogStore, Graph, GraphSession } from '@canopy/graph';
 
 export type GraphAccessAuthContext = Readonly<{
-  tenantId?: string;
   userId?: string;
   roles?: readonly string[];
   scopes?: readonly string[];

@@ -19,7 +19,6 @@ describe('GraphAccessContext', () => {
   it('should preserve provided authContext and custom limits', () => {
     const graph = unwrap(createGraph(TEST_GRAPH_ID, 'Test Graph'));
     const authContext = {
-      tenantId: 'tenant-123',
       userId: 'user-456',
       roles: ['admin'],
       scopes: ['read', 'write'],

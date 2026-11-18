@@ -25,7 +25,7 @@ const convertPropertiesToMap = (
 export const executeCreateNode = async (
   request: GraphAccessRequest<NodeCreatePayload>,
 ): Promise<GraphAccessResponse<GraphAccessNodePayload>> => {
-  const { session, authContext } = request.context;
+  const { session } = request.context;
   if (!session) {
     return err(
       createGraphAccessError(
@@ -37,22 +37,6 @@ export const executeCreateNode = async (
 
   const { id, type, properties } = request.payload;
   const nodeId = id ?? createNodeId();
-
-  if (authContext?.tenantId) {
-    const payloadTenant = properties.tenantId;
-    if (payloadTenant !== undefined && payloadTenant !== authContext.tenantId) {
-      return err(
-        createGraphAccessError(
-          'FORBIDDEN',
-          `Cannot create node for tenant '${payloadTenant}' under active tenant '${authContext.tenantId}'`,
-        ),
-      );
-    }
-  }
-
-  const finalProperties: Readonly<Record<string, PropertyValue>> = authContext?.tenantId
-    ? { ...properties, tenantId: authContext.tenantId }
-    : properties;
 
   const currentGraph = session.graph();
   if (currentGraph.nodes.has(nodeId)) {
@@ -69,7 +53,7 @@ export const executeCreateNode = async (
     eventId,
     id: nodeId,
     nodeType: type,
-    properties: convertPropertiesToMap(finalProperties),
+    properties: convertPropertiesToMap(properties),
     timestamp: now,
     deviceId: currentGraph.metadata.modifiedBy,
   };
@@ -98,7 +82,7 @@ export const executeCreateNode = async (
 export const executeUpdateNodeProperties = async (
   request: GraphAccessRequest<NodeUpdatePropertiesPayload>,
 ): Promise<GraphAccessResponse<GraphAccessNodePayload>> => {
-  const { session, authContext } = request.context;
+  const { session } = request.context;
   if (!session) {
     return err(
       createGraphAccessError(
@@ -114,13 +98,6 @@ export const executeUpdateNodeProperties = async (
 
   if (!existingNode) {
     return err(createGraphAccessError('NOT_FOUND', `Node with ID ${id} not found`));
-  }
-
-  if (authContext?.tenantId) {
-    const existingTenant = existingNode.properties.get('tenantId');
-    if (existingTenant !== authContext.tenantId) {
-      return err(createGraphAccessError('NOT_FOUND', `Node with ID ${id} not found`));
-    }
   }
 
   const changesMap = convertPropertiesToMap(properties);
@@ -157,7 +134,7 @@ export const executeUpdateNodeProperties = async (
 export const executeDeleteNode = async (
   request: GraphAccessRequest<NodeDeletePayload>,
 ): Promise<GraphAccessResponse<MutationResultPayload>> => {
-  const { session, authContext } = request.context;
+  const { session } = request.context;
   if (!session) {
     return err(
       createGraphAccessError(
@@ -173,13 +150,6 @@ export const executeDeleteNode = async (
 
   if (!existingNode) {
     return err(createGraphAccessError('NOT_FOUND', `Node with ID ${id} not found`));
-  }
-
-  if (authContext?.tenantId) {
-    const existingTenant = existingNode.properties.get('tenantId');
-    if (existingTenant !== authContext.tenantId) {
-      return err(createGraphAccessError('NOT_FOUND', `Node with ID ${id} not found`));
-    }
   }
 
   const edgesToDelete = [...currentGraph.edges.values()].filter(
@@ -219,7 +189,7 @@ export const executeDeleteNode = async (
 export const executeCreateEdge = async (
   request: GraphAccessRequest<EdgeCreatePayload>,
 ): Promise<GraphAccessResponse<GraphAccessEdgePayload>> => {
-  const { session, authContext } = request.context;
+  const { session } = request.context;
   if (!session) {
     return err(
       createGraphAccessError(
@@ -241,15 +211,6 @@ export const executeCreateEdge = async (
   }
   if (!targetNode) {
     return err(createGraphAccessError('NOT_FOUND', `Target node with ID ${target} not found`));
-  }
-
-  if (authContext?.tenantId) {
-    if (sourceNode.properties.get('tenantId') !== authContext.tenantId) {
-      return err(createGraphAccessError('NOT_FOUND', `Source node with ID ${source} not found`));
-    }
-    if (targetNode.properties.get('tenantId') !== authContext.tenantId) {
-      return err(createGraphAccessError('NOT_FOUND', `Target node with ID ${target} not found`));
-    }
   }
 
   if (currentGraph.edges.has(edgeId)) {
@@ -294,7 +255,7 @@ export const executeCreateEdge = async (
 export const executeDeleteEdge = async (
   request: GraphAccessRequest<EdgeDeletePayload>,
 ): Promise<GraphAccessResponse<MutationResultPayload>> => {
-  const { session, authContext } = request.context;
+  const { session } = request.context;
   if (!session) {
     return err(
       createGraphAccessError(
@@ -310,13 +271,6 @@ export const executeDeleteEdge = async (
 
   if (!existingEdge) {
     return err(createGraphAccessError('NOT_FOUND', `Edge with ID ${id} not found`));
-  }
-
-  if (authContext?.tenantId) {
-    const sourceNode = currentGraph.nodes.get(existingEdge.source);
-    if (!sourceNode || sourceNode.properties.get('tenantId') !== authContext.tenantId) {
-      return err(createGraphAccessError('NOT_FOUND', `Edge with ID ${id} not found`));
-    }
   }
 
   const event: GraphEvent = {

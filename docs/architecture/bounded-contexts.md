@@ -1,6 +1,6 @@
 # Bounded contexts
 
-Canopy is split into eleven packages.
+Canopy is split into ten packages.
 Each owns a single bounded concept.
 Generic catch-all packages (`types`, `schema`, `api`) are not used.
 
@@ -18,10 +18,8 @@ graph TD
   storageHttp[@canopy/storage-http]
   graphAccess[@canopy/graph-access]
   pluginHost[@canopy/plugin-host]
-  apiAdapter[@canopy/api-adapter]
   web[apps/web]
   cli[apps/cli]
-  daemon[apps/daemon]
 
   queries --> graph
   settings --> graph
@@ -34,8 +32,6 @@ graph TD
   graphAccess --> queries
   pluginHost --> graph
   pluginHost --> graphAccess
-  apiAdapter --> graph
-  apiAdapter --> graphAccess
 
   web --> graph
   web --> queries
@@ -44,14 +40,6 @@ graph TD
   web --> storageIndexeddb
   web --> graphAccess
   web --> pluginHost
-  cli --> graph
-  cli --> storage
-  cli --> apiAdapter
-  daemon --> graph
-  daemon --> storage
-  daemon --> storageSqlite
-  daemon --> apiAdapter
-  daemon --> graphAccess
 ```
 
 `@canopy/graph` is the leaf and has no internal dependencies.
@@ -114,12 +102,6 @@ All mutations continue through `GraphSession.commit`.
 
 The WASM plugin execution host over `@canopy/graph-access` and `@canopy/graph`.
 Owns host bindings, capability validation, sandbox execution, fuel and memory limits, termination helpers, WIT error conversion, and the inline graph API WIT contract.
-
-### @canopy/api-adapter
-
-The transport and protocol adapter layer over `@canopy/graph-access` and `@canopy/graph`.
-Hosts the Unix-socket JSON-RPC IPC server (`createIpcServer`), including the `canopy.v1.draft.*` family that wraps `DraftSession` (Connect and GraphQL adapters purged; TypeSpec `canopy.v0` pending in Track B).
-Owns protocol-specific error translation and is consumed by `apps/cli` and `apps/daemon`.
 
 ## Cross-context ports
 

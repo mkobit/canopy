@@ -113,16 +113,6 @@ export async function executeReplayEventStream(
   context: GraphAccessContext,
   payload: ReplayRequestPayload,
 ): Promise<GraphAccessResponse<readonly EventStreamMessage[]>> {
-  const tenantId = context.authContext?.tenantId;
-  if (tenantId !== undefined && tenantId !== payload.tenantId) {
-    return err(
-      createGraphAccessError(
-        'FORBIDDEN',
-        `Tenant boundary mismatch: payload tenant '${payload.tenantId}' does not match context tenant '${tenantId}'`,
-      ),
-    );
-  }
-
   if (!context.eventLogStore) {
     return err(
       createGraphAccessError(

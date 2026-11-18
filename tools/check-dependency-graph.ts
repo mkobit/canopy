@@ -320,7 +320,6 @@ function main(): undefined {
   const resolved = resolveMermaidGraph(parsedGraph, workspaces);
 
   const forbiddenApiAdapterRoot = path.join(rootDirectory, 'packages/api-adapter');
-  const forbiddenPluginHostRoot = path.join(rootDirectory, 'packages/plugin-host');
   const sourceImportViolations = checkSourceImportBoundaries([
     {
       sourceRoot: path.join(rootDirectory, 'packages/graph-access/src'),
@@ -343,14 +342,6 @@ function main(): undefined {
       forbiddenPackage: '@canopy/api-adapter',
       forbiddenRoot: forbiddenApiAdapterRoot,
       aliases: readTypescriptAliases(path.join(rootDirectory, 'apps/web/tsconfig.json')),
-    },
-    {
-      sourceRoot: path.join(rootDirectory, 'packages/api-adapter/src'),
-      forbiddenPackage: '@canopy/plugin-host',
-      forbiddenRoot: forbiddenPluginHostRoot,
-      aliases: readTypescriptAliases(
-        path.join(rootDirectory, 'packages/api-adapter/tsconfig.json'),
-      ),
     },
   ]).map((violation) => ({
     kind: 'source-import' as const,

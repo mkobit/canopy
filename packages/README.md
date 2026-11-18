@@ -2,13 +2,12 @@
 
 ## Overview
 
-This directory groups the Canopy domain kernel, query engine, settings cascade, graph-access boundary, API adapters, WASM plugin host, and `EventLogStore` storage adapters.
+This directory groups the Canopy domain kernel, query engine, settings cascade, graph-access boundary, WASM plugin host, and `EventLogStore` storage adapters.
 
 ## Subdirectories & Boundaries
 
-- API Adapter: [api-adapter](./api-adapter/README.md) — `@canopy/api-adapter` Connect-RPC, GraphQL, and JSON-RPC 2.0 IPC transport adapters.
 - Graph: [graph](./graph/README.md) — `@canopy/graph` leaf domain kernel (branded IDs, Zod schemas, bootstrap, projection, indexes, sessions, validation, ops).
-- Graph Access: [graph-access](./graph-access/README.md) — `@canopy/graph-access` tenant-isolated query, traversal, mutation, and event-stream handlers.
+- Graph Access: [graph-access](./graph-access/README.md) — `@canopy/graph-access` bounded query, traversal, mutation, and event-stream handlers.
 - Plugin Host: [plugin-host](./plugin-host/README.md) — `@canopy/plugin-host` WIT specification, capability/tier validation, host bindings, and sandboxed/terminable WASM execution.
 - Queries: [queries](./queries/README.md) — `@canopy/queries` functional query pipeline DSL, dual indexed/scan-only engines, Cypher adapter, and stored query/view execution.
 - Settings: [settings](./settings/README.md) — `@canopy/settings` 5-level scoped settings cascade, `USER_SETTING` authoring, and 3-step `ViewDefinition` resolution.

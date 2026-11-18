@@ -8,8 +8,8 @@ This directory contains CLI release audits, CI and pre-commit quality gates, dep
 
 - `[audit-ai-tool-releases.ts:main]` Standalone CLI auditing `beads` versions against upstream releases.
 - `[audit-beads-conventions.ts]` CLI (`--check-issue`, `--report`) auditing Beads lint, labels, orphan issues, and closed-issue commit reachability.
-- `[check-api-compatibility.ts]` CLI (`--target`, `--update-baselines`, `--allow-breaking`, `--add-waiver`, `--protocol`, `--path`, `--reason`, `--ticket`, `--expires-at`, `--change-type`) checking GraphQL, Connect, WIT, and OpenRPC schema baselines.
-- `[check-built-package-exports.ts]` Standalone CLI verifying built `@canopy/graph-access`, `@canopy/plugin-host`, and `@canopy/api-adapter` exports.
+- `[check-api-compatibility.ts]` CLI (`--target`, `--update-baselines`, `--allow-breaking`, `--add-waiver`, `--protocol`, `--path`, `--reason`, `--ticket`, `--expires-at`, `--change-type`) checking WASM WIT schema baselines.
+- `[check-built-package-exports.ts]` Standalone CLI verifying built `@canopy/graph-access` and `@canopy/plugin-host` exports.
 - `[check-ci-tooling.ts:Violation, PinClassification, readMiseBunVersion, findSetupBunVersionPins, parseWorkflowEnvironment, resolvePinValue, classifyPin, checkWorkflowVersionConsistency, matchesGeneratedArtifact]` Workflow Bun pin and generated-artifact tracker.
 - `[check-commands.ts]` Standalone CLI forbidding `npm`, `npx`, and `node` in `package.json` scripts (excluding `preinstall`) and `.husky/*`.
 - `[check-dependency-graph.ts:readWorkspaces, deriveRuntimeEdges, deriveAllEdges, checkLeaf, checkCycle, extractMermaidBlock, parseMermaidGraph, resolveMermaidGraph, checkDocumentParity]` Workspace DAG, leaf-package, import-boundary, and `docs/architecture/bounded-contexts.md` parity checker.
@@ -24,7 +24,7 @@ This directory contains CLI release audits, CI and pre-commit quality gates, dep
 
 ## Invariants
 
-- `[check-dependency-graph.ts:checkLeaf]` `@canopy/graph` must declare zero `@canopy/*` dependencies or devDependencies; the internal workspace graph must be acyclic; `packages/graph-access/src`, `packages/plugin-host/src`, and `apps/web/src` must not import `@canopy/api-adapter`; `packages/api-adapter/src` must not import `@canopy/plugin-host`.
+- `[check-dependency-graph.ts:checkLeaf]` `@canopy/graph` must declare zero `@canopy/*` dependencies or devDependencies; the internal workspace graph must be acyclic; `packages/graph-access/src`, `packages/plugin-host/src`, and `apps/web/src` must not import `@canopy/api-adapter`.
 - `[check-eslint-disable-ceiling.ts:main]` Tracked `.ts`/`.tsx`/`.mjs` directive count must remain `<=` the ceiling in `tools/eslint-disable-baseline.json`.
 - `[check-ci-tooling.ts:GENERATED_ARTIFACT_PATTERNS]` No git-tracked file may match generated plugin-output patterns (`guest.js`, `plugin.wasm`, `/transpiled/`, `plugin-node.json`, `apps/web/src/plugin/types/`).
 - `[check-commands.ts:checkCommandString]` No `package.json` script (except `preinstall`) or `.husky/*` line may invoke `npm`, `npx`, or `node`.

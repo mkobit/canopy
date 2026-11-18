@@ -57,45 +57,23 @@ export const executeNodeQuery = (
   request: GraphAccessRequest<NodeQueryPayload>,
 ): GraphAccessResponse<readonly GraphAccessNodePayload[]> => {
   const graph = request.context.session?.graph() ?? request.context.graph;
-  const { authContext } = request.context;
 
   const { id, type, filter, sort, limit } = request.payload;
 
   if (id !== undefined) {
     const node = graph.nodes.get(id);
-    if (!node) {
-      return err(createGraphAccessError('NOT_FOUND', `Node not found: ${id}`));
-    }
-    if (authContext?.tenantId) {
-      const tenant = node.properties.get('tenantId');
-      if (tenant !== authContext.tenantId) {
-        return err(createGraphAccessError('NOT_FOUND', `Node not found: ${id}`));
-      }
-    }
-    return ok([mapNodeToPayload(node)]);
+    return node
+      ? ok([mapNodeToPayload(node)])
+      : err(createGraphAccessError('NOT_FOUND', `Node not found: ${id}`));
   }
 
   const baseSteps: readonly QueryStep[] = [{ kind: 'node-scan', type }];
-  const tenantStep: readonly QueryStep[] = authContext?.tenantId
-    ? [
-        {
-          kind: 'filter',
-          predicate: { property: 'tenantId', operator: 'eq', value: authContext.tenantId },
-        },
-      ]
-    : [];
   const filterStep: readonly QueryStep[] = filter ? [{ kind: 'filter', predicate: filter }] : [];
   const sortStep: readonly QueryStep[] = sort ? [{ kind: 'sort', sort }] : [];
   const limitStep: readonly QueryStep[] =
     limit !== undefined && limit > 0 ? [{ kind: 'limit', limit }] : [];
 
-  const steps: readonly QueryStep[] = [
-    ...baseSteps,
-    ...tenantStep,
-    ...filterStep,
-    ...sortStep,
-    ...limitStep,
-  ];
+  const steps: readonly QueryStep[] = [...baseSteps, ...filterStep, ...sortStep, ...limitStep];
 
   const queryResult = executeQueryEngine(graph, { steps });
   if (!queryResult.ok) {
@@ -111,21 +89,13 @@ export const executeEdgeQuery = (
   request: GraphAccessRequest<EdgeQueryPayload>,
 ): GraphAccessResponse<readonly GraphAccessEdgePayload[]> => {
   const graph = request.context.session?.graph() ?? request.context.graph;
-  const { authContext } = request.context;
   const { id, type, source, target, limit } = request.payload;
 
   if (id !== undefined) {
     const edge = graph.edges.get(id);
-    if (!edge) {
-      return err(createGraphAccessError('NOT_FOUND', `Edge not found: ${id}`));
-    }
-    if (authContext?.tenantId) {
-      const sourceNode = graph.nodes.get(edge.source);
-      if (!sourceNode || sourceNode.properties.get('tenantId') !== authContext.tenantId) {
-        return err(createGraphAccessError('NOT_FOUND', `Edge not found: ${id}`));
-      }
-    }
-    return ok([mapEdgeToPayload(edge)]);
+    return edge
+      ? ok([mapEdgeToPayload(edge)])
+      : err(createGraphAccessError('NOT_FOUND', `Edge not found: ${id}`));
   }
 
   const maxCap = limit !== undefined && limit > 0 ? Math.min(limit, 1000) : 1000;
@@ -136,13 +106,6 @@ export const executeEdgeQuery = (
       if (type && edge.type !== type) return false;
       if (source && edge.source !== source) return false;
       if (target && edge.target !== target) return false;
-
-      if (authContext?.tenantId) {
-        const sourceNode = graph.nodes.get(edge.source);
-        if (!sourceNode || sourceNode.properties.get('tenantId') !== authContext.tenantId) {
-          return false;
-        }
-      }
 
       return true;
     })
@@ -157,7 +120,6 @@ export const executePropertyLookup = (
   request: GraphAccessRequest<PropertyLookupPayload>,
 ): GraphAccessResponse<PropertyLookupResult> => {
   const graph = request.context.session?.graph() ?? request.context.graph;
-  const { authContext } = request.context;
   const { entityId, propertyKey } = request.payload;
 
   const node = graph.nodes.get(entityId as never);
@@ -166,19 +128,6 @@ export const executePropertyLookup = (
 
   if (!entity) {
     return err(createGraphAccessError('NOT_FOUND', `Entity not found: ${entityId}`));
-  }
-
-  if (authContext?.tenantId) {
-    if (node) {
-      if (node.properties.get('tenantId') !== authContext.tenantId) {
-        return err(createGraphAccessError('NOT_FOUND', `Entity not found: ${entityId}`));
-      }
-    } else if (edge) {
-      const sourceNode = graph.nodes.get(edge.source);
-      if (!sourceNode || sourceNode.properties.get('tenantId') !== authContext.tenantId) {
-        return err(createGraphAccessError('NOT_FOUND', `Entity not found: ${entityId}`));
-      }
-    }
   }
 
   if (propertyKey !== undefined) {
@@ -221,7 +170,6 @@ interface TraversalContext {
   readonly nodes: ReadonlyMap<string, Node>;
   readonly direction: 'in' | 'out' | 'both';
   readonly edgeType: TypeId | undefined;
-  readonly tenantId: string | undefined;
   readonly effectiveMaxCost: number;
 }
 
@@ -245,10 +193,8 @@ const stepSingleEdge = (
   }
 
   const nextNode = context.nodes.get(nextNodeId as never);
-  const isTenantMatch =
-    !context.tenantId || nextNode?.properties.get('tenantId') === context.tenantId;
 
-  if (!nextNode || !isTenantMatch) {
+  if (!nextNode) {
     return ok(accumulator);
   }
 
@@ -312,7 +258,7 @@ export const executeGraphTraversal = (
   request: GraphAccessRequest<TraversalQueryPayload>,
 ): GraphAccessResponse<GraphAccessTraversalPayload> => {
   const graph = request.context.session?.graph() ?? request.context.graph;
-  const { authContext, limits } = request.context;
+  const { limits } = request.context;
   const { startNodeIds, edgeType, direction = 'out', maxDepth, maxCost } = request.payload;
 
   if (!startNodeIds || startNodeIds.length === 0) {
@@ -328,13 +274,9 @@ export const executeGraphTraversal = (
     limits?.maxQueryCost ?? 1000,
   );
 
-  const initialValidNodes = startNodeIds.flatMap((id) => {
-    const node = graph.nodes.get(id);
-    if (!node) return [];
-    return authContext?.tenantId && node.properties.get('tenantId') !== authContext.tenantId
-      ? []
-      : { id, node };
-  });
+  const initialValidNodes = startNodeIds
+    .map((id) => ({ id, node: graph.nodes.get(id) }))
+    .filter((entry): entry is Readonly<{ id: NodeId; node: Node }> => entry.node !== undefined);
 
   const initialState: TraversalState = {
     visitedNodes: new Set(initialValidNodes.map((n) => n.id)),
@@ -349,7 +291,6 @@ export const executeGraphTraversal = (
     nodes: graph.nodes,
     direction,
     edgeType,
-    tenantId: authContext?.tenantId,
     effectiveMaxCost,
   };
 
