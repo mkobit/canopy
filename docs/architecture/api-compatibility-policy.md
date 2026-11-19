@@ -1,15 +1,15 @@
 # API Compatibility and Backward Breaking Change Policy
 
-This document defines the backward compatibility, deprecation lifecycle, and CI validation policies for Canopy API protocol surfaces.
+This document defines the backward and forward wire-compatibility, deprecation lifecycle, and CI validation policies for Canopy API protocol surfaces.
 
 ## Scope and protocol surfaces
 
-Canopy is transitioning from legacy multi-protocol adapters in `@canopy/api-adapter` to single-source versioned **TypeSpec** contracts under `canopy.v0` (see [Canopy v0 architecture](canopy-v0-architecture.md)):
+Canopy uses single-source versioned **TypeSpec** contracts under `packages/graph-access/typespec/main.tsp` (`canopy.v0`; see [Canopy v0 architecture](canopy-v0-architecture.md)):
 
-1. TypeSpec `canopy.v0` HTTP/RPC service contracts generating server routes and TypeScript client SDKs.
-2. WebAssembly Interface Type (WIT) specifications for sandboxed guest plugin host bindings (moving toward unified generation from TypeSpec).
+1. TypeSpec `canopy.v0` HTTP/RPC service contracts generating server routes (`CANOPY_V0_ROUTES`, `createCanopyV0ServerRouter`), in-process handlers, and the shared TypeScript client SDK (`createCanopyV0Client`).
+2. Unified WebAssembly Interface Type (WIT) specifications (`package canopy:graph;`) generated from TypeSpec for both server extension host bindings (`graph-plugin`, `server-extension-plugin`) and browser/client guest plugins (`wizard-plugin`, `render-plugin`).
 
-All protocol surfaces map to single-source kernel semantics provided by `@canopy/graph` and `@canopy/queries`.
+All protocol surfaces map to single-source kernel semantics provided by `@canopy/graph`, `@canopy/queries`, and `@canopy/graph-access`.
 
 ## Compatibility rules and change classification
 
@@ -17,49 +17,44 @@ All protocol surfaces map to single-source kernel semantics provided by `@canopy
 
 The following changes are backward compatible and may be introduced within minor or patch releases:
 
-- Adding new optional fields to GraphQL query or mutation payload types.
-- Adding new Protobuf message fields with unique, unused tag numbers.
-- Adding new WIT functions or non-conflicting interface definitions.
-- Adding new optional input arguments or parameters with default fallbacks.
-- Adding `@deprecated` annotations (GraphQL), `[deprecated = true]` options (Protobuf), or `/// @deprecated` doc comments (WIT).
-- Adding new canonical error codes within existing error response shapes.
+- Adding new namespaces or operations under `canopy.v0`.
+- Adding new optional fields (`field?: T`) to existing TypeSpec request or response models.
+- Adding new variants to TypeSpec enums explicitly annotated with `@extensible`.
+- Adding new WIT interfaces, worlds, or functions without altering existing function signatures.
+- Adding `@deprecated("...")` annotations on TypeSpec operations, models, scalars, or fields, or `/// @deprecated` doc comments on WIT declarations.
 
 ### Breaking changes
 
-The following changes alter existing contracts and are classified as breaking changes:
+The following changes alter existing contracts and are classified as backward or forward compatibility violations:
 
-- Removing or renaming types, interfaces, fields, RPC methods, or WIT functions.
-- Modifying field data types or scalar definitions across any transport.
-- Renaming Protobuf fields even if tag numbers are preserved, because Connect-Web JSON clients rely on field names.
-- Changing Protobuf field tag numbers or message package namespaces.
-- Changing GraphQL output field return types from non-null (`Type!`) to nullable (`Type`), which breaks client non-null assertions.
-- Changing GraphQL input arguments or input object fields from nullable to non-null (`Type!`).
-- Removing variants from WIT enums or parameters from WIT host functions.
-- Modifying internal JSON payload schemas passed across WASM WIT boundaries (`payload-json: string`).
+- Removing namespaces, models, enums, operations, or fields (`NAMESPACE_REMOVAL`, `MODEL_REMOVAL`, `OPERATION_REMOVAL`, `FIELD_REMOVAL`, `UNDEPRECATED_REMOVAL`).
+- Changing HTTP methods, route paths, or request/response model names on operations (`ROUTE_CHANGE`).
+- Changing field data types (`FIELD_TYPE_CHANGE`), tightening an optional field to required or adding a new required field to an existing model (`OPTIONAL_TO_REQUIRED`), or relaxing a required response field to optional (`REQUIRED_TO_OPTIONAL`).
+- Removing enum variants (`ENUM_VARIANT_REMOVAL`) or adding new variants to a closed response enum without `@extensible` (`ENUM_VARIANT_ADDED`).
+- Removing WIT interfaces, worlds, or functions (`INTERFACE_REMOVAL`, `WORLD_REMOVAL`, `FUNCTION_REMOVAL`) or modifying WIT function signatures (`SIGNATURE_CHANGE`).
+- Leaving generated contract/WIT/baseline files out of sync with `packages/graph-access/typespec/main.tsp` (`CODEGEN_DRIFT`).
 
 ## Deprecation lifecycle and grace period
 
-To prevent abrupt partner breakage, all field or endpoint removals must follow a managed deprecation runway:
+To prevent abrupt client or plugin breakage, all field or endpoint removals must follow a managed deprecation runway:
 
-1. A field or endpoint targeted for removal must first be annotated with deprecation metadata in its protocol definition:
-   - GraphQL: `@deprecated(reason: "...")`
-   - Protobuf: `option deprecated = true;`
-   - WIT: `/// @deprecated [Reason] [Target-Release]`
+1. A field or endpoint targeted for removal must first be annotated with `@deprecated("...")` in `packages/graph-access/typespec/main.tsp` (or `/// @deprecated [Reason] [Target-Release]` in WIT).
 2. The deprecation notice must remain active for at least one minor or major release cycle before removal.
-3. Direct removal of non-deprecated schema elements is prohibited and will be rejected by CI checks even if a waiver is provided.
+3. Direct removal of non-deprecated TypeSpec operations or fields (`UNDEPRECATED_REMOVAL`) is prohibited and is rejected by CI checks even if a waiver is provided.
 
 ## Schema baselines and snapshot storage
 
 Canonical schema snapshots are stored under `packages/plugin-host/schema-baselines/`:
 
-- `plugin.wit`: Baseline snapshot for WASM WIT specifications.
-- `approved-breaking-changes.json`: Declarative waiver manifest for approved breaking changes.
+- `canopy-v0-typespec.json`: Canonical TypeSpec IR snapshot emitted from `packages/graph-access/typespec/main.tsp`.
+- `plugin.wit`: Unified WASM WIT baseline (`package canopy:graph;`) emitted from TypeSpec.
+- `approved-breaking-changes.json`: Declarative waiver manifest for approved breaking changes (`protocol`: `"typespec" | "wit" | "all"`).
 
-All generated baseline files contain an explicit autogenerated header banner warning against manual modifications.
+All generated baseline files contain an explicit autogenerated header banner or comment warning against manual modifications.
 
 ## Managed escape hatch and breaking change waivers
 
-When a breaking change is intentional and scheduled for a major release, it must be declared in `packages/plugin-host/schema-baselines/approved-breaking-changes.json`:
+When a waivable breaking change is intentional and scheduled for a major release, it must be declared in `packages/plugin-host/schema-baselines/approved-breaking-changes.json`:
 
 ```json
 {
@@ -67,13 +62,13 @@ When a breaking change is intentional and scheduled for a major release, it must
   "waivers": [
     {
       "id": "WAIVER-2026-001",
-      "protocol": "wit",
-      "path": "host-queries.query-edges",
-      "changeType": "FUNCTION_REMOVAL",
-      "reason": "Replaced by unified canopy.v0 query capability",
+      "protocol": "typespec",
+      "path": "CanopyV0ActorKind.service",
+      "changeType": "ENUM_VARIANT_ADDED",
+      "reason": "Scheduled minor protocol expansion with updated client decoders",
       "author": "@mkobit",
       "expiresAt": "2026-09-01",
-      "ticket": "canopy-1dk.10"
+      "ticket": "canopy-anir.2.2"
     }
   ]
 }
@@ -82,16 +77,19 @@ When a breaking change is intentional and scheduled for a major release, it must
 ### Waiver verification rules in CI
 
 - If an unapproved breaking change is detected without a corresponding valid waiver entry, CI fails.
-- CI fails if a waiver entry has expired according to its `expiresAt` timestamp.
+- `UNDEPRECATED_REMOVAL` violations fail CI unconditionally regardless of waiver entries.
+- CI fails if a waiver entry has expired according to its `expiresAt` date.
 - CI fails if `approved-breaking-changes.json` contains stale or unused waivers that do not match active schema diffs.
 
 ## Automated CI verification tooling
 
-API compatibility is enforced automatically via `tools/check-api-compatibility.ts`:
+Codegen parity and API compatibility are enforced automatically via `tools/typespec-codegen.ts` and `tools/check-api-compatibility.ts`:
 
-- Run locally or in CI: `bun tools/check-api-compatibility.ts`
-- Update baselines after non-breaking changes: `bun tools/check-api-compatibility.ts --update-baselines`
-- Scope updates by protocol: `bun tools/check-api-compatibility.ts --update-baselines --target <wit|all>`
-- Add waiver helper: `bun tools/check-api-compatibility.ts --add-waiver --protocol <wit|all> --path <symbol> --reason "<reason>"`
+- Regenerate contracts and WIT artifacts: `bun run codegen:typespec`
+- Verify codegen determinism/drift: `bun run check:typespec-codegen`
+- Run compatibility checks locally or in CI: `bun run check:api-compatibility`
+- Update baselines after approved changes: `bun tools/check-api-compatibility.ts --update-baselines`
+- Scope updates by protocol: `bun tools/check-api-compatibility.ts --update-baselines --target <typespec|wit|all>`
+- Add waiver helper: `bun tools/check-api-compatibility.ts --add-waiver --protocol <typespec|wit|all> --path <symbol> --change-type <type> --reason "<reason>"`
 
-The compatibility check is executed automatically during `bun run lint` and in `.github/workflows/ci.yml`.
+Both `bun run check:typespec-codegen` and `bun run check:api-compatibility` execute automatically during `bun run lint` and in `.github/workflows/ci.yml`.

@@ -1,3 +1,6 @@
+export * from './canopy-v0-client';
+export * from './canopy-v0-contract';
+export * from './canopy-v0-server';
 export * from './event-stream-handlers';
 export * from './graph-access-context';
 export * from './graph-access-payloads';

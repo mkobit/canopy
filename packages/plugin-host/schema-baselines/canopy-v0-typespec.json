@@ -1,0 +1,2634 @@
+{
+  "serviceTitle": "Canopy v0 API",
+  "version": "0.0.0",
+  "scalars": [
+    {
+      "name": "GraphId",
+      "baseType": "string"
+    },
+    {
+      "name": "NodeId",
+      "baseType": "string"
+    },
+    {
+      "name": "EdgeId",
+      "baseType": "string"
+    },
+    {
+      "name": "ShapeId",
+      "baseType": "string"
+    },
+    {
+      "name": "PropertyTypeId",
+      "baseType": "string"
+    },
+    {
+      "name": "NamespaceId",
+      "baseType": "string"
+    },
+    {
+      "name": "EventId",
+      "baseType": "string"
+    },
+    {
+      "name": "BatchId",
+      "baseType": "string"
+    },
+    {
+      "name": "DraftId",
+      "baseType": "string"
+    },
+    {
+      "name": "BundleId",
+      "baseType": "string"
+    },
+    {
+      "name": "MigrationId",
+      "baseType": "string"
+    },
+    {
+      "name": "CommitSeq",
+      "baseType": "uint64"
+    },
+    {
+      "name": "HlcTimestamp",
+      "baseType": "string"
+    },
+    {
+      "name": "CapabilityToken",
+      "baseType": "string"
+    }
+  ],
+  "enums": [
+    {
+      "name": "CanopyV0ActorKind",
+      "extensible": false,
+      "members": [
+        {
+          "name": "user",
+          "value": "user"
+        },
+        {
+          "name": "agent",
+          "value": "agent"
+        },
+        {
+          "name": "plugin",
+          "value": "plugin"
+        },
+        {
+          "name": "workflow",
+          "value": "workflow"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0WriteConsistencyMode",
+      "extensible": false,
+      "members": [
+        {
+          "name": "unconditional",
+          "value": "unconditional"
+        },
+        {
+          "name": "entityCas",
+          "value": "entity-cas"
+        },
+        {
+          "name": "graphCas",
+          "value": "graph-cas"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0BatchOperationKind",
+      "extensible": false,
+      "members": [
+        {
+          "name": "createNode",
+          "value": "create-node"
+        },
+        {
+          "name": "updateNodeProperties",
+          "value": "update-node-properties"
+        },
+        {
+          "name": "deleteNode",
+          "value": "delete-node"
+        },
+        {
+          "name": "createEdge",
+          "value": "create-edge"
+        },
+        {
+          "name": "deleteEdge",
+          "value": "delete-edge"
+        },
+        {
+          "name": "registerShapeMigration",
+          "value": "register-shape-migration"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0Direction",
+      "extensible": false,
+      "members": [
+        {
+          "name": "in",
+          "value": "in"
+        },
+        {
+          "name": "out",
+          "value": "out"
+        },
+        {
+          "name": "both",
+          "value": "both"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0ViewBindingKind",
+      "extensible": false,
+      "members": [
+        {
+          "name": "standalone",
+          "value": "standalone"
+        },
+        {
+          "name": "shapeBound",
+          "value": "shape-bound"
+        },
+        {
+          "name": "openNode",
+          "value": "open-node"
+        },
+        {
+          "name": "entityBound",
+          "value": "entity-bound"
+        },
+        {
+          "name": "queryBound",
+          "value": "query-bound"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0SettingScope",
+      "extensible": false,
+      "members": [
+        {
+          "name": "node",
+          "value": "node"
+        },
+        {
+          "name": "shape",
+          "value": "shape"
+        },
+        {
+          "name": "namespace",
+          "value": "namespace"
+        },
+        {
+          "name": "global",
+          "value": "global"
+        },
+        {
+          "name": "default",
+          "value": "default"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0PropertyCardinality",
+      "extensible": false,
+      "members": [
+        {
+          "name": "one",
+          "value": "one"
+        },
+        {
+          "name": "many",
+          "value": "many"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0EntityKind",
+      "extensible": false,
+      "members": [
+        {
+          "name": "node",
+          "value": "node"
+        },
+        {
+          "name": "edge",
+          "value": "edge"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0MigrationStatus",
+      "extensible": false,
+      "members": [
+        {
+          "name": "registered",
+          "value": "registered"
+        },
+        {
+          "name": "buildingGreen",
+          "value": "building-green"
+        },
+        {
+          "name": "swapped",
+          "value": "swapped"
+        },
+        {
+          "name": "aborted",
+          "value": "aborted"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0DraftStatus",
+      "extensible": false,
+      "members": [
+        {
+          "name": "open",
+          "value": "open"
+        },
+        {
+          "name": "committed",
+          "value": "committed"
+        },
+        {
+          "name": "discarded",
+          "value": "discarded"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0StreamMessageKind",
+      "extensible": false,
+      "members": [
+        {
+          "name": "event",
+          "value": "event"
+        },
+        {
+          "name": "gap",
+          "value": "gap"
+        },
+        {
+          "name": "overflowDisconnect",
+          "value": "overflow_disconnect"
+        },
+        {
+          "name": "end",
+          "value": "end"
+        }
+      ]
+    }
+  ],
+  "models": [
+    {
+      "name": "CanopyV0PropertyEntry",
+      "namespaceName": "V0",
+      "fields": [
+        {
+          "name": "key",
+          "typeName": "string",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "valueJson",
+          "typeName": "string",
+          "optional": false,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0ActorProvenance",
+      "namespaceName": "V0",
+      "fields": [
+        {
+          "name": "principalId",
+          "typeName": "string",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "actorId",
+          "typeName": "string",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "actorKind",
+          "typeName": "CanopyV0ActorKind",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "deviceId",
+          "typeName": "string",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "hlcTimestamp",
+          "typeName": "HlcTimestamp",
+          "optional": false,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0ReadConsistency",
+      "namespaceName": "V0",
+      "fields": [
+        {
+          "name": "minCommitSeq",
+          "typeName": "CommitSeq",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "atCommitSeq",
+          "typeName": "CommitSeq",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "atTimestamp",
+          "typeName": "string",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "linearizable",
+          "typeName": "boolean",
+          "optional": true,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0EntityCasPrecondition",
+      "namespaceName": "V0",
+      "fields": [
+        {
+          "name": "entityId",
+          "typeName": "string",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "expectedSeq",
+          "typeName": "CommitSeq",
+          "optional": false,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0WritePrecondition",
+      "namespaceName": "V0",
+      "fields": [
+        {
+          "name": "mode",
+          "typeName": "CanopyV0WriteConsistencyMode",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "expectedEntitySeq",
+          "typeName": "CanopyV0EntityCasPrecondition[]",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "expectedGraphSeq",
+          "typeName": "CommitSeq",
+          "optional": true,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0GraphSummary",
+      "namespaceName": "Graphs",
+      "fields": [
+        {
+          "name": "graphId",
+          "typeName": "GraphId",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "name",
+          "typeName": "string",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "headCommitSeq",
+          "typeName": "CommitSeq",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "revision",
+          "typeName": "string",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "nodeCount",
+          "typeName": "int32",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "edgeCount",
+          "typeName": "int32",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "createdAt",
+          "typeName": "string",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "updatedAt",
+          "typeName": "string",
+          "optional": false,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0ListGraphsRequest",
+      "namespaceName": "Graphs",
+      "fields": [
+        {
+          "name": "limit",
+          "typeName": "int32",
+          "optional": true,
+          "location": "query"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0ListGraphsResponse",
+      "namespaceName": "Graphs",
+      "fields": [
+        {
+          "name": "graphs",
+          "typeName": "CanopyV0GraphSummary[]",
+          "optional": false,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0CreateGraphRequest",
+      "namespaceName": "Graphs",
+      "fields": [
+        {
+          "name": "graphId",
+          "typeName": "GraphId",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "name",
+          "typeName": "string",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "provenance",
+          "typeName": "CanopyV0ActorProvenance",
+          "optional": true,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0GetGraphRequest",
+      "namespaceName": "Graphs",
+      "fields": [
+        {
+          "name": "graphId",
+          "typeName": "GraphId",
+          "optional": false,
+          "location": "path"
+        },
+        {
+          "name": "consistency",
+          "typeName": "CanopyV0ReadConsistency",
+          "optional": true,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0DeleteGraphRequest",
+      "namespaceName": "Graphs",
+      "fields": [
+        {
+          "name": "graphId",
+          "typeName": "GraphId",
+          "optional": false,
+          "location": "path"
+        },
+        {
+          "name": "expectedGraphSeq",
+          "typeName": "CommitSeq",
+          "optional": true,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0DeleteGraphResponse",
+      "namespaceName": "Graphs",
+      "fields": [
+        {
+          "name": "graphId",
+          "typeName": "GraphId",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "deleted",
+          "typeName": "boolean",
+          "optional": false,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0BatchOperation",
+      "namespaceName": "Transactions",
+      "fields": [
+        {
+          "name": "kind",
+          "typeName": "CanopyV0BatchOperationKind",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "entityId",
+          "typeName": "string",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "shapeId",
+          "typeName": "ShapeId",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "sourceNodeId",
+          "typeName": "NodeId",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "targetNodeId",
+          "typeName": "NodeId",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "edgeTypeId",
+          "typeName": "ShapeId",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "properties",
+          "typeName": "CanopyV0PropertyEntry[]",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "migrationId",
+          "typeName": "MigrationId",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "fromShapeId",
+          "typeName": "ShapeId",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "toShapeId",
+          "typeName": "ShapeId",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "transformWasmRef",
+          "typeName": "string",
+          "optional": true,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0CommitTransactionRequest",
+      "namespaceName": "Transactions",
+      "fields": [
+        {
+          "name": "graphId",
+          "typeName": "GraphId",
+          "optional": false,
+          "location": "path"
+        },
+        {
+          "name": "batchId",
+          "typeName": "BatchId",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "provenance",
+          "typeName": "CanopyV0ActorProvenance",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "precondition",
+          "typeName": "CanopyV0WritePrecondition",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "operations",
+          "typeName": "CanopyV0BatchOperation[]",
+          "optional": false,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0CommitTransactionResponse",
+      "namespaceName": "Transactions",
+      "fields": [
+        {
+          "name": "graphId",
+          "typeName": "GraphId",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "batchId",
+          "typeName": "BatchId",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "commitSeq",
+          "typeName": "CommitSeq",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "hlcTimestamp",
+          "typeName": "HlcTimestamp",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "revision",
+          "typeName": "string",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "committedEventIds",
+          "typeName": "EventId[]",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "affectedEntitySeqs",
+          "typeName": "CanopyV0EntityCasPrecondition[]",
+          "optional": false,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0DraftRecord",
+      "namespaceName": "Transactions",
+      "fields": [
+        {
+          "name": "draftId",
+          "typeName": "DraftId",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "graphId",
+          "typeName": "GraphId",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "status",
+          "typeName": "CanopyV0DraftStatus",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "baseCommitSeq",
+          "typeName": "CommitSeq",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "parentRevision",
+          "typeName": "string",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "stagedOperationCount",
+          "typeName": "int32",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "createdAt",
+          "typeName": "string",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "updatedAt",
+          "typeName": "string",
+          "optional": false,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0CreateDraftRequest",
+      "namespaceName": "Transactions",
+      "fields": [
+        {
+          "name": "graphId",
+          "typeName": "GraphId",
+          "optional": false,
+          "location": "path"
+        },
+        {
+          "name": "draftId",
+          "typeName": "DraftId",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "provenance",
+          "typeName": "CanopyV0ActorProvenance",
+          "optional": true,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0GetDraftRequest",
+      "namespaceName": "Transactions",
+      "fields": [
+        {
+          "name": "graphId",
+          "typeName": "GraphId",
+          "optional": false,
+          "location": "path"
+        },
+        {
+          "name": "draftId",
+          "typeName": "DraftId",
+          "optional": false,
+          "location": "path"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0StageDraftOperationsRequest",
+      "namespaceName": "Transactions",
+      "fields": [
+        {
+          "name": "graphId",
+          "typeName": "GraphId",
+          "optional": false,
+          "location": "path"
+        },
+        {
+          "name": "draftId",
+          "typeName": "DraftId",
+          "optional": false,
+          "location": "path"
+        },
+        {
+          "name": "operations",
+          "typeName": "CanopyV0BatchOperation[]",
+          "optional": false,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0CommitDraftRequest",
+      "namespaceName": "Transactions",
+      "fields": [
+        {
+          "name": "graphId",
+          "typeName": "GraphId",
+          "optional": false,
+          "location": "path"
+        },
+        {
+          "name": "draftId",
+          "typeName": "DraftId",
+          "optional": false,
+          "location": "path"
+        },
+        {
+          "name": "provenance",
+          "typeName": "CanopyV0ActorProvenance",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "precondition",
+          "typeName": "CanopyV0WritePrecondition",
+          "optional": true,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0DiscardDraftRequest",
+      "namespaceName": "Transactions",
+      "fields": [
+        {
+          "name": "graphId",
+          "typeName": "GraphId",
+          "optional": false,
+          "location": "path"
+        },
+        {
+          "name": "draftId",
+          "typeName": "DraftId",
+          "optional": false,
+          "location": "path"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0NodeRecord",
+      "namespaceName": "Queries",
+      "fields": [
+        {
+          "name": "nodeId",
+          "typeName": "NodeId",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "shapeId",
+          "typeName": "ShapeId",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "entitySeq",
+          "typeName": "CommitSeq",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "properties",
+          "typeName": "CanopyV0PropertyEntry[]",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "createdAt",
+          "typeName": "string",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "updatedAt",
+          "typeName": "string",
+          "optional": false,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0EdgeRecord",
+      "namespaceName": "Queries",
+      "fields": [
+        {
+          "name": "edgeId",
+          "typeName": "EdgeId",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "shapeId",
+          "typeName": "ShapeId",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "sourceNodeId",
+          "typeName": "NodeId",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "targetNodeId",
+          "typeName": "NodeId",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "entitySeq",
+          "typeName": "CommitSeq",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "properties",
+          "typeName": "CanopyV0PropertyEntry[]",
+          "optional": false,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0QueryNodesRequest",
+      "namespaceName": "Queries",
+      "fields": [
+        {
+          "name": "graphId",
+          "typeName": "GraphId",
+          "optional": false,
+          "location": "path"
+        },
+        {
+          "name": "nodeId",
+          "typeName": "NodeId",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "shapeId",
+          "typeName": "ShapeId",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "canonicalUri",
+          "typeName": "string",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "limit",
+          "typeName": "int32",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "consistency",
+          "typeName": "CanopyV0ReadConsistency",
+          "optional": true,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0QueryNodesResponse",
+      "namespaceName": "Queries",
+      "fields": [
+        {
+          "name": "graphId",
+          "typeName": "GraphId",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "appliedCommitSeq",
+          "typeName": "CommitSeq",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "nodes",
+          "typeName": "CanopyV0NodeRecord[]",
+          "optional": false,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0QueryEdgesRequest",
+      "namespaceName": "Queries",
+      "fields": [
+        {
+          "name": "graphId",
+          "typeName": "GraphId",
+          "optional": false,
+          "location": "path"
+        },
+        {
+          "name": "edgeId",
+          "typeName": "EdgeId",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "shapeId",
+          "typeName": "ShapeId",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "sourceNodeId",
+          "typeName": "NodeId",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "targetNodeId",
+          "typeName": "NodeId",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "direction",
+          "typeName": "CanopyV0Direction",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "limit",
+          "typeName": "int32",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "consistency",
+          "typeName": "CanopyV0ReadConsistency",
+          "optional": true,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0QueryEdgesResponse",
+      "namespaceName": "Queries",
+      "fields": [
+        {
+          "name": "graphId",
+          "typeName": "GraphId",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "appliedCommitSeq",
+          "typeName": "CommitSeq",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "edges",
+          "typeName": "CanopyV0EdgeRecord[]",
+          "optional": false,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0LookupPropertiesRequest",
+      "namespaceName": "Queries",
+      "fields": [
+        {
+          "name": "graphId",
+          "typeName": "GraphId",
+          "optional": false,
+          "location": "path"
+        },
+        {
+          "name": "entityId",
+          "typeName": "string",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "propertyKey",
+          "typeName": "string",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "consistency",
+          "typeName": "CanopyV0ReadConsistency",
+          "optional": true,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0LookupPropertiesResponse",
+      "namespaceName": "Queries",
+      "fields": [
+        {
+          "name": "graphId",
+          "typeName": "GraphId",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "appliedCommitSeq",
+          "typeName": "CommitSeq",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "entityId",
+          "typeName": "string",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "properties",
+          "typeName": "CanopyV0PropertyEntry[]",
+          "optional": false,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0TraverseGraphRequest",
+      "namespaceName": "Queries",
+      "fields": [
+        {
+          "name": "graphId",
+          "typeName": "GraphId",
+          "optional": false,
+          "location": "path"
+        },
+        {
+          "name": "startNodeIds",
+          "typeName": "NodeId[]",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "edgeShapeId",
+          "typeName": "ShapeId",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "direction",
+          "typeName": "CanopyV0Direction",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "maxDepth",
+          "typeName": "int32",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "maxCost",
+          "typeName": "int32",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "consistency",
+          "typeName": "CanopyV0ReadConsistency",
+          "optional": true,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0TraverseGraphResponse",
+      "namespaceName": "Queries",
+      "fields": [
+        {
+          "name": "graphId",
+          "typeName": "GraphId",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "appliedCommitSeq",
+          "typeName": "CommitSeq",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "nodes",
+          "typeName": "CanopyV0NodeRecord[]",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "edges",
+          "typeName": "CanopyV0EdgeRecord[]",
+          "optional": false,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0ExecuteStoredQueryRequest",
+      "namespaceName": "Queries",
+      "fields": [
+        {
+          "name": "graphId",
+          "typeName": "GraphId",
+          "optional": false,
+          "location": "path"
+        },
+        {
+          "name": "queryNodeId",
+          "typeName": "NodeId",
+          "optional": false,
+          "location": "path"
+        },
+        {
+          "name": "parametersJson",
+          "typeName": "string",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "consistency",
+          "typeName": "CanopyV0ReadConsistency",
+          "optional": true,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0ExecuteStoredQueryResponse",
+      "namespaceName": "Queries",
+      "fields": [
+        {
+          "name": "graphId",
+          "typeName": "GraphId",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "queryNodeId",
+          "typeName": "NodeId",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "appliedCommitSeq",
+          "typeName": "CommitSeq",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "nodes",
+          "typeName": "CanopyV0NodeRecord[]",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "edges",
+          "typeName": "CanopyV0EdgeRecord[]",
+          "optional": false,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0HistorySnapshotRequest",
+      "namespaceName": "Queries",
+      "fields": [
+        {
+          "name": "graphId",
+          "typeName": "GraphId",
+          "optional": false,
+          "location": "path"
+        },
+        {
+          "name": "atCommitSeq",
+          "typeName": "CommitSeq",
+          "optional": true,
+          "location": "query"
+        },
+        {
+          "name": "atTimestamp",
+          "typeName": "string",
+          "optional": true,
+          "location": "query"
+        },
+        {
+          "name": "atEventId",
+          "typeName": "EventId",
+          "optional": true,
+          "location": "query"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0HistorySnapshotResponse",
+      "namespaceName": "Queries",
+      "fields": [
+        {
+          "name": "graphId",
+          "typeName": "GraphId",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "snapshotCommitSeq",
+          "typeName": "CommitSeq",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "revision",
+          "typeName": "string",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "nodes",
+          "typeName": "CanopyV0NodeRecord[]",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "edges",
+          "typeName": "CanopyV0EdgeRecord[]",
+          "optional": false,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0RenderSelectorRecord",
+      "namespaceName": "Views",
+      "fields": [
+        {
+          "name": "selectorEdgeId",
+          "typeName": "EdgeId",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "viewNodeId",
+          "typeName": "NodeId",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "context",
+          "typeName": "string",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "priority",
+          "typeName": "int32",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "isDefault",
+          "typeName": "boolean",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "targetShapeId",
+          "typeName": "ShapeId",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "targetNodeId",
+          "typeName": "NodeId",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "targetQueryNodeId",
+          "typeName": "NodeId",
+          "optional": true,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0ViewDefinitionRecord",
+      "namespaceName": "Views",
+      "fields": [
+        {
+          "name": "viewNodeId",
+          "typeName": "NodeId",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "name",
+          "typeName": "string",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "layout",
+          "typeName": "string",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "bindingKind",
+          "typeName": "CanopyV0ViewBindingKind",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "queryNodeId",
+          "typeName": "NodeId",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "rendererPluginRef",
+          "typeName": "string",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "isHermetic",
+          "typeName": "boolean",
+          "optional": false,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0ResolveViewRequest",
+      "namespaceName": "Views",
+      "fields": [
+        {
+          "name": "graphId",
+          "typeName": "GraphId",
+          "optional": false,
+          "location": "path"
+        },
+        {
+          "name": "viewNodeId",
+          "typeName": "NodeId",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "targetNodeId",
+          "typeName": "NodeId",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "targetShapeId",
+          "typeName": "ShapeId",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "queryNodeId",
+          "typeName": "NodeId",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "context",
+          "typeName": "string",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "maxDepth",
+          "typeName": "int32",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "consistency",
+          "typeName": "CanopyV0ReadConsistency",
+          "optional": true,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0ResolveViewResponse",
+      "namespaceName": "Views",
+      "fields": [
+        {
+          "name": "graphId",
+          "typeName": "GraphId",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "appliedCommitSeq",
+          "typeName": "CommitSeq",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "view",
+          "typeName": "CanopyV0ViewDefinitionRecord",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "resolvedPathViewIds",
+          "typeName": "NodeId[]",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "cycleDetected",
+          "typeName": "boolean",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "leafRenderer",
+          "typeName": "string",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "nodes",
+          "typeName": "CanopyV0NodeRecord[]",
+          "optional": false,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0GetViewDefinitionRequest",
+      "namespaceName": "Views",
+      "fields": [
+        {
+          "name": "graphId",
+          "typeName": "GraphId",
+          "optional": false,
+          "location": "path"
+        },
+        {
+          "name": "viewNodeId",
+          "typeName": "NodeId",
+          "optional": false,
+          "location": "path"
+        },
+        {
+          "name": "consistency",
+          "typeName": "CanopyV0ReadConsistency",
+          "optional": true,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0ResolveSettingRequest",
+      "namespaceName": "Views",
+      "fields": [
+        {
+          "name": "graphId",
+          "typeName": "GraphId",
+          "optional": false,
+          "location": "path"
+        },
+        {
+          "name": "key",
+          "typeName": "string",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "nodeId",
+          "typeName": "NodeId",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "shapeId",
+          "typeName": "ShapeId",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "namespaceId",
+          "typeName": "NamespaceId",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "consistency",
+          "typeName": "CanopyV0ReadConsistency",
+          "optional": true,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0ResolveSettingResponse",
+      "namespaceName": "Views",
+      "fields": [
+        {
+          "name": "graphId",
+          "typeName": "GraphId",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "appliedCommitSeq",
+          "typeName": "CommitSeq",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "key",
+          "typeName": "string",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "resolvedScope",
+          "typeName": "CanopyV0SettingScope",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "valueJson",
+          "typeName": "string",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "found",
+          "typeName": "boolean",
+          "optional": false,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0PropertyTypeRecord",
+      "namespaceName": "Bundles",
+      "fields": [
+        {
+          "name": "propertyTypeId",
+          "typeName": "PropertyTypeId",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "name",
+          "typeName": "string",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "scalarKind",
+          "typeName": "string",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "cardinality",
+          "typeName": "CanopyV0PropertyCardinality",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "schemaOrgUri",
+          "typeName": "string",
+          "optional": true,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0ShapePropertyBinding",
+      "namespaceName": "Bundles",
+      "fields": [
+        {
+          "name": "key",
+          "typeName": "string",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "propertyTypeId",
+          "typeName": "PropertyTypeId",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "required",
+          "typeName": "boolean",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "cardinality",
+          "typeName": "CanopyV0PropertyCardinality",
+          "optional": false,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0ShapeRecord",
+      "namespaceName": "Bundles",
+      "fields": [
+        {
+          "name": "shapeId",
+          "typeName": "ShapeId",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "name",
+          "typeName": "string",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "entityKind",
+          "typeName": "CanopyV0EntityKind",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "closed",
+          "typeName": "boolean",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "properties",
+          "typeName": "CanopyV0ShapePropertyBinding[]",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "schemaOrgUri",
+          "typeName": "string",
+          "optional": true,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0ShapeMigrationRecord",
+      "namespaceName": "Bundles",
+      "fields": [
+        {
+          "name": "migrationId",
+          "typeName": "MigrationId",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "fromShapeId",
+          "typeName": "ShapeId",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "toShapeId",
+          "typeName": "ShapeId",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "transformWasmRef",
+          "typeName": "string",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "status",
+          "typeName": "CanopyV0MigrationStatus",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "registeredCommitSeq",
+          "typeName": "CommitSeq",
+          "optional": false,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0RegisterShapeMigrationRequest",
+      "namespaceName": "Bundles",
+      "fields": [
+        {
+          "name": "graphId",
+          "typeName": "GraphId",
+          "optional": false,
+          "location": "path"
+        },
+        {
+          "name": "migrationId",
+          "typeName": "MigrationId",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "fromShapeId",
+          "typeName": "ShapeId",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "toShapeId",
+          "typeName": "ShapeId",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "transformWasmRef",
+          "typeName": "string",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "provenance",
+          "typeName": "CanopyV0ActorProvenance",
+          "optional": false,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0BundleManifestRecord",
+      "namespaceName": "Bundles",
+      "fields": [
+        {
+          "name": "bundleId",
+          "typeName": "BundleId",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "name",
+          "typeName": "string",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "version",
+          "typeName": "string",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "shapeIds",
+          "typeName": "ShapeId[]",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "queryNodeIds",
+          "typeName": "NodeId[]",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "viewNodeIds",
+          "typeName": "NodeId[]",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "pluginIds",
+          "typeName": "NodeId[]",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "activationKeyRequired",
+          "typeName": "boolean",
+          "optional": false,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0ListBundlesRequest",
+      "namespaceName": "Bundles",
+      "fields": [
+        {
+          "name": "graphId",
+          "typeName": "GraphId",
+          "optional": false,
+          "location": "path"
+        },
+        {
+          "name": "consistency",
+          "typeName": "CanopyV0ReadConsistency",
+          "optional": true,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0ListBundlesResponse",
+      "namespaceName": "Bundles",
+      "fields": [
+        {
+          "name": "graphId",
+          "typeName": "GraphId",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "appliedCommitSeq",
+          "typeName": "CommitSeq",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "bundles",
+          "typeName": "CanopyV0BundleManifestRecord[]",
+          "optional": false,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0InstallBundleRequest",
+      "namespaceName": "Bundles",
+      "fields": [
+        {
+          "name": "graphId",
+          "typeName": "GraphId",
+          "optional": false,
+          "location": "path"
+        },
+        {
+          "name": "bundle",
+          "typeName": "CanopyV0BundleManifestRecord",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "activationKey",
+          "typeName": "string",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "provenance",
+          "typeName": "CanopyV0ActorProvenance",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "precondition",
+          "typeName": "CanopyV0WritePrecondition",
+          "optional": true,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0InstallBundleResponse",
+      "namespaceName": "Bundles",
+      "fields": [
+        {
+          "name": "graphId",
+          "typeName": "GraphId",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "bundleId",
+          "typeName": "BundleId",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "commitSeq",
+          "typeName": "CommitSeq",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "installedNodeIds",
+          "typeName": "NodeId[]",
+          "optional": false,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0GetSchemaRequest",
+      "namespaceName": "Bundles",
+      "fields": [
+        {
+          "name": "graphId",
+          "typeName": "GraphId",
+          "optional": false,
+          "location": "path"
+        },
+        {
+          "name": "consistency",
+          "typeName": "CanopyV0ReadConsistency",
+          "optional": true,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0GraphSchemaResponse",
+      "namespaceName": "Bundles",
+      "fields": [
+        {
+          "name": "graphId",
+          "typeName": "GraphId",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "appliedCommitSeq",
+          "typeName": "CommitSeq",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "propertyTypes",
+          "typeName": "CanopyV0PropertyTypeRecord[]",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "shapes",
+          "typeName": "CanopyV0ShapeRecord[]",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "migrations",
+          "typeName": "CanopyV0ShapeMigrationRecord[]",
+          "optional": false,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0StreamSubscribeRequest",
+      "namespaceName": "Streams",
+      "fields": [
+        {
+          "name": "graphId",
+          "typeName": "GraphId",
+          "optional": false,
+          "location": "path"
+        },
+        {
+          "name": "afterCommitSeq",
+          "typeName": "CommitSeq",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "bufferCapacity",
+          "typeName": "int32",
+          "optional": true,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0StreamReplayRequest",
+      "namespaceName": "Streams",
+      "fields": [
+        {
+          "name": "graphId",
+          "typeName": "GraphId",
+          "optional": false,
+          "location": "path"
+        },
+        {
+          "name": "afterCommitSeq",
+          "typeName": "CommitSeq",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "lastSeenEventId",
+          "typeName": "EventId",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "maxReplayCount",
+          "typeName": "int32",
+          "optional": true,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0StreamEnvelope",
+      "namespaceName": "Streams",
+      "fields": [
+        {
+          "name": "kind",
+          "typeName": "CanopyV0StreamMessageKind",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "commitSeq",
+          "typeName": "CommitSeq",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "eventId",
+          "typeName": "EventId",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "eventJson",
+          "typeName": "string",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "gapCount",
+          "typeName": "int32",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "lastSeenEventId",
+          "typeName": "EventId",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "reason",
+          "typeName": "string",
+          "optional": true,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0StreamReplayResponse",
+      "namespaceName": "Streams",
+      "fields": [
+        {
+          "name": "graphId",
+          "typeName": "GraphId",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "headCommitSeq",
+          "typeName": "CommitSeq",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "envelopes",
+          "typeName": "CanopyV0StreamEnvelope[]",
+          "optional": false,
+          "location": "body"
+        }
+      ]
+    }
+  ],
+  "namespaces": [
+    {
+      "name": "Graphs",
+      "routePrefix": "/v0/graphs",
+      "operations": [
+        {
+          "name": "listGraphs",
+          "namespaceName": "Graphs",
+          "method": "GET",
+          "path": "/v0/graphs",
+          "pathParams": [],
+          "requestModel": "CanopyV0ListGraphsRequest",
+          "responseModel": "CanopyV0ListGraphsResponse"
+        },
+        {
+          "name": "createGraph",
+          "namespaceName": "Graphs",
+          "method": "POST",
+          "path": "/v0/graphs",
+          "pathParams": [],
+          "requestModel": "CanopyV0CreateGraphRequest",
+          "responseModel": "CanopyV0GraphSummary"
+        },
+        {
+          "name": "getGraph",
+          "namespaceName": "Graphs",
+          "method": "GET",
+          "path": "/v0/graphs/{graphId}",
+          "pathParams": [
+            "graphId"
+          ],
+          "requestModel": "CanopyV0GetGraphRequest",
+          "responseModel": "CanopyV0GraphSummary"
+        },
+        {
+          "name": "deleteGraph",
+          "namespaceName": "Graphs",
+          "method": "DELETE",
+          "path": "/v0/graphs/{graphId}",
+          "pathParams": [
+            "graphId"
+          ],
+          "requestModel": "CanopyV0DeleteGraphRequest",
+          "responseModel": "CanopyV0DeleteGraphResponse"
+        }
+      ]
+    },
+    {
+      "name": "Transactions",
+      "routePrefix": "/v0/graphs/{graphId}/transactions",
+      "operations": [
+        {
+          "name": "commitTransaction",
+          "namespaceName": "Transactions",
+          "method": "POST",
+          "path": "/v0/graphs/{graphId}/transactions",
+          "pathParams": [
+            "graphId"
+          ],
+          "requestModel": "CanopyV0CommitTransactionRequest",
+          "responseModel": "CanopyV0CommitTransactionResponse"
+        },
+        {
+          "name": "createDraft",
+          "namespaceName": "Transactions",
+          "method": "POST",
+          "path": "/v0/graphs/{graphId}/transactions/drafts",
+          "pathParams": [
+            "graphId"
+          ],
+          "requestModel": "CanopyV0CreateDraftRequest",
+          "responseModel": "CanopyV0DraftRecord"
+        },
+        {
+          "name": "getDraft",
+          "namespaceName": "Transactions",
+          "method": "GET",
+          "path": "/v0/graphs/{graphId}/transactions/drafts/{draftId}",
+          "pathParams": [
+            "graphId",
+            "draftId"
+          ],
+          "requestModel": "CanopyV0GetDraftRequest",
+          "responseModel": "CanopyV0DraftRecord"
+        },
+        {
+          "name": "stageDraftOperations",
+          "namespaceName": "Transactions",
+          "method": "POST",
+          "path": "/v0/graphs/{graphId}/transactions/drafts/{draftId}/operations",
+          "pathParams": [
+            "graphId",
+            "draftId"
+          ],
+          "requestModel": "CanopyV0StageDraftOperationsRequest",
+          "responseModel": "CanopyV0DraftRecord"
+        },
+        {
+          "name": "commitDraft",
+          "namespaceName": "Transactions",
+          "method": "POST",
+          "path": "/v0/graphs/{graphId}/transactions/drafts/{draftId}/commit",
+          "pathParams": [
+            "graphId",
+            "draftId"
+          ],
+          "requestModel": "CanopyV0CommitDraftRequest",
+          "responseModel": "CanopyV0CommitTransactionResponse"
+        },
+        {
+          "name": "discardDraft",
+          "namespaceName": "Transactions",
+          "method": "DELETE",
+          "path": "/v0/graphs/{graphId}/transactions/drafts/{draftId}",
+          "pathParams": [
+            "graphId",
+            "draftId"
+          ],
+          "requestModel": "CanopyV0DiscardDraftRequest",
+          "responseModel": "CanopyV0DraftRecord"
+        }
+      ]
+    },
+    {
+      "name": "Queries",
+      "routePrefix": "/v0/graphs/{graphId}/queries",
+      "operations": [
+        {
+          "name": "queryNodes",
+          "namespaceName": "Queries",
+          "method": "POST",
+          "path": "/v0/graphs/{graphId}/queries/nodes",
+          "pathParams": [
+            "graphId"
+          ],
+          "requestModel": "CanopyV0QueryNodesRequest",
+          "responseModel": "CanopyV0QueryNodesResponse"
+        },
+        {
+          "name": "queryEdges",
+          "namespaceName": "Queries",
+          "method": "POST",
+          "path": "/v0/graphs/{graphId}/queries/edges",
+          "pathParams": [
+            "graphId"
+          ],
+          "requestModel": "CanopyV0QueryEdgesRequest",
+          "responseModel": "CanopyV0QueryEdgesResponse"
+        },
+        {
+          "name": "lookupProperties",
+          "namespaceName": "Queries",
+          "method": "POST",
+          "path": "/v0/graphs/{graphId}/queries/properties",
+          "pathParams": [
+            "graphId"
+          ],
+          "requestModel": "CanopyV0LookupPropertiesRequest",
+          "responseModel": "CanopyV0LookupPropertiesResponse"
+        },
+        {
+          "name": "traverseGraph",
+          "namespaceName": "Queries",
+          "method": "POST",
+          "path": "/v0/graphs/{graphId}/queries/traverse",
+          "pathParams": [
+            "graphId"
+          ],
+          "requestModel": "CanopyV0TraverseGraphRequest",
+          "responseModel": "CanopyV0TraverseGraphResponse"
+        },
+        {
+          "name": "executeStoredQuery",
+          "namespaceName": "Queries",
+          "method": "POST",
+          "path": "/v0/graphs/{graphId}/queries/stored/{queryNodeId}",
+          "pathParams": [
+            "graphId",
+            "queryNodeId"
+          ],
+          "requestModel": "CanopyV0ExecuteStoredQueryRequest",
+          "responseModel": "CanopyV0ExecuteStoredQueryResponse"
+        },
+        {
+          "name": "getHistorySnapshot",
+          "namespaceName": "Queries",
+          "method": "GET",
+          "path": "/v0/graphs/{graphId}/queries/history/snapshot",
+          "pathParams": [
+            "graphId"
+          ],
+          "requestModel": "CanopyV0HistorySnapshotRequest",
+          "responseModel": "CanopyV0HistorySnapshotResponse"
+        }
+      ]
+    },
+    {
+      "name": "Views",
+      "routePrefix": "/v0/graphs/{graphId}/views",
+      "operations": [
+        {
+          "name": "resolveView",
+          "namespaceName": "Views",
+          "method": "POST",
+          "path": "/v0/graphs/{graphId}/views/resolve",
+          "pathParams": [
+            "graphId"
+          ],
+          "requestModel": "CanopyV0ResolveViewRequest",
+          "responseModel": "CanopyV0ResolveViewResponse"
+        },
+        {
+          "name": "getViewDefinition",
+          "namespaceName": "Views",
+          "method": "GET",
+          "path": "/v0/graphs/{graphId}/views/{viewNodeId}",
+          "pathParams": [
+            "graphId",
+            "viewNodeId"
+          ],
+          "requestModel": "CanopyV0GetViewDefinitionRequest",
+          "responseModel": "CanopyV0ViewDefinitionRecord"
+        },
+        {
+          "name": "resolveSetting",
+          "namespaceName": "Views",
+          "method": "POST",
+          "path": "/v0/graphs/{graphId}/views/settings/resolve",
+          "pathParams": [
+            "graphId"
+          ],
+          "requestModel": "CanopyV0ResolveSettingRequest",
+          "responseModel": "CanopyV0ResolveSettingResponse"
+        }
+      ]
+    },
+    {
+      "name": "Bundles",
+      "routePrefix": "/v0/graphs/{graphId}/bundles",
+      "operations": [
+        {
+          "name": "listBundles",
+          "namespaceName": "Bundles",
+          "method": "GET",
+          "path": "/v0/graphs/{graphId}/bundles",
+          "pathParams": [
+            "graphId"
+          ],
+          "requestModel": "CanopyV0ListBundlesRequest",
+          "responseModel": "CanopyV0ListBundlesResponse"
+        },
+        {
+          "name": "installBundle",
+          "namespaceName": "Bundles",
+          "method": "POST",
+          "path": "/v0/graphs/{graphId}/bundles",
+          "pathParams": [
+            "graphId"
+          ],
+          "requestModel": "CanopyV0InstallBundleRequest",
+          "responseModel": "CanopyV0InstallBundleResponse"
+        },
+        {
+          "name": "getSchema",
+          "namespaceName": "Bundles",
+          "method": "GET",
+          "path": "/v0/graphs/{graphId}/bundles/schema",
+          "pathParams": [
+            "graphId"
+          ],
+          "requestModel": "CanopyV0GetSchemaRequest",
+          "responseModel": "CanopyV0GraphSchemaResponse"
+        },
+        {
+          "name": "registerShapeMigration",
+          "namespaceName": "Bundles",
+          "method": "POST",
+          "path": "/v0/graphs/{graphId}/bundles/schema/migrations",
+          "pathParams": [
+            "graphId"
+          ],
+          "requestModel": "CanopyV0RegisterShapeMigrationRequest",
+          "responseModel": "CanopyV0ShapeMigrationRecord"
+        }
+      ]
+    },
+    {
+      "name": "Streams",
+      "routePrefix": "/v0/graphs/{graphId}/streams",
+      "operations": [
+        {
+          "name": "subscribeEvents",
+          "namespaceName": "Streams",
+          "method": "POST",
+          "path": "/v0/graphs/{graphId}/streams/subscribe",
+          "pathParams": [
+            "graphId"
+          ],
+          "requestModel": "CanopyV0StreamSubscribeRequest",
+          "responseModel": "CanopyV0StreamReplayResponse"
+        },
+        {
+          "name": "replayEvents",
+          "namespaceName": "Streams",
+          "method": "POST",
+          "path": "/v0/graphs/{graphId}/streams/replay",
+          "pathParams": [
+            "graphId"
+          ],
+          "requestModel": "CanopyV0StreamReplayRequest",
+          "responseModel": "CanopyV0StreamReplayResponse"
+        }
+      ]
+    }
+  ],
+  "witPackage": "canopy:graph",
+  "witInterfaces": [
+    {
+      "name": "graph-types",
+      "body": "type node-id = string;\ntype edge-id = string;\ntype type-id = string;\ntype capability-token = string;\n\nenum error-code {\n  validation-error,\n  not-found,\n  concurrency-conflict,\n  permission-denied,\n  resource-exhausted,\n  internal-error,\n}\n\nrecord adapter-error {\n  code: error-code,\n  message: string,\n  details: option<string>,\n}"
+    },
+    {
+      "name": "host-queries",
+      "body": "use graph-types.{capability-token, adapter-error};\n\nquery-nodes: func(token: capability-token, payload-json: string) -> result<string, adapter-error>;\nquery-edges: func(token: capability-token, payload-json: string) -> result<string, adapter-error>;\nlookup-properties: func(token: capability-token, payload-json: string) -> result<string, adapter-error>;\ntraverse-graph: func(token: capability-token, payload-json: string) -> result<string, adapter-error>;"
+    },
+    {
+      "name": "host-mutations",
+      "body": "use graph-types.{capability-token, adapter-error};\n\ncreate-node: func(token: capability-token, payload-json: string) -> result<string, adapter-error>;\nupdate-node-properties: func(token: capability-token, payload-json: string) -> result<string, adapter-error>;\ndelete-node: func(token: capability-token, payload-json: string) -> result<string, adapter-error>;\ncreate-edge: func(token: capability-token, payload-json: string) -> result<string, adapter-error>;\ndelete-edge: func(token: capability-token, payload-json: string) -> result<string, adapter-error>;\ncommit-batch: func(token: capability-token, payload-json: string) -> result<string, adapter-error>;"
+    },
+    {
+      "name": "host-events",
+      "body": "use graph-types.{capability-token, adapter-error};\n\nsubscribe-events: func(token: capability-token, payload-json: string) -> result<string, adapter-error>;\nreplay-events: func(token: capability-token, payload-json: string) -> result<string, adapter-error>;"
+    },
+    {
+      "name": "host-filesystem",
+      "body": "use graph-types.{capability-token, adapter-error};\n\nread-file: func(token: capability-token, directory-handle: string, relative-path: string) -> result<string, adapter-error>;\nwrite-file: func(token: capability-token, directory-handle: string, relative-path: string, contents: string) -> result<_, adapter-error>;\nlist-directory: func(token: capability-token, directory-handle: string, relative-path: string) -> result<list<string>, adapter-error>;"
+    },
+    {
+      "name": "host-http",
+      "body": "use graph-types.{capability-token, adapter-error};\n\nfetch: func(token: capability-token, request-json: string) -> result<string, adapter-error>;"
+    },
+    {
+      "name": "host-secrets",
+      "body": "use graph-types.{capability-token, adapter-error};\n\nresolve-secret-handle: func(token: capability-token, handle: string) -> result<string, adapter-error>;"
+    },
+    {
+      "name": "host-clock",
+      "body": "use graph-types.{capability-token, adapter-error};\n\nnow-epoch-ms: func(token: capability-token) -> result<u64, adapter-error>;\nschedule-tick: func(token: capability-token, schedule-json: string) -> result<string, adapter-error>;"
+    },
+    {
+      "name": "draft-session",
+      "body": "type node-id = string;\ntype event-id = string;\ntype type-id = string;\n\nrecord property-entry {\n  name: string,\n  value: property-value,\n}\n\nvariant property-value {\n  text(string),\n  integer(s64),\n  decimal(f64),\n  boolean(bool),\n  date-time(string),\n  node-id(string),\n  list-of-text(list<string>),\n  none,\n}\n\nrecord node-created-event {\n  event-id: event-id,\n  id: node-id,\n  node-type: type-id,\n  properties: list<property-entry>,\n  timestamp: string,\n  device-id: string,\n  batch-id: option<string>,\n}\n\nrecord node-properties-updated-event {\n  event-id: event-id,\n  id: node-id,\n  changes: list<property-entry>,\n  timestamp: string,\n  device-id: string,\n  batch-id: option<string>,\n}\n\nvariant draft-event {\n  node-created(node-created-event),\n  node-properties-updated(node-properties-updated-event),\n}\n\nrecord graph-node {\n  id: node-id,\n  node-type: type-id,\n  properties: list<property-entry>,\n}\n\nenum draft-error {\n  parent-not-found,\n  unauthorized,\n  invalid-event-format,\n  validation-failure,\n  concurrent-modification,\n  storage-error,\n}\n\nenum query-error {\n  invalid-query,\n  node-not-found,\n  access-denied,\n}\n\nresource draft-session-handle {\n  apply-events: func(events: list<draft-event>) -> result<_, draft-error>;\n  get-parent-revision: func() -> result<string, draft-error>;\n  get-node: func(id: node-id) -> result<graph-node, query-error>;\n  query-nodes: func(query-string: string) -> result<list<graph-node>, query-error>;\n}"
+    },
+    {
+      "name": "plugin-manifest",
+      "body": "record menu-item {\n  label: string,\n  command: string,\n  shortcut: option<string>,\n}\n\nrecord command-contribution {\n  id: string,\n  title: string,\n  category: option<string>,\n}\n\nrecord plugin-manifest {\n  name: string,\n  version: string,\n  description: option<string>,\n  capabilities: list<string>,\n  menu-items: list<menu-item>,\n  commands: list<command-contribution>,\n}"
+    },
+    {
+      "name": "plugin-lifecycle",
+      "body": "use plugin-manifest.{plugin-manifest};\n\nget-manifest: func() -> plugin-manifest;\ninitialize: func() -> result<_, string>;\nshutdown: func() -> result<_, string>;"
+    },
+    {
+      "name": "content-rendering",
+      "body": "record render-output {\n  html: string,\n}\n\nrender: func(properties-json: string) -> result<render-output, string>;"
+    },
+    {
+      "name": "wizard-execution",
+      "body": "use draft-session.{draft-session-handle, draft-event, property-value};\n\nenum field-kind {\n  text,\n  number,\n  boolean,\n  date,\n  node-reference,\n}\n\nrecord field-definition {\n  name: string,\n  label: string,\n  kind: field-kind,\n  required: bool,\n  default-value: option<property-value>,\n  options: option<list<string>>,\n}\n\nrecord form-schema {\n  title: string,\n  description: option<string>,\n  fields: list<field-definition>,\n  submit-label: string,\n}\n\nrecord input-entry {\n  field-name: string,\n  value: property-value,\n}\n\nvariant step-destination {\n  form(form-schema),\n  complete,\n  cancel,\n}\n\nrecord step-result {\n  next-step: step-destination,\n  events-to-stage: list<draft-event>,\n}\n\nresource wizard-session {\n  constructor(draft: draft-session-handle);\n  render-step-schema: func() -> result<form-schema, string>;\n  handle-step-submission: func(inputs: list<input-entry>) -> result<step-result, string>;\n}"
+    }
+  ],
+  "witWorlds": [
+    {
+      "name": "graph-plugin",
+      "body": "use graph-types.{adapter-error};\n\nimport host-queries;\nimport host-mutations;\nimport host-events;\n\nexport execute: func(input-json: string) -> result<string, adapter-error>;"
+    },
+    {
+      "name": "server-extension-plugin",
+      "body": "use graph-types.{adapter-error};\n\nimport host-queries;\nimport host-mutations;\nimport host-events;\nimport host-filesystem;\nimport host-http;\nimport host-secrets;\nimport host-clock;\n\nexport plugin-lifecycle;\nexport execute: func(input-json: string) -> result<string, adapter-error>;"
+    },
+    {
+      "name": "wizard-plugin",
+      "body": "import draft-session;\n\nexport plugin-lifecycle;\nexport wizard-execution;"
+    },
+    {
+      "name": "render-plugin",
+      "body": "export plugin-lifecycle;\nexport content-rendering;"
+    }
+  ]
+}

@@ -24,17 +24,19 @@ async function main(): Promise<void> {
     const configContent = readFileSync(configPath, 'utf8');
     const config = JSON.parse(configContent) as ConfigSchema;
 
+    const unifiedWitPath = resolve(cwd, '../../packages/plugin-host/schema-baselines/plugin.wit');
+
     for (const plugin of config.plugins) {
       console.log(`\n--- Compiling Plugin: ${plugin.name} ---`);
 
-      // 1. Generate types for this plugin's world. The WIT package now holds
-      // multiple worlds, so `jco types` must be scoped with `-n <world>`.
+      // 1. Generate types for this plugin's world. The unified WIT file holds
+      // host and guest worlds, so `jco types` must be scoped with `-n <world>`.
       const worldSlug = plugin.world.split('/').pop() ?? plugin.world;
       await runCommand([
         'bunx',
         'jco',
         'types',
-        './wit',
+        unifiedWitPath,
         '-n',
         plugin.world,
         '-o',
@@ -79,7 +81,7 @@ async function main(): Promise<void> {
         'componentize',
         bundledJsPath,
         '--wit',
-        'wit',
+        unifiedWitPath,
         '-n',
         plugin.world,
         '-o',

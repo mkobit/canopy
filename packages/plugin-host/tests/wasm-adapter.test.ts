@@ -52,7 +52,7 @@ describe('WASM WIT Protocol Adapter', () => {
     const context = await setupTestContext();
     const adapter = createWasmAdapter(context, { boundToken: 'read:nodes' });
 
-    expect(adapter.witSpec).toContain('package canopy:graph-api@0.1.0;');
+    expect(adapter.witSpec).toContain('package canopy:graph;');
     expect(adapter.hostBindings.queries.queryNodes).toBeDefined();
     expect(adapter.hostBindings.mutations.createNode).toBeDefined();
     expect(adapter.hostBindings.events.subscribeEvents).toBeDefined();
