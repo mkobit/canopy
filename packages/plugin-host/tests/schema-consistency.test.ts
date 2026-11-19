@@ -3,8 +3,8 @@ import { createGraphAccessError, type GraphAccessErrorCategory } from '@canopy/g
 import { CANOPY_WIT_SPECIFICATION, toWitError } from '../src';
 
 describe('Plugin host schema consistency', () => {
-  test('defines host queries, mutations, events, and the plugin world', () => {
-    expect(CANOPY_WIT_SPECIFICATION).toContain('package canopy:graph-api@0.1.0;');
+  test('defines host queries, mutations, events, and unified host/guest plugin worlds', () => {
+    expect(CANOPY_WIT_SPECIFICATION).toContain('package canopy:graph;');
     expect(CANOPY_WIT_SPECIFICATION).toContain('interface graph-types');
     expect(CANOPY_WIT_SPECIFICATION).toContain('interface host-queries');
     expect(CANOPY_WIT_SPECIFICATION).toContain('query-nodes: func(');
@@ -16,10 +16,23 @@ describe('Plugin host schema consistency', () => {
     expect(CANOPY_WIT_SPECIFICATION).toContain('delete-node: func(');
     expect(CANOPY_WIT_SPECIFICATION).toContain('create-edge: func(');
     expect(CANOPY_WIT_SPECIFICATION).toContain('delete-edge: func(');
+    expect(CANOPY_WIT_SPECIFICATION).toContain('commit-batch: func(');
     expect(CANOPY_WIT_SPECIFICATION).toContain('interface host-events');
     expect(CANOPY_WIT_SPECIFICATION).toContain('subscribe-events: func(');
     expect(CANOPY_WIT_SPECIFICATION).toContain('replay-events: func(');
+    expect(CANOPY_WIT_SPECIFICATION).toContain('interface host-filesystem');
+    expect(CANOPY_WIT_SPECIFICATION).toContain('interface host-http');
+    expect(CANOPY_WIT_SPECIFICATION).toContain('interface host-secrets');
+    expect(CANOPY_WIT_SPECIFICATION).toContain('interface host-clock');
+    expect(CANOPY_WIT_SPECIFICATION).toContain('interface draft-session');
+    expect(CANOPY_WIT_SPECIFICATION).toContain('interface plugin-manifest');
+    expect(CANOPY_WIT_SPECIFICATION).toContain('interface plugin-lifecycle');
+    expect(CANOPY_WIT_SPECIFICATION).toContain('interface content-rendering');
+    expect(CANOPY_WIT_SPECIFICATION).toContain('interface wizard-execution');
     expect(CANOPY_WIT_SPECIFICATION).toContain('world graph-plugin');
+    expect(CANOPY_WIT_SPECIFICATION).toContain('world server-extension-plugin');
+    expect(CANOPY_WIT_SPECIFICATION).toContain('world wizard-plugin');
+    expect(CANOPY_WIT_SPECIFICATION).toContain('world render-plugin');
   });
 
   test('maps every graph access error category to WIT', () => {

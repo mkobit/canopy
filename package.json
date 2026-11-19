@@ -12,6 +12,8 @@
   },
   "scripts": {
     "build": "tsc -b && bun --filter './apps/*' build",
+    "codegen:typespec": "bun tools/typespec-codegen.ts",
+    "check:typespec-codegen": "bun tools/typespec-codegen.ts --check",
     "check:api-compatibility": "bun tools/check-api-compatibility.ts",
     "check:versions": "bun tools/verify-versions.ts",
     "check:sbx-env": "bun scripts/check-sbx-env.ts",
@@ -27,7 +29,7 @@
     "audit:beads": "bun tools/audit-beads-conventions.ts",
     "test": "bun --filter '*' test",
     "dev:demo": "bun --filter @canopy/web dev:demo",
-    "lint": "bun tools/check-commands.ts && bun run check:versions && bun run check:api-compatibility && bun run check:unused && bun tools/lint-workspaces.ts && bun run check:eslint-disable-ceiling && bun run check:dependency-graph && bun run check:plugin-artifacts && bun run check:built-package-exports && bun run check:ci-tooling",
+    "lint": "bun tools/check-commands.ts && bun run check:versions && bun run check:typespec-codegen && bun run check:api-compatibility && bun run check:unused && bun tools/lint-workspaces.ts && bun run check:eslint-disable-ceiling && bun run check:dependency-graph && bun run check:plugin-artifacts && bun run check:built-package-exports && bun run check:ci-tooling",
     "format": "prettier --write .",
     "typecheck": "bun --filter '*' typecheck",
     "storybook": "bun --filter '@canopy/web' storybook",

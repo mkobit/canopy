@@ -24,7 +24,7 @@
           },
           "protocol": {
             "type": "string",
-            "enum": ["wit", "all"]
+            "enum": ["typespec", "wit", "all"]
           },
           "path": {
             "type": "string"

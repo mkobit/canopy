@@ -1,11 +1,19 @@
-/* eslint-disable no-console, no-restricted-globals, import/extensions -- CLI script */
-import { parseArgs } from 'node:util';
+import * as crypto from 'node:crypto';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import * as crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
-import { checkApiCompatibility, type Waiver } from './lib/api-compatibility-checker.js';
-import { CANOPY_WIT_SPECIFICATION } from '../packages/plugin-host/src/index.js';
+import { parseArgs } from 'node:util';
+import { CANOPY_WIT_SPECIFICATION } from '../packages/plugin-host/src/wasm/wit-spec';
+import {
+  checkApiCompatibility,
+  type CompatibilityProtocol,
+  type Waiver,
+} from './lib/api-compatibility-checker';
+import {
+  emitTypeSpecBaselineJson,
+  getDefaultTypeSpecSourcePath,
+  loadAndParseTypeSpecFromDisk,
+} from './lib/typespec-compiler';
 
 const { values } = parseArgs({
   options: {
@@ -25,57 +33,76 @@ const { values } = parseArgs({
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const PLUGIN_HOST_BASELINES_DIR = path.resolve(
-  __dirname,
-  '../packages/plugin-host/schema-baselines',
+const ROOT_DIRECTORY = path.resolve(__dirname, '..');
+const PLUGIN_HOST_BASELINES_DIR = path.join(
+  ROOT_DIRECTORY,
+  'packages/plugin-host/schema-baselines',
 );
 const WAIVERS_FILE = path.join(PLUGIN_HOST_BASELINES_DIR, 'approved-breaking-changes.json');
 
 const waiversData = fs.existsSync(WAIVERS_FILE)
-  ? (JSON.parse(fs.readFileSync(WAIVERS_FILE, 'utf8')) as { waivers: Waiver[] })
-  : { waivers: [] as Waiver[] };
+  ? (JSON.parse(fs.readFileSync(WAIVERS_FILE, 'utf8')) as Readonly<{ waivers: readonly Waiver[] }>)
+  : { waivers: [] as readonly Waiver[] };
+
+const SUPPORTED_PROTOCOLS = new Set<CompatibilityProtocol | 'all'>(['wit', 'typespec', 'all']);
+
+const parseProtocolOption = (raw: string | boolean | undefined): CompatibilityProtocol | 'all' =>
+  typeof raw === 'string' && SUPPORTED_PROTOCOLS.has(raw as CompatibilityProtocol | 'all')
+    ? (raw as CompatibilityProtocol | 'all')
+    : 'all';
+
+const parseStringOption = (raw: string | boolean | undefined, fallback: string): string =>
+  typeof raw === 'string' && raw.length > 0 ? raw : fallback;
 
 if (values['add-waiver']) {
-  const expiresAtDefault = new Date();
-  expiresAtDefault.setDate(expiresAtDefault.getDate() + 90);
+  const expiresAtDefault = Temporal.Now.plainDateISO().add({ days: 90 }).toString();
 
   const newWaiver: Waiver = {
     id: crypto.randomUUID(),
-    protocol: (values.protocol as 'wit' | 'all' | undefined) || 'all',
-    path: values.path || 'unknown',
-    changeType: values['change-type'] || 'UNKNOWN',
-    reason: values.reason || 'No reason provided',
-    author: process.env.USER || 'unknown',
-    expiresAt: values['expires-at'] || expiresAtDefault.toISOString().split('T', 1)[0] || '',
-    ticket: values.ticket || 'UNKNOWN-TICKET',
+    protocol: parseProtocolOption(values.protocol),
+    path: parseStringOption(values.path, 'unknown'),
+    changeType: parseStringOption(values['change-type'], 'UNKNOWN'),
+    reason: parseStringOption(values.reason, 'No reason provided'),
+    author: process.env.USER ?? 'unknown',
+    expiresAt: parseStringOption(values['expires-at'], expiresAtDefault),
+    ticket: parseStringOption(values.ticket, 'UNKNOWN-TICKET'),
   };
 
   const newWaiversData = { waivers: [...waiversData.waivers, newWaiver] };
-  fs.writeFileSync(WAIVERS_FILE, JSON.stringify(newWaiversData, null, 2) + '\n');
-  console.log(`✅ Added waiver for ${newWaiver.path} (${newWaiver.protocol})`);
+  fs.writeFileSync(WAIVERS_FILE, `${JSON.stringify(newWaiversData, undefined, 2)}\n`);
+  process.stdout.write(`✅ Added waiver for ${newWaiver.path} (${newWaiver.protocol})\n`);
   process.exit(0);
 }
 
-const target = values.target as 'wit' | 'all';
+const target = parseProtocolOption(values.target);
+const typeSpecPath = getDefaultTypeSpecSourcePath(ROOT_DIRECTORY);
+const parsedTypeSpec = loadAndParseTypeSpecFromDisk(typeSpecPath);
+
+if (!parsedTypeSpec.ok) {
+  process.stderr.write(`❌ Failed to parse TypeSpec: ${parsedTypeSpec.error}\n`);
+  process.exit(1);
+}
 
 const result = checkApiCompatibility({
   target,
   currentWit: CANOPY_WIT_SPECIFICATION,
+  currentTypeSpecIr: parsedTypeSpec.value,
+  checkCodegenDrift: true,
   overrideWaivers: waiversData.waivers,
+  rootDirectory: ROOT_DIRECTORY,
 });
 
 if (values['update-baselines']) {
   if (!result.success && !values['allow-breaking']) {
-    console.error(
-      'ERROR: Unapproved breaking changes exist. Use --allow-breaking to override or add waivers first.',
+    process.stderr.write(
+      'ERROR: Unapproved breaking changes exist. Use --allow-breaking to override or add waivers first.\n',
     );
-    console.error(result.formattedDiagnostic);
+    process.stderr.write(`${result.formattedDiagnostic}\n`);
     process.exit(1);
   }
 
-  // Regenerate baseline files with autogenerated header banners
   if (target === 'all' || target === 'wit') {
-    const banner = `/* AUTOGENERATED BASELINE FILE - DO NOT EDIT MANUALLY */\n`;
+    const banner = '/* AUTOGENERATED BASELINE FILE - DO NOT EDIT MANUALLY */\n';
     fs.writeFileSync(
       path.join(PLUGIN_HOST_BASELINES_DIR, 'plugin.wit'),
       banner +
@@ -85,13 +112,21 @@ if (values['update-baselines']) {
         ),
     );
   }
-  console.log('✅ Baselines updated successfully.');
+  if (target === 'all' || target === 'typespec') {
+    fs.writeFileSync(
+      path.join(PLUGIN_HOST_BASELINES_DIR, 'canopy-v0-typespec.json'),
+      emitTypeSpecBaselineJson(parsedTypeSpec.value),
+    );
+  }
+  process.stdout.write('✅ Baselines updated successfully.\n');
   process.exit(0);
 }
 
 if (result.success) {
-  console.log('✅ All API compatibility checks passed across WASM WIT.');
+  process.stdout.write(
+    '✅ All API compatibility checks passed across TypeSpec canopy.v0 and WASM WIT.\n',
+  );
   process.exit(0);
 }
-console.error(result.formattedDiagnostic);
+process.stderr.write(`${result.formattedDiagnostic}\n`);
 process.exit(1);

@@ -17,7 +17,7 @@ This directory contains the WIT codegen and plugin-packaging CLI scripts (`wit-c
 - `[bench-render-worker.ts:self.onmessage]` Looks up `WORKER_GUESTS.get('fixture:interactive')` and executes `'render:interactive'`, posting `{ id, ok: false }` if guest or graph context is undefined.
 - `[bench-wasm-render.ts:process.on]` Swallows only `uncaughtException` errors whose message includes `'tcp_wrap'`; instantiates `../src/plugin/markdown/transpiled/plugin.js` with `WASIShim({ sandbox: { enableNetwork: false } })`.
 - `[package-plugin.ts:extractManifest]` Requires a `getManifest() { return ...; }` block in `plugin.entrypoint`; `[package-plugin.ts:main]` writes `GraphNode` (`system:node:plugin-<slug>`) with Brotli-compressed base64 `wasm_binary` and JSON-stringified `manifest`.
-- `[wit-codegen.ts:main]` Runs `jco types`, `Bun.build` (target `'browser'`, format `'esm'`, external `canopy:graph/*`), `jco componentize`, and `jco transpile --instantiation` sequentially per plugin, throwing on non-zero exit codes.
+- `[wit-codegen.ts:main]` Runs `jco types`, `Bun.build` (target `'browser'`, format `'esm'`, external `canopy:graph/*`), `jco componentize`, and `jco transpile --instantiation` sequentially per plugin against the unified `../../packages/plugin-host/schema-baselines/plugin.wit`, throwing on non-zero exit codes.
 
 ## Side Effects
 
