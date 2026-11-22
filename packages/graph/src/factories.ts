@@ -5,7 +5,6 @@ import type {
   ShapeId,
   PropertyTypeId,
   BatchId,
-  TypeId,
   GraphId,
   EventId,
   DeviceId,
@@ -39,13 +38,6 @@ export function asBatchId(id: string): BatchId {
 
 export function createBatchId(): BatchId {
   return `batch:${uuidv7()}` as BatchId;
-}
-
-/**
-@deprecated Removed in bead d.
-*/
-export function asTypeId(id: string): TypeId {
-  return id as TypeId;
 }
 
 export function createGraphId(): GraphId {

@@ -15,7 +15,6 @@ import {
   asShapeId,
   asPropertyTypeId,
   asBatchId,
-  asTypeId,
   asGraphId,
   asInstant,
   asPlainDate,
@@ -34,10 +33,6 @@ export const EdgeIdSchema = z.string().min(1).transform(asEdgeId);
 export const ShapeIdSchema = z.string().min(1).transform(asShapeId);
 export const PropertyTypeIdSchema = z.string().min(1).transform(asPropertyTypeId);
 export const BatchIdSchema = z.string().min(1).transform(asBatchId);
-/**
-@deprecated Removed in bead d.
-*/
-export const TypeIdSchema = z.string().min(1).transform(asTypeId);
 export const GraphIdSchema = z.string().uuid().transform(asGraphId);
 export const DeviceIdSchema = z.string().uuid().transform(asDeviceId);
 export const RevisionSchema = z.string().uuid().transform(asRevision);
@@ -101,7 +96,7 @@ export const PropertyDefinitionSchema: z.ZodType<PropertyDefinition, unknown> = 
     cardinality: z.enum(['one', 'many']).optional(),
     unique: z.boolean().optional(),
     targetShapeId: ShapeIdSchema.optional(),
-    targetTypeId: TypeIdSchema.optional(),
+    targetTypeId: ShapeIdSchema.optional(),
     schemaOrgUri: z.string().optional(),
   })
   .refine((value) => value.unique !== true || value.cardinality === 'many', {

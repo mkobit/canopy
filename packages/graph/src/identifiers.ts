@@ -35,16 +35,6 @@ Unique identifier for an atomic batch of events.
 export type BatchId = string & Readonly<{ [batchIdBrand]: never }>;
 
 /**
-@deprecated Removed in bead d.
-*/
-export type TypeId = ShapeId;
-
-/**
-@deprecated Removed in bead d.
-*/
-export declare const typeIdBrand: typeof shapeIdBrand;
-
-/**
 Unique identifier for a graph (aggregate root).
 */
 export type GraphId = string & Readonly<{ [graphIdBrand]: never }>;

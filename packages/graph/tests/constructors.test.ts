@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'bun:test';
-import { createNodeId, createTypeId, createInstant, createPlainDate } from '../src/constructors';
-import { unwrap, isErr, asNodeId, asTypeId, asInstant, asPlainDate } from '@canopy/graph';
+import { createNodeId, createShapeId, createInstant, createPlainDate } from '../src/constructors';
+import { unwrap, isErr, asNodeId, asShapeId, asInstant, asPlainDate } from '@canopy/graph';
 
 describe('Constructors', () => {
   it('should create valid NodeId from valid UUID', () => {
@@ -18,14 +18,14 @@ describe('Constructors', () => {
     expect(nodeId).toMatch(/^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i);
   });
 
-  it('should create valid TypeId', () => {
-    expect(unwrap(createTypeId('MyType'))).toBe(asTypeId('MyType'));
-    expect(unwrap(createTypeId('my-type_1'))).toBe(asTypeId('my-type_1'));
+  it('should create valid ShapeId', () => {
+    expect(unwrap(createShapeId('MyType'))).toBe(asShapeId('MyType'));
+    expect(unwrap(createShapeId('my-type_1'))).toBe(asShapeId('my-type_1'));
   });
 
-  it('should return Error for invalid TypeId', () => {
-    expect(isErr(createTypeId('Invalid Type'))).toBe(true); // Spaces not allowed in regex
-    expect(isErr(createTypeId(''))).toBe(true);
+  it('should return Error for invalid ShapeId', () => {
+    expect(isErr(createShapeId('Invalid Type'))).toBe(true); // Spaces not allowed in regex
+    expect(isErr(createShapeId(''))).toBe(true);
   });
 
   it('should create valid Instant', () => {

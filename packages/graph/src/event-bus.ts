@@ -1,5 +1,5 @@
 import type { GraphEvent, NodeCreated } from './events';
-import type { TypeId } from './identifiers';
+import type { ShapeId } from './identifiers';
 
 export type EventHandler = (events: readonly GraphEvent[]) => unknown;
 
@@ -8,7 +8,7 @@ interface EventSubscription {
 }
 
 export const onNodeCreated = (
-  shapeId: TypeId,
+  shapeId: ShapeId,
   callback: (event: NodeCreated) => unknown,
 ): EventHandler => {
   return (events: readonly GraphEvent[]) =>
