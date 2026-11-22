@@ -37,6 +37,10 @@ export function asBatchId(id: string): BatchId {
   return id as BatchId;
 }
 
+export function createBatchId(): BatchId {
+  return `batch:${uuidv7()}` as BatchId;
+}
+
 /**
 @deprecated Removed in bead d.
 */

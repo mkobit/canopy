@@ -459,4 +459,115 @@ describe('TypeSpec canopy.v0 server router and client SDK', () => {
       expect(overflow.value.envelopes[0]?.kind).toBe('overflow_disconnect');
     }
   });
+
+  test('serializes concurrent commits, drafts, and deleteGraph, and validates batchId', async () => {
+    const { client } = await setupSdk();
+    const graphId = 'concurrent-v0-g1';
+
+    const created = await client.graphs.createGraph({ graphId, name: 'Concurrent Test' });
+    expect(created.ok).toBe(true);
+
+    const emptyBatchIdResult = await client.transactions.commitTransaction({
+      graphId,
+      operations: [],
+      provenance,
+      precondition: { mode: 'unconditional' },
+      batchId: '',
+    });
+    expect(emptyBatchIdResult.ok).toBe(false);
+    if (!emptyBatchIdResult.ok) {
+      expect(emptyBatchIdResult.error.category).toBe('VALIDATION_ERROR');
+    }
+
+    const echoBatchIdResult = await client.transactions.commitTransaction({
+      graphId,
+      operations: [],
+      provenance,
+      precondition: { mode: 'unconditional' },
+      batchId: 'batch:caller-echo',
+    });
+    expect(echoBatchIdResult.ok).toBe(true);
+    if (echoBatchIdResult.ok) {
+      expect(echoBatchIdResult.value.batchId).toBe('batch:caller-echo');
+    }
+
+    const draft = await client.transactions.createDraft({ graphId, draftId: 'draft:concurrent' });
+    expect(draft.ok).toBe(true);
+    await client.transactions.stageDraftOperations({
+      graphId,
+      draftId: 'draft:concurrent',
+      operations: [
+        {
+          kind: 'create-node',
+          entityId: 'node:drafted',
+          properties: [{ key: 'label', valueJson: '"from-draft"' }],
+        },
+      ],
+    });
+
+    const [commit1, commit2, draftCommit] = await Promise.all([
+      client.transactions.commitTransaction({
+        graphId,
+        operations: [
+          {
+            kind: 'create-node',
+            entityId: 'node:c1',
+            properties: [{ key: 'label', valueJson: '"c1"' }],
+          },
+        ],
+        provenance,
+        precondition: { mode: 'unconditional' },
+      }),
+      client.transactions.commitTransaction({
+        graphId,
+        operations: [
+          {
+            kind: 'create-node',
+            entityId: 'node:c2',
+            properties: [{ key: 'label', valueJson: '"c2"' }],
+          },
+        ],
+        provenance,
+        precondition: { mode: 'unconditional' },
+      }),
+      client.transactions.commitDraft({
+        graphId,
+        draftId: 'draft:concurrent',
+        provenance,
+      }),
+    ]);
+
+    expect(commit1.ok).toBe(true);
+    expect(commit2.ok).toBe(true);
+    // Draft had baseCommitSeq=1 (after echoBatchIdRes); commit1/commit2 ran before it under the lock
+    expect(draftCommit.ok).toBe(false);
+    if (!draftCommit.ok) {
+      expect(draftCommit.error.category).toBe('CONCURRENCY_CONFLICT');
+    }
+
+    const [lateCommit, deleted] = await Promise.all([
+      client.transactions.commitTransaction({
+        graphId,
+        operations: [
+          {
+            kind: 'create-node',
+            entityId: 'node:c3',
+            properties: [{ key: 'label', valueJson: '"c3"' }],
+          },
+        ],
+        provenance,
+        precondition: { mode: 'unconditional' },
+      }),
+      client.graphs.deleteGraph({ graphId }),
+    ]);
+
+    expect(lateCommit.ok).toBe(true);
+    expect(deleted.ok).toBe(true);
+
+    const afterDelete = await client.graphs.getGraph({ graphId });
+    expect(afterDelete.ok).toBe(false);
+    if (!afterDelete.ok) {
+      expect(afterDelete.error.category).toBe('NOT_FOUND');
+    }
+  });
 });

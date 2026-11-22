@@ -192,7 +192,7 @@ const applyQueryOptions = (
 };
 
 const writeAtomically = async (filePath: string, content: string): Promise<void> => {
-  const temporaryPath = `${filePath}.tmp`;
+  const temporaryPath = `${filePath}.${crypto.randomUUID()}.tmp`;
   await fs.writeFile(temporaryPath, content, 'utf8');
   await fs.rename(temporaryPath, filePath);
 };
@@ -813,8 +813,18 @@ const executeInitStore = async (
   });
 };
 
+const createWriteQueue = (): (<T>(operation: () => Promise<T>) => Promise<T>) => {
+  const queueCell = { current: Promise.resolve() as Promise<unknown> };
+  return <T>(operation: () => Promise<T>): Promise<T> => {
+    const next = queueCell.current.catch(() => undefined).then(operation);
+    queueCell.current = next.catch(() => undefined);
+    return next;
+  };
+};
+
 export const createFileEventLog = (config: FileEventLogConfig): FileEventLog => {
   const storageConfig = createStorageConfig(config);
+  const enqueueWrite = createWriteQueue();
 
   let initializedGraphId: string | null = null;
   let isInitialized = false;
@@ -834,6 +844,28 @@ export const createFileEventLog = (config: FileEventLogConfig): FileEventLog => 
     knownEventIds = new Set([...knownEventIds, ...events.map((event_) => event_.eventId)]);
   };
 
+  const appendEventsInternal = async (
+    graphId: string,
+    events: readonly GraphEvent[],
+  ): Promise<Result<void, Error>> => {
+    if (!isInitialized) return err(new Error('Store not initialized'));
+    if (events.length === 0) return ok(undefined);
+
+    return executeAppendEvents(
+      {
+        storageConfig,
+        state: { initializedGraphId, knownEventIds },
+        ensureCacheLoaded,
+        setInitializedGraphId: (id) => {
+          initializedGraphId = id;
+        },
+        updateKnownEventIds,
+      },
+      graphId,
+      events,
+    );
+  };
+
   const store: FileEventLog = {
     init: async (): Promise<Result<void, Error>> =>
       executeInitStore(
@@ -850,27 +882,8 @@ export const createFileEventLog = (config: FileEventLogConfig): FileEventLog => 
 
     close: async (): Promise<Result<void, Error>> => ok(undefined),
 
-    appendEvents: async (
-      graphId: string,
-      events: readonly GraphEvent[],
-    ): Promise<Result<void, Error>> => {
-      if (!isInitialized) return err(new Error('Store not initialized'));
-      if (events.length === 0) return ok(undefined);
-
-      return executeAppendEvents(
-        {
-          storageConfig,
-          state: { initializedGraphId, knownEventIds },
-          ensureCacheLoaded,
-          setInitializedGraphId: (id) => {
-            initializedGraphId = id;
-          },
-          updateKnownEventIds,
-        },
-        graphId,
-        events,
-      );
-    },
+    appendEvents: (graphId: string, events: readonly GraphEvent[]): Promise<Result<void, Error>> =>
+      enqueueWrite(() => appendEventsInternal(graphId, events)),
 
     getEvents: async (
       graphId: string,
@@ -890,16 +903,19 @@ export const createFileEventLog = (config: FileEventLogConfig): FileEventLog => 
       );
     },
 
-    reconcile: async (graphId: string): Promise<Result<void, Error>> => {
-      if (!isInitialized) return err(new Error('Store not initialized'));
+    reconcile: (graphId: string): Promise<Result<void, Error>> =>
+      enqueueWrite(async (): Promise<Result<void, Error>> => {
+        if (!isInitialized) return err(new Error('Store not initialized'));
 
-      if (initializedGraphId !== null && graphId !== initializedGraphId) {
-        return err(new Error(`Graph ID mismatch: expected ${initializedGraphId}, got ${graphId}`));
-      }
+        if (initializedGraphId !== null && graphId !== initializedGraphId) {
+          return err(
+            new Error(`Graph ID mismatch: expected ${initializedGraphId}, got ${graphId}`),
+          );
+        }
 
-      await ensureCacheLoaded();
-      return reconcileRemoteManifests(storageConfig, graphId, store.appendEvents);
-    },
+        await ensureCacheLoaded();
+        return reconcileRemoteManifests(storageConfig, graphId, appendEventsInternal);
+      }),
   };
 
   return store;

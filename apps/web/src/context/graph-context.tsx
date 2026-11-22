@@ -53,7 +53,7 @@ async function commitCreatedNode(
   if (!opResult.ok) return err(validationErrorToError(opResult.error));
 
   const commitResult = await session.commit(opResult.value.events);
-  if (!commitResult.ok) return commitResult;
+  if (!commitResult.ok) return err(new Error(commitResult.error.message));
 
   const created = opResult.value.events.find((event) => event.type === 'NodeCreated');
   return created ? ok(created.id) : err(new Error('Expected op to produce a NodeCreated event'));
@@ -212,7 +212,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
 
         const commitResult = await session.commit(opResult.value.events);
 
-        if (!commitResult.ok) throw commitResult.error;
+        if (!commitResult.ok) throw new Error(commitResult.error.message);
 
         return node.id;
       });
@@ -250,7 +250,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
 
         const commitResult = await session.commit(opResult.value.events);
 
-        if (!commitResult.ok) throw commitResult.error;
+        if (!commitResult.ok) throw new Error(commitResult.error.message);
 
         return edge.id;
       });
@@ -275,7 +275,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
       if (!opResult.ok) return err(opResult.error);
 
       const commitResult = await session.commit(opResult.value.events);
-      return commitResult.ok ? ok(undefined) : err(commitResult.error);
+      return commitResult.ok ? ok(undefined) : err(new Error(commitResult.error.message));
     },
     [deviceId],
   );
@@ -289,7 +289,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
       if (!opResult.ok) return err(opResult.error);
 
       const commitResult = await session.commit(opResult.value.events);
-      return commitResult.ok ? ok(undefined) : err(commitResult.error);
+      return commitResult.ok ? ok(undefined) : err(new Error(commitResult.error.message));
     },
     [deviceId],
   );

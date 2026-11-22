@@ -1,5 +1,6 @@
 import type {
   BatchId,
+  CommitError,
   Edge,
   EventId,
   EventLogQueryOptions,
@@ -21,6 +22,7 @@ import {
   asGraphId,
   asNodeId,
   asShapeId,
+  createBatchId,
   createDeviceId,
   createDraftSession,
   createEdgeId,
@@ -152,6 +154,7 @@ interface ManagedV0GraphState {
 interface GraphRegistryStore {
   readonly readAll: () => ReadonlyMap<string, ManagedV0GraphState>;
   readonly writeAll: (next: ReadonlyMap<string, ManagedV0GraphState>) => number;
+  readonly withGraphWriteLock: <T>(graphId: string, operation: () => Promise<T>) => Promise<T>;
 }
 
 interface BuiltOperationStep {
@@ -609,6 +612,22 @@ const updateEntitySequences = (
   return new Map([...current, ...entries]);
 };
 
+const mapCommitErrorToCategory = (commitError: CommitError): GraphAccessErrorCategory => {
+  switch (commitError.kind) {
+    case 'validation':
+    case 'batch':
+    case 'projection': {
+      return 'VALIDATION_ERROR';
+    }
+    case 'system-node': {
+      return 'FORBIDDEN';
+    }
+    case 'storage': {
+      return 'INTERNAL_ERROR';
+    }
+  }
+};
+
 const commitOperationsToGraphState = async (
   state: ManagedV0GraphState,
   operations: readonly CanopyV0BatchOperation[],
@@ -620,10 +639,14 @@ const commitOperationsToGraphState = async (
     Readonly<{ nextState: ManagedV0GraphState; response: CanopyV0CommitTransactionResponse }>
   >
 > => {
+  if (batchIdInput === '') {
+    return err(createGraphAccessError('VALIDATION_ERROR', 'batchId must not be empty'));
+  }
+
   const preconditionCheck = checkWritePrecondition(state, precondition);
   if (!preconditionCheck.ok) return preconditionCheck;
 
-  const batchId = asBatchId(batchIdInput ?? `batch:${createEventId()}`);
+  const batchId = batchIdInput === undefined ? createBatchId() : asBatchId(batchIdInput);
   const nextCommitSeq = state.headCommitSeq + 1;
   const compiled = compileBatchOperations(
     operations,
@@ -643,10 +666,17 @@ const commitOperationsToGraphState = async (
     );
   const commitResult = await session.commit(compiled.value.events);
   if (!commitResult.ok) {
-    return err(createGraphAccessError('VALIDATION_ERROR', commitResult.error.message));
+    return err(
+      createGraphAccessError(
+        mapCommitErrorToCategory(commitResult.error),
+        commitResult.error.message,
+      ),
+    );
   }
 
-  const nextGraph = commitResult.value;
+  const nextGraph = commitResult.value.graph;
+  const committedEvents = commitResult.value.events;
+  const responseBatchId = operations.length === 0 ? batchId : commitResult.value.batchId;
   const nextEntitySeqs = updateEntitySequences(
     state.entitySeqs,
     compiled.value.touchedEntityIds,
@@ -655,7 +685,7 @@ const commitOperationsToGraphState = async (
   const affectedEntitySeqs: readonly CanopyV0EntityCasPrecondition[] = [
     ...new Set(compiled.value.touchedEntityIds),
   ].map((entityId) => ({ entityId, expectedSeq: nextCommitSeq }));
-  const eventIds = compiled.value.events.map((event) => event.eventId);
+  const eventIds = committedEvents.map((event) => event.eventId);
   const nextState: ManagedV0GraphState = {
     ...state,
     updatedAt: createInstant(),
@@ -667,10 +697,10 @@ const commitOperationsToGraphState = async (
       ...state.commitLog,
       {
         commitSeq: nextCommitSeq,
-        batchId,
+        batchId: responseBatchId,
         hlcTimestamp: provenance.hlcTimestamp,
         eventIds,
-        events: compiled.value.events,
+        events: committedEvents,
         snapshotGraph: nextGraph,
       },
     ],
@@ -681,7 +711,7 @@ const commitOperationsToGraphState = async (
     nextState,
     response: {
       graphId: state.graphId,
-      batchId,
+      batchId: responseBatchId,
       commitSeq: nextCommitSeq,
       hlcTimestamp: provenance.hlcTimestamp,
       revision: nextGraph.revision,
@@ -1080,36 +1110,40 @@ const createGraphsHandlers = (registry: GraphRegistryStore): CanopyV0ServiceHand
         : allSummaries;
     return ok({ graphs: limited });
   },
-  createGraph: async (request: CanopyV0CreateGraphRequest) => {
+  createGraph: (request: CanopyV0CreateGraphRequest) => {
     const graphId = asGraphId(request.graphId ?? createGraphId());
-    if (registry.readAll().has(graphId)) {
-      return err(createGraphAccessError('CONCURRENCY_CONFLICT', `Graph ${graphId} already exists`));
-    }
-    const createdResult = createGraph(graphId, request.name);
-    if (!createdResult.ok) {
-      return err(createGraphAccessError('VALIDATION_ERROR', createdResult.error.message));
-    }
-    const store = createEmbeddedEventLogStore();
-    const deviceId = asDeviceId(request.provenance?.deviceId ?? createDeviceId());
-    const session = createGraphSession(store, graphId, deviceId);
-    await session.load();
-    const timestamp = createInstant();
-    const newState = setManagedGraphInRegistry(registry, {
-      graphId,
-      name: request.name,
-      createdAt: timestamp,
-      updatedAt: timestamp,
-      headCommitSeq: 0,
-      graph: session.graph(),
-      session,
-      eventLogStore: store,
-      entitySeqs: new Map(),
-      commitLog: [],
-      drafts: new Map(),
-      bundles: [],
-      migrations: [],
+    return registry.withGraphWriteLock(graphId, async () => {
+      if (registry.readAll().has(graphId)) {
+        return err(
+          createGraphAccessError('CONCURRENCY_CONFLICT', `Graph ${graphId} already exists`),
+        );
+      }
+      const createdResult = createGraph(graphId, request.name);
+      if (!createdResult.ok) {
+        return err(createGraphAccessError('VALIDATION_ERROR', createdResult.error.message));
+      }
+      const store = createEmbeddedEventLogStore();
+      const deviceId = asDeviceId(request.provenance?.deviceId ?? createDeviceId());
+      const session = createGraphSession(store, graphId, deviceId);
+      await session.load();
+      const timestamp = createInstant();
+      const newState = setManagedGraphInRegistry(registry, {
+        graphId,
+        name: request.name,
+        createdAt: timestamp,
+        updatedAt: timestamp,
+        headCommitSeq: 0,
+        graph: session.graph(),
+        session,
+        eventLogStore: store,
+        entitySeqs: new Map(),
+        commitLog: [],
+        drafts: new Map(),
+        bundles: [],
+        migrations: [],
+      });
+      return ok(createGraphSummary(newState));
     });
-    return ok(createGraphSummary(newState));
   },
   getGraph: async (request: CanopyV0GetGraphRequest) => {
     const stateResult = getManagedGraphFromRegistry(registry, request.graphId);
@@ -1125,83 +1159,85 @@ const createGraphsHandlers = (registry: GraphRegistryStore): CanopyV0ServiceHand
       edgeCount: consistent.value.graph.edges.size,
     });
   },
-  deleteGraph: async (request: CanopyV0DeleteGraphRequest) => {
-    const stateResult = getManagedGraphFromRegistry(registry, request.graphId);
-    if (!stateResult.ok) return stateResult;
-    if (
-      request.expectedGraphSeq !== undefined &&
-      request.expectedGraphSeq !== stateResult.value.headCommitSeq
-    ) {
-      return err(
-        createGraphAccessError(
-          'CONCURRENCY_CONFLICT',
-          `Delete graph CAS mismatch: expected ${request.expectedGraphSeq}, actual ${stateResult.value.headCommitSeq}`,
-        ),
-      );
-    }
-    registry.writeAll(new Map([...registry.readAll()].filter(([id]) => id !== request.graphId)));
-    return ok({ graphId: request.graphId, deleted: true });
-  },
+  deleteGraph: (request: CanopyV0DeleteGraphRequest) =>
+    registry.withGraphWriteLock(request.graphId, async () => {
+      const stateResult = getManagedGraphFromRegistry(registry, request.graphId);
+      if (!stateResult.ok) return stateResult;
+      if (
+        request.expectedGraphSeq !== undefined &&
+        request.expectedGraphSeq !== stateResult.value.headCommitSeq
+      ) {
+        return err(
+          createGraphAccessError(
+            'CONCURRENCY_CONFLICT',
+            `Delete graph CAS mismatch: expected ${request.expectedGraphSeq}, actual ${stateResult.value.headCommitSeq}`,
+          ),
+        );
+      }
+      registry.writeAll(new Map([...registry.readAll()].filter(([id]) => id !== request.graphId)));
+      return ok({ graphId: request.graphId, deleted: true });
+    }),
 });
 
-const handleCommitTransaction = async (
+const handleCommitTransaction = (
   registry: GraphRegistryStore,
   request: CanopyV0CommitTransactionRequest,
-) => {
-  const stateResult = getManagedGraphFromRegistry(registry, request.graphId);
-  if (!stateResult.ok) return stateResult;
-  const committed = await commitOperationsToGraphState(
-    stateResult.value,
-    request.operations,
-    request.provenance,
-    request.precondition,
-    request.batchId,
-  );
-  if (!committed.ok) return committed;
-  setManagedGraphInRegistry(registry, committed.value.nextState);
-  return ok(committed.value.response);
-};
+) =>
+  registry.withGraphWriteLock(request.graphId, async () => {
+    const stateResult = getManagedGraphFromRegistry(registry, request.graphId);
+    if (!stateResult.ok) return stateResult;
+    const committed = await commitOperationsToGraphState(
+      stateResult.value,
+      request.operations,
+      request.provenance,
+      request.precondition,
+      request.batchId,
+    );
+    if (!committed.ok) return committed;
+    setManagedGraphInRegistry(registry, committed.value.nextState);
+    return ok(committed.value.response);
+  });
 
-const handleCreateDraft = async (
-  registry: GraphRegistryStore,
-  request: CanopyV0CreateDraftRequest,
-) => {
-  const stateResult = getManagedGraphFromRegistry(registry, request.graphId);
-  if (!stateResult.ok) return stateResult;
-  const state = stateResult.value;
-  const draftId = request.draftId ?? `draft:${createEventId()}`;
-  if (state.drafts.has(draftId)) {
-    return err(createGraphAccessError('CONCURRENCY_CONFLICT', `Draft ${draftId} already exists`));
-  }
-  const draftSession = state.session ? createDraftSession(state.session) : undefined;
-  const revisionResult = draftSession?.getParentRevision();
-  const parentRevision = revisionResult?.ok ? revisionResult.value : currentGraphOf(state).revision;
-  const timestamp = createInstant();
-  const draft: ManagedV0DraftState = {
-    draftId,
-    graphId: state.graphId,
-    status: 'open',
-    baseCommitSeq: state.headCommitSeq,
-    parentRevision,
-    operations: [],
-    createdAt: timestamp,
-    updatedAt: timestamp,
-  };
-  setManagedGraphInRegistry(registry, {
-    ...state,
-    drafts: new Map(state.drafts).set(draftId, draft),
+const handleCreateDraft = (registry: GraphRegistryStore, request: CanopyV0CreateDraftRequest) =>
+  registry.withGraphWriteLock(request.graphId, async () => {
+    const stateResult = getManagedGraphFromRegistry(registry, request.graphId);
+    if (!stateResult.ok) return stateResult;
+    const state = stateResult.value;
+    const draftId = request.draftId ?? `draft:${createEventId()}`;
+    if (state.drafts.has(draftId)) {
+      return err(createGraphAccessError('CONCURRENCY_CONFLICT', `Draft ${draftId} already exists`));
+    }
+    const draftSession = state.session ? createDraftSession(state.session) : undefined;
+    const revisionResult = draftSession?.getParentRevision();
+    const parentRevision = revisionResult?.ok
+      ? revisionResult.value
+      : currentGraphOf(state).revision;
+    const timestamp = createInstant();
+    const draft: ManagedV0DraftState = {
+      draftId,
+      graphId: state.graphId,
+      status: 'open',
+      baseCommitSeq: state.headCommitSeq,
+      parentRevision,
+      operations: [],
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+    setManagedGraphInRegistry(registry, {
+      ...state,
+      drafts: new Map(state.drafts).set(draftId, draft),
+    });
+    return ok({
+      draftId: draft.draftId,
+      graphId: draft.graphId,
+      status: draft.status,
+      baseCommitSeq: draft.baseCommitSeq,
+      parentRevision: draft.parentRevision,
+      stagedOperationCount: 0,
+      createdAt: draft.createdAt,
+      updatedAt: draft.updatedAt,
+    });
   });
-  return ok({
-    draftId: draft.draftId,
-    graphId: draft.graphId,
-    status: draft.status,
-    baseCommitSeq: draft.baseCommitSeq,
-    parentRevision: draft.parentRevision,
-    stagedOperationCount: 0,
-    createdAt: draft.createdAt,
-    updatedAt: draft.updatedAt,
-  });
-};
 
 const handleGetDraft = async (registry: GraphRegistryStore, request: CanopyV0GetDraftRequest) => {
   const stateResult = getManagedGraphFromRegistry(registry, request.graphId);
@@ -1221,110 +1257,107 @@ const handleGetDraft = async (registry: GraphRegistryStore, request: CanopyV0Get
     : err(createGraphAccessError('NOT_FOUND', `Draft not found: ${request.draftId}`));
 };
 
-const handleStageDraftOperations = async (
+const handleStageDraftOperations = (
   registry: GraphRegistryStore,
   request: CanopyV0StageDraftOperationsRequest,
-) => {
-  const stateResult = getManagedGraphFromRegistry(registry, request.graphId);
-  if (!stateResult.ok) return stateResult;
-  const draft = stateResult.value.drafts.get(request.draftId);
-  if (!draft) {
-    return err(createGraphAccessError('NOT_FOUND', `Draft not found: ${request.draftId}`));
-  }
-  if (draft.status !== 'open') {
-    return err(
-      createGraphAccessError('CONCURRENCY_CONFLICT', `Draft ${draft.draftId} is ${draft.status}`),
-    );
-  }
-  const updatedDraft: ManagedV0DraftState = {
-    ...draft,
-    operations: [...draft.operations, ...request.operations],
-    updatedAt: createInstant(),
-  };
-  setManagedGraphInRegistry(registry, {
-    ...stateResult.value,
-    drafts: new Map(stateResult.value.drafts).set(draft.draftId, updatedDraft),
+) =>
+  registry.withGraphWriteLock(request.graphId, async () => {
+    const stateResult = getManagedGraphFromRegistry(registry, request.graphId);
+    if (!stateResult.ok) return stateResult;
+    const draft = stateResult.value.drafts.get(request.draftId);
+    if (!draft) {
+      return err(createGraphAccessError('NOT_FOUND', `Draft not found: ${request.draftId}`));
+    }
+    if (draft.status !== 'open') {
+      return err(
+        createGraphAccessError('CONCURRENCY_CONFLICT', `Draft ${draft.draftId} is ${draft.status}`),
+      );
+    }
+    const updatedDraft: ManagedV0DraftState = {
+      ...draft,
+      operations: [...draft.operations, ...request.operations],
+      updatedAt: createInstant(),
+    };
+    setManagedGraphInRegistry(registry, {
+      ...stateResult.value,
+      drafts: new Map(stateResult.value.drafts).set(draft.draftId, updatedDraft),
+    });
+    return ok({
+      draftId: updatedDraft.draftId,
+      graphId: updatedDraft.graphId,
+      status: updatedDraft.status,
+      baseCommitSeq: updatedDraft.baseCommitSeq,
+      parentRevision: updatedDraft.parentRevision,
+      stagedOperationCount: updatedDraft.operations.length,
+      createdAt: updatedDraft.createdAt,
+      updatedAt: updatedDraft.updatedAt,
+    });
   });
-  return ok({
-    draftId: updatedDraft.draftId,
-    graphId: updatedDraft.graphId,
-    status: updatedDraft.status,
-    baseCommitSeq: updatedDraft.baseCommitSeq,
-    parentRevision: updatedDraft.parentRevision,
-    stagedOperationCount: updatedDraft.operations.length,
-    createdAt: updatedDraft.createdAt,
-    updatedAt: updatedDraft.updatedAt,
-  });
-};
 
-const handleCommitDraft = async (
-  registry: GraphRegistryStore,
-  request: CanopyV0CommitDraftRequest,
-) => {
-  const stateResult = getManagedGraphFromRegistry(registry, request.graphId);
-  if (!stateResult.ok) return stateResult;
-  const draft = stateResult.value.drafts.get(request.draftId);
-  if (!draft) {
-    return err(createGraphAccessError('NOT_FOUND', `Draft not found: ${request.draftId}`));
-  }
-  if (draft.status !== 'open') {
-    return err(
-      createGraphAccessError('CONCURRENCY_CONFLICT', `Draft ${draft.draftId} is ${draft.status}`),
+const handleCommitDraft = (registry: GraphRegistryStore, request: CanopyV0CommitDraftRequest) =>
+  registry.withGraphWriteLock(request.graphId, async () => {
+    const stateResult = getManagedGraphFromRegistry(registry, request.graphId);
+    if (!stateResult.ok) return stateResult;
+    const draft = stateResult.value.drafts.get(request.draftId);
+    if (!draft) {
+      return err(createGraphAccessError('NOT_FOUND', `Draft not found: ${request.draftId}`));
+    }
+    if (draft.status !== 'open') {
+      return err(
+        createGraphAccessError('CONCURRENCY_CONFLICT', `Draft ${draft.draftId} is ${draft.status}`),
+      );
+    }
+    const precondition: CanopyV0WritePrecondition = request.precondition ?? {
+      mode: 'graph-cas',
+      expectedGraphSeq: draft.baseCommitSeq,
+    };
+    const committed = await commitOperationsToGraphState(
+      stateResult.value,
+      draft.operations,
+      request.provenance,
+      precondition,
     );
-  }
-  const precondition: CanopyV0WritePrecondition = request.precondition ?? {
-    mode: 'graph-cas',
-    expectedGraphSeq: draft.baseCommitSeq,
-  };
-  const committed = await commitOperationsToGraphState(
-    stateResult.value,
-    draft.operations,
-    request.provenance,
-    precondition,
-  );
-  if (!committed.ok) return committed;
-  const nextDraft: ManagedV0DraftState = {
-    ...draft,
-    status: 'committed',
-    updatedAt: createInstant(),
-  };
-  setManagedGraphInRegistry(registry, {
-    ...committed.value.nextState,
-    drafts: new Map(committed.value.nextState.drafts).set(draft.draftId, nextDraft),
+    if (!committed.ok) return committed;
+    const nextDraft: ManagedV0DraftState = {
+      ...draft,
+      status: 'committed',
+      updatedAt: createInstant(),
+    };
+    setManagedGraphInRegistry(registry, {
+      ...committed.value.nextState,
+      drafts: new Map(committed.value.nextState.drafts).set(draft.draftId, nextDraft),
+    });
+    return ok(committed.value.response);
   });
-  return ok(committed.value.response);
-};
 
-const handleDiscardDraft = async (
-  registry: GraphRegistryStore,
-  request: CanopyV0DiscardDraftRequest,
-) => {
-  const stateResult = getManagedGraphFromRegistry(registry, request.graphId);
-  if (!stateResult.ok) return stateResult;
-  const draft = stateResult.value.drafts.get(request.draftId);
-  if (!draft) {
-    return err(createGraphAccessError('NOT_FOUND', `Draft not found: ${request.draftId}`));
-  }
-  const discarded: ManagedV0DraftState = {
-    ...draft,
-    status: 'discarded',
-    updatedAt: createInstant(),
-  };
-  setManagedGraphInRegistry(registry, {
-    ...stateResult.value,
-    drafts: new Map(stateResult.value.drafts).set(draft.draftId, discarded),
+const handleDiscardDraft = (registry: GraphRegistryStore, request: CanopyV0DiscardDraftRequest) =>
+  registry.withGraphWriteLock(request.graphId, async () => {
+    const stateResult = getManagedGraphFromRegistry(registry, request.graphId);
+    if (!stateResult.ok) return stateResult;
+    const draft = stateResult.value.drafts.get(request.draftId);
+    if (!draft) {
+      return err(createGraphAccessError('NOT_FOUND', `Draft not found: ${request.draftId}`));
+    }
+    const discarded: ManagedV0DraftState = {
+      ...draft,
+      status: 'discarded',
+      updatedAt: createInstant(),
+    };
+    setManagedGraphInRegistry(registry, {
+      ...stateResult.value,
+      drafts: new Map(stateResult.value.drafts).set(draft.draftId, discarded),
+    });
+    return ok({
+      draftId: discarded.draftId,
+      graphId: discarded.graphId,
+      status: discarded.status,
+      baseCommitSeq: discarded.baseCommitSeq,
+      parentRevision: discarded.parentRevision,
+      stagedOperationCount: discarded.operations.length,
+      createdAt: discarded.createdAt,
+      updatedAt: discarded.updatedAt,
+    });
   });
-  return ok({
-    draftId: discarded.draftId,
-    graphId: discarded.graphId,
-    status: discarded.status,
-    baseCommitSeq: discarded.baseCommitSeq,
-    parentRevision: discarded.parentRevision,
-    stagedOperationCount: discarded.operations.length,
-    createdAt: discarded.createdAt,
-    updatedAt: discarded.updatedAt,
-  });
-};
 
 const createTransactionsHandlers = (
   registry: GraphRegistryStore,
@@ -1657,65 +1690,63 @@ const createViewsHandlers = (registry: GraphRegistryStore): CanopyV0ServiceHandl
   },
 });
 
-const handleInstallBundle = async (
-  registry: GraphRegistryStore,
-  request: CanopyV0InstallBundleRequest,
-) => {
-  const stateResult = getManagedGraphFromRegistry(registry, request.graphId);
-  if (!stateResult.ok) return stateResult;
-  if (
-    request.bundle.activationKeyRequired &&
-    (!request.activationKey || request.activationKey.trim().length === 0)
-  ) {
-    return err(
-      createGraphAccessError(
-        'FORBIDDEN',
-        `Activation key required to install bundle ${request.bundle.bundleId}`,
-      ),
+const handleInstallBundle = (registry: GraphRegistryStore, request: CanopyV0InstallBundleRequest) =>
+  registry.withGraphWriteLock(request.graphId, async () => {
+    const stateResult = getManagedGraphFromRegistry(registry, request.graphId);
+    if (!stateResult.ok) return stateResult;
+    if (
+      request.bundle.activationKeyRequired &&
+      (!request.activationKey || request.activationKey.trim().length === 0)
+    ) {
+      return err(
+        createGraphAccessError(
+          'FORBIDDEN',
+          `Activation key required to install bundle ${request.bundle.bundleId}`,
+        ),
+      );
+    }
+    const currentGraph = currentGraphOf(stateResult.value);
+    const installedNodeId = asNodeId(`bundle:${request.bundle.bundleId}`);
+    const bundleOperation: CanopyV0BatchOperation = currentGraph.nodes.has(installedNodeId)
+      ? {
+          kind: 'update-node-properties',
+          entityId: installedNodeId,
+          properties: [
+            { key: 'name', valueJson: JSON.stringify(request.bundle.name) },
+            { key: 'version', valueJson: JSON.stringify(request.bundle.version) },
+          ],
+        }
+      : {
+          kind: 'create-node',
+          entityId: installedNodeId,
+          shapeId: asShapeId('system:nodetype:bundle'),
+          properties: [
+            { key: 'bundleId', valueJson: JSON.stringify(request.bundle.bundleId) },
+            { key: 'name', valueJson: JSON.stringify(request.bundle.name) },
+            { key: 'version', valueJson: JSON.stringify(request.bundle.version) },
+          ],
+        };
+    const committed = await commitOperationsToGraphState(
+      stateResult.value,
+      [bundleOperation],
+      request.provenance,
+      request.precondition ?? { mode: 'unconditional' },
     );
-  }
-  const currentGraph = currentGraphOf(stateResult.value);
-  const installedNodeId = asNodeId(`bundle:${request.bundle.bundleId}`);
-  const bundleOperation: CanopyV0BatchOperation = currentGraph.nodes.has(installedNodeId)
-    ? {
-        kind: 'update-node-properties',
-        entityId: installedNodeId,
-        properties: [
-          { key: 'name', valueJson: JSON.stringify(request.bundle.name) },
-          { key: 'version', valueJson: JSON.stringify(request.bundle.version) },
-        ],
-      }
-    : {
-        kind: 'create-node',
-        entityId: installedNodeId,
-        shapeId: asShapeId('system:nodetype:bundle'),
-        properties: [
-          { key: 'bundleId', valueJson: JSON.stringify(request.bundle.bundleId) },
-          { key: 'name', valueJson: JSON.stringify(request.bundle.name) },
-          { key: 'version', valueJson: JSON.stringify(request.bundle.version) },
-        ],
-      };
-  const committed = await commitOperationsToGraphState(
-    stateResult.value,
-    [bundleOperation],
-    request.provenance,
-    request.precondition ?? { mode: 'unconditional' },
-  );
-  if (!committed.ok) return committed;
-  const remainingBundles = committed.value.nextState.bundles.filter(
-    (bundle) => bundle.bundleId !== request.bundle.bundleId,
-  );
-  setManagedGraphInRegistry(registry, {
-    ...committed.value.nextState,
-    bundles: [...remainingBundles, request.bundle],
+    if (!committed.ok) return committed;
+    const remainingBundles = committed.value.nextState.bundles.filter(
+      (bundle) => bundle.bundleId !== request.bundle.bundleId,
+    );
+    setManagedGraphInRegistry(registry, {
+      ...committed.value.nextState,
+      bundles: [...remainingBundles, request.bundle],
+    });
+    return ok({
+      graphId: request.graphId,
+      bundleId: request.bundle.bundleId,
+      commitSeq: committed.value.response.commitSeq,
+      installedNodeIds: [installedNodeId],
+    });
   });
-  return ok({
-    graphId: request.graphId,
-    bundleId: request.bundle.bundleId,
-    commitSeq: committed.value.response.commitSeq,
-    installedNodeIds: [installedNodeId],
-  });
-};
 
 const createBundlesHandlers = (
   registry: GraphRegistryStore,
@@ -1747,30 +1778,31 @@ const createBundlesHandlers = (
         })
       : consistent;
   },
-  registerShapeMigration: async (request: CanopyV0RegisterShapeMigrationRequest) => {
-    const stateResult = getManagedGraphFromRegistry(registry, request.graphId);
-    if (!stateResult.ok) return stateResult;
-    const committed = await commitOperationsToGraphState(
-      stateResult.value,
-      [
-        {
-          kind: 'register-shape-migration',
-          ...(request.migrationId !== undefined && { migrationId: request.migrationId }),
-          fromShapeId: request.fromShapeId,
-          toShapeId: request.toShapeId,
-          transformWasmRef: request.transformWasmRef,
-        },
-      ],
-      request.provenance,
-      { mode: 'unconditional' },
-    );
-    if (!committed.ok) return committed;
-    setManagedGraphInRegistry(registry, committed.value.nextState);
-    const created = committed.value.nextState.migrations.at(-1);
-    return created
-      ? ok(created)
-      : err(createGraphAccessError('INTERNAL_ERROR', 'Shape migration was not recorded'));
-  },
+  registerShapeMigration: (request: CanopyV0RegisterShapeMigrationRequest) =>
+    registry.withGraphWriteLock(request.graphId, async () => {
+      const stateResult = getManagedGraphFromRegistry(registry, request.graphId);
+      if (!stateResult.ok) return stateResult;
+      const committed = await commitOperationsToGraphState(
+        stateResult.value,
+        [
+          {
+            kind: 'register-shape-migration',
+            ...(request.migrationId !== undefined && { migrationId: request.migrationId }),
+            fromShapeId: request.fromShapeId,
+            toShapeId: request.toShapeId,
+            transformWasmRef: request.transformWasmRef,
+          },
+        ],
+        request.provenance,
+        { mode: 'unconditional' },
+      );
+      if (!committed.ok) return committed;
+      setManagedGraphInRegistry(registry, committed.value.nextState);
+      const created = committed.value.nextState.migrations.at(-1);
+      return created
+        ? ok(created)
+        : err(createGraphAccessError('INTERNAL_ERROR', 'Shape migration was not recorded'));
+    }),
 });
 
 const createStreamsHandlers = (
@@ -1875,11 +1907,29 @@ export const createCanopyV0InProcessHandlers = (
       ManagedV0GraphState
     >,
   };
+  const writeQueuesCell = {
+    current: new Map<string, Promise<unknown>>() as ReadonlyMap<string, Promise<unknown>>,
+  };
   const registry: GraphRegistryStore = {
     readAll: () => registryCell.current,
     writeAll: (next) => {
       registryCell.current = next;
       return next.size;
+    },
+    withGraphWriteLock: <T>(graphId: string, operation: () => Promise<T>): Promise<T> => {
+      const previous = writeQueuesCell.current.get(graphId) ?? Promise.resolve();
+      const next = previous.catch(() => undefined).then(operation);
+      const settled = next.catch(() => undefined);
+      writeQueuesCell.current = new Map(writeQueuesCell.current).set(graphId, settled);
+      void settled.then(() => {
+        if (writeQueuesCell.current.get(graphId) === settled) {
+          writeQueuesCell.current = new Map(
+            [...writeQueuesCell.current].filter(([id]) => id !== graphId),
+          );
+        }
+        return undefined;
+      });
+      return next;
     },
   };
 

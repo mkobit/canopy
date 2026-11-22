@@ -85,6 +85,7 @@ export {
   asShapeId,
   asPropertyTypeId,
   asBatchId,
+  createBatchId,
   asTypeId,
   createGraphId,
   asGraphId,
@@ -125,6 +126,7 @@ export * from './history';
 export * from './ops';
 export * from './event-log';
 export * from './incremental-projection';
+export * from './batch-validation';
 export * from './graph-session';
 export * from './draft-session';
 export * from './plugin-validation';

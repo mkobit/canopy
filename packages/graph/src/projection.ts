@@ -311,6 +311,60 @@ function applyEventsFold(
   return result.ok ? applyEventsFold(events, result.value, index + 1) : result;
 }
 
+function causalRank(event: GraphEvent): number {
+  switch (event.type) {
+    case 'NodeCreated': {
+      return 0;
+    }
+    case 'EdgeCreated': {
+      return 1;
+    }
+    case 'NodePropertiesUpdated':
+    case 'EdgePropertiesUpdated':
+    case 'WorkflowStarted':
+    case 'WorkflowCompleted': {
+      return 2;
+    }
+    case 'EdgeDeleted': {
+      return 3;
+    }
+    case 'NodeDeleted': {
+      return 4;
+    }
+  }
+}
+
+/**
+Orders events causally within each `batchId` group (or singleton when `batchId`
+is absent) by `(anchorEventId, causalRank, eventId)`, where `anchorEventId` is
+the minimum `eventId` in the batch and `causalRank` orders `NodeCreated` ->
+`EdgeCreated` -> updates/workflow -> `EdgeDeleted` -> `NodeDeleted`.
+*/
+export function sortEventsCausally(events: readonly GraphEvent[]): readonly GraphEvent[] {
+  if (events.length <= 1) return events;
+
+  const batchAnchors = new Map(
+    events
+      .filter((event) => event.batchId !== undefined)
+      .toSorted((a, b) => b.eventId.localeCompare(a.eventId))
+      .map((event) => [event.batchId as string, event.eventId] as const),
+  );
+
+  return [...events].toSorted((a, b) => {
+    const anchorA =
+      a.batchId === undefined ? a.eventId : (batchAnchors.get(a.batchId) ?? a.eventId);
+    const anchorB =
+      b.batchId === undefined ? b.eventId : (batchAnchors.get(b.batchId) ?? b.eventId);
+    if (anchorA !== anchorB) return anchorA < anchorB ? -1 : 1;
+
+    const rankDiff = causalRank(a) - causalRank(b);
+    if (rankDiff !== 0) return rankDiff;
+
+    if (a.eventId === b.eventId) return 0;
+    return a.eventId < b.eventId ? -1 : 1;
+  });
+}
+
 /**
 Reconstructs a graph from a stream of events.
 Optionally accepts an initial graph state.
@@ -319,6 +373,6 @@ export function projectGraph(
   events: readonly GraphEvent[],
   initialGraph: Graph,
 ): Result<Graph, Error> {
-  const sortedEvents = [...events].toSorted((a, b) => a.eventId.localeCompare(b.eventId));
+  const sortedEvents = sortEventsCausally(events);
   return applyEventsFold(sortedEvents, initialGraph);
 }

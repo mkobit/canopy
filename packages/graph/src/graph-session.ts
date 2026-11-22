@@ -1,14 +1,15 @@
 import type { Graph } from './graph';
 import type { GraphEvent } from './events';
-import type { GraphId, DeviceId, NodeId, EdgeId } from './identifiers';
+import type { GraphId, DeviceId, BatchId } from './identifiers';
 import type { EventLogStore } from './event-log';
 import type { Result } from './result';
 import { ok, err as error, unwrap } from './result';
-import { createGraph } from './create-graph';
-import { projectGraph } from './projection';
 import { mergeEvents, createMergeState, type MergeState } from './incremental-projection';
-import { validateNode, validateEdge } from './validation';
-import { isSystemNodeId } from './system';
+import { createGraph } from './create-graph';
+import { createBatchId } from './factories';
+import { validateBatch, type CommitError, type CommitSuccess } from './batch-validation';
+
+export type { CommitError, CommitSuccess } from './batch-validation';
 
 export interface GraphSessionDelta {
   readonly applied: readonly GraphEvent[];
@@ -27,11 +28,10 @@ export interface GraphSession {
   readonly load: () => Promise<Result<Graph, Error>>;
   /**
   Validates, appends, and merges a set of events as one atomic commit.
-  Events are stamped with the session's own deviceId regardless of what
-  they already carry. On validation failure, nothing is appended and the
-  projected graph is unchanged.
+  Events are stamped with the session's own deviceId and a single batchId.
+  On validation failure, nothing is appended and the projected graph is unchanged.
   */
-  readonly commit: (events: readonly GraphEvent[]) => Promise<Result<Graph, Error>>;
+  readonly commit: (events: readonly GraphEvent[]) => Promise<Result<CommitSuccess, CommitError>>;
   /**
   The session's current projected graph (bootstrap-only if load() hasn't run yet).
   */
@@ -41,71 +41,23 @@ export interface GraphSession {
 
 const SESSION_GRAPH_NAME = 'graph';
 
-/**
-Structural + referential + type validation for a candidate commit.
-Referential/structural checks reuse the canonical fold directly (a dry-run
-projectGraph against the pre-commit graph rejects duplicate ids and
-dangling references exactly as commit needs); type checks then run
-validateNode/validateEdge against the entities the dry run produced.
-*/
-function validateCommit(graph: Graph, events: readonly GraphEvent[]): Result<void, Error> {
-  const deletedSystemEvent = events.find(
-    (event) => event.type === 'NodeDeleted' && isSystemNodeId(event.id),
+function resolveCommitBatchId(events: readonly GraphEvent[]): Result<BatchId, CommitError> {
+  if (events.some((event) => (event.batchId as string | undefined) === '')) {
+    return error({ kind: 'batch', message: 'Event batchId must not be empty' });
+  }
+
+  const distinctBatchIds = new Set(
+    events.map((event) => event.batchId).filter((id): id is BatchId => id !== undefined),
   );
-  if (deletedSystemEvent && deletedSystemEvent.type === 'NodeDeleted') {
-    return error(new Error(`Cannot delete system node: ${deletedSystemEvent.id}`));
+  if (distinctBatchIds.size > 1) {
+    return error({
+      kind: 'batch',
+      message: 'All events in a commit must share a single batchId',
+    });
   }
 
-  const dryRun = projectGraph(events, graph);
-  if (!dryRun.ok) return dryRun;
-  const dryRunGraph = dryRun.value;
-
-  const touchedNodeIds = [
-    ...new Set<NodeId>(
-      events.flatMap((event) =>
-        event.type === 'NodeCreated' || event.type === 'NodePropertiesUpdated' ? event.id : [],
-      ),
-    ),
-  ];
-  const touchedEdgeIds = [
-    ...new Set<EdgeId>(
-      events.flatMap((event) =>
-        event.type === 'EdgeCreated' || event.type === 'EdgePropertiesUpdated' ? event.id : [],
-      ),
-    ),
-  ];
-
-  const invalidNodeError = touchedNodeIds
-    .map((id) => {
-      const node = dryRunGraph.nodes.get(id);
-      if (!node) return undefined;
-      const result = validateNode(dryRunGraph, node);
-      if (!result.valid) {
-        const detail = result.errors.map((error_) => error_.message).join(', ');
-        return new Error(`Node ${id} failed validation: ${detail}`);
-      }
-      return undefined;
-    })
-    .find((error_): error_ is Error => error_ !== undefined);
-
-  if (invalidNodeError) {
-    return error(invalidNodeError);
-  }
-
-  const invalidEdgeError = touchedEdgeIds
-    .map((id) => {
-      const edge = dryRunGraph.edges.get(id);
-      if (!edge) return undefined;
-      const result = validateEdge(dryRunGraph, edge);
-      if (!result.valid) {
-        const detail = result.errors.map((error_) => error_.message).join(', ');
-        return new Error(`Edge ${id} failed validation: ${detail}`);
-      }
-      return undefined;
-    })
-    .find((error_): error_ is Error => error_ !== undefined);
-
-  return invalidEdgeError ? error(invalidEdgeError) : ok(undefined);
+  const [firstBatchId] = distinctBatchIds;
+  return ok(firstBatchId ?? createBatchId());
 }
 
 function dispatchChangeHandlers(
@@ -114,6 +66,15 @@ function dispatchChangeHandlers(
   delta: GraphSessionDelta,
 ): readonly unknown[] {
   return handlers.map((subscription) => subscription.handler(graph, delta));
+}
+
+function createSessionQueue(): <T>(operation: () => Promise<T>) => Promise<T> {
+  const queueCell = { current: Promise.resolve() as Promise<unknown> };
+  return <T>(operation: () => Promise<T>): Promise<T> => {
+    const next = queueCell.current.catch(() => undefined).then(operation);
+    queueCell.current = next.catch(() => undefined);
+    return next;
+  };
 }
 
 /**
@@ -131,6 +92,7 @@ export function createGraphSession(
   const subscribersCell = {
     current: new Set<GraphChangeSubscription>() as ReadonlySet<GraphChangeSubscription>,
   };
+  const enqueue = createSessionQueue();
 
   const notify = (graph: Graph, applied: readonly GraphEvent[]): readonly unknown[] => {
     if (applied.length === 0) return [];
@@ -138,39 +100,61 @@ export function createGraphSession(
     return dispatchChangeHandlers([...subscribersCell.current], graph, delta);
   };
 
-  const load = async (): Promise<Result<Graph, Error>> => {
-    const initial = createGraph(graphId, SESSION_GRAPH_NAME);
-    if (!initial.ok) return initial;
+  const load = (): Promise<Result<Graph, Error>> =>
+    enqueue(async () => {
+      const initial = createGraph(graphId, SESSION_GRAPH_NAME);
+      if (!initial.ok) return initial;
 
-    const eventsResult = await eventLog.getEvents(graphId);
-    if (!eventsResult.ok) return eventsResult;
+      const eventsResult = await eventLog.getEvents(graphId);
+      if (!eventsResult.ok) return eventsResult;
 
-    const merged = mergeEvents(createMergeState(), initial.value, eventsResult.value);
-    mergeStateCell.current = merged.state;
-    currentGraphCell.current = merged.graph;
-    return ok(merged.graph);
-  };
+      const merged = mergeEvents(createMergeState(), initial.value, eventsResult.value);
+      mergeStateCell.current = merged.state;
+      currentGraphCell.current = merged.graph;
+      return ok(merged.graph);
+    });
 
-  const commit = async (events: readonly GraphEvent[]): Promise<Result<Graph, Error>> => {
-    if (events.length === 0) {
-      return ok(currentGraphCell.current);
-    }
+  const commit = (events: readonly GraphEvent[]): Promise<Result<CommitSuccess, CommitError>> =>
+    enqueue(async () => {
+      if (events.length === 0) {
+        return ok({
+          graph: currentGraphCell.current,
+          batchId: createBatchId(),
+          events: [],
+          warnings: [],
+        });
+      }
 
-    const stamped = events.map((event) => ({ ...event, deviceId }) as GraphEvent);
+      const batchIdResult = resolveCommitBatchId(events);
+      if (!batchIdResult.ok) return batchIdResult;
+      const batchId = batchIdResult.value;
 
-    const validation = validateCommit(currentGraphCell.current, stamped);
-    if (!validation.ok) return validation;
+      const stamped = events.map((event) => ({ ...event, deviceId, batchId }) as GraphEvent);
 
-    const appendResult = await eventLog.appendEvents(graphId, stamped);
-    if (!appendResult.ok) return appendResult;
+      const validation = validateBatch(currentGraphCell.current, stamped, batchId);
+      if (!validation.ok) return validation;
 
-    const merged = mergeEvents(mergeStateCell.current, currentGraphCell.current, stamped);
-    mergeStateCell.current = merged.state;
-    currentGraphCell.current = merged.graph;
-    notify(merged.graph, merged.applied);
+      const appendResult = await eventLog.appendEvents(graphId, stamped);
+      if (!appendResult.ok) {
+        return error({
+          kind: 'storage',
+          message: appendResult.error.message,
+          cause: appendResult.error,
+        });
+      }
 
-    return ok(merged.graph);
-  };
+      const merged = mergeEvents(mergeStateCell.current, currentGraphCell.current, stamped);
+      mergeStateCell.current = merged.state;
+      currentGraphCell.current = merged.graph;
+      notify(merged.graph, merged.applied);
+
+      return ok({
+        graph: merged.graph,
+        batchId,
+        events: stamped,
+        warnings: validation.value,
+      });
+    });
 
   const subscribe = (handler: GraphChangeHandler): (() => boolean) => {
     const subscription: GraphChangeSubscription = { handler };

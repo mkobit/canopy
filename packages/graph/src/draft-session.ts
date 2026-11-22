@@ -82,7 +82,10 @@ export function createDraftSession(parentSession: GraphSession): DraftSession {
 
     const commitResult = await parentSession.commit(stagedEventsCell.current);
     if (!commitResult.ok) {
-      return error({ type: 'storage-error', message: commitResult.error.message });
+      return error({
+        type: commitResult.error.kind === 'storage' ? 'storage-error' : 'validation-failure',
+        message: commitResult.error.message,
+      });
     }
 
     stagedEventsCell.current = [];

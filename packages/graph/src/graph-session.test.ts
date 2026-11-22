@@ -1,15 +1,18 @@
 import { describe, it, expect } from 'bun:test';
 import { createGraphSession, type GraphSessionDelta } from './graph-session';
 import { projectGraph } from './projection';
+import { createMergeState, mergeEvents } from './incremental-projection';
 import { createGraph } from './create-graph';
 import type { EventLogStore, EventLogQueryOptions } from './event-log';
 import {
   createGraphId,
   createNodeId,
   createEdgeId,
+  asBatchId,
   asShapeId,
   asNodeId,
   createEventId,
+  asEventId,
   asDeviceId,
   createInstant,
   unwrap,
@@ -100,7 +103,7 @@ describe('GraphSession', () => {
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.value.nodes.has(event.id)).toBe(true);
+    expect(result.value.graph.nodes.has(event.id)).toBe(true);
 
     expect(notifications.length).toBe(1);
     expect(notifications[0]?.delta.applied.map((event_) => event_.eventId)).toEqual([
@@ -316,8 +319,188 @@ describe('GraphSession', () => {
 
     const result = await session.commit([deleteEvent]);
     expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.kind).toBe('system-node');
+    expect(result.error.message).toContain('Cannot delete system node');
+  });
+
+  it('returns N validation errors for N invalid entities and appends nothing', async () => {
+    const eventLog = createTestEventLog();
+    const graphId = createGraphId();
+    const session = createGraphSession(eventLog, graphId, sessionDeviceId);
+    await session.load();
+
+    const invalidNode1 = nodeCreatedEvent({ shapeId: asShapeId('missing:shape:1') });
+    const invalidNode2 = nodeCreatedEvent({ shapeId: asShapeId('missing:shape:2') });
+    const invalidNode3 = nodeCreatedEvent({ shapeId: asShapeId('missing:shape:3') });
+
+    const result = await session.commit([invalidNode1, invalidNode2, invalidNode3]);
+    expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.error.message).toContain('Cannot delete system node');
+      expect(result.error.kind).toBe('validation');
+      if (result.error.kind === 'validation') {
+        expect(result.error.errors).toHaveLength(3);
+        expect(result.error.batchId.startsWith('batch:')).toBe(true);
+      }
     }
+
+    const stored = unwrap(await eventLog.getEvents(graphId));
+    expect(stored).toHaveLength(0);
+  });
+
+  it('rejects empty batchId or multiple distinct batchIds in a single commit', async () => {
+    const eventLog = createTestEventLog();
+    const graphId = createGraphId();
+    const session = createGraphSession(eventLog, graphId, sessionDeviceId);
+    await session.load();
+
+    const emptyBatchResult = await session.commit([nodeCreatedEvent({ batchId: asBatchId('') })]);
+    expect(emptyBatchResult.ok).toBe(false);
+    if (!emptyBatchResult.ok) {
+      expect(emptyBatchResult.error.kind).toBe('batch');
+    }
+
+    const mixedBatchResult = await session.commit([
+      nodeCreatedEvent({ batchId: asBatchId('batch:one') }),
+      nodeCreatedEvent({ batchId: asBatchId('batch:two') }),
+    ]);
+    expect(mixedBatchResult.ok).toBe(false);
+    if (!mixedBatchResult.ok) {
+      expect(mixedBatchResult.error.kind).toBe('batch');
+    }
+  });
+
+  it('stamps all appended events with one shared batchId and returns warnings', async () => {
+    const eventLog = createTestEventLog();
+    const graphId = createGraphId();
+    const session = createGraphSession(eventLog, graphId, sessionDeviceId);
+    await session.load();
+
+    const edgeShapeId = asShapeId('shape:test:restricted-edge');
+    const shapeEvent: NodeCreated = {
+      type: 'NodeCreated',
+      eventId: createEventId(),
+      id: asNodeId(edgeShapeId),
+      shapeId: SYSTEM_IDS.SHAPE,
+      properties: new Map<string, string | boolean | readonly string[]>([
+        ['name', 'RestrictedEdge'],
+        ['namespace', 'user'],
+        ['entityKind', 'edge'],
+        ['closed', false],
+        ['sourceTypes', [asShapeId('shape:test:expected-source')]],
+      ]),
+      timestamp: createInstant(),
+      deviceId: sessionDeviceId,
+    };
+    const node1 = nodeCreatedEvent();
+    const node2 = nodeCreatedEvent();
+    const edge: EdgeCreated = {
+      type: 'EdgeCreated',
+      eventId: createEventId(),
+      id: createEdgeId(),
+      shapeId: edgeShapeId,
+      source: node1.id,
+      target: node2.id,
+      properties: new Map(),
+      timestamp: createInstant(),
+      deviceId: sessionDeviceId,
+    };
+
+    const result = await session.commit([shapeEvent, node1, node2, edge]);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.value.batchId.startsWith('batch:')).toBe(true);
+    expect(result.value.events).toHaveLength(4);
+    expect(result.value.events.every((event) => event.batchId === result.value.batchId)).toBe(true);
+    expect(result.value.warnings.length).toBeGreaterThan(0);
+
+    const stored = unwrap(await eventLog.getEvents(graphId));
+    expect(stored).toHaveLength(4);
+    expect(stored.every((event) => event.batchId === result.value.batchId)).toBe(true);
+  });
+
+  it('serializes concurrent commit and load calls on the same GraphSession', async () => {
+    const baseLog = createTestEventLog();
+    const delayedLog: EventLogStore = {
+      appendEvents: async (graphId, newEvents) => {
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        return baseLog.appendEvents(graphId, newEvents);
+      },
+      getEvents: async (graphId, options) => {
+        await new Promise((resolve) => setTimeout(resolve, 5));
+        return baseLog.getEvents(graphId, options);
+      },
+    };
+    const graphId = createGraphId();
+    const session = createGraphSession(delayedLog, graphId, sessionDeviceId);
+    await session.load();
+
+    const n1 = nodeCreatedEvent();
+    const n2 = nodeCreatedEvent();
+    const n3 = nodeCreatedEvent();
+
+    const results = await Promise.all([
+      session.commit([n1]),
+      session.commit([n2]),
+      session.load(),
+      session.commit([n3]),
+    ]);
+
+    expect(results.every((result) => result.ok)).toBe(true);
+    expect(session.graph().nodes.has(n1.id)).toBe(true);
+    expect(session.graph().nodes.has(n2.id)).toBe(true);
+    expect(session.graph().nodes.has(n3.id)).toBe(true);
+  });
+
+  it('converges identically in projectGraph and mergeEvents when intra-batch EdgeCreated precedes NodeCreated', () => {
+    const graphId = createGraphId();
+    const base = unwrap(createGraph(graphId, 'causal-test'));
+    const batchId = asBatchId('batch:causal-order');
+    const sourceId = createNodeId();
+    const targetId = createNodeId();
+    const edgeId = createEdgeId();
+    const timestamp = createInstant();
+
+    const edgeEvent: EdgeCreated = {
+      type: 'EdgeCreated',
+      eventId: asEventId('00000000-0000-7000-8000-000000000001'),
+      id: edgeId,
+      source: sourceId,
+      target: targetId,
+      properties: new Map(),
+      timestamp,
+      deviceId: sessionDeviceId,
+      batchId,
+    };
+    const sourceEvent: NodeCreated = {
+      type: 'NodeCreated',
+      eventId: asEventId('00000000-0000-7000-8000-000000000002'),
+      id: sourceId,
+      properties: new Map(),
+      timestamp,
+      deviceId: sessionDeviceId,
+      batchId,
+    };
+    const targetEvent: NodeCreated = {
+      type: 'NodeCreated',
+      eventId: asEventId('00000000-0000-7000-8000-000000000003'),
+      id: targetId,
+      properties: new Map(),
+      timestamp,
+      deviceId: sessionDeviceId,
+      batchId,
+    };
+
+    const events: readonly GraphEvent[] = [edgeEvent, sourceEvent, targetEvent];
+    const projected = unwrap(projectGraph(events, base));
+    const merged = mergeEvents(createMergeState(), base, events);
+
+    expect(projected.nodes.has(sourceId)).toBe(true);
+    expect(projected.nodes.has(targetId)).toBe(true);
+    expect(projected.edges.has(edgeId)).toBe(true);
+    expect(merged.graph.nodes.size).toBe(projected.nodes.size);
+    expect(merged.graph.edges.size).toBe(projected.edges.size);
+    expect(merged.graph.revision).toBe(projected.revision);
   });
 });
