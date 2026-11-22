@@ -8,11 +8,13 @@ import {
   verifyIndexes,
 } from './indexes';
 import { applyEvent } from './projection';
+import { addNode } from './ops/node';
+import { addEdge } from './ops/edge';
 import {
   asGraphId,
   asNodeId,
   asEdgeId,
-  asTypeId,
+  asShapeId,
   asInstant,
   createEventId,
   asDeviceId,
@@ -47,7 +49,7 @@ describe('GraphIndexes', () => {
 
     const node: Node = {
       id: asNodeId('custom-schema'),
-      type: SYSTEM_IDS.SETTINGS_SCHEMA,
+      shape: SYSTEM_IDS.SETTINGS_SCHEMA,
       properties: new Map([
         ['key', 'my-custom-key'],
         ['name', 'Custom Schema'],
@@ -75,7 +77,7 @@ describe('GraphIndexes', () => {
 
     const userSettingNode: Node = {
       id: asNodeId('setting-1'),
-      type: SYSTEM_IDS.USER_SETTING,
+      shape: SYSTEM_IDS.USER_SETTING,
       properties: new Map([
         ['schemaId', 'custom-schema'],
         ['scopeType', 'node'],
@@ -117,7 +119,7 @@ describe('GraphIndexes', () => {
     // Node A: schemaId="A:B", scopeType="C"
     const settingA: Node = {
       id: asNodeId('setting-a'),
-      type: SYSTEM_IDS.USER_SETTING,
+      shape: SYSTEM_IDS.USER_SETTING,
       properties: new Map([
         ['schemaId', 'A:B'],
         ['scopeType', 'C'],
@@ -129,7 +131,7 @@ describe('GraphIndexes', () => {
     // Node B: schemaId="A", scopeType="B:C"
     const settingB: Node = {
       id: asNodeId('setting-b'),
-      type: SYSTEM_IDS.USER_SETTING,
+      shape: SYSTEM_IDS.USER_SETTING,
       properties: new Map([
         ['schemaId', 'A'],
         ['scopeType', 'B:C'],
@@ -157,13 +159,13 @@ describe('GraphIndexes', () => {
     const sourceNodeId = asNodeId('my-content-node');
     const viewDefinition1: Node = {
       id: asNodeId('view-def-1'),
-      type: SYSTEM_IDS.VIEW_DEFINITION,
+      shape: SYSTEM_IDS.VIEW_DEFINITION,
       properties: new Map(),
       metadata: { created: createInstant(), modified: createInstant(), modifiedBy: deviceId },
     };
     const viewDefinition2: Node = {
       id: asNodeId('view-def-2'),
-      type: SYSTEM_IDS.VIEW_DEFINITION,
+      shape: SYSTEM_IDS.VIEW_DEFINITION,
       properties: new Map(),
       metadata: { created: createInstant(), modified: createInstant(), modifiedBy: deviceId },
     };
@@ -180,7 +182,7 @@ describe('GraphIndexes', () => {
     // Edge 1: older
     const edge1: Edge = {
       id: asEdgeId('edge-1'),
-      type: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
+      shape: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
       source: sourceNodeId,
       target: viewDefinition1.id,
       properties: new Map(),
@@ -194,7 +196,7 @@ describe('GraphIndexes', () => {
     // Edge 2: newer
     const edge2: Edge = {
       id: asEdgeId('edge-2'),
-      type: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
+      shape: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
       source: sourceNodeId,
       target: viewDefinition2.id,
       properties: new Map(),
@@ -251,7 +253,7 @@ describe('GraphIndexes', () => {
       eventId: createEventId(),
       type: 'NodeCreated',
       id: asNodeId('system:nodetype:settings-schema'),
-      nodeType: SYSTEM_IDS.SETTINGS_SCHEMA,
+      shapeId: SYSTEM_IDS.SETTINGS_SCHEMA,
       properties: new Map([['key', 'new-schema-key']]),
       timestamp: createInstant(),
       deviceId,
@@ -265,28 +267,28 @@ describe('GraphIndexes', () => {
 describe('read-model indexes (type / adjacency / property-equality)', () => {
   const graphId = asGraphId('read-model-test-graph');
   const deviceId = asDeviceId('00000000-0000-0000-0000-000000000002');
-  const taskType = asTypeId('content:node-type:task');
-  const projectType = asTypeId('content:node-type:project');
-  const belongsToType = asTypeId('content:edge-type:belongs-to');
-  const tagType = asTypeId('content:edge-type:tagged-with');
+  const taskType = asShapeId('content:node-type:task');
+  const projectType = asShapeId('content:node-type:project');
+  const belongsToType = asShapeId('content:edge-type:belongs-to');
+  const tagType = asShapeId('content:edge-type:tagged-with');
 
   function makeNode(
     id: string,
-    type: ReturnType<typeof asTypeId>,
+    shape: ReturnType<typeof asShapeId>,
     properties: ReadonlyMap<string, PropertyValue>,
   ): Node {
     return {
       id: asNodeId(id),
-      type,
+      shape,
       properties,
       metadata: { created: createInstant(), modified: createInstant(), modifiedBy: deviceId },
     };
   }
 
-  function makeEdge(id: string, type: ReturnType<typeof asTypeId>, source: string): Edge {
+  function makeEdge(id: string, shape: ReturnType<typeof asShapeId>, source: string): Edge {
     return {
       id: asEdgeId(id),
-      type,
+      shape,
       source: asNodeId(source),
       target: asNodeId('project-1'),
       properties: new Map(),
@@ -409,7 +411,7 @@ describe('read-model indexes (type / adjacency / property-equality)', () => {
       expect(new Set(readModel.typedNodeIds(taskType))).toEqual(
         new Set([asNodeId('task-1'), asNodeId('task-2')]),
       );
-      expect(new Set(readModel.typedNodeIds(asTypeId('nonexistent')))).toEqual(new Set());
+      expect(new Set(readModel.typedNodeIds(asShapeId('nonexistent')))).toEqual(new Set());
     });
 
     it('neighbours resolves out/in/both direction, with and without edgeType narrowing', () => {
@@ -428,7 +430,7 @@ describe('read-model indexes (type / adjacency / property-equality)', () => {
         new Set([asNodeId('task-1'), asNodeId('task-2')]), // project-1 has no outbound belongsTo edges
       );
       expect(
-        new Set(readModel.neighbours(asNodeId('task-1'), asTypeId('nonexistent'), 'out')),
+        new Set(readModel.neighbours(asNodeId('task-1'), asShapeId('nonexistent'), 'out')),
       ).toEqual(new Set());
     });
 
@@ -444,6 +446,54 @@ describe('read-model indexes (type / adjacency / property-equality)', () => {
       expect(new Set(readModel.nodesWhereEquals('status', 'nonexistent-value'))).toEqual(new Set());
       expect(new Set(readModel.nodesWhereEquals('tags', ['a', 'b']))).toEqual(new Set());
     });
+
+    it('indexes open nodes and open edges cleanly without typeIndex contamination', () => {
+      const base = graphWithFixture();
+      const openNode: Node = {
+        id: asNodeId('open-node-1'),
+        properties: new Map<string, PropertyValue>([['status', 'open']]),
+        metadata: { created: createInstant(), modified: createInstant(), modifiedBy: deviceId },
+      };
+      const openEdge: Edge = {
+        id: asEdgeId('open-edge-1'),
+        source: openNode.id,
+        target: asNodeId('project-1'),
+        properties: new Map(),
+        metadata: { created: createInstant(), modified: createInstant(), modifiedBy: deviceId },
+      };
+      const graphWithOpen: Graph = {
+        ...base,
+        nodes: new Map([...base.nodes, [openNode.id, openNode]]),
+        edges: new Map([...base.edges, [openEdge.id, openEdge]]),
+      };
+
+      const indexes = buildGraphIndexes(graphWithOpen);
+      for (const bucket of indexes.typeIndex.values()) {
+        expect(bucket.has(openNode.id)).toBe(false);
+      }
+      expect(indexes.adjacencyOut.get(openNode.id)?.get(null)).toEqual(
+        new Map([[asNodeId('project-1'), 1]]),
+      );
+      expect(indexes.adjacencyIn.get(asNodeId('project-1'))?.get(null)).toEqual(
+        new Map([[openNode.id, 1]]),
+      );
+
+      const readModel = createIndexedReadModel(graphWithOpen);
+      expect(new Set(readModel.nodesWhereEquals('status', 'open'))).toEqual(
+        new Set([asNodeId('task-1'), asNodeId('project-1'), openNode.id]),
+      );
+      expect(new Set(readModel.nodesWhereEquals('status', 'open', taskType))).toEqual(
+        new Set([asNodeId('task-1')]),
+      );
+      expect(new Set(readModel.neighbours(openNode.id, undefined, 'out'))).toEqual(
+        new Set([asNodeId('project-1')]),
+      );
+      expect(new Set(readModel.neighbours(asNodeId('project-1'), undefined, 'in'))).toEqual(
+        new Set([asNodeId('task-1'), asNodeId('task-2'), openNode.id]),
+      );
+      expect(new Set(readModel.neighbours(openNode.id, belongsToType, 'out'))).toEqual(new Set());
+      expect(verifyIndexes(graphWithOpen).ok).toBe(true);
+    });
   });
 });
 
@@ -456,27 +506,27 @@ function applyOk(graph: Graph, event: GraphEvent): Graph {
 describe('incrementalUpdateIndexes O(delta) read-model maintenance', () => {
   const graphId = asGraphId('incremental-read-model-test-graph');
   const deviceId = asDeviceId('00000000-0000-0000-0000-000000000003');
-  const taskType = asTypeId('content:node-type:task');
-  const projectType = asTypeId('content:node-type:project');
-  const belongsToType = asTypeId('content:edge-type:belongs-to');
+  const taskType = asShapeId('content:node-type:task');
+  const projectType = asShapeId('content:node-type:project');
+  const belongsToType = asShapeId('content:edge-type:belongs-to');
 
   function seededGraph(): Graph {
     const base = unwrap(createGraph(graphId, 'Test'));
     const nodeA: Node = {
       id: asNodeId('node-a'),
-      type: taskType,
+      shape: taskType,
       properties: new Map<string, PropertyValue>([['status', 'open']]),
       metadata: { created: createInstant(), modified: createInstant(), modifiedBy: deviceId },
     };
     const nodeB: Node = {
       id: asNodeId('node-b'),
-      type: projectType,
+      shape: projectType,
       properties: new Map(),
       metadata: { created: createInstant(), modified: createInstant(), modifiedBy: deviceId },
     };
     const edgeAB: Edge = {
       id: asEdgeId('edge-a-b'),
-      type: belongsToType,
+      shape: belongsToType,
       source: nodeA.id,
       target: nodeB.id,
       properties: new Map(),
@@ -499,7 +549,7 @@ describe('incrementalUpdateIndexes O(delta) read-model maintenance', () => {
       type: 'NodeCreated',
       eventId: createEventId(),
       id: asNodeId('node-c'),
-      nodeType: taskType,
+      shapeId: taskType,
       properties: new Map<string, PropertyValue>([['status', 'done']]),
       timestamp: createInstant(),
       deviceId,
@@ -557,7 +607,7 @@ describe('incrementalUpdateIndexes O(delta) read-model maintenance', () => {
       type: 'EdgeCreated',
       eventId: createEventId(),
       id: asEdgeId('edge-a-b-2'),
-      edgeType: belongsToType,
+      shapeId: belongsToType,
       source: asNodeId('node-a'),
       target: asNodeId('node-b'),
       properties: new Map(),
@@ -592,7 +642,7 @@ describe('incrementalUpdateIndexes O(delta) read-model maintenance', () => {
     const graph = seededGraph();
     const nodeC: Node = {
       id: asNodeId('node-c'),
-      type: taskType,
+      shape: taskType,
       properties: new Map(),
       metadata: { created: createInstant(), modified: createInstant(), modifiedBy: deviceId },
     };
@@ -602,7 +652,7 @@ describe('incrementalUpdateIndexes O(delta) read-model maintenance', () => {
       type: 'EdgeCreated',
       eventId: createEventId(),
       id: asEdgeId('edge-c-b'),
-      edgeType: belongsToType,
+      shapeId: belongsToType,
       source: nodeC.id,
       target: asNodeId('node-b'),
       properties: new Map(),
@@ -619,6 +669,57 @@ describe('incrementalUpdateIndexes O(delta) read-model maintenance', () => {
         [nodeC.id, 1],
       ]),
     );
+  });
+
+  it('maintains open nodes and open edges incrementally and passes verifyIndexes', () => {
+    const graph = seededGraph();
+    const withOpenNode = applyOk(graph, {
+      type: 'NodeCreated',
+      eventId: createEventId(),
+      id: asNodeId('open-node-c'),
+      properties: new Map<string, PropertyValue>([['status', 'open']]),
+      timestamp: createInstant(),
+      deviceId,
+    });
+    expect(withOpenNode._indexes?.typeIndex).toBe(graph._indexes?.typeIndex);
+    expect(
+      withOpenNode._indexes?.propertyEquality
+        .get('status')
+        ?.get('string:open')
+        ?.has(asNodeId('open-node-c')),
+    ).toBe(true);
+    expect(verifyIndexes(withOpenNode).ok).toBe(true);
+
+    const withOpenEdge = applyOk(withOpenNode, {
+      type: 'EdgeCreated',
+      eventId: createEventId(),
+      id: asEdgeId('open-edge-c-b'),
+      source: asNodeId('open-node-c'),
+      target: asNodeId('node-b'),
+      properties: new Map(),
+      timestamp: createInstant(),
+      deviceId,
+    });
+    expect(withOpenEdge._indexes?.adjacencyOut.get(asNodeId('open-node-c'))?.get(null)).toEqual(
+      new Map([[asNodeId('node-b'), 1]]),
+    );
+    expect(withOpenEdge._indexes?.adjacencyIn.get(asNodeId('node-b'))?.get(null)).toEqual(
+      new Map([[asNodeId('open-node-c'), 1]]),
+    );
+    expect(verifyIndexes(withOpenEdge).ok).toBe(true);
+
+    const afterDeleteOpenEdge = applyOk(withOpenEdge, {
+      type: 'EdgeDeleted',
+      eventId: createEventId(),
+      id: asEdgeId('open-edge-c-b'),
+      timestamp: createInstant(),
+      deviceId,
+    });
+    expect(afterDeleteOpenEdge._indexes?.adjacencyOut.has(asNodeId('open-node-c'))).toBe(false);
+    expect(
+      afterDeleteOpenEdge._indexes?.adjacencyIn.get(asNodeId('node-b'))?.get(null),
+    ).toBeUndefined();
+    expect(verifyIndexes(afterDeleteOpenEdge).ok).toBe(true);
   });
 
   it('EdgeDeleted removes adjacency entries in both directions', () => {
@@ -685,7 +786,7 @@ describe('incrementalUpdateIndexes O(delta) read-model maintenance', () => {
       type: 'NodeCreated',
       eventId: createEventId(),
       id: asNodeId('node-c'),
-      nodeType: taskType,
+      shapeId: taskType,
       properties: new Map<string, PropertyValue>([['status', 'done']]),
       timestamp: createInstant(),
       deviceId,
@@ -722,7 +823,7 @@ describe('index maintenance cost regression (delta, not graph size)', () => {
     const nodes = new Map(base.nodes);
     nodes.set(hubId, {
       id: hubId,
-      type: asTypeId(`content:node-type:hub`),
+      shape: asShapeId(`content:node-type:hub`),
       properties: new Map(),
       metadata: { created: createInstant(), modified: createInstant(), modifiedBy: deviceId },
     });
@@ -731,14 +832,14 @@ describe('index maintenance cost regression (delta, not graph size)', () => {
       const nodeId = asNodeId(`bucket-node-${count}-${index}`);
       nodes.set(nodeId, {
         id: nodeId,
-        type: asTypeId(`content:node-type:bucket-${index}`), // own type -> own typeIndex bucket
+        shape: asShapeId(`content:node-type:bucket-${index}`), // own type -> own typeIndex bucket
         properties: new Map<string, PropertyValue>([[`prop${index}`, `v${index}`]]), // own propertyEquality bucket
         metadata: { created: createInstant(), modified: createInstant(), modifiedBy: deviceId },
       });
       const edgeId = asEdgeId(`bucket-edge-${count}-${index}`);
       edges.set(edgeId, {
         id: edgeId,
-        type: asTypeId(`content:edge-type:bucket-${index}`), // own edge type -> own adjacency bucket
+        shape: asShapeId(`content:edge-type:bucket-${index}`), // own edge type -> own adjacency bucket
         source: nodeId,
         target: hubId,
         properties: new Map(),
@@ -759,7 +860,7 @@ describe('index maintenance cost regression (delta, not graph size)', () => {
         type: 'NodeCreated',
         eventId: createEventId(),
         id: asNodeId(`probe-${count}`),
-        nodeType: asTypeId('content:node-type:probe'),
+        shapeId: asShapeId('content:node-type:probe'),
         properties: new Map<string, PropertyValue>([['probeProp', 'probeValue']]),
         timestamp: createInstant(),
         deviceId,
@@ -772,7 +873,7 @@ describe('index maintenance cost regression (delta, not graph size)', () => {
       // reference. This holds identically at 50 and 5000 buckets -- unlike a timing-based
       // assertion, it can't be flaky under CI/parallel-test-suite load.
       for (let index = 0; index < count; index += 1) {
-        const type = asTypeId(`content:node-type:bucket-${index}`);
+        const type = asShapeId(`content:node-type:bucket-${index}`);
         expect(after.typeIndex.get(type)).toBe(before.typeIndex.get(type));
 
         const property = `prop${index}`;
@@ -782,9 +883,61 @@ describe('index maintenance cost regression (delta, not graph size)', () => {
         expect(after.adjacencyOut.get(nodeId)).toBe(before.adjacencyOut.get(nodeId));
       }
       // The new node's own type/property buckets are, correctly, new (the one thing that changed).
-      expect(after.typeIndex.get(asTypeId('content:node-type:probe'))).not.toBe(
-        before.typeIndex.get(asTypeId('content:node-type:probe')),
+      expect(after.typeIndex.get(asShapeId('content:node-type:probe'))).not.toBe(
+        before.typeIndex.get(asShapeId('content:node-type:probe')),
       );
     }
+  });
+
+  it('invalidates cached _indexes on direct ops mutations (addNode, addEdge)', () => {
+    const initial = unwrap(
+      createGraph(asGraphId('ops-invalidation-graph'), 'Ops Index Invalidation'),
+    );
+    const nodeId = asNodeId('ops-node-1');
+    const viewId = asNodeId('ops-view-1');
+
+    const withNode = unwrap(
+      addNode(
+        initial,
+        {
+          id: nodeId,
+          properties: new Map(),
+          metadata: { created: createInstant(), modified: createInstant(), modifiedBy: deviceId },
+        },
+        { deviceId },
+      ),
+    ).graph;
+
+    expect(getGraphIndexes(withNode).viewOverrides.get(nodeId)).toBeUndefined();
+
+    const withView = unwrap(
+      addNode(
+        withNode,
+        {
+          id: viewId,
+          shape: SYSTEM_IDS.VIEW_DEFINITION,
+          properties: new Map(),
+          metadata: { created: createInstant(), modified: createInstant(), modifiedBy: deviceId },
+        },
+        { deviceId },
+      ),
+    ).graph;
+
+    const withOverride = unwrap(
+      addEdge(
+        withView,
+        {
+          id: asEdgeId('ops-override-1'),
+          shape: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
+          source: nodeId,
+          target: viewId,
+          properties: new Map(),
+          metadata: { created: createInstant(), modified: createInstant(), modifiedBy: deviceId },
+        },
+        { deviceId },
+      ),
+    ).graph;
+
+    expect(getGraphIndexes(withOverride).viewOverrides.get(nodeId)?.id).toBe(viewId);
   });
 });

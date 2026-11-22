@@ -5,7 +5,7 @@ import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import {
   asGraphId,
   asNodeId,
-  asTypeId,
+  asShapeId,
   createGraph,
   createInstant,
   SYSTEM_DEVICE_ID,
@@ -22,7 +22,7 @@ const defaultViewId = asNodeId('user:view:tier2-default');
 const defaultRendererId = asNodeId('user:renderer:tier2-default');
 const buildNode = (id: string): Node => ({
   id: asNodeId(id),
-  type: asTypeId('user:nodetype:tier2-test'),
+  shape: asShapeId('user:nodetype:tier2-test'),
   properties: new Map([['content', 'static fallback']]),
   metadata: {
     created: createInstant(),

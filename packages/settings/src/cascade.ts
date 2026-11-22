@@ -1,4 +1,4 @@
-import type { Graph, Node, NodeId, TypeId, PropertyValue, Namespace } from '@canopy/graph';
+import type { Graph, Node, NodeId, ShapeId, PropertyValue, Namespace } from '@canopy/graph';
 import { fromThrowable, getGraphIndexes } from '@canopy/graph';
 
 export type ScopeType = 'node' | 'type' | 'namespace' | 'global';
@@ -11,7 +11,7 @@ export function resolveSetting(
   graph: Graph,
   settingKey: string,
   nodeId: NodeId,
-  nodeType: TypeId,
+  nodeType: ShapeId | undefined,
   nodeNamespace: Namespace,
 ): PropertyValue | undefined {
   // 1. Find the SettingsSchema for this key
@@ -21,7 +21,7 @@ export function resolveSetting(
   // 2. Check each scope level in order
   const scopes: readonly Readonly<{ scopeType: ScopeType; scopeTarget?: string }>[] = [
     { scopeType: 'node', scopeTarget: nodeId },
-    { scopeType: 'type', scopeTarget: nodeType },
+    ...(nodeType === undefined ? [] : [{ scopeType: 'type' as const, scopeTarget: nodeType }]),
     { scopeType: 'namespace', scopeTarget: nodeNamespace },
     { scopeType: 'global' },
   ];

@@ -21,7 +21,7 @@ export function parseNamespace(graph: Readonly<Graph>, name: string): Result<Nam
 
   const isExists = graph.nodes
     .values()
-    .some((node) => node.type === SYSTEM_IDS.NAMESPACE && node.properties.get('name') === name);
+    .some((node) => node.shape === SYSTEM_IDS.NAMESPACE && node.properties.get('name') === name);
   return isExists ? ok(formatResult.data) : error(new Error(`Namespace '${name}' does not exist`));
 }
 
@@ -44,13 +44,15 @@ export function resolveNamespace(graph: Readonly<Graph>, node: Node): Namespace 
       return parsed.value;
     }
   }
-  const typeDefinition = getNodeType(graph, node.type);
-  if (typeDefinition) {
-    const ns = typeDefinition.properties.get('namespace');
-    if (typeof ns === 'string') {
-      const parsed = parseNamespace(graph, ns);
-      if (parsed.ok) {
-        return parsed.value;
+  if (node.shape !== undefined) {
+    const typeDefinition = getNodeType(graph, node.shape);
+    if (typeDefinition) {
+      const ns = typeDefinition.properties.get('namespace');
+      if (typeof ns === 'string') {
+        const parsed = parseNamespace(graph, ns);
+        if (parsed.ok) {
+          return parsed.value;
+        }
       }
     }
   }

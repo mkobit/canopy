@@ -161,7 +161,7 @@ function benchQuerySteps(fixture: ReturnType<typeof generateQueryBenchmarkFixtur
     let start = performance.now();
     const filterResult = executeQuery(fixture.graph, {
       steps: [
-        { kind: 'node-scan', type: fixture.sampleNodeTypes[0] },
+        { kind: 'node-scan', shape: fixture.sampleNodeTypes[0] },
         { kind: 'filter', predicate: { property: 'category', operator: 'eq', value: 'cat_2' } },
       ],
     });
@@ -171,9 +171,9 @@ function benchQuerySteps(fixture: ReturnType<typeof generateQueryBenchmarkFixtur
     start = performance.now();
     const traversalResult = executeQuery(fixture.graph, {
       steps: [
-        { kind: 'node-scan', type: fixture.sampleNodeTypes[0] },
+        { kind: 'node-scan', shape: fixture.sampleNodeTypes[0] },
         { kind: 'limit', limit: 100 },
-        { kind: 'traversal', edgeType: fixture.sampleEdgeTypes[0], direction: 'out' },
+        { kind: 'traversal', shape: fixture.sampleEdgeTypes[0], direction: 'out' },
       ],
     });
     traversalSamplesMs.push(performance.now() - start);
@@ -182,7 +182,7 @@ function benchQuerySteps(fixture: ReturnType<typeof generateQueryBenchmarkFixtur
     start = performance.now();
     const sortResult = executeQuery(fixture.graph, {
       steps: [
-        { kind: 'node-scan', type: fixture.sampleNodeTypes[0] },
+        { kind: 'node-scan', shape: fixture.sampleNodeTypes[0] },
         { kind: 'sort', sort: { property: 'index', direction: 'desc' } },
         { kind: 'limit', limit: 50 },
         { kind: 'project', properties: ['category', 'index'] },
@@ -208,7 +208,7 @@ async function main(): Promise<void> {
   // Warm the read-model index cache `executeQuery` builds lazily per `Graph` reference (see
   // `getGraphIndexes` in @canopy/graph); `fixture.graph` starts with no `_indexes`, so without
   // this the first query benchmark below would pay a one-time O(V+E) build cost.
-  executeQuery(fixture.graph, { steps: [{ kind: 'node-scan', type: fixture.sampleNodeTypes[0] }] });
+  executeQuery(fixture.graph, { steps: [{ kind: 'node-scan', shape: fixture.sampleNodeTypes[0] }] });
 
   console.log(`\nGraphSession query projection benchmark (10k nodes, 20k edges)\n`);
 

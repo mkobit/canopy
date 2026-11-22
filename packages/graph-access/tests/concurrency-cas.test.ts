@@ -4,7 +4,7 @@ import {
   asEdgeId,
   asGraphId,
   asNodeId,
-  asTypeId,
+  asShapeId,
   createGraphSession,
 } from '@canopy/graph';
 import { createInMemoryEventStore } from '@canopy/storage';
@@ -18,8 +18,8 @@ import {
 } from '@canopy/graph-access';
 
 const graphId = asGraphId('concurrency-g1');
-const deviceId1 = asDeviceId('device-1');
-const deviceId2 = asDeviceId('device-2');
+const deviceId1 = asDeviceId('00000000-0000-4000-8000-000000000001');
+const deviceId2 = asDeviceId('00000000-0000-4000-8000-000000000002');
 
 describe('CAS & Concurrency Stress Verification', () => {
   test('atomic compare-and-swap (CAS): rejects concurrent commits with outdated sequence number', async () => {
@@ -37,7 +37,7 @@ describe('CAS & Concurrency Stress Verification', () => {
     const createResult = await executeCreateNode(
       createGraphAccessRequest('req-init', context1, {
         id: asNodeId('node-cas-1'),
-        type: asTypeId('doc'),
+        type: asShapeId('doc'),
         properties: { version: 1 },
       }),
     );
@@ -89,7 +89,7 @@ describe('CAS & Concurrency Stress Verification', () => {
       executeCreateNode(
         createGraphAccessRequest(`req-stress-${index}`, context, {
           id: asNodeId(`stress-node-${index}`),
-          type: asTypeId('item'),
+          type: asShapeId('item'),
           properties: { index: index },
         }),
       ),
@@ -117,14 +117,14 @@ describe('CAS & Concurrency Stress Verification', () => {
     await executeCreateNode(
       createGraphAccessRequest('req-n1', context, {
         id: asNodeId('n1'),
-        type: asTypeId('doc'),
+        type: asShapeId('doc'),
         properties: {},
       }),
     );
     await executeCreateNode(
       createGraphAccessRequest('req-n2', context, {
         id: asNodeId('n2'),
-        type: asTypeId('doc'),
+        type: asShapeId('doc'),
         properties: {},
       }),
     );
@@ -133,7 +133,7 @@ describe('CAS & Concurrency Stress Verification', () => {
     await executeCreateEdge(
       createGraphAccessRequest('req-e1', context, {
         id: asEdgeId('e1'),
-        type: asTypeId('rel'),
+        type: asShapeId('rel'),
         source: asNodeId('n1'),
         target: asNodeId('n2'),
       }),
@@ -155,7 +155,7 @@ describe('CAS & Concurrency Stress Verification', () => {
     const failEdgeResult = await executeCreateEdge(
       createGraphAccessRequest('req-fail-edge', context, {
         id: asEdgeId('e2'),
-        type: asTypeId('rel'),
+        type: asShapeId('rel'),
         source: asNodeId('n1'),
         target: asNodeId('n2'),
       }),
@@ -177,7 +177,7 @@ describe('CAS & Concurrency Stress Verification', () => {
     await executeCreateNode(
       createGraphAccessRequest('n-a', context1, {
         id: asNodeId('a'),
-        type: asTypeId('doc'),
+        type: asShapeId('doc'),
         properties: {},
       }),
     );

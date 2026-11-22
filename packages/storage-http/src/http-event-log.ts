@@ -1,11 +1,5 @@
-import type {
-  Result,
-  GraphEvent,
-  EventLogStore,
-  EventLogQueryOptions,
-  PropertyValue,
-} from '@canopy/graph';
-import { ok, err, fromAsyncThrowable } from '@canopy/graph';
+import type { Result, GraphEvent, EventLogStore, EventLogQueryOptions } from '@canopy/graph';
+import { decodeStoredEvent, ok, err, fromAsyncThrowable } from '@canopy/graph';
 
 export interface HTTPOptions {
   readonly headers?: Record<string, string>;
@@ -41,45 +35,9 @@ const serializeEvent = (event: GraphEvent): unknown => {
   }
 };
 
-const isObject = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null;
-
-const deserializeEvent = (storable: unknown): Result<GraphEvent, Error> => {
-  if (!isObject(storable) || typeof storable.type !== 'string') {
-    return err(new Error('Invalid storable event'));
-  }
-
-  switch (storable.type) {
-    case 'NodeCreated':
-    case 'EdgeCreated': {
-      const properties = isObject(storable.properties)
-        ? new Map(Object.entries(storable.properties as Record<string, PropertyValue>))
-        : new Map();
-      return ok({
-        ...storable,
-        properties,
-      } as unknown as GraphEvent);
-    }
-    case 'NodePropertiesUpdated':
-    case 'EdgePropertiesUpdated': {
-      const changes = isObject(storable.changes)
-        ? new Map(Object.entries(storable.changes as Record<string, PropertyValue>))
-        : new Map();
-      return ok({
-        ...storable,
-        changes,
-      } as unknown as GraphEvent);
-    }
-    case 'NodeDeleted':
-    case 'EdgeDeleted':
-    case 'WorkflowStarted':
-    case 'WorkflowCompleted': {
-      return ok(storable as unknown as GraphEvent);
-    }
-    default: {
-      return err(new Error(`Unknown event type: ${storable.type}`));
-    }
-  }
+const deserializeEvent = (storable: unknown): Result<GraphEvent | null, Error> => {
+  const decoded = decodeStoredEvent(storable);
+  return decoded.ok ? ok(decoded.value) : err(new Error(decoded.error.message));
 };
 
 export const createHTTPEventLog = (baseUrl: string, options?: HTTPOptions): HTTPEventLog => {
@@ -174,7 +132,11 @@ export const createHTTPEventLog = (baseUrl: string, options?: HTTPOptions): HTTP
       const firstError = eventResults.find((r) => !r.ok);
       return firstError && !firstError.ok
         ? firstError
-        : ok(eventResults.map((r) => (r as { ok: true; value: GraphEvent }).value));
+        : ok(
+            eventResults
+              .map((r) => (r as { ok: true; value: GraphEvent | null }).value)
+              .filter((event_): event_ is GraphEvent => event_ !== null),
+          );
     },
   };
 };

@@ -114,7 +114,7 @@ export function createDraftSession(parentSession: GraphSession): DraftSession {
     }
 
     const matches = nodes.filter((node) => {
-      if (node.id.toLowerCase().includes(query) || node.type.toLowerCase().includes(query))
+      if (node.id.toLowerCase().includes(query) || node.shape?.toLowerCase().includes(query))
         return true;
 
       return node.properties.values().some((value) => {

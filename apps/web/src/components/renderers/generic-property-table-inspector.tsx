@@ -23,12 +23,12 @@ export const GenericPropertyTableInspector: React.FC<GenericPropertyTableInspect
     <div
       data-testid="generic-property-table-inspector"
       data-node-id={node.id}
-      data-node-type={node.type}
+      data-node-type={node.shape ?? 'open'}
       className={`border border-gray-300 dark:border-gray-700 rounded-md p-3 bg-gray-50 dark:bg-gray-900 text-xs font-mono space-y-2 ${className}`}
     >
       <div className="flex justify-between items-center text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-800 pb-1.5 font-sans">
         <span className="font-semibold text-xs tracking-wide">Property table inspector</span>
-        <span className="text-[11px] text-gray-500">{node.type}</span>
+        <span className="text-[11px] text-gray-500">{node.shape ?? 'Open'}</span>
       </div>
       <div className="text-[11px] text-gray-500 font-sans">
         <span className="font-medium text-gray-400">Node ID: </span>

@@ -24,7 +24,7 @@ const mockCommands = [
 
 const mockNode1: Node = {
   id: createNodeId(),
-  type: SYSTEM_IDS.TYPE_MARKDOWN,
+  shape: SYSTEM_IDS.TYPE_MARKDOWN,
   properties: new Map([
     ['name', 'Project Alpha'],
     ['content', 'Draft content.'],
@@ -38,7 +38,7 @@ const mockNode1: Node = {
 
 const mockNode2: Node = {
   id: createNodeId(),
-  type: SYSTEM_IDS.TYPE_CODE_BLOCK,
+  shape: SYSTEM_IDS.TYPE_CODE_BLOCK,
   properties: new Map([
     ['name', 'Project Beta'],
     ['content', 'console.log("test");'],

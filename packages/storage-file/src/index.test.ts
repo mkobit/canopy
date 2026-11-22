@@ -5,7 +5,9 @@ import {
   unwrap,
   createEventId,
   createNodeId,
-  asTypeId,
+  createEdgeId,
+  asShapeId,
+  asBatchId,
   asDeviceId,
   createInstant,
 } from '@canopy/graph';
@@ -33,7 +35,7 @@ describe('FileEventLog', () => {
     type: 'NodeCreated',
     eventId: createEventId(),
     id: createNodeId(),
-    nodeType: asTypeId('test-node'),
+    shapeId: asShapeId('test-node'),
     properties: new Map(),
     timestamp,
     deviceId,
@@ -204,7 +206,7 @@ describe('FileEventLog', () => {
     });
     await unwrap(await batchStore.init());
 
-    const batchId = 'batch-1';
+    const batchId = asBatchId('batch-1');
     const event1 = { ...createTestEvent(), batchId };
     const event2 = { ...createTestEvent(), batchId };
     const event3 = { ...createTestEvent(), batchId };
@@ -491,6 +493,107 @@ describe('FileEventLog', () => {
       );
       const localManifest = JSON.parse(manifestContent);
       expect(localManifest.watermarks[remoteDeviceId as string]).toBe(event3.eventId);
+    });
+  });
+
+  describe('legacy event upcasting and active-segment sealing', () => {
+    it('replays legacy JSONL events and seals a legacy active segment without rewriting it', async () => {
+      await unwrap(await store.close());
+      const restartDirectory = path.join(temporaryDirectory, 'legacy-vault');
+      const deviceDirectory = path.join(restartDirectory, 'events/device-legacy');
+      await fs.mkdir(deviceDirectory, { recursive: true });
+
+      const node1Id = createNodeId();
+      const node2Id = createNodeId();
+      const legacyEvent1 = {
+        type: 'NodeCreated',
+        eventId: createEventId(),
+        id: node1Id,
+        nodeType: 'legacy:note',
+        properties: { title: 'Legacy' },
+        timestamp,
+        deviceId,
+      };
+      const legacyEvent2 = {
+        type: 'NodeCreated',
+        eventId: createEventId(),
+        id: node2Id,
+        nodeType: 'canopy:open',
+        properties: {},
+        timestamp,
+        deviceId,
+      };
+      const legacyEdge = {
+        type: 'EdgeCreated',
+        eventId: createEventId(),
+        id: createEdgeId(),
+        edgeType: 'legacy:rel',
+        source: node1Id,
+        target: node2Id,
+        properties: {},
+        timestamp,
+        deviceId,
+      };
+
+      const legacyFilename = `${legacyEvent1.eventId}.jsonl`;
+      const originalContent =
+        [legacyEvent1, legacyEvent2, legacyEdge].map((event) => JSON.stringify(event)).join('\n') +
+        '\n';
+
+      await fs.writeFile(
+        path.join(restartDirectory, 'canopy.json'),
+        JSON.stringify({ version: 1, graphId: 'legacy-graph', name: 'legacy-graph' }),
+        'utf8',
+      );
+      await fs.writeFile(
+        path.join(deviceDirectory, 'manifest.json'),
+        JSON.stringify({ sealed: [], lastEventId: legacyEdge.eventId, watermarks: {} }),
+        'utf8',
+      );
+      await fs.writeFile(path.join(deviceDirectory, legacyFilename), originalContent, 'utf8');
+
+      const legacyStore = createFileEventLog({
+        rootDir: restartDirectory,
+        deviceId: 'device-legacy',
+        maxEventsPerSegment: 100,
+        maxBytesPerSegment: 65_536,
+      });
+      await unwrap(await legacyStore.init());
+
+      const beforeAppend = unwrap(await legacyStore.getEvents('legacy-graph'));
+      expect(beforeAppend).toHaveLength(3);
+      expect(beforeAppend[0]?.type === 'NodeCreated' && beforeAppend[0].shapeId).toBe(
+        asShapeId('legacy:note'),
+      );
+      expect(beforeAppend[1]?.type === 'NodeCreated' && beforeAppend[1].shapeId).toBeUndefined();
+      expect(beforeAppend[2]?.type === 'EdgeCreated' && beforeAppend[2].shapeId).toBe(
+        asShapeId('legacy:rel'),
+      );
+
+      // Appending a modern event must seal the legacy active segment without modifying it on disk
+      const modernOpenNode: GraphEvent = {
+        type: 'NodeCreated',
+        eventId: createEventId(),
+        id: createNodeId(),
+        properties: new Map([['kind', 'open']]),
+        timestamp,
+        deviceId,
+      };
+      await unwrap(await legacyStore.appendEvents('legacy-graph', [modernOpenNode]));
+
+      const afterDiskLegacy = await fs.readFile(path.join(deviceDirectory, legacyFilename), 'utf8');
+      expect(afterDiskLegacy).toBe(originalContent);
+
+      const manifestAfter = JSON.parse(
+        await fs.readFile(path.join(deviceDirectory, 'manifest.json'), 'utf8'),
+      ) as { sealed: readonly string[] };
+      expect(manifestAfter.sealed).toContain(legacyFilename);
+
+      const afterAppend = unwrap(await legacyStore.getEvents('legacy-graph'));
+      expect(afterAppend).toHaveLength(4);
+      expect(afterAppend[3]?.type === 'NodeCreated' && afterAppend[3].shapeId).toBeUndefined();
+
+      await unwrap(await legacyStore.close());
     });
   });
 });

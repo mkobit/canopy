@@ -35,7 +35,8 @@ export const executeCreateNode = async (
     );
   }
 
-  const { id, type, properties } = request.payload;
+  const { id, shapeId: explicitShapeId, type, properties } = request.payload;
+  const shapeId = explicitShapeId ?? type;
   const nodeId = id ?? createNodeId();
 
   const currentGraph = session.graph();
@@ -52,7 +53,7 @@ export const executeCreateNode = async (
     type: 'NodeCreated',
     eventId,
     id: nodeId,
-    nodeType: type,
+    ...(shapeId !== undefined && { shapeId }),
     properties: convertPropertiesToMap(properties),
     timestamp: now,
     deviceId: currentGraph.metadata.modifiedBy,
@@ -71,7 +72,7 @@ export const executeCreateNode = async (
 
   return ok({
     id: createdNode.id,
-    type: createdNode.type,
+    ...(createdNode.shape !== undefined && { type: createdNode.shape }),
     properties: Object.fromEntries(createdNode.properties),
     createdAt: createdNode.metadata.created,
     updatedAt: createdNode.metadata.modified,
@@ -123,7 +124,7 @@ export const executeUpdateNodeProperties = async (
 
   return ok({
     id: updatedNode.id,
-    type: updatedNode.type,
+    ...(updatedNode.shape !== undefined && { type: updatedNode.shape }),
     properties: Object.fromEntries(updatedNode.properties),
     createdAt: updatedNode.metadata.created,
     updatedAt: updatedNode.metadata.modified,
@@ -199,7 +200,8 @@ export const executeCreateEdge = async (
     );
   }
 
-  const { id, type, source, target, properties = {} } = request.payload;
+  const { id, shapeId: explicitShapeId, type, source, target, properties = {} } = request.payload;
+  const shapeId = explicitShapeId ?? type;
   const edgeId = id ?? createEdgeId();
   const currentGraph = session.graph();
 
@@ -223,7 +225,7 @@ export const executeCreateEdge = async (
     type: 'EdgeCreated',
     eventId: createEventId(),
     id: edgeId,
-    edgeType: type,
+    ...(shapeId !== undefined && { shapeId }),
     source,
     target,
     properties: convertPropertiesToMap(properties),
@@ -244,7 +246,7 @@ export const executeCreateEdge = async (
 
   return ok({
     id: createdEdge.id,
-    type: createdEdge.type,
+    ...(createdEdge.shape !== undefined && { type: createdEdge.shape }),
     source: createdEdge.source,
     target: createdEdge.target,
     properties: Object.fromEntries(createdEdge.properties),

@@ -31,9 +31,10 @@ export const CustomNode = React.memo(function CustomNode({
 
   const nameValue = node.properties.get('name') ?? node.properties.get('title');
   const nameString = typeof nameValue === 'string' ? nameValue : undefined;
+  const shapeLabel = node.shape ?? 'Open';
   const label = nameString
-    ? `Node ${node.type}: ${nameString} (ID: ${node.id.slice(0, 6)})`
-    : `Node ${node.type} (ID: ${node.id.slice(0, 6)})`;
+    ? `Node ${shapeLabel}: ${nameString} (ID: ${node.id.slice(0, 6)})`
+    : `Node ${shapeLabel} (ID: ${node.id.slice(0, 6)})`;
 
   return (
     <div
@@ -51,7 +52,7 @@ export const CustomNode = React.memo(function CustomNode({
 
       <div className="flex justify-between items-start mb-2">
         <span className="bg-slate-100 text-slate-800 border border-slate-200 text-xs px-2 py-1 rounded font-mono font-medium">
-          {node.type}
+          {shapeLabel}
         </span>
         <span className="text-slate-600 text-[10px] font-mono" title={node.id}>
           {node.id.slice(0, 6)}

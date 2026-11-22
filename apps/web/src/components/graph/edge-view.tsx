@@ -77,7 +77,7 @@ export const EdgeView: React.FC<EdgeViewProperties> = ({
         textAnchor="middle"
         className="text-xs fill-gray-400 opacity-0 group-hover:opacity-100 transition-opacity bg-white"
       >
-        {edge.type}
+        {edge.shape ?? ''}
       </text>
     </g>
   );

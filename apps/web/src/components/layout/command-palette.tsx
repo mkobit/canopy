@@ -77,7 +77,7 @@ const NodeItem: React.FC<NodeItemProperties> = ({ node, isSelected, onSelect, on
             : 'bg-[#1a2637]/40 text-on-surface-variant/60'
         }`}
       >
-        {node.type}
+        {node.shape ?? 'Open'}
       </span>
     </button>
   );

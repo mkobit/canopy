@@ -1,7 +1,15 @@
 import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
 import { createSQLiteEventLog } from './sqlite-event-log';
 import type { SQLiteEventLog } from './sqlite-event-log';
-import { unwrap, asNodeId, asTypeId, asEventId, asInstant, asDeviceId } from '@canopy/graph';
+import {
+  unwrap,
+  asNodeId,
+  asShapeId,
+  asEventId,
+  asInstant,
+  asDeviceId,
+  createEdgeId,
+} from '@canopy/graph';
 import type { NodeCreated, GraphEvent } from '@canopy/graph';
 
 const mockGraphId = 'test-graph-id';
@@ -18,7 +26,7 @@ const createEvent = (index: number): NodeCreated => ({
   type: 'NodeCreated',
   eventId: asEventId(`018d9${index.toString().padStart(3, '0')}-0000-7000-8000-000000000000`), // Dummy UUIDv7-ish
   id: asNodeId(`node-${index}`),
-  nodeType: asTypeId('test-type'),
+  shapeId: asShapeId('test-type'),
   properties: new Map(),
   timestamp: asInstant(
     Temporal.Instant.from(`2024-01-01T10:${String(index).padStart(2, '0')}:00.000Z`).toString(),
@@ -106,5 +114,65 @@ describe('SQLiteEventLog', () => {
 
     const result = unwrap(await adapter.getEvents(mockGraphId));
     expect(result).toHaveLength(1);
+  });
+
+  it('upcasts legacy nodeType/edgeType and canopy:open sentinel and round-trips open entities', async () => {
+    const legacyNode = {
+      type: 'NodeCreated',
+      eventId: asEventId('018d9001-0000-7000-8000-000000000000'),
+      id: asNodeId('node-legacy'),
+      nodeType: 'legacy:task',
+      properties: new Map([['title', 'Legacy']]),
+      timestamp: asInstant('2024-01-01T10:00:00.000Z'),
+      deviceId: asDeviceId('00000000-0000-0000-0000-000000000000'),
+    } as unknown as GraphEvent;
+
+    const legacySentinel = {
+      type: 'NodeCreated',
+      eventId: asEventId('018d9002-0000-7000-8000-000000000000'),
+      id: asNodeId('node-open-sentinel'),
+      nodeType: 'canopy:open',
+      properties: new Map(),
+      timestamp: asInstant('2024-01-01T10:01:00.000Z'),
+      deviceId: asDeviceId('00000000-0000-0000-0000-000000000000'),
+    } as unknown as GraphEvent;
+
+    const legacyEdge = {
+      type: 'EdgeCreated',
+      eventId: asEventId('018d9003-0000-7000-8000-000000000000'),
+      id: createEdgeId(),
+      edgeType: 'legacy:rel',
+      source: asNodeId('node-legacy'),
+      target: asNodeId('node-open-sentinel'),
+      properties: new Map(),
+      timestamp: asInstant('2024-01-01T10:02:00.000Z'),
+      deviceId: asDeviceId('00000000-0000-0000-0000-000000000000'),
+    } as unknown as GraphEvent;
+
+    const openEdge: GraphEvent = {
+      type: 'EdgeCreated',
+      eventId: asEventId('018d9004-0000-7000-8000-000000000000'),
+      id: createEdgeId(),
+      source: asNodeId('node-legacy'),
+      target: asNodeId('node-open-sentinel'),
+      properties: new Map(),
+      timestamp: asInstant('2024-01-01T10:03:00.000Z'),
+      deviceId: asDeviceId('00000000-0000-0000-0000-000000000000'),
+    };
+
+    await unwrap(
+      await adapter.appendEvents('legacy-graph', [
+        legacyNode,
+        legacySentinel,
+        legacyEdge,
+        openEdge,
+      ]),
+    );
+    const result = unwrap(await adapter.getEvents('legacy-graph'));
+    expect(result).toHaveLength(4);
+    expect(result[0]?.type === 'NodeCreated' && result[0].shapeId).toBe(asShapeId('legacy:task'));
+    expect(result[1]?.type === 'NodeCreated' && result[1].shapeId).toBeUndefined();
+    expect(result[2]?.type === 'EdgeCreated' && result[2].shapeId).toBe(asShapeId('legacy:rel'));
+    expect(result[3]?.type === 'EdgeCreated' && result[3].shapeId).toBeUndefined();
   });
 });

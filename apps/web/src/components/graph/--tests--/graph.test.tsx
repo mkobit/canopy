@@ -5,7 +5,7 @@ import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { NodeView } from '../node-view';
 import { GraphCanvas } from '../graph-canvas';
 import { Node, asDeviceId } from '@canopy/graph';
-import { asNodeId, asTypeId, createInstant } from '@canopy/graph';
+import { asNodeId, asShapeId, createInstant } from '@canopy/graph';
 
 // See graph-accessibility.test.ts for why this is needed: @testing-library/react doesn't
 // auto-cleanup under Bun's test runner, and this file's `screen.getByText`/`getAllByText` queries
@@ -16,12 +16,12 @@ afterEach(() => {
 
 // Mocks
 const mockNodeId = asNodeId('node-1');
-const mockTypeId = asTypeId('person');
+const mockTypeId = asShapeId('person');
 const mockTextValue = 'Alice';
 
 const mockNode: Node = {
   id: mockNodeId,
-  type: mockTypeId,
+  shape: mockTypeId,
   properties: new Map([['name', mockTextValue]]),
   metadata: {
     created: createInstant(),

@@ -7,7 +7,7 @@ import { createWasmAdapter } from '../src/wasm/wasm-adapter';
 import { DEFAULT_WASM_FUEL_LIMIT } from '../src/wasm/sandboxed-executor';
 
 const graphId = asGraphId('wasm-adapter-graph');
-const deviceId = asDeviceId('wasm-adapter-device');
+const deviceId = asDeviceId('00000000-0000-4000-8000-000000000001');
 
 const setupTestContext = async () => {
   const eventLogStore = createInMemoryEventStore();

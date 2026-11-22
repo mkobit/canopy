@@ -1,6 +1,8 @@
 export type {
   nodeIdBrand,
   edgeIdBrand,
+  shapeIdBrand,
+  batchIdBrand,
   typeIdBrand,
   graphIdBrand,
   eventIdBrand,
@@ -9,6 +11,8 @@ export type {
   revisionBrand,
   NodeId,
   EdgeId,
+  ShapeId,
+  BatchId,
   TypeId,
   GraphId,
   EventId,
@@ -65,6 +69,8 @@ export { RESTRICTED_NAMESPACE_KINDS } from './namespace';
 export {
   createNodeId,
   createEdgeId,
+  asShapeId,
+  asBatchId,
   asTypeId,
   createGraphId,
   asGraphId,
@@ -85,6 +91,7 @@ export {
 export { asRevision, zeroRevision, maxRevision, accumulateRevision } from './revision';
 
 export * from './schemas';
+export * from './event-upcast';
 export * from './guards';
 export * from './property-map';
 

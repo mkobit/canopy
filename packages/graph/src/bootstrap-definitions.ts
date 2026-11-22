@@ -23,14 +23,14 @@ export function reference(target: NodeId): PropertyValue {
 
 export function createBootstrapNode(
   id: NodeId,
-  type: TypeId,
+  shape: TypeId,
   name: string,
   description: string,
   extraProperties: Record<string, PropertyValue> = {},
 ): Node {
   return {
     id,
-    type,
+    shape,
     properties: createProperties({
       name: text(name),
       description: text(description),

@@ -81,7 +81,7 @@ export function saveQueryDefinition(
 
   const node: Node = {
     id: nodeId,
-    type: SYSTEM_IDS.QUERY_DEFINITION,
+    shape: SYSTEM_IDS.QUERY_DEFINITION,
     properties,
     metadata: {
       created: createInstant(),
@@ -104,7 +104,7 @@ export function getQueryDefinition(graph: Graph, nodeId: NodeId): Result<Query, 
     return err(new Error(`Query definition node ${nodeId} not found`));
   }
 
-  if (node.type !== SYSTEM_IDS.QUERY_DEFINITION) {
+  if (node.shape !== SYSTEM_IDS.QUERY_DEFINITION) {
     return err(new Error(`Node ${nodeId} is not a Query Definition`));
   }
 
@@ -122,7 +122,7 @@ export function getQueryDefinition(graph: Graph, nodeId: NodeId): Result<Query, 
 }
 
 export function listQueryDefinitions(graph: Graph): readonly Node[] {
-  return [...graph.nodes.values()].filter((node) => node.type === SYSTEM_IDS.QUERY_DEFINITION);
+  return [...graph.nodes.values()].filter((node) => node.shape === SYSTEM_IDS.QUERY_DEFINITION);
 }
 
 // Helper to substitute parameters in the query structure

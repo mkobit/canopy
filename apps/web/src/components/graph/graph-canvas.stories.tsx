@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import React from 'react';
 import { GraphCanvas } from './graph-canvas';
-import { asDeviceId, asEdgeId, asInstant, asNodeId, asTypeId } from '@canopy/graph';
+import { asDeviceId, asEdgeId, asInstant, asNodeId, asShapeId } from '@canopy/graph';
 
 const meta: Meta<typeof GraphCanvas> = {
   title: 'Graph/GraphCanvas',
@@ -13,7 +13,7 @@ type Story = StoryObj<typeof GraphCanvas>;
 
 const sampleNode1 = {
   id: asNodeId('1'),
-  type: asTypeId('customNode'),
+  shape: asShapeId('customNode'),
   properties: new Map([['title', 'Knowledge Graph']]),
   metadata: {
     created: asInstant('2025-01-01T00:00:00Z'),
@@ -25,7 +25,7 @@ const sampleNode1 = {
 
 const sampleNode2 = {
   id: asNodeId('2'),
-  type: asTypeId('customNode'),
+  shape: asShapeId('customNode'),
   properties: new Map([['title', 'Storybook Component']]),
   metadata: {
     created: asInstant('2025-01-01T00:00:00Z'),
@@ -37,7 +37,7 @@ const sampleNode2 = {
 
 const sampleEdge = {
   id: asEdgeId('e1-2'),
-  type: asTypeId('renders'),
+  shape: asShapeId('renders'),
   source: sampleNode1.id,
   target: sampleNode2.id,
   properties: new Map(),

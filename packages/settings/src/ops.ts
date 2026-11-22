@@ -32,7 +32,7 @@ export function addUserSetting(
 
   const node: Node = {
     id: createNodeId(),
-    type: SYSTEM_IDS.USER_SETTING,
+    shape: SYSTEM_IDS.USER_SETTING,
     properties,
     metadata: {
       created: createInstant(),

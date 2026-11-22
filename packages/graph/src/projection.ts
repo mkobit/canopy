@@ -44,7 +44,7 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
 
             const node: Node = {
               id: event.id,
-              type: event.nodeType,
+              ...(event.shapeId !== undefined && { shape: event.shapeId }),
               properties: event.properties,
               metadata: {
                 created: event.timestamp,
@@ -166,7 +166,7 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
 
             const edge: Edge = {
               id: event.id,
-              type: event.edgeType,
+              ...(event.shapeId !== undefined && { shape: event.shapeId }),
               source: event.source,
               target: event.target,
               properties: event.properties,

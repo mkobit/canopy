@@ -7,7 +7,7 @@ import type { WasmHostBindings } from '../src/wasm/host-bindings';
 import { executeSandboxedGuestPlugin } from '../src/wasm/sandboxed-executor';
 
 const graphId = asGraphId('wasm-sandbox-graph');
-const deviceId = asDeviceId('wasm-sandbox-device');
+const deviceId = asDeviceId('00000000-0000-4000-8000-000000000001');
 
 const setupTestContext = async () => {
   const eventLogStore = createInMemoryEventStore();

@@ -6,7 +6,7 @@ import { createWasmHostBindings } from '../src/wasm/host-bindings';
 import { createFuelMeter, createReentrancyGuard } from '../src/wasm/sandboxed-executor';
 
 const graphId = asGraphId('wasm-graph-1');
-const deviceId = asDeviceId('wasm-device-1');
+const deviceId = asDeviceId('00000000-0000-4000-8000-000000000001');
 
 const setupTestContext = async () => {
   const eventLogStore = createInMemoryEventStore();

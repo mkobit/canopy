@@ -1,6 +1,7 @@
 export declare const nodeIdBrand: unique symbol;
 export declare const edgeIdBrand: unique symbol;
-export declare const typeIdBrand: unique symbol;
+export declare const shapeIdBrand: unique symbol;
+export declare const batchIdBrand: unique symbol;
 export declare const graphIdBrand: unique symbol;
 export declare const eventIdBrand: unique symbol;
 export declare const deviceIdBrand: unique symbol;
@@ -18,9 +19,24 @@ Unique identifier for an edge within a graph.
 export type EdgeId = string & Readonly<{ [edgeIdBrand]: never }>;
 
 /**
-Unique identifier for a node or edge type definition.
+Unique identifier for a node or edge shape definition.
 */
-export type TypeId = string & Readonly<{ [typeIdBrand]: never }>;
+export type ShapeId = string & Readonly<{ [shapeIdBrand]: never }>;
+
+/**
+Unique identifier for an atomic batch of events.
+*/
+export type BatchId = string & Readonly<{ [batchIdBrand]: never }>;
+
+/**
+@deprecated Removed in bead d.
+*/
+export type TypeId = ShapeId;
+
+/**
+@deprecated Removed in bead d.
+*/
+export declare const typeIdBrand: typeof shapeIdBrand;
 
 /**
 Unique identifier for a graph (aggregate root).

@@ -47,7 +47,7 @@ export function isNode(value: unknown): value is Node {
     typeof value === 'object' &&
     value !== null &&
     'id' in value &&
-    'type' in value &&
+    (!('shape' in value) || value.shape === undefined || typeof value.shape === 'string') &&
     'properties' in value &&
     'metadata' in value &&
     !('source' in value) &&
@@ -60,7 +60,7 @@ export function isEdge(value: unknown): value is Edge {
     typeof value === 'object' &&
     value !== null &&
     'id' in value &&
-    'type' in value &&
+    (!('shape' in value) || value.shape === undefined || typeof value.shape === 'string') &&
     'source' in value &&
     'target' in value &&
     'properties' in value &&

@@ -12,6 +12,8 @@ import type { NodeId, EdgeId, Namespace } from './identifiers';
 import {
   asNodeId,
   asEdgeId,
+  asShapeId,
+  asBatchId,
   asTypeId,
   asGraphId,
   asInstant,
@@ -28,6 +30,11 @@ import { asRevision } from './revision';
 // Node and edge IDs are non-empty strings; user-created IDs are UUIDs but system IDs are semantic (e.g. 'query:system:all-nodes').
 export const NodeIdSchema = z.string().min(1).transform(asNodeId);
 export const EdgeIdSchema = z.string().min(1).transform(asEdgeId);
+export const ShapeIdSchema = z.string().min(1).transform(asShapeId);
+export const BatchIdSchema = z.string().min(1).transform(asBatchId);
+/**
+@deprecated Removed in bead d.
+*/
 export const TypeIdSchema = z.string().min(1).transform(asTypeId);
 export const GraphIdSchema = z.string().uuid().transform(asGraphId);
 export const DeviceIdSchema = z.string().uuid().transform(asDeviceId);
@@ -119,14 +126,14 @@ export const PropertyMapSchema = z.union([
 
 export const NodeSchema: z.ZodType<Node, unknown> = z.object({
   id: NodeIdSchema,
-  type: TypeIdSchema,
+  shape: ShapeIdSchema.optional(),
   properties: PropertyMapSchema,
   metadata: TemporalMetadataSchema,
 });
 
 export const EdgeSchema: z.ZodType<Edge, unknown> = z.object({
   id: EdgeIdSchema,
-  type: TypeIdSchema,
+  shape: ShapeIdSchema.optional(),
   source: NodeIdSchema,
   target: NodeIdSchema,
   properties: PropertyMapSchema,
@@ -202,7 +209,7 @@ export const WorkflowStartedSchema = z.object({
   triggerId: NodeIdSchema,
   timestamp: InstantSchema,
   deviceId: DeviceIdSchema,
-  batchId: z.string().optional(),
+  batchId: BatchIdSchema.optional(),
 });
 
 export const WorkflowCompletedSchema = z.object({
@@ -211,18 +218,18 @@ export const WorkflowCompletedSchema = z.object({
   executionId: EventIdSchema,
   timestamp: InstantSchema,
   deviceId: DeviceIdSchema,
-  batchId: z.string().optional(),
+  batchId: BatchIdSchema.optional(),
 });
 
 export const NodeCreatedSchema = z.object({
   type: z.literal('NodeCreated'),
   eventId: EventIdSchema,
   id: NodeIdSchema,
-  nodeType: TypeIdSchema,
+  shapeId: ShapeIdSchema.optional(),
   properties: PropertyMapSchema,
   timestamp: InstantSchema,
   deviceId: DeviceIdSchema,
-  batchId: z.string().optional(),
+  batchId: BatchIdSchema.optional(),
   migrationId: z.string().optional(),
 });
 
@@ -233,7 +240,7 @@ export const NodePropertiesUpdatedSchema = z.object({
   changes: PropertyMapSchema,
   timestamp: InstantSchema,
   deviceId: DeviceIdSchema,
-  batchId: z.string().optional(),
+  batchId: BatchIdSchema.optional(),
   migrationId: z.string().optional(),
 });
 
@@ -243,7 +250,7 @@ export const NodeDeletedSchema = z.object({
   id: NodeIdSchema,
   timestamp: InstantSchema,
   deviceId: DeviceIdSchema,
-  batchId: z.string().optional(),
+  batchId: BatchIdSchema.optional(),
   migrationId: z.string().optional(),
 });
 
@@ -251,13 +258,13 @@ export const EdgeCreatedSchema = z.object({
   type: z.literal('EdgeCreated'),
   eventId: EventIdSchema,
   id: EdgeIdSchema,
-  edgeType: TypeIdSchema,
+  shapeId: ShapeIdSchema.optional(),
   source: NodeIdSchema,
   target: NodeIdSchema,
   properties: PropertyMapSchema,
   timestamp: InstantSchema,
   deviceId: DeviceIdSchema,
-  batchId: z.string().optional(),
+  batchId: BatchIdSchema.optional(),
   migrationId: z.string().optional(),
 });
 
@@ -268,7 +275,7 @@ export const EdgePropertiesUpdatedSchema = z.object({
   changes: PropertyMapSchema,
   timestamp: InstantSchema,
   deviceId: DeviceIdSchema,
-  batchId: z.string().optional(),
+  batchId: BatchIdSchema.optional(),
   migrationId: z.string().optional(),
 });
 
@@ -278,7 +285,7 @@ export const EdgeDeletedSchema = z.object({
   id: EdgeIdSchema,
   timestamp: InstantSchema,
   deviceId: DeviceIdSchema,
-  batchId: z.string().optional(),
+  batchId: BatchIdSchema.optional(),
   migrationId: z.string().optional(),
 });
 

@@ -44,13 +44,13 @@ function addNodeGraph(graph: Graph, node: Node, migrationId?: string): Result<Gr
 function addEdgeGraph(
   graph: Graph,
   id: string,
-  type: TypeId,
+  shape: TypeId,
   source: NodeId,
   target: NodeId,
 ): Result<Graph, Error> {
   const edge: Edge = {
     id: asEdgeId(id),
-    type,
+    shape,
     source,
     target,
     properties: new Map(),

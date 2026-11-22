@@ -35,7 +35,7 @@ import {
 } from '@canopy/graph';
 import { useStorage } from './storage-context';
 import { z } from 'zod';
-import { TypeIdSchema, PropertyValueSchema } from '@canopy/graph';
+import { ShapeIdSchema, PropertyValueSchema } from '@canopy/graph';
 
 function validationErrorToError(validationError: ValidationError): Error {
   return new Error(
@@ -95,12 +95,12 @@ interface GraphContextActions {
 type GraphContextType = GraphContextState & GraphContextActions;
 
 const CreateNodeInputSchema = z.object({
-  type: TypeIdSchema,
+  type: ShapeIdSchema,
   properties: z.record(z.string(), PropertyValueSchema).optional(),
 });
 
 const CreateEdgeInputSchema = z.object({
-  type: TypeIdSchema,
+  type: ShapeIdSchema,
   properties: z.record(z.string(), PropertyValueSchema).optional(),
 });
 
@@ -199,7 +199,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
         );
         const node: Node = {
           id: createNodeId(),
-          type: input.type,
+          shape: input.type,
           properties: propertiesMap,
           metadata: { created: createInstant(), modified: createInstant(), modifiedBy: deviceId },
         };
@@ -235,7 +235,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
         );
         const edge: Edge = {
           id: createEdgeId(),
-          type: input.type,
+          shape: input.type,
           source,
           target,
           properties: propertiesMap,

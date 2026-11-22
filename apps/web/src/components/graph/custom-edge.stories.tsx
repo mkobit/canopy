@@ -4,7 +4,7 @@ import { ReactFlow, Position } from '@xyflow/react';
 import type { EdgeProps } from '@xyflow/react';
 import { CustomEdge } from './custom-edge';
 import { CustomNode } from './custom-node';
-import { asDeviceId, asInstant, asNodeId, asTypeId } from '@canopy/graph';
+import { asDeviceId, asInstant, asNodeId, asShapeId } from '@canopy/graph';
 
 const meta: Meta<typeof CustomEdge> = {
   title: 'Graph/CustomEdge',
@@ -19,7 +19,7 @@ type Story = StoryObj<typeof CustomEdge>;
 
 const sourceNode = {
   id: asNodeId('node-1'),
-  type: asTypeId('concept'),
+  shape: asShapeId('concept'),
   properties: new Map([['title', 'Source']]),
   metadata: {
     created: asInstant('2025-01-01T00:00:00Z'),
@@ -30,7 +30,7 @@ const sourceNode = {
 
 const targetNode = {
   id: asNodeId('node-2'),
-  type: asTypeId('concept'),
+  shape: asShapeId('concept'),
   properties: new Map([['title', 'Target']]),
   metadata: {
     created: asInstant('2025-01-01T00:00:00Z'),

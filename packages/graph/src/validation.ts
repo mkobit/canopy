@@ -281,12 +281,12 @@ function validateTargetType(
       };
     }
 
-    if (targetNode.type !== targetTypeId) {
+    if (targetNode.shape !== targetTypeId) {
       return {
         path,
-        message: `Property '${name}' target node '${targetIdString}' has type '${targetNode.type}', expected '${targetTypeId}'`,
+        message: `Property '${name}' target node '${targetIdString}' has type '${targetNode.shape}', expected '${targetTypeId}'`,
         expected: targetTypeId,
-        actual: targetNode.type,
+        actual: targetNode.shape ?? 'open',
       };
     }
 
@@ -536,8 +536,11 @@ function validateProperties(
 }
 
 export function validateNode(graph: Graph, node: Node): ValidationResult {
+  if (node.shape === undefined) {
+    return SUCCESS;
+  }
   // 1. Lookup NodeType
-  const definitionNode = getNodeTypeDefinition(graph, node.type);
+  const definitionNode = getNodeTypeDefinition(graph, node.shape);
   if (!definitionNode) {
     return SUCCESS;
   }
@@ -548,7 +551,7 @@ export function validateNode(graph: Graph, node: Node): ValidationResult {
     return failure([
       {
         path: ['type'],
-        message: `Node type '${node.type}' is inactive (TYPE_INACTIVE)`,
+        message: `Node type '${node.shape}' is inactive (TYPE_INACTIVE)`,
         expected: 'active',
         actual: 'inactive',
       },
@@ -562,7 +565,7 @@ export function validateNode(graph: Graph, node: Node): ValidationResult {
   const manifestValue = node.properties.get('manifest');
 
   const pluginErrors =
-    node.type === SYSTEM_IDS.TYPE_PLUGIN
+    node.shape === SYSTEM_IDS.TYPE_PLUGIN
       ? [
           ...(wasmBinaryValue === undefined
             ? []
@@ -678,41 +681,41 @@ function validateNodeTypeEdgeConstraints(graph: Graph, edge: Edge): readonly Val
   const targetNode = graph.nodes.get(edge.target);
 
   const sourceErrors: readonly ValidationError[] = (() => {
-    if (!sourceNode) return [];
-    const sourceTypeDefinition = getNodeTypeDefinition(graph, sourceNode.type);
+    if (!sourceNode || sourceNode.shape === undefined) return [];
+    const sourceTypeDefinition = getNodeTypeDefinition(graph, sourceNode.shape);
     if (!sourceTypeDefinition) return [];
     const sourceDefinition = extractNodeTypeDefinition(graph, sourceTypeDefinition);
     if (
       sourceDefinition.validOutgoingEdges.length === 0 ||
-      sourceDefinition.validOutgoingEdges.includes(edge.type)
+      (edge.shape !== undefined && sourceDefinition.validOutgoingEdges.includes(edge.shape))
     )
       return [];
     return [
       {
         path: ['source'],
-        message: `Source node type '${sourceDefinition.name}' does not allow outgoing edge type '${edge.type}'`,
+        message: `Source node type '${sourceDefinition.name}' does not allow outgoing edge type '${edge.shape ?? 'open'}'`,
         expected: sourceDefinition.validOutgoingEdges.join(' | '),
-        actual: edge.type,
+        actual: edge.shape ?? 'open',
       },
     ];
   })();
 
   const targetErrors: readonly ValidationError[] = (() => {
-    if (!targetNode) return [];
-    const targetTypeDefinition = getNodeTypeDefinition(graph, targetNode.type);
+    if (!targetNode || targetNode.shape === undefined) return [];
+    const targetTypeDefinition = getNodeTypeDefinition(graph, targetNode.shape);
     if (!targetTypeDefinition) return [];
     const targetDefinition = extractNodeTypeDefinition(graph, targetTypeDefinition);
     if (
       targetDefinition.validIncomingEdges.length === 0 ||
-      targetDefinition.validIncomingEdges.includes(edge.type)
+      (edge.shape !== undefined && targetDefinition.validIncomingEdges.includes(edge.shape))
     )
       return [];
     return [
       {
         path: ['target'],
-        message: `Target node type '${targetDefinition.name}' does not allow incoming edge type '${edge.type}'`,
+        message: `Target node type '${targetDefinition.name}' does not allow incoming edge type '${edge.shape ?? 'open'}'`,
         expected: targetDefinition.validIncomingEdges.join(' | '),
-        actual: edge.type,
+        actual: edge.shape ?? 'open',
       },
     ];
   })();
@@ -722,10 +725,10 @@ function validateNodeTypeEdgeConstraints(graph: Graph, edge: Edge): readonly Val
 
 export function validateEdge(graph: Graph, edge: Edge): ValidationResult {
   // 1. Lookup EdgeType
-  const edgeTypeId = asNodeId(edge.type);
-  const rawDefinitionNode = graph.nodes.get(edgeTypeId);
+  const rawDefinitionNode =
+    edge.shape === undefined ? undefined : graph.nodes.get(asNodeId(edge.shape));
   const definitionNode =
-    rawDefinitionNode && rawDefinitionNode.type === SYSTEM_IDS.EDGE_TYPE
+    rawDefinitionNode && rawDefinitionNode.shape === SYSTEM_IDS.EDGE_TYPE
       ? rawDefinitionNode
       : undefined;
 
@@ -740,13 +743,16 @@ export function validateEdge(graph: Graph, edge: Edge): ValidationResult {
       map((id) => graph.nodes.get(id)),
       filter((node): node is Node => !!node),
       flatMap((node) => {
-        if (definition.sourceTypes.length > 0 && !definition.sourceTypes.includes(node.type)) {
+        if (
+          definition.sourceTypes.length > 0 &&
+          (node.shape === undefined || !definition.sourceTypes.includes(node.shape))
+        ) {
           return [
             {
               path: ['source'],
-              message: `Source node type '${node.type}' is not allowed for edge type '${edge.type}'`,
+              message: `Source node type '${node.shape ?? 'open'}' is not allowed for edge type '${edge.shape ?? 'open'}'`,
               expected: definition.sourceTypes.join(' | '),
-              actual: node.type,
+              actual: node.shape ?? 'open',
             },
           ];
         }
@@ -759,13 +765,16 @@ export function validateEdge(graph: Graph, edge: Edge): ValidationResult {
       map((id) => graph.nodes.get(id)),
       filter((node): node is Node => !!node),
       flatMap((node) => {
-        if (definition.targetTypes.length > 0 && !definition.targetTypes.includes(node.type)) {
+        if (
+          definition.targetTypes.length > 0 &&
+          (node.shape === undefined || !definition.targetTypes.includes(node.shape))
+        ) {
           return [
             {
               path: ['target'],
-              message: `Target node type '${node.type}' is not allowed for edge type '${edge.type}'`,
+              message: `Target node type '${node.shape ?? 'open'}' is not allowed for edge type '${edge.shape ?? 'open'}'`,
               expected: definition.targetTypes.join(' | '),
-              actual: node.type,
+              actual: node.shape ?? 'open',
             },
           ];
         }

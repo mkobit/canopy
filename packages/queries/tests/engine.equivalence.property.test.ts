@@ -5,7 +5,7 @@ import {
   asEdgeId,
   asInstant,
   asNodeId,
-  asTypeId,
+  asShapeId,
   createGraphId,
   type Edge,
   type Graph,
@@ -50,10 +50,14 @@ const propertiesArb: fc.Arbitrary<ReadonlyMap<string, ScalarValue>> = fc
     return new Map<string, ScalarValue>(entries);
   });
 
-function makeNode(index: number, type: string, properties: ReadonlyMap<string, ScalarValue>): Node {
+function makeNode(
+  index: number,
+  shape: string | undefined,
+  properties: ReadonlyMap<string, ScalarValue>,
+): Node {
   return {
     id: asNodeId(`node-${index}`),
-    type: asTypeId(type),
+    ...(shape !== undefined && { shape: asShapeId(shape) }),
     properties,
     metadata: {
       created: asInstant('2026-01-01T00:00:00Z'),
@@ -63,10 +67,10 @@ function makeNode(index: number, type: string, properties: ReadonlyMap<string, S
   };
 }
 
-function makeEdge(index: number, type: string, source: NodeId, target: NodeId): Edge {
+function makeEdge(index: number, shape: string | undefined, source: NodeId, target: NodeId): Edge {
   return {
     id: asEdgeId(`edge-${index}`),
-    type: asTypeId(type),
+    ...(shape !== undefined && { shape: asShapeId(shape) }),
     source,
     target,
     properties: new Map(),
@@ -81,12 +85,15 @@ function makeEdge(index: number, type: string, source: NodeId, target: NodeId): 
 const graphArb: fc.Arbitrary<Graph> = fc
   .record({
     nodeSpecs: fc.array(
-      fc.record({ type: fc.constantFrom(...NODE_TYPES), properties: propertiesArb }),
+      fc.record({
+        shape: fc.option(fc.constantFrom(...NODE_TYPES), { nil: undefined }),
+        properties: propertiesArb,
+      }),
       { minLength: 0, maxLength: 30 },
     ),
     edgeSpecs: fc.array(
       fc.record({
-        type: fc.constantFrom(...EDGE_TYPES),
+        shape: fc.option(fc.constantFrom(...EDGE_TYPES), { nil: undefined }),
         sourceIndex: fc.nat(999),
         targetIndex: fc.nat(999),
       }),
@@ -94,7 +101,7 @@ const graphArb: fc.Arbitrary<Graph> = fc
     ),
   })
   .map(({ nodeSpecs, edgeSpecs }) => {
-    const nodeList = nodeSpecs.map((spec, index) => makeNode(index, spec.type, spec.properties));
+    const nodeList = nodeSpecs.map((spec, index) => makeNode(index, spec.shape, spec.properties));
     const nodes = new Map(nodeList.map((node) => [node.id, node]));
 
     const edgeList =
@@ -105,7 +112,7 @@ const graphArb: fc.Arbitrary<Graph> = fc
             const target = nodeList[spec.targetIndex % nodeList.length];
             return source === undefined || target === undefined
               ? []
-              : [makeEdge(index, spec.type, source.id, target.id)];
+              : [makeEdge(index, spec.shape, source.id, target.id)];
           });
     const edges = new Map(edgeList.map((edge) => [edge.id, edge]));
 
@@ -135,9 +142,9 @@ const NODE_FILTER_OPERATORS: readonly Operator[] = [
 
 const filterStepArb: fc.Arbitrary<QueryStep> = fc
   .record({
-    property: fc.constantFrom(...PROP_NAMES),
+    property: fc.constantFrom('shape', 'type', ...PROP_NAMES),
     operator: fc.constantFrom(...NODE_FILTER_OPERATORS),
-    value: fc.constantFrom(...PROP_VALUES),
+    value: fc.constantFrom(...NODE_TYPES, ...PROP_VALUES),
   })
   .map((predicate: Filter): QueryStep => ({
     kind: 'filter',

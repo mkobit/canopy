@@ -4,7 +4,7 @@ import React from 'react';
 import { StorageProvider, useStorage } from '../storage-context';
 import { GraphProvider, useGraph } from '../graph-context';
 import { PluginProvider, usePlugin } from '../plugin-context';
-import { asGraphId, asTypeId, asNodeId, SYSTEM_IDS } from '@canopy/graph';
+import { asGraphId, asShapeId, asNodeId, SYSTEM_IDS } from '@canopy/graph';
 import type { NodeId } from '@canopy/graph';
 import type { ReactNode } from 'react';
 
@@ -130,7 +130,7 @@ describe('plugin wizard integration', () => {
     expect(finalGraph).not.toBeNull();
     const outputNode = finalGraph?.nodes.get(asNodeId('node_mock_plugin_output'));
     expect(outputNode).toBeDefined();
-    expect(outputNode?.type).toBe(asTypeId('mock_output'));
+    expect(outputNode?.shape).toBe(asShapeId('mock_output'));
     expect(outputNode?.properties.get('age')).toBe(42);
   });
 });

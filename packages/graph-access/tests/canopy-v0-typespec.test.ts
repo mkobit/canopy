@@ -4,7 +4,7 @@ import {
   asDeviceId,
   asGraphId,
   asNodeId,
-  asTypeId,
+  asShapeId,
   createEdgeId,
   createEventId,
   createGraphSession,
@@ -27,14 +27,14 @@ const provenance: CanopyV0ActorProvenance = {
   principalId: 'principal-alice',
   actorId: 'alice',
   actorKind: 'user',
-  deviceId: '00000000-0000-0000-0000-0000000000a1',
+  deviceId: '00000000-0000-4000-8000-0000000000a1',
   hlcTimestamp: '1700000000000:0:alice',
 };
 
 const setupSdk = async () => {
   const store = createInMemoryEventStore();
   const graphId = asGraphId('00000000-0000-7000-8000-000000000101');
-  const deviceId = asDeviceId('00000000-0000-0000-0000-0000000000a1');
+  const deviceId = asDeviceId('00000000-0000-4000-8000-0000000000a1');
   const session = createGraphSession(store, graphId, deviceId);
   await session.load();
 
@@ -165,6 +165,17 @@ describe('TypeSpec canopy.v0 server router and client SDK', () => {
     expect(proxyLookup.ok).toBe(true);
     if (proxyLookup.ok) {
       expect(proxyLookup.value.nodes.map((n) => n.nodeId)).toEqual(['node-proxy-wiki']);
+      expect(proxyLookup.value.nodes[0]?.shapeId).toBeUndefined();
+    }
+
+    const allNodes = await client.queries.queryNodes({
+      graphId,
+      consistency: { minCommitSeq: 1 },
+    });
+    expect(allNodes.ok).toBe(true);
+    if (allNodes.ok) {
+      const rawNode = allNodes.value.nodes.find((n) => n.nodeId === 'node-raw-1');
+      expect(rawNode?.shapeId).toBeUndefined();
     }
 
     const aheadRead = await client.queries.queryNodes({
@@ -221,6 +232,7 @@ describe('TypeSpec canopy.v0 server router and client SDK', () => {
     expect(snap1.ok).toBe(true);
     if (snap1.ok) {
       const nodeAt1 = snap1.value.nodes.find((n) => n.nodeId === 'node-raw-1');
+      expect(nodeAt1?.shapeId).toBeUndefined();
       expect(nodeAt1?.properties.find((p) => p.key === 'title')?.valueJson).toBe('"Raw capture"');
     }
 
@@ -263,13 +275,13 @@ describe('TypeSpec canopy.v0 server router and client SDK', () => {
   test('supports decoupled Views with RenderSelector cycles, settings cascade, bundles, migrations, and streams', async () => {
     const { graphId, session, client } = await setupSdk();
 
-    const deviceId = asDeviceId('00000000-0000-0000-0000-0000000000a1');
+    const deviceId = asDeviceId('00000000-0000-4000-8000-0000000000a1');
     const setupEvents: readonly GraphEvent[] = [
       {
         type: 'NodeCreated',
         eventId: createEventId(),
         id: asNodeId('view:standalone'),
-        nodeType: SYSTEM_IDS.VIEW_DEFINITION,
+        shapeId: SYSTEM_IDS.VIEW_DEFINITION,
         properties: new Map([
           ['name', 'Scratchpad'],
           ['layout', 'layout-stack'],
@@ -283,7 +295,7 @@ describe('TypeSpec canopy.v0 server router and client SDK', () => {
         type: 'NodeCreated',
         eventId: createEventId(),
         id: asNodeId('view:cycle-a'),
-        nodeType: SYSTEM_IDS.VIEW_DEFINITION,
+        shapeId: SYSTEM_IDS.VIEW_DEFINITION,
         properties: new Map([
           ['name', 'Cycle A'],
           ['layout', 'layout-stack'],
@@ -295,7 +307,7 @@ describe('TypeSpec canopy.v0 server router and client SDK', () => {
         type: 'EdgeCreated',
         eventId: createEventId(),
         id: createEdgeId(),
-        edgeType: asTypeId('system:edgetype:render-selector'),
+        shapeId: asShapeId('system:edgetype:render-selector'),
         source: asNodeId('view:cycle-a'),
         target: asNodeId('view:cycle-a'),
         properties: new Map<string, string | number>([
@@ -309,7 +321,7 @@ describe('TypeSpec canopy.v0 server router and client SDK', () => {
         type: 'NodeCreated',
         eventId: createEventId(),
         id: asNodeId('setting:shape-density'),
-        nodeType: SYSTEM_IDS.USER_SETTING,
+        shapeId: SYSTEM_IDS.USER_SETTING,
         properties: new Map([
           ['schemaId', SYSTEM_IDS.SETTING_DISPLAY_DENSITY],
           ['scopeType', 'type'],

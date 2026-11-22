@@ -18,7 +18,7 @@ import {
   asEdgeId,
   asInstant,
   asNodeId,
-  asTypeId,
+  asShapeId,
   createEventId,
   createGraphId,
   createMergeState,
@@ -63,7 +63,10 @@ function summarize(samplesMs: readonly number[]): Stats {
   return { medianMs: percentile(sorted, 0.5), p95Ms: percentile(sorted, 0.95) };
 }
 
-function buildSeededGraphAndState(nodeCount: number): {
+function buildSeededGraphAndState(
+  nodeCount: number,
+  mixedOpen: boolean = false,
+): {
   readonly graph: Graph;
   readonly state: MergeState;
 } {
@@ -75,10 +78,11 @@ function buildSeededGraphAndState(nodeCount: number): {
     const propWriters = new Map<string, ReturnType<typeof createEventId>>();
     propWriters.set('status', createEventId());
     propWriters.set('priority', createEventId());
+    const isOpen = mixedOpen && index % 2 === 0;
 
     nodes.set(id, {
       id,
-      type: asTypeId(NODE_TYPES[index % NODE_TYPES.length] ?? 'task'),
+      ...(isOpen ? {} : { shape: asShapeId(NODE_TYPES[index % NODE_TYPES.length] ?? 'task') }),
       properties: new Map<string, PropertyValue>([
         ['status', index % 2 === 0 ? 'open' : 'done'],
         ['priority', index % 5],
@@ -105,10 +109,13 @@ function buildSeededGraphAndState(nodeCount: number): {
     const id = asEdgeId(`bench-edge-${index}`);
     const sourceIndex = (index * 2654435761) % nodeCount;
     const targetIndex = (index * 40503 + 7) % nodeCount;
+    const isOpen = mixedOpen && index % 2 === 0;
 
     edges.set(id, {
       id,
-      type: asTypeId(EDGE_TYPES[index % EDGE_TYPES.length] ?? 'belongs-to'),
+      ...(isOpen
+        ? {}
+        : { shape: asShapeId(EDGE_TYPES[index % EDGE_TYPES.length] ?? 'belongs-to') }),
       source: asNodeId(`bench-node-${sourceIndex}`),
       target: asNodeId(`bench-node-${targetIndex}`),
       properties: new Map(),
@@ -169,15 +176,21 @@ const EVENT_KINDS: readonly EventKind[] = [
   'EdgeDeleted',
 ];
 
-function probeEvent(graph: Graph, kind: EventKind, repetition: number): GraphEvent {
+function probeEvent(
+  graph: Graph,
+  kind: EventKind,
+  repetition: number,
+  mixedOpen: boolean = false,
+): GraphEvent {
   const timestamp = asInstant('2026-06-01T00:00:00Z');
   switch (kind) {
     case 'NodeCreated': {
+      const isOpen = mixedOpen && repetition % 2 === 0;
       return {
         type: 'NodeCreated',
         eventId: createEventId(),
         id: asNodeId(`probe-node-${repetition}`),
-        nodeType: asTypeId('task'),
+        ...(isOpen ? {} : { shapeId: asShapeId('task') }),
         properties: new Map<string, PropertyValue>([['status', 'open']]),
         timestamp,
         deviceId: DEVICE_ID,
@@ -207,11 +220,12 @@ function probeEvent(graph: Graph, kind: EventKind, repetition: number): GraphEve
     case 'EdgeCreated': {
       const sourceIndex = repetition % graph.nodes.size;
       const targetIndex = (repetition + 1) % graph.nodes.size;
+      const isOpen = mixedOpen && repetition % 2 === 0;
       return {
         type: 'EdgeCreated',
         eventId: createEventId(),
         id: asEdgeId(`probe-edge-${repetition}`),
-        edgeType: asTypeId('belongs-to'),
+        ...(isOpen ? {} : { shapeId: asShapeId('belongs-to') }),
         source: asNodeId(`bench-node-${sourceIndex}`),
         target: asNodeId(`bench-node-${targetIndex}`),
         properties: new Map(),
@@ -247,11 +261,12 @@ function benchSingleEvents(
   graph: Graph,
   state: MergeState,
   kind: EventKind,
+  mixedOpen: boolean = false,
 ): Stats {
   const samplesMs: number[] = [];
 
   for (let repetition = 0; repetition < REPETITIONS; repetition += 1) {
-    const event = probeEvent(graph, kind, repetition);
+    const event = probeEvent(graph, kind, repetition, mixedOpen);
     const start = performance.now();
     mergeEvents(state, graph, [event]);
     samplesMs.push(performance.now() - start);
@@ -263,6 +278,7 @@ function benchSingleEvents(
 function benchDependencyDrain(
   graph: Graph,
   state: MergeState,
+  mixedOpen: boolean = false,
 ): Stats {
   const samplesMs: number[] = [];
 
@@ -270,13 +286,14 @@ function benchDependencyDrain(
     const targetNodeId = asNodeId(`unblock-node-${repetition}`);
     const edgeId = asEdgeId(`unblock-edge-${repetition}`);
     const sourceNodeId = asNodeId(`bench-node-${repetition % graph.nodes.size}`);
+    const isOpen = mixedOpen && repetition % 2 === 0;
 
     // Edge arrives out of order (targetNodeId not yet created)
     const edgeEvent: GraphEvent = {
       type: 'EdgeCreated',
       eventId: createEventId(),
       id: edgeId,
-      edgeType: asTypeId('belongs-to'),
+      ...(isOpen ? {} : { shapeId: asShapeId('belongs-to') }),
       source: sourceNodeId,
       target: targetNodeId,
       properties: new Map(),
@@ -289,7 +306,7 @@ function benchDependencyDrain(
       type: 'NodeCreated',
       eventId: createEventId(),
       id: targetNodeId,
-      nodeType: asTypeId('task'),
+      ...(isOpen ? {} : { shapeId: asShapeId('task') }),
       properties: new Map(),
       timestamp: asInstant('2026-06-01T00:01:00Z'),
       deviceId: DEVICE_ID,
@@ -315,6 +332,7 @@ function benchBatchMerge(
   graph: Graph,
   state: MergeState,
   batchSize: number,
+  mixedOpen: boolean = false,
 ): Stats {
   const samplesMs: number[] = [];
 
@@ -323,11 +341,12 @@ function benchBatchMerge(
     const timestamp = asInstant('2026-06-01T00:00:00Z');
 
     for (let index = 0; index < batchSize; index += 1) {
+      const isOpen = mixedOpen && index % 2 === 0;
       events.push({
         type: 'NodeCreated',
         eventId: createEventId(),
         id: asNodeId(`batch-node-${repetition}-${index}`),
-        nodeType: asTypeId('task'),
+        ...(isOpen ? {} : { shapeId: asShapeId('task') }),
         properties: new Map([['status', 'open']]),
         timestamp,
         deviceId: DEVICE_ID,
@@ -346,8 +365,8 @@ function formatMs(ms: number): string {
   return ms < 0.001 ? '<0.001' : ms.toFixed(3);
 }
 
-function main(): void {
-  console.log(`\nIncremental projection benchmark (${REPETITIONS} reps/case)\n`);
+function runSuite(label: string, mixedOpen: boolean): void {
+  console.log(`\nIncremental projection benchmark — ${label} (${REPETITIONS} reps/case)\n`);
 
   console.log('Single-event merge (median/p95 ms per call)');
   const header = `event                    | ${GRAPH_SIZES.map((n) => `           n=${n}`).join(' | ')}`;
@@ -361,8 +380,8 @@ function main(): void {
     const statsList: Stats[] = [];
 
     for (const size of GRAPH_SIZES) {
-      const { graph, state } = buildSeededGraphAndState(size);
-      const stats = benchSingleEvents(graph, state, kind);
+      const { graph, state } = buildSeededGraphAndState(size, mixedOpen);
+      const stats = benchSingleEvents(graph, state, kind, mixedOpen);
       statsList.push(stats);
       row.push(`${formatMs(stats.medianMs)}/${formatMs(stats.p95Ms)}`.padStart(16));
     }
@@ -390,8 +409,8 @@ function main(): void {
   const drainStatsList: Stats[] = [];
 
   for (const size of GRAPH_SIZES) {
-    const { graph, state } = buildSeededGraphAndState(size);
-    const stats = benchDependencyDrain(graph, state);
+    const { graph, state } = buildSeededGraphAndState(size, mixedOpen);
+    const stats = benchDependencyDrain(graph, state, mixedOpen);
     drainStatsList.push(stats);
     drainRow.push(`${formatMs(stats.medianMs)}/${formatMs(stats.p95Ms)}`.padStart(16));
   }
@@ -403,11 +422,16 @@ function main(): void {
 
   const batchRow: string[] = ['Batch (50 events)'.padEnd(24)];
   for (const size of GRAPH_SIZES) {
-    const { graph, state } = buildSeededGraphAndState(size);
-    const stats = benchBatchMerge(graph, state, 50);
+    const { graph, state } = buildSeededGraphAndState(size, mixedOpen);
+    const stats = benchBatchMerge(graph, state, 50, mixedOpen);
     batchRow.push(`${formatMs(stats.medianMs)}/${formatMs(stats.p95Ms)}`.padStart(16));
   }
   console.log(batchRow.join(' | '));
+}
+
+function main(): void {
+  runSuite('all-shaped', false);
+  runSuite('50%-open', true);
 }
 
 main();

@@ -16,7 +16,7 @@ import {
 import {
   createNodeId,
   createEdgeId,
-  asTypeId,
+  asShapeId,
   createGraphId,
   createInstant,
   unwrap,
@@ -41,7 +41,7 @@ describe('Core Graph Engine', () => {
   const nodeId1 = createNodeId();
   const node1: Node = {
     id: nodeId1,
-    type: asTypeId('person'),
+    shape: asShapeId('person'),
     properties: new Map(),
     metadata: {
       created: createInstant(),
@@ -53,7 +53,7 @@ describe('Core Graph Engine', () => {
   const nodeId2 = createNodeId();
   const node2: Node = {
     id: nodeId2,
-    type: asTypeId('person'),
+    shape: asShapeId('person'),
     properties: new Map(),
     metadata: {
       created: createInstant(),
@@ -76,7 +76,7 @@ describe('Core Graph Engine', () => {
       type: 'NodeCreated',
       eventId: expect.any(String),
       id: node1.id,
-      nodeType: node1.type,
+      shapeId: node1.shape,
       properties: node1.properties,
     });
 
@@ -93,7 +93,7 @@ describe('Core Graph Engine', () => {
       type: 'NodeCreated',
       eventId: expect.any(String),
       id: node2.id,
-      nodeType: node2.type,
+      shapeId: node2.shape,
       properties: node2.properties,
     });
   });
@@ -155,7 +155,7 @@ describe('Core Graph Engine', () => {
       id: edgeId,
       source: nodeId1,
       target: nodeId2,
-      type: asTypeId('knows'),
+      shape: asShapeId('knows'),
       properties: new Map(),
       metadata: {
         created: createInstant(),
@@ -221,7 +221,7 @@ describe('Core Graph Engine', () => {
       id: edgeId,
       source: nodeId1,
       target: nodeId2,
-      type: asTypeId('knows'),
+      shape: asShapeId('knows'),
       properties: new Map(),
       metadata: {
         created: createInstant(),
@@ -239,7 +239,7 @@ describe('Core Graph Engine', () => {
 
     // getNodesOfType should find the 2 people we added.
     // It should NOT find bootstrap nodes unless they have type 'person' (which they don't).
-    const people = getNodesOfType(g, asTypeId('person'));
+    const people = getNodesOfType(g, asShapeId('person'));
     expect(people).toHaveLength(2);
     expect(people.map((p) => p.id)).toContain(nodeId1);
     expect(people.map((p) => p.id)).toContain(nodeId2);
@@ -262,7 +262,7 @@ describe('Core Graph Engine', () => {
       id: edgeId,
       source: nodeId1,
       target: nodeId2,
-      type: asTypeId('knows'),
+      shape: asShapeId('knows'),
       properties: new Map(),
       metadata: {
         created: createInstant(),
@@ -319,7 +319,7 @@ describe('Core Graph Engine', () => {
       id: edgeId,
       source: nodeId1,
       target: nodeId2,
-      type: asTypeId('knows'),
+      shape: asShapeId('knows'),
       properties: new Map(),
       metadata: {
         created: createInstant(),

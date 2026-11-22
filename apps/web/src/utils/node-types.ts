@@ -1,19 +1,19 @@
 import {
   SYSTEM_IDS,
   RESTRICTED_NAMESPACE_KINDS,
-  asTypeId,
+  asShapeId,
   fromThrowable,
   PropertyDefinitionSchema,
   type Graph,
   type Node,
   type PropertyDefinition,
-  type TypeId,
+  type ShapeId,
 } from '@canopy/graph';
 import { z } from 'zod';
 import type { NamespaceOption } from './schema';
 
 export interface NodeTypeOption {
-  readonly id: TypeId;
+  readonly id: ShapeId;
   readonly label: string;
   readonly description: string | undefined;
   readonly properties: readonly PropertyDefinition[];
@@ -64,9 +64,9 @@ export function listAllowedNodeTypes(
 ): readonly NodeTypeOption[] {
   const kindByNamespace = new Map<string, string>(namespaces.map((ns) => [ns.name, ns.kind]));
   return [...graph.nodes.values()]
-    .filter((node) => node.type === SYSTEM_IDS.NODE_TYPE && isInstantiable(node, kindByNamespace))
+    .filter((node) => node.shape === SYSTEM_IDS.NODE_TYPE && isInstantiable(node, kindByNamespace))
     .map((node) => ({
-      id: asTypeId(node.id),
+      id: asShapeId(node.id),
       label: readString(node.properties.get('name')) ?? node.id,
       description: readString(node.properties.get('description')),
       properties: parseProperties(node.properties.get('properties')),

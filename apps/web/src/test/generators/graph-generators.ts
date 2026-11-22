@@ -3,7 +3,7 @@ import {
   asEdgeId,
   asGraphId,
   asNodeId,
-  asTypeId,
+  asShapeId,
   createEventId,
   createGraph,
   createInstant,
@@ -48,7 +48,7 @@ function buildSchemaNodes(seed?: number): readonly Readonly<[NodeId, Node]>[] {
     nodeType.id,
     {
       id: nodeType.id,
-      type: SYSTEM_IDS.NODE_TYPE,
+      shape: SYSTEM_IDS.NODE_TYPE,
       properties: new Map<string, PropertyValue>([
         ['name', nodeType.name],
         ['namespace', nodeType.namespace],
@@ -67,7 +67,7 @@ function buildSchemaNodes(seed?: number): readonly Readonly<[NodeId, Node]>[] {
     edgeType.id,
     {
       id: edgeType.id,
-      type: SYSTEM_IDS.EDGE_TYPE,
+      shape: SYSTEM_IDS.EDGE_TYPE,
       properties: new Map<string, PropertyValue>([
         ['name', edgeType.name],
         ['namespace', edgeType.namespace],
@@ -92,7 +92,7 @@ function buildViewAndRendererNodes(): Readonly<{
   const emptyPermissions: readonly string[] = [];
   const rendererNode: Node = {
     id: rendererNodeId,
-    type: SYSTEM_IDS.RENDERER,
+    shape: SYSTEM_IDS.RENDERER,
     properties: new Map<string, PropertyValue>([
       ['name', 'Project Card Renderer'],
       ['description', 'Renders project overview cards via WASM component'],
@@ -111,7 +111,7 @@ function buildViewAndRendererNodes(): Readonly<{
   const viewNodeId = asNodeId('user:view:project-card');
   const viewNode: Node = {
     id: viewNodeId,
-    type: SYSTEM_IDS.VIEW_DEFINITION,
+    shape: SYSTEM_IDS.VIEW_DEFINITION,
     properties: new Map<string, PropertyValue>([
       ['name', 'Project Card View'],
       ['description', 'Default card layout view for project nodes'],
@@ -128,7 +128,7 @@ function buildViewAndRendererNodes(): Readonly<{
   const usesRendererEdgeId = asEdgeId('user:edge:uses-renderer:project-card');
   const usesRendererEdge: Edge = {
     id: usesRendererEdgeId,
-    type: SYSTEM_EDGE_TYPES.USES_RENDERER,
+    shape: SYSTEM_EDGE_TYPES.USES_RENDERER,
     source: viewNodeId,
     target: rendererNodeId,
     properties: new Map(),
@@ -142,7 +142,7 @@ function buildViewAndRendererNodes(): Readonly<{
   const defaultViewEdgeId = asEdgeId('user:edge:default-view:project');
   const defaultViewEdge: Edge = {
     id: defaultViewEdgeId,
-    type: SYSTEM_EDGE_TYPES.DEFAULT_VIEW,
+    shape: SYSTEM_EDGE_TYPES.DEFAULT_VIEW,
     source: asNodeId('user:node-type:project'),
     target: viewNodeId,
     properties: new Map(),
@@ -170,7 +170,7 @@ function buildQueryNodes(seed?: number): readonly Readonly<[NodeId, Node]>[] {
     const queryPayload = generateQueryPayload(index, seed);
     const queryNode: Node = {
       id: queryPayload.id,
-      type: SYSTEM_IDS.QUERY_DEFINITION,
+      shape: SYSTEM_IDS.QUERY_DEFINITION,
       properties: new Map<string, PropertyValue>([
         ['name', queryPayload.name],
         ['description', queryPayload.description],
@@ -191,7 +191,7 @@ function buildContentNodes(count: number, seed?: number): readonly Readonly<[Nod
     const payload = generateNodePayload(index, seed);
     const node: Node = {
       id: payload.id,
-      type: payload.type,
+      shape: payload.shape,
       properties: new Map<string, PropertyValue>(Object.entries(payload.properties)),
       metadata: {
         created: createInstant(),
@@ -232,7 +232,7 @@ function buildContentEdges(
 
     const edge: Edge = {
       id: edgeId,
-      type: asTypeId(edgeTypeRaw),
+      shape: asShapeId(edgeTypeRaw),
       source: sourceId,
       target: targetId,
       properties: new Map(),
@@ -251,7 +251,7 @@ export function graphToEvents(graph: Graph, deviceId: DeviceId): readonly GraphE
     type: 'NodeCreated',
     eventId: createEventId(),
     id: node.id,
-    nodeType: node.type,
+    ...(node.shape !== undefined && { shapeId: node.shape }),
     properties: node.properties,
     timestamp: node.metadata.created,
     deviceId: node.metadata.modifiedBy ?? deviceId,
@@ -261,7 +261,7 @@ export function graphToEvents(graph: Graph, deviceId: DeviceId): readonly GraphE
     type: 'EdgeCreated',
     eventId: createEventId(),
     id: edge.id,
-    edgeType: edge.type,
+    ...(edge.shape !== undefined && { shapeId: edge.shape }),
     source: edge.source,
     target: edge.target,
     properties: edge.properties,
@@ -312,7 +312,7 @@ export function generateVault(options: GenerateVaultOptions): GraphSession {
   const graph = generateGraphVault(options);
   const store = createInMemoryEventStore();
   const graphId = asGraphId('demo-graph');
-  const deviceId = asDeviceId('demo-device');
+  const deviceId = asDeviceId('00000000-0000-4000-8000-000000000001');
   const events = graphToEvents(graph, deviceId);
   void store.appendEvents('demo-graph', events);
 

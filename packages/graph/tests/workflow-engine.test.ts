@@ -12,7 +12,7 @@ import {
   createEventId,
   createInstant,
   asDeviceId,
-  asTypeId,
+  asShapeId,
   createGraphId,
   asNodeId,
   PropertyValue,
@@ -22,11 +22,11 @@ import {
 describe('WorkflowTriggerRegistry', () => {
   it('should register and match a trigger for NodeCreated event', () => {
     const registry = createWorkflowTriggerRegistry();
-    const typeId = asTypeId('test-type-id');
+    const typeId = asShapeId('test-type-id');
 
     const node: Node = {
       id: createNodeId(),
-      type: asTypeId('trigger'),
+      shape: asShapeId('trigger'),
       metadata: {
         created: createInstant(),
         modified: createInstant(),
@@ -42,7 +42,7 @@ describe('WorkflowTriggerRegistry', () => {
       type: 'NodeCreated',
       eventId: createEventId(),
       id: createNodeId(),
-      nodeType: typeId,
+      shapeId: typeId,
       properties: new Map(),
       timestamp: createInstant(),
       deviceId: asDeviceId('test-device'),
@@ -58,7 +58,7 @@ describe('WorkflowTriggerRegistry', () => {
 
     const missingConditionNode: Node = {
       id: createNodeId(),
-      type: asTypeId('trigger'),
+      shape: asShapeId('trigger'),
       metadata: {
         created: createInstant(),
         modified: createInstant(),
@@ -70,7 +70,7 @@ describe('WorkflowTriggerRegistry', () => {
 
     const nonStringConditionNode: Node = {
       id: createNodeId(),
-      type: asTypeId('trigger'),
+      shape: asShapeId('trigger'),
       metadata: {
         created: createInstant(),
         modified: createInstant(),
@@ -86,7 +86,7 @@ describe('WorkflowTriggerRegistry', () => {
 
     const malformedNode: Node = {
       id: createNodeId(),
-      type: asTypeId('trigger'),
+      shape: asShapeId('trigger'),
       metadata: {
         created: createInstant(),
         modified: createInstant(),
@@ -103,7 +103,7 @@ describe('WorkflowTriggerRegistry', () => {
 
     const missingTypeIdNode: Node = {
       id: createNodeId(),
-      type: asTypeId('trigger'),
+      shape: asShapeId('trigger'),
       metadata: {
         created: createInstant(),
         modified: createInstant(),
@@ -115,7 +115,7 @@ describe('WorkflowTriggerRegistry', () => {
 
     const nullJsonNode: Node = {
       id: createNodeId(),
-      type: asTypeId('trigger'),
+      shape: asShapeId('trigger'),
       metadata: {
         created: createInstant(),
         modified: createInstant(),
@@ -127,7 +127,7 @@ describe('WorkflowTriggerRegistry', () => {
 
     const primitiveJsonNode: Node = {
       id: createNodeId(),
-      type: asTypeId('trigger'),
+      shape: asShapeId('trigger'),
       metadata: {
         created: createInstant(),
         modified: createInstant(),
@@ -159,7 +159,7 @@ describe('WorkflowEngine', () => {
     // Add nodes to the graph first
     const sourceId = asNodeId('source-node');
     const targetId = asNodeId('target-node');
-    const typeId = asTypeId('edge-type');
+    const typeId = asShapeId('edge-type');
 
     const graphWithNodes: Graph = {
       ...mockGraph,
@@ -168,7 +168,7 @@ describe('WorkflowEngine', () => {
           sourceId,
           {
             id: sourceId,
-            type: asTypeId('node-type'),
+            shape: asShapeId('node-type'),
             properties: new Map(),
             metadata: mockGraph.metadata,
           },
@@ -177,7 +177,7 @@ describe('WorkflowEngine', () => {
           targetId,
           {
             id: targetId,
-            type: asTypeId('node-type'),
+            shape: asShapeId('node-type'),
             properties: new Map(),
             metadata: mockGraph.metadata,
           },
@@ -203,7 +203,7 @@ describe('WorkflowEngine', () => {
     if (newEdge === undefined) {
       throw new Error('Expected new edge to be created');
     }
-    expect(newEdge.type).toBe(typeId);
+    expect(newEdge.shape).toBe(typeId);
     expect(newEdge.source).toBe(sourceId);
     expect(newEdge.target).toBe(targetId);
     expect(newEdge.properties.get('weight')).toBe(10);
@@ -212,7 +212,7 @@ describe('WorkflowEngine', () => {
   it('should support executeWorkflowAction as a standalone function', () => {
     const sourceId = asNodeId('source-node');
     const targetId = asNodeId('target-node');
-    const typeId = asTypeId('edge-type');
+    const typeId = asShapeId('edge-type');
 
     const graphWithNodes: Graph = {
       ...mockGraph,
@@ -221,7 +221,7 @@ describe('WorkflowEngine', () => {
           sourceId,
           {
             id: sourceId,
-            type: asTypeId('node-type'),
+            shape: asShapeId('node-type'),
             properties: new Map(),
             metadata: mockGraph.metadata,
           },
@@ -230,7 +230,7 @@ describe('WorkflowEngine', () => {
           targetId,
           {
             id: targetId,
-            type: asTypeId('node-type'),
+            shape: asShapeId('node-type'),
             properties: new Map(),
             metadata: mockGraph.metadata,
           },
@@ -262,7 +262,7 @@ describe('WorkflowEngine', () => {
     const engine = createWorkflowEngine();
 
     const result = engine.executeAction(mockGraph, 'create-edge', {
-      type: asTypeId('edge-type'),
+      shape: asShapeId('edge-type'),
       // missing source and target
     });
 
@@ -283,7 +283,7 @@ describe('WorkflowEngine', () => {
           nodeId,
           {
             id: nodeId,
-            type: asTypeId('node-type'),
+            shape: asShapeId('node-type'),
             properties: new Map([['status', 'draft']]),
             metadata: mockGraph.metadata,
           },

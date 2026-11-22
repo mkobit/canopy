@@ -1,4 +1,5 @@
 import type {
+  BatchId,
   Edge,
   EventId,
   EventLogQueryOptions,
@@ -13,12 +14,13 @@ import type {
 } from '@canopy/graph';
 import {
   SYSTEM_IDS,
+  asBatchId,
   asDeviceId,
   asEdgeId,
   asEventId,
   asGraphId,
   asNodeId,
-  asTypeId,
+  asShapeId,
   createDeviceId,
   createDraftSession,
   createEdgeId,
@@ -28,6 +30,7 @@ import {
   createGraphSession,
   createInstant,
   createNodeId,
+  decodeStoredEvent,
   err,
   fromThrowable,
   getGraphAt,
@@ -112,7 +115,7 @@ export interface CanopyV0ServerRouter {
 
 interface CommittedV0BatchRecord {
   readonly commitSeq: number;
-  readonly batchId: string;
+  readonly batchId: BatchId;
   readonly hlcTimestamp: string;
   readonly eventIds: readonly EventId[];
   readonly events: readonly GraphEvent[];
@@ -164,8 +167,7 @@ interface BuiltOperationsResult {
 }
 
 const DEFAULT_MAX_VIEW_DEPTH = 16;
-const OPEN_NODE_SHAPE = asTypeId('canopy:open');
-const RENDER_SELECTOR_EDGE_TYPE = asTypeId('system:edgetype:render-selector');
+const RENDER_SELECTOR_EDGE_TYPE = asShapeId('system:edgetype:render-selector');
 
 const createEmbeddedEventLogStore = (): EventLogStore => {
   const eventsCell = {
@@ -186,10 +188,16 @@ const createEmbeddedEventLogStore = (): EventLogStore => {
     options?: EventLogQueryOptions,
   ): Promise<Result<readonly GraphEvent[], Error>> => {
     const existing = eventsCell.current.get(graphId) ?? [];
+    const decodedResults = existing.map((event) => decodeStoredEvent(event));
+    const firstError = decodedResults.find((result) => !result.ok);
+    if (firstError && !firstError.ok) return err(new Error(firstError.error.message));
+    const decodedEvents = decodedResults.flatMap((result) =>
+      result.ok && result.value !== null ? [result.value] : [],
+    );
     const afterFiltered =
       options?.after === undefined
-        ? existing
-        : existing.filter((event) => (event.eventId as string) > (options.after as string));
+        ? decodedEvents
+        : decodedEvents.filter((event) => (event.eventId as string) > (options.after as string));
     const beforeFiltered =
       options?.before === undefined
         ? afterFiltered
@@ -243,7 +251,7 @@ const serializePropertyEntries = (
 
 const toNodeRecord = (node: Node, entitySeqs: ReadonlyMap<string, number>): CanopyV0NodeRecord => ({
   nodeId: node.id,
-  ...(node.type !== OPEN_NODE_SHAPE && { shapeId: node.type }),
+  ...(node.shape !== undefined && { shapeId: node.shape }),
   entitySeq: entitySeqs.get(node.id) ?? 0,
   properties: serializePropertyEntries(node.properties),
   createdAt: node.metadata.created,
@@ -252,7 +260,7 @@ const toNodeRecord = (node: Node, entitySeqs: ReadonlyMap<string, number>): Cano
 
 const toEdgeRecord = (edge: Edge, entitySeqs: ReadonlyMap<string, number>): CanopyV0EdgeRecord => ({
   edgeId: edge.id,
-  shapeId: edge.type,
+  shapeId: edge.shape ?? asShapeId(''),
   sourceNodeId: edge.source,
   targetNodeId: edge.target,
   entitySeq: entitySeqs.get(edge.id) ?? 0,
@@ -349,7 +357,7 @@ const checkWritePrecondition = (
 const buildCreateNodeEvent = (
   operation: CanopyV0BatchOperation,
   provenance: CanopyV0ActorProvenance,
-  batchId: string,
+  batchId: BatchId,
 ): GraphAccessResponse<BuiltOperationStep> => {
   const nodeId = asNodeId(operation.entityId ?? createNodeId());
   return ok({
@@ -358,7 +366,7 @@ const buildCreateNodeEvent = (
         type: 'NodeCreated',
         eventId: createEventId(),
         id: nodeId,
-        nodeType: asTypeId(operation.shapeId ?? OPEN_NODE_SHAPE),
+        ...(operation.shapeId !== undefined && { shapeId: asShapeId(operation.shapeId) }),
         properties: toPropertyMap(operation.properties),
         timestamp: createInstant(),
         deviceId: asDeviceId(provenance.deviceId),
@@ -372,7 +380,7 @@ const buildCreateNodeEvent = (
 const buildUpdateNodePropertiesEvent = (
   operation: CanopyV0BatchOperation,
   provenance: CanopyV0ActorProvenance,
-  batchId: string,
+  batchId: BatchId,
 ): GraphAccessResponse<BuiltOperationStep> => {
   if (!operation.entityId) {
     return err(
@@ -399,7 +407,7 @@ const buildUpdateNodePropertiesEvent = (
 const buildDeleteNodeEvents = (
   operation: CanopyV0BatchOperation,
   provenance: CanopyV0ActorProvenance,
-  batchId: string,
+  batchId: BatchId,
   currentGraph: Graph,
 ): GraphAccessResponse<BuiltOperationStep> => {
   if (!operation.entityId) {
@@ -436,7 +444,7 @@ const buildDeleteNodeEvents = (
 const buildCreateEdgeEvent = (
   operation: CanopyV0BatchOperation,
   provenance: CanopyV0ActorProvenance,
-  batchId: string,
+  batchId: BatchId,
 ): GraphAccessResponse<BuiltOperationStep> => {
   if (!operation.sourceNodeId || !operation.targetNodeId || !operation.edgeTypeId) {
     return err(
@@ -453,7 +461,7 @@ const buildCreateEdgeEvent = (
         type: 'EdgeCreated',
         eventId: createEventId(),
         id: edgeId,
-        edgeType: asTypeId(operation.edgeTypeId),
+        shapeId: asShapeId(operation.edgeTypeId),
         source: asNodeId(operation.sourceNodeId),
         target: asNodeId(operation.targetNodeId),
         properties: toPropertyMap(operation.properties),
@@ -469,7 +477,7 @@ const buildCreateEdgeEvent = (
 const buildDeleteEdgeEvent = (
   operation: CanopyV0BatchOperation,
   provenance: CanopyV0ActorProvenance,
-  batchId: string,
+  batchId: BatchId,
 ): GraphAccessResponse<BuiltOperationStep> => {
   if (!operation.entityId) {
     return err(createGraphAccessError('VALIDATION_ERROR', 'entityId is required for delete-edge'));
@@ -493,7 +501,7 @@ const buildDeleteEdgeEvent = (
 const buildRegisterMigrationEvents = (
   operation: CanopyV0BatchOperation,
   provenance: CanopyV0ActorProvenance,
-  batchId: string,
+  batchId: BatchId,
   nextCommitSeq: number,
 ): GraphAccessResponse<BuiltOperationStep> => {
   if (!operation.fromShapeId || !operation.toShapeId || !operation.transformWasmRef) {
@@ -518,7 +526,7 @@ const buildRegisterMigrationEvents = (
     type: 'NodeCreated',
     eventId: createEventId(),
     id: migrationNodeId,
-    nodeType: asTypeId('system:nodetype:shape-migration'),
+    shapeId: asShapeId('system:nodetype:shape-migration'),
     properties: new Map<string, PropertyValue>([
       ['migrationId', migrationId],
       ['fromShapeId', operation.fromShapeId],
@@ -540,7 +548,7 @@ const buildRegisterMigrationEvents = (
 const buildOperationEvent = (
   operation: CanopyV0BatchOperation,
   provenance: CanopyV0ActorProvenance,
-  batchId: string,
+  batchId: BatchId,
   nextCommitSeq: number,
   currentGraph: Graph,
 ): GraphAccessResponse<BuiltOperationStep> => {
@@ -569,7 +577,7 @@ const buildOperationEvent = (
 const compileBatchOperations = (
   operations: readonly CanopyV0BatchOperation[],
   provenance: CanopyV0ActorProvenance,
-  batchId: string,
+  batchId: BatchId,
   nextCommitSeq: number,
   currentGraph: Graph,
 ): GraphAccessResponse<BuiltOperationsResult> => {
@@ -615,7 +623,7 @@ const commitOperationsToGraphState = async (
   const preconditionCheck = checkWritePrecondition(state, precondition);
   if (!preconditionCheck.ok) return preconditionCheck;
 
-  const batchId = batchIdInput ?? `batch:${createEventId()}`;
+  const batchId = asBatchId(batchIdInput ?? `batch:${createEventId()}`);
   const nextCommitSeq = state.headCommitSeq + 1;
   const compiled = compileBatchOperations(
     operations,
@@ -727,9 +735,9 @@ const findSelectorCandidateViews = (
   return [...graph.edges.values()]
     .filter(
       (edge) =>
-        edge.type === RENDER_SELECTOR_EDGE_TYPE ||
-        edge.type === asTypeId('system:edgetype:view-override') ||
-        edge.type === asTypeId('system:edgetype:default-view'),
+        edge.shape === RENDER_SELECTOR_EDGE_TYPE ||
+        edge.shape === asShapeId('system:edgetype:view-override') ||
+        edge.shape === asShapeId('system:edgetype:default-view'),
     )
     .flatMap((edge): readonly ResolvedSelectorMatch[] => {
       const edgeContext = edge.properties.get('context');
@@ -779,14 +787,14 @@ const followViewChain = (
     .find(
       (edge) =>
         edge.source === currentViewId &&
-        (edge.type === RENDER_SELECTOR_EDGE_TYPE ||
-          edge.type === asTypeId('system:edgetype:uses-renderer')),
+        (edge.shape === RENDER_SELECTOR_EDGE_TYPE ||
+          edge.shape === asShapeId('system:edgetype:uses-renderer')),
     );
   if (!delegateEdge) {
     return { terminalViewId: currentViewId, visitedPath: nextPath, cycleDetected: false };
   }
   const targetNode = graph.nodes.get(delegateEdge.target);
-  return targetNode?.type === SYSTEM_IDS.VIEW_DEFINITION
+  return targetNode?.shape === SYSTEM_IDS.VIEW_DEFINITION
     ? followViewChain(graph, targetNode.id, nextPath, maxDepth)
     : { terminalViewId: currentViewId, visitedPath: nextPath, cycleDetected: false };
 };
@@ -858,11 +866,11 @@ const resolveSettingFromGraph = (
     .values()
     .find(
       (node) =>
-        node.type === SYSTEM_IDS.SETTINGS_SCHEMA && node.properties.get('key') === request.key,
+        node.shape === SYSTEM_IDS.SETTINGS_SCHEMA && node.properties.get('key') === request.key,
     );
   const settingNodes = [...graph.nodes.values()].filter(
     (node) =>
-      node.type === SYSTEM_IDS.USER_SETTING &&
+      node.shape === SYSTEM_IDS.USER_SETTING &&
       (node.properties.get('key') === request.key ||
         (schemaNode !== undefined && node.properties.get('schemaId') === schemaNode.id)),
   );
@@ -901,7 +909,7 @@ const resolveSettingFromGraph = (
 
 const extractShapeRecordsFromGraph = (graph: Graph): readonly CanopyV0ShapeRecord[] =>
   [...graph.nodes.values()]
-    .filter((node) => node.type === SYSTEM_IDS.NODE_TYPE || node.type === SYSTEM_IDS.EDGE_TYPE)
+    .filter((node) => node.shape === SYSTEM_IDS.NODE_TYPE || node.shape === SYSTEM_IDS.EDGE_TYPE)
     .map((node) => {
       const nameValue = node.properties.get('name');
       const schemaOrgValue = node.properties.get('schemaOrgUri');
@@ -930,7 +938,7 @@ const extractShapeRecordsFromGraph = (graph: Graph): readonly CanopyV0ShapeRecor
       return {
         shapeId: node.id,
         name: typeof nameValue === 'string' ? nameValue : node.id,
-        entityKind: node.type === SYSTEM_IDS.EDGE_TYPE ? 'edge' : 'node',
+        entityKind: node.shape === SYSTEM_IDS.EDGE_TYPE ? 'edge' : 'node',
         closed: node.properties.get('closed') === true,
         properties: parsedBindings,
         ...(typeof schemaOrgValue === 'string' && { schemaOrgUri: schemaOrgValue }),
@@ -939,7 +947,7 @@ const extractShapeRecordsFromGraph = (graph: Graph): readonly CanopyV0ShapeRecor
 
 const extractPropertyTypesFromGraph = (graph: Graph): readonly CanopyV0PropertyTypeRecord[] =>
   [...graph.nodes.values()]
-    .filter((node) => node.type === SYSTEM_IDS.PROPERTY_TYPE)
+    .filter((node) => node.shape === SYSTEM_IDS.PROPERTY_TYPE)
     .map((node) => {
       const nameValue = node.properties.get('name');
       const scalarValue = node.properties.get('scalarKind');
@@ -987,7 +995,7 @@ const stepBfsTraversal = (
     }
 
     const matchingEdges = allEdges.filter((edge) => {
-      if (edgeShapeId && edge.type !== edgeShapeId) return false;
+      if (edgeShapeId && edge.shape !== edgeShapeId) return false;
       const outMatch = (direction === 'out' || direction === 'both') && edge.source === current.id;
       const inMatch = (direction === 'in' || direction === 'both') && edge.target === current.id;
       return outMatch || inMatch;
@@ -1355,7 +1363,7 @@ const handleQueryNodes = async (
   const steps: readonly QueryStep[] = [
     {
       kind: 'node-scan',
-      ...(request.shapeId !== undefined && { type: asTypeId(request.shapeId) }),
+      ...(request.shapeId !== undefined && { shape: asShapeId(request.shapeId) }),
     },
     ...(request.limit !== undefined && request.limit > 0
       ? [{ kind: 'limit' as const, limit: request.limit }]
@@ -1399,7 +1407,7 @@ const handleQueryEdges = async (
   const edges = [...graph.edges.values()]
     .filter(
       (edge) =>
-        (request.shapeId === undefined || edge.type === request.shapeId) &&
+        (request.shapeId === undefined || edge.shape === request.shapeId) &&
         (request.sourceNodeId === undefined || edge.source === request.sourceNodeId) &&
         (request.targetNodeId === undefined || edge.target === request.targetNodeId),
     )
@@ -1614,7 +1622,7 @@ const createViewsHandlers = (registry: GraphRegistryStore): CanopyV0ServiceHandl
     const consistent = await resolveConsistentGraph(stateResult.value, request.consistency);
     if (!consistent.ok) return consistent;
     const node = consistent.value.graph.nodes.get(asNodeId(request.viewNodeId));
-    return node?.type === SYSTEM_IDS.VIEW_DEFINITION
+    return node?.shape === SYSTEM_IDS.VIEW_DEFINITION
       ? ok(extractViewDefinitionRecord(node))
       : err(createGraphAccessError('NOT_FOUND', `ViewDefinition not found: ${request.viewNodeId}`));
   },
@@ -1666,7 +1674,7 @@ const handleInstallBundle = async (
     : {
         kind: 'create-node',
         entityId: installedNodeId,
-        shapeId: asTypeId('system:nodetype:bundle'),
+        shapeId: asShapeId('system:nodetype:bundle'),
         properties: [
           { key: 'bundleId', valueJson: JSON.stringify(request.bundle.bundleId) },
           { key: 'name', valueJson: JSON.stringify(request.bundle.name) },

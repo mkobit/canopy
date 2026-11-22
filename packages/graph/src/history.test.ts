@@ -6,7 +6,7 @@ import { ok } from './result';
 import {
   unwrap,
   createEventId,
-  asTypeId,
+  asShapeId,
   asDeviceId,
   asEventId,
   createInstant,
@@ -134,7 +134,7 @@ describe('time-travel', () => {
         type: 'NodeCreated',
         eventId: asEventId(`${part1}-${part2}-7000-8000-000000000000`),
         id: asNodeId(`node-${index}`),
-        nodeType: asTypeId('test-type'),
+        shapeId: asShapeId('test-type'),
         properties: new Map(),
         timestamp,
         deviceId,

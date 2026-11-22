@@ -1,8 +1,8 @@
-import { asNodeId, asTypeId, type NodeId, type TypeId, type PropertyValue } from '@canopy/graph';
+import { asNodeId, asShapeId, type NodeId, type ShapeId, type PropertyValue } from '@canopy/graph';
 
 export type GeneratedNode = Readonly<{
   id: NodeId;
-  type: TypeId;
+  shape: ShapeId;
   properties: Readonly<Record<string, PropertyValue>>;
 }>;
 
@@ -35,13 +35,13 @@ export function generateNodePayload(index: number, seed?: number): GeneratedNode
 
   const typeIndex = Math.floor(nextRandom() * NODE_TYPES.length);
   const rawType = NODE_TYPES[typeIndex % NODE_TYPES.length] ?? 'system:node-type:markdown';
-  const type = asTypeId(rawType);
+  const shape = asShapeId(rawType);
   const id = asNodeId(`node-seed-${index}`);
 
   if (rawType === 'system:node-type:text-block') {
     return {
       id,
-      type,
+      shape,
       properties: {
         title: `Text Segment Block ${index}`,
         content: [`Demo text block segment ${index}`, `Additional details for segment ${index}`],
@@ -55,7 +55,7 @@ export function generateNodePayload(index: number, seed?: number): GeneratedNode
     const language = LANGUAGES[langIndex % LANGUAGES.length] ?? 'typescript';
     return {
       id,
-      type,
+      shape,
       properties: {
         title: `Code Snippet ${index}`,
         content: `// Sample code snippet ${index}\nfunction demoFunc_${index}() {\n  return ${index};\n}`,
@@ -70,7 +70,7 @@ export function generateNodePayload(index: number, seed?: number): GeneratedNode
     const status = PROJECT_STATUSES[statusIndex % PROJECT_STATUSES.length] ?? 'in-progress';
     return {
       id,
-      type,
+      shape,
       properties: {
         title: `Project Alpha ${index}`,
         description: `Project definition and overview for component ${index}`,
@@ -87,7 +87,7 @@ export function generateNodePayload(index: number, seed?: number): GeneratedNode
     const priority = PRIORITIES[prioIndex % PRIORITIES.length] ?? 'medium';
     return {
       id,
-      type,
+      shape,
       properties: {
         title: `Task Item ${index}`,
         content: `Detailed execution plan for task ${index}`,
@@ -102,7 +102,7 @@ export function generateNodePayload(index: number, seed?: number): GeneratedNode
   if (rawType === 'user:node-type:note') {
     return {
       id,
-      type,
+      shape,
       properties: {
         title: `Knowledge Note ${index}`,
         content: `Captured notes and insights for index ${index}.\n- Item 1\n- Item 2`,
@@ -114,7 +114,7 @@ export function generateNodePayload(index: number, seed?: number): GeneratedNode
   // Default to MarkdownNode
   return {
     id,
-    type: asTypeId('system:node-type:markdown'),
+    shape: asShapeId('system:node-type:markdown'),
     properties: {
       title: `Demo Content ${index}`,
       content: `# Demo Markdown Header ${index}\nSample body content for node payload index ${index}.`,

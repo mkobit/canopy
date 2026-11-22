@@ -33,7 +33,7 @@ import {
   asEdgeId,
   asInstant,
   asNodeId,
-  asTypeId,
+  asShapeId,
   createEventId,
   createGraphId,
   getGraphIndexes,
@@ -77,13 +77,14 @@ function summarize(samplesMs: readonly number[]): Stats {
 }
 
 /** Builds a graph of `nodeCount` nodes and ~`EDGES_PER_NODE` edges/node, seeded with `_indexes`. */
-function buildSeededGraph(nodeCount: number): Graph {
+function buildSeededGraph(nodeCount: number, mixedOpen: boolean = false): Graph {
   const nodes = new Map<ReturnType<typeof asNodeId>, Node>();
   for (let index = 0; index < nodeCount; index += 1) {
     const id = asNodeId(`bench-node-${index}`);
+    const isOpen = mixedOpen && index % 2 === 0;
     nodes.set(id, {
       id,
-      type: asTypeId(NODE_TYPES[index % NODE_TYPES.length] ?? 'task'),
+      ...(isOpen ? {} : { shape: asShapeId(NODE_TYPES[index % NODE_TYPES.length] ?? 'task') }),
       properties: new Map<string, PropertyValue>([
         ['status', index % 2 === 0 ? 'open' : 'done'],
         ['priority', index % 5],
@@ -103,9 +104,12 @@ function buildSeededGraph(nodeCount: number): Graph {
     // Deterministic pseudo-random spread so adjacency buckets vary in size, not a uniform chain.
     const sourceIndex = (index * 2654435761) % nodeCount;
     const targetIndex = (index * 40503 + 7) % nodeCount;
+    const isOpen = mixedOpen && index % 2 === 0;
     edges.set(id, {
       id,
-      type: asTypeId(EDGE_TYPES[index % EDGE_TYPES.length] ?? 'belongs-to'),
+      ...(isOpen
+        ? {}
+        : { shape: asShapeId(EDGE_TYPES[index % EDGE_TYPES.length] ?? 'belongs-to') }),
       source: asNodeId(`bench-node-${sourceIndex}`),
       target: asNodeId(`bench-node-${targetIndex}`),
       properties: new Map(),
@@ -134,15 +138,21 @@ function buildSeededGraph(nodeCount: number): Graph {
 }
 
 /** One probe event per repetition, applied fresh against the pristine seeded graph each time. */
-function probeEvent(graph: Graph, kind: EventKind, repetition: number): GraphEvent {
+function probeEvent(
+  graph: Graph,
+  kind: EventKind,
+  repetition: number,
+  mixedOpen: boolean = false,
+): GraphEvent {
   const timestamp = asInstant('2026-06-01T00:00:00Z');
   switch (kind) {
     case 'NodeCreated': {
+      const isOpen = mixedOpen && repetition % 2 === 0;
       return {
         type: 'NodeCreated',
         eventId: createEventId(),
         id: asNodeId(`probe-node-${repetition}`),
-        nodeType: asTypeId('task'),
+        ...(isOpen ? {} : { shapeId: asShapeId('task') }),
         properties: new Map<string, PropertyValue>([['status', 'open']]),
         timestamp,
         deviceId: DEVICE_ID,
@@ -175,11 +185,12 @@ function probeEvent(graph: Graph, kind: EventKind, repetition: number): GraphEve
     case 'EdgeCreated': {
       const sourceIndex = repetition % graph.nodes.size;
       const targetIndex = (repetition + 1) % graph.nodes.size;
+      const isOpen = mixedOpen && repetition % 2 === 0;
       return {
         type: 'EdgeCreated',
         eventId: createEventId(),
         id: asEdgeId(`probe-edge-${repetition}`),
-        edgeType: asTypeId('belongs-to'),
+        ...(isOpen ? {} : { shapeId: asShapeId('belongs-to') }),
         source: asNodeId(`bench-node-${sourceIndex}`),
         target: asNodeId(`bench-node-${targetIndex}`),
         properties: new Map(),
@@ -215,13 +226,13 @@ interface KindStats {
   readonly indexOnly: Stats;
 }
 
-function benchEventKind(graph: Graph, kind: EventKind): KindStats {
+function benchEventKind(graph: Graph, kind: EventKind, mixedOpen: boolean = false): KindStats {
   const applySamplesMs: number[] = [];
   const indexOnlySamplesMs: number[] = [];
   const previousIndexes = getGraphIndexes(graph); // already seeded; O(1) cache hit, not a rebuild
 
   for (let repetition = 0; repetition < REPETITIONS; repetition += 1) {
-    const event = probeEvent(graph, kind, repetition);
+    const event = probeEvent(graph, kind, repetition, mixedOpen);
 
     const applyStart = performance.now();
     const result = applyEvent(graph, event); // always applied against the pristine seeded graph
@@ -285,8 +296,8 @@ function printSection(
   }
 }
 
-function printReport(rows: readonly Row[]): void {
-  console.log(`\nRead-model index maintenance benchmark (${REPETITIONS} reps/case)`);
+function printReport(label: string, rows: readonly Row[]): void {
+  console.log(`\nRead-model index maintenance benchmark — ${label} (${REPETITIONS} reps/case)`);
   printSection(
     'Full applyEvent (includes the accepted O(n)/event graph Map-clone cost)',
     rows,
@@ -301,14 +312,19 @@ function printReport(rows: readonly Row[]): void {
 }
 
 function main(): void {
-  const rows: Row[] = [];
-  for (const nodeCount of GRAPH_SIZES) {
-    const graph = buildSeededGraph(nodeCount);
-    for (const kind of EVENT_KINDS) {
-      rows.push({ nodeCount, kind, stats: benchEventKind(graph, kind) });
+  for (const [label, mixedOpen] of [
+    ['all-shaped', false],
+    ['50%-open', true],
+  ] as const) {
+    const rows: Row[] = [];
+    for (const nodeCount of GRAPH_SIZES) {
+      const graph = buildSeededGraph(nodeCount, mixedOpen);
+      for (const kind of EVENT_KINDS) {
+        rows.push({ nodeCount, kind, stats: benchEventKind(graph, kind, mixedOpen) });
+      }
     }
+    printReport(label, rows);
   }
-  printReport(rows);
 }
 
 main();

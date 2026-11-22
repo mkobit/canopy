@@ -3,7 +3,7 @@ import React from 'react';
 import { ReactFlow } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
 import { CustomNode } from './custom-node';
-import { asDeviceId, asInstant, asNodeId, asTypeId } from '@canopy/graph';
+import { asDeviceId, asInstant, asNodeId, asShapeId } from '@canopy/graph';
 
 const meta: Meta<typeof CustomNode> = {
   title: 'Graph/CustomNode',
@@ -18,7 +18,7 @@ type Story = StoryObj<typeof CustomNode>;
 
 const defaultNode = {
   id: asNodeId('node-1'),
-  type: asTypeId('concept'),
+  shape: asShapeId('concept'),
   properties: new Map([['title', 'Default Node']]),
   metadata: {
     created: asInstant('2025-01-01T00:00:00Z'),
@@ -29,7 +29,7 @@ const defaultNode = {
 
 const selectedNode = {
   id: asNodeId('node-2'),
-  type: asTypeId('action'),
+  shape: asShapeId('action'),
   properties: new Map([['title', 'Selected Node']]),
   metadata: {
     created: asInstant('2025-01-01T00:00:00Z'),

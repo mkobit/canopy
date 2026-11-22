@@ -13,7 +13,7 @@ interface PluginManifest {
 
 interface GraphNode {
   readonly id: string;
-  readonly type: string;
+  readonly shape: string;
   readonly properties: {
     readonly wasm_binary: string;
     readonly manifest: string;
@@ -80,7 +80,7 @@ function main(): void {
 
       const node: GraphNode = {
         id: nodeId,
-        type: 'system:nodetype:plugin',
+        shape: 'system:nodetype:plugin',
         properties: {
           wasm_binary: wasmBase64,
           manifest: manifestJson,

@@ -4,7 +4,7 @@ import {
   asEdgeId,
   asGraphId,
   asNodeId,
-  asTypeId,
+  asShapeId,
   createGraph,
   createGraphSession,
   unwrap,
@@ -21,7 +21,7 @@ import {
 } from '../src';
 
 const graphId = asGraphId('g1');
-const deviceId = asDeviceId('device-1');
+const deviceId = asDeviceId('00000000-0000-4000-8000-000000000001');
 
 const setupSessionContext = async () => {
   const eventLogStore = createInMemoryEventStore();
@@ -35,7 +35,7 @@ describe('Mutation execution handlers', () => {
     const graph = unwrap(createGraph(graphId, 'test'));
     const context = createGraphAccessContext({ graph });
     const request = createGraphAccessRequest('req-1', context, {
-      type: asTypeId('doc'),
+      type: asShapeId('doc'),
       properties: { title: 'Test' },
     });
 
@@ -54,7 +54,7 @@ describe('Mutation execution handlers', () => {
     const context = createGraphAccessContext({ graph: session.graph(), session });
     const request = createGraphAccessRequest('req-2', context, {
       id: asNodeId('n1'),
-      type: asTypeId('doc'),
+      type: asShapeId('doc'),
       properties: { title: 'My Document' },
     });
 
@@ -74,7 +74,7 @@ describe('Mutation execution handlers', () => {
     await executeCreateNode(
       createGraphAccessRequest('req-dup-1', context, {
         id: asNodeId('dup1'),
-        type: asTypeId('doc'),
+        type: asShapeId('doc'),
         properties: {},
       }),
     );
@@ -82,7 +82,7 @@ describe('Mutation execution handlers', () => {
     const dupResult = await executeCreateNode(
       createGraphAccessRequest('req-dup-2', context, {
         id: asNodeId('dup1'),
-        type: asTypeId('doc'),
+        type: asShapeId('doc'),
         properties: {},
       }),
     );
@@ -100,7 +100,7 @@ describe('Mutation execution handlers', () => {
     await executeCreateNode(
       createGraphAccessRequest('req-4', context, {
         id: asNodeId('n3'),
-        type: asTypeId('doc'),
+        type: asShapeId('doc'),
         properties: { title: 'Original Title' },
       }),
     );
@@ -139,21 +139,21 @@ describe('Mutation execution handlers', () => {
     await executeCreateNode(
       createGraphAccessRequest('req-7', context, {
         id: asNodeId('src'),
-        type: asTypeId('doc'),
+        type: asShapeId('doc'),
         properties: {},
       }),
     );
     await executeCreateNode(
       createGraphAccessRequest('req-8', context, {
         id: asNodeId('tgt'),
-        type: asTypeId('doc'),
+        type: asShapeId('doc'),
         properties: {},
       }),
     );
 
     const requestEdge = createGraphAccessRequest('req-9', context, {
       id: asEdgeId('e1'),
-      type: asTypeId('links'),
+      type: asShapeId('links'),
       source: asNodeId('src'),
       target: asNodeId('tgt'),
       properties: { weight: 10 },
@@ -175,7 +175,7 @@ describe('Mutation execution handlers', () => {
     const context = createGraphAccessContext({ graph: session.graph(), session });
 
     const requestEdge = createGraphAccessRequest('req-10', context, {
-      type: asTypeId('links'),
+      type: asShapeId('links'),
       source: asNodeId('missing-src'),
       target: asNodeId('tgt'),
     });
@@ -194,21 +194,21 @@ describe('Mutation execution handlers', () => {
     await executeCreateNode(
       createGraphAccessRequest('req-11', context, {
         id: asNodeId('n11'),
-        type: asTypeId('doc'),
+        type: asShapeId('doc'),
         properties: {},
       }),
     );
     await executeCreateNode(
       createGraphAccessRequest('req-12', context, {
         id: asNodeId('n12'),
-        type: asTypeId('doc'),
+        type: asShapeId('doc'),
         properties: {},
       }),
     );
     await executeCreateEdge(
       createGraphAccessRequest('req-13', context, {
         id: asEdgeId('e13'),
-        type: asTypeId('links'),
+        type: asShapeId('links'),
         source: asNodeId('n11'),
         target: asNodeId('n12'),
       }),
@@ -245,21 +245,21 @@ describe('Mutation execution handlers', () => {
     await executeCreateNode(
       createGraphAccessRequest('req-15', context, {
         id: asNodeId('n15'),
-        type: asTypeId('doc'),
+        type: asShapeId('doc'),
         properties: {},
       }),
     );
     await executeCreateNode(
       createGraphAccessRequest('req-16', context, {
         id: asNodeId('n16'),
-        type: asTypeId('doc'),
+        type: asShapeId('doc'),
         properties: {},
       }),
     );
     await executeCreateEdge(
       createGraphAccessRequest('req-17', context, {
         id: asEdgeId('e17'),
-        type: asTypeId('links'),
+        type: asShapeId('links'),
         source: asNodeId('n15'),
         target: asNodeId('n16'),
       }),
@@ -290,5 +290,44 @@ describe('Mutation execution handlers', () => {
     if (!resultDelNode.ok) {
       expect(resultDelNode.error.category).toBe('NOT_FOUND');
     }
+  });
+
+  test('executeCreateNode and executeCreateEdge support open entities with no shape', async () => {
+    const { session } = await setupSessionContext();
+    const context = createGraphAccessContext({ graph: session.graph(), session });
+
+    const openNode1 = await executeCreateNode(
+      createGraphAccessRequest('req-open-n1', context, {
+        id: asNodeId('open-n1'),
+        properties: { title: 'Open Node 1' },
+      }),
+    );
+    expect(openNode1.ok).toBe(true);
+    if (openNode1.ok) {
+      expect(openNode1.value.type).toBeUndefined();
+    }
+    expect(session.graph().nodes.get(asNodeId('open-n1'))?.shape).toBeUndefined();
+
+    const openNode2 = await executeCreateNode(
+      createGraphAccessRequest('req-open-n2', context, {
+        id: asNodeId('open-n2'),
+        properties: {},
+      }),
+    );
+    expect(openNode2.ok).toBe(true);
+
+    const openEdge = await executeCreateEdge(
+      createGraphAccessRequest('req-open-e1', context, {
+        id: asEdgeId('open-e1'),
+        source: asNodeId('open-n1'),
+        target: asNodeId('open-n2'),
+        properties: { label: 'loose link' },
+      }),
+    );
+    expect(openEdge.ok).toBe(true);
+    if (openEdge.ok) {
+      expect(openEdge.value.type).toBeUndefined();
+    }
+    expect(session.graph().edges.get(asEdgeId('open-e1'))?.shape).toBeUndefined();
   });
 });

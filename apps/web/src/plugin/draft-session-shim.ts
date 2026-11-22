@@ -4,7 +4,7 @@ import type {
   Node,
   PropertyValue as TsPropertyValue,
 } from '@canopy/graph';
-import { asEventId, asNodeId, asTypeId, asInstant, asDeviceId } from '@canopy/graph';
+import { asBatchId, asEventId, asNodeId, asShapeId, asInstant, asDeviceId } from '@canopy/graph';
 
 // Mapping from WIT property value to TS property value
 export function mapWitValueToTs(value: any): TsPropertyValue {
@@ -61,7 +61,7 @@ export function mapTsNodeToWit(node: Node): any {
   }));
   return {
     id: node.id,
-    nodeType: node.type,
+    nodeType: node.shape ?? '',
     properties,
   };
 }
@@ -79,15 +79,23 @@ export function mapWitEventToTs(witEvent: any, defaultDeviceId: string): GraphEv
         properties.set(entry.name, mapWitValueToTs(entry.value));
       }
     }
+    const shapeId =
+      typeof witEvent.val.nodeType === 'string' &&
+      witEvent.val.nodeType.length > 0 &&
+      witEvent.val.nodeType !== 'canopy:open'
+        ? asShapeId(witEvent.val.nodeType)
+        : undefined;
     return {
       type: 'NodeCreated',
       eventId: asEventId(eventIdStr),
       id: asNodeId(witEvent.val.id),
-      nodeType: asTypeId(witEvent.val.nodeType),
+      ...(shapeId !== undefined && { shapeId }),
       properties,
       timestamp: asInstant(timestampStr),
       deviceId: asDeviceId(deviceIdStr),
-      batchId: witEvent.val.batchId,
+      ...(typeof witEvent.val.batchId === 'string' && {
+        batchId: asBatchId(witEvent.val.batchId),
+      }),
     };
   } else if (witEvent.tag === 'node-properties-updated') {
     const changes = new Map<string, TsPropertyValue>();
@@ -103,7 +111,9 @@ export function mapWitEventToTs(witEvent: any, defaultDeviceId: string): GraphEv
       changes,
       timestamp: asInstant(timestampStr),
       deviceId: asDeviceId(deviceIdStr),
-      batchId: witEvent.val.batchId,
+      ...(typeof witEvent.val.batchId === 'string' && {
+        batchId: asBatchId(witEvent.val.batchId),
+      }),
     };
   }
   throw new Error(`Unsupported WIT event tag: ${witEvent.tag}`);

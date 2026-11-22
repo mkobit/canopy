@@ -1,4 +1,4 @@
-import type { NodeId, TypeId } from './identifiers';
+import type { NodeId, ShapeId } from './identifiers';
 import type { Node } from './node';
 import type { Edge } from './edge';
 import type { PropertyValue } from './properties';
@@ -9,7 +9,7 @@ import type { ReadModelPort } from './read-model';
 import type { Result } from './result';
 import { fromThrowable, ok, err as error } from './result';
 import { SYSTEM_IDS, SYSTEM_EDGE_TYPES } from './system';
-import { asTypeId } from './factories';
+import { asShapeId } from './factories';
 
 /**
 Pre-computed settings, view, and read-model indexes for O(1)/O(delta) lookup.
@@ -26,14 +26,20 @@ export interface GraphIndexes {
   readonly settingsSchemas: ReadonlyMap<string, Node>; // key -> SettingsSchema node
   readonly userSettings: ReadonlyMap<string, PropertyValue>; // schemaNodeId\0scopeType\0scopeTarget -> parsed value (deeply frozen)
   readonly viewOverrides: ReadonlyMap<NodeId, Node>; // nodeId -> ViewDefinition node
-  readonly defaultViews: ReadonlyMap<TypeId, Node>; // typeId -> ViewDefinition node
-  readonly typeIndex: ReadonlyMap<TypeId, ReadonlySet<NodeId>>; // typeId -> node IDs of that type
-  // nodeId -> edgeType -> (neighbour node ID -> number of edges of that type/direction contributing
+  readonly defaultViews: ReadonlyMap<ShapeId, Node>; // shapeId -> ViewDefinition node
+  readonly typeIndex: ReadonlyMap<ShapeId, ReadonlySet<NodeId>>; // shapeId -> node IDs of that shape (open nodes omitted)
+  // nodeId -> (edgeShape | null) -> (neighbour node ID -> number of edges of that shape/direction contributing
   // that neighbour). Counted, not a plain Set: parallel edges (including self-loops) between the
   // same pair can independently come and go, so a neighbour must stay present until every
   // contributing edge is gone, not just the most recently deleted one.
-  readonly adjacencyOut: ReadonlyMap<NodeId, ReadonlyMap<TypeId, ReadonlyMap<NodeId, number>>>;
-  readonly adjacencyIn: ReadonlyMap<NodeId, ReadonlyMap<TypeId, ReadonlyMap<NodeId, number>>>;
+  readonly adjacencyOut: ReadonlyMap<
+    NodeId,
+    ReadonlyMap<ShapeId | null, ReadonlyMap<NodeId, number>>
+  >;
+  readonly adjacencyIn: ReadonlyMap<
+    NodeId,
+    ReadonlyMap<ShapeId | null, ReadonlyMap<NodeId, number>>
+  >;
   readonly propertyEquality: ReadonlyMap<string, ReadonlyMap<string, ReadonlySet<NodeId>>>; // property -> serialized scalar value -> node IDs
 }
 
@@ -83,26 +89,26 @@ function indexNodeProperty(
 }
 
 /**
-Increments `adjacency[nodeId][edgeType][neighbourId]`'s edge count, creating buckets as needed.
+Increments `adjacency[nodeId][edgeShape][neighbourId]`'s edge count, creating buckets as needed.
 A count (not a plain Set) because parallel edges between the same pair must each contribute
 independently -- see the `GraphIndexes.adjacencyOut` doc comment.
 */
 function addNeighbour(
   // eslint-disable-next-line functional/prefer-immutable-types
-  adjacency: Map<NodeId, Map<TypeId, Map<NodeId, number>>>,
+  adjacency: Map<NodeId, Map<ShapeId | null, Map<NodeId, number>>>,
   nodeId: NodeId,
-  edgeType: TypeId,
+  edgeShape: ShapeId | null,
   neighbourId: NodeId,
   // eslint-disable-next-line functional/no-return-void
 ): void {
-  const byEdgeType = adjacency.get(nodeId) ?? new Map<TypeId, Map<NodeId, number>>();
-  const bucket = byEdgeType.get(edgeType) ?? new Map<NodeId, number>();
+  const byEdgeShape = adjacency.get(nodeId) ?? new Map<ShapeId | null, Map<NodeId, number>>();
+  const bucket = byEdgeShape.get(edgeShape) ?? new Map<NodeId, number>();
 
   bucket.set(neighbourId, (bucket.get(neighbourId) ?? 0) + 1);
 
-  byEdgeType.set(edgeType, bucket);
+  byEdgeShape.set(edgeShape, bucket);
 
-  adjacency.set(nodeId, byEdgeType);
+  adjacency.set(nodeId, byEdgeShape);
 }
 
 /**
@@ -298,19 +304,19 @@ Builds the graph indexes from scratch using a single scan of the graph nodes and
 export function buildGraphIndexes(graph: Graph): GraphIndexes {
   const settingsSchemas = new Map<string, Node>();
   const userSettings = new Map<string, PropertyValue>();
-  const typeIndex = new Map<TypeId, Set<NodeId>>();
+  const typeIndex = new Map<ShapeId, Set<NodeId>>();
   const propertyEquality = new Map<string, Map<string, Set<NodeId>>>();
 
   // 1. Scan nodes for SettingsSchema and UserSetting, and populate the type/property-equality
   //    read-model indexes (every node, not just settings-related ones).
 
   for (const node of graph.nodes.values()) {
-    if (node.type === SYSTEM_IDS.SETTINGS_SCHEMA) {
+    if (node.shape === SYSTEM_IDS.SETTINGS_SCHEMA) {
       const key = node.properties.get('key');
       if (typeof key === 'string') {
         settingsSchemas.set(key, node);
       }
-    } else if (node.type === SYSTEM_IDS.USER_SETTING) {
+    } else if (node.shape === SYSTEM_IDS.USER_SETTING) {
       const schemaId = node.properties.get('schemaId');
       const scopeType = node.properties.get('scopeType');
       const scopeTarget = node.properties.get('scopeTarget');
@@ -327,11 +333,11 @@ export function buildGraphIndexes(graph: Graph): GraphIndexes {
       }
     }
 
-    const typeBucket = typeIndex.get(node.type) ?? new Set<NodeId>();
-
-    typeBucket.add(node.id);
-
-    typeIndex.set(node.type, typeBucket);
+    if (node.shape !== undefined) {
+      const typeBucket = typeIndex.get(node.shape) ?? new Set<NodeId>();
+      typeBucket.add(node.id);
+      typeIndex.set(node.shape, typeBucket);
+    }
 
     for (const [property, value] of node.properties) {
       indexNodeProperty(propertyEquality, node.id, property, value);
@@ -344,18 +350,19 @@ export function buildGraphIndexes(graph: Graph): GraphIndexes {
   const overrideEdges: Edge[] = [];
   // eslint-disable-next-line functional/prefer-immutable-types
   const defaultEdges: Edge[] = [];
-  const adjacencyOut = new Map<NodeId, Map<TypeId, Map<NodeId, number>>>();
-  const adjacencyIn = new Map<NodeId, Map<TypeId, Map<NodeId, number>>>();
+  const adjacencyOut = new Map<NodeId, Map<ShapeId | null, Map<NodeId, number>>>();
+  const adjacencyIn = new Map<NodeId, Map<ShapeId | null, Map<NodeId, number>>>();
 
   for (const edge of graph.edges.values()) {
-    if (edge.type === SYSTEM_EDGE_TYPES.VIEW_OVERRIDE) {
+    if (edge.shape === SYSTEM_EDGE_TYPES.VIEW_OVERRIDE) {
       overrideEdges.push(edge);
-    } else if (edge.type === SYSTEM_EDGE_TYPES.DEFAULT_VIEW) {
+    } else if (edge.shape === SYSTEM_EDGE_TYPES.DEFAULT_VIEW) {
       defaultEdges.push(edge);
     }
 
-    addNeighbour(adjacencyOut, edge.source, edge.type, edge.target);
-    addNeighbour(adjacencyIn, edge.target, edge.type, edge.source);
+    const edgeShape = edge.shape ?? null;
+    addNeighbour(adjacencyOut, edge.source, edgeShape, edge.target);
+    addNeighbour(adjacencyIn, edge.target, edgeShape, edge.source);
   }
 
   // 3. Group and resolve view override edges deterministically
@@ -371,7 +378,7 @@ export function buildGraphIndexes(graph: Graph): GraphIndexes {
 
     const matchingEdge = list.find((edge) => {
       const targetNode = graph.nodes.get(edge.target);
-      return targetNode !== undefined && targetNode.type === SYSTEM_IDS.VIEW_DEFINITION;
+      return targetNode !== undefined && targetNode.shape === SYSTEM_IDS.VIEW_DEFINITION;
     });
     if (!matchingEdge) continue;
     const targetNode = graph.nodes.get(matchingEdge.target);
@@ -379,9 +386,9 @@ export function buildGraphIndexes(graph: Graph): GraphIndexes {
   }
 
   // 4. Group and resolve default view edges deterministically
-  const defaultsBySource = Map.groupBy(defaultEdges, (edge) => asTypeId(edge.source));
+  const defaultsBySource = Map.groupBy(defaultEdges, (edge) => asShapeId(edge.source));
 
-  const defaultViews = new Map<TypeId, Node>();
+  const defaultViews = new Map<ShapeId, Node>();
 
   for (const [source, list] of defaultsBySource) {
     list.sort((a, b) => {
@@ -391,7 +398,7 @@ export function buildGraphIndexes(graph: Graph): GraphIndexes {
 
     const matchingEdge = list.find((edge) => {
       const targetNode = graph.nodes.get(edge.target);
-      return targetNode !== undefined && targetNode.type === SYSTEM_IDS.VIEW_DEFINITION;
+      return targetNode !== undefined && targetNode.shape === SYSTEM_IDS.VIEW_DEFINITION;
     });
     if (!matchingEdge) continue;
     const targetNode = graph.nodes.get(matchingEdge.target);
@@ -444,8 +451,8 @@ Checks if an event modifies settings schema, user settings, or view overrides.
 function isConfigEvent(event: GraphEvent, graph: Graph): boolean {
   if (
     event.type === 'EdgeCreated' &&
-    (event.edgeType === SYSTEM_EDGE_TYPES.VIEW_OVERRIDE ||
-      event.edgeType === SYSTEM_EDGE_TYPES.DEFAULT_VIEW)
+    (event.shapeId === SYSTEM_EDGE_TYPES.VIEW_OVERRIDE ||
+      event.shapeId === SYSTEM_EDGE_TYPES.DEFAULT_VIEW)
   ) {
     return true;
   }
@@ -453,15 +460,15 @@ function isConfigEvent(event: GraphEvent, graph: Graph): boolean {
     const edge = graph.edges.get(event.id);
     if (
       edge &&
-      (edge.type === SYSTEM_EDGE_TYPES.VIEW_OVERRIDE ||
-        edge.type === SYSTEM_EDGE_TYPES.DEFAULT_VIEW)
+      (edge.shape === SYSTEM_EDGE_TYPES.VIEW_OVERRIDE ||
+        edge.shape === SYSTEM_EDGE_TYPES.DEFAULT_VIEW)
     ) {
       return true;
     }
   }
   if (
     event.type === 'NodeCreated' &&
-    (event.nodeType === SYSTEM_IDS.SETTINGS_SCHEMA || event.nodeType === SYSTEM_IDS.USER_SETTING)
+    (event.shapeId === SYSTEM_IDS.SETTINGS_SCHEMA || event.shapeId === SYSTEM_IDS.USER_SETTING)
   ) {
     return true;
   }
@@ -469,7 +476,7 @@ function isConfigEvent(event: GraphEvent, graph: Graph): boolean {
     const node = graph.nodes.get(event.id);
     if (
       node &&
-      (node.type === SYSTEM_IDS.SETTINGS_SCHEMA || node.type === SYSTEM_IDS.USER_SETTING)
+      (node.shape === SYSTEM_IDS.SETTINGS_SCHEMA || node.shape === SYSTEM_IDS.USER_SETTING)
     ) {
       return true;
     }
@@ -478,10 +485,11 @@ function isConfigEvent(event: GraphEvent, graph: Graph): boolean {
 }
 
 /**
-Adds a newly-created node's type and scalar properties to the read-model indexes.
+Adds a newly-created node's shape (if shaped) and scalar properties to the read-model indexes.
 */
 function addNodeToReadModelIndexes(indexes: GraphIndexes, node: Node): GraphIndexes {
-  const typeIndex = addToSet(indexes.typeIndex, node.type, node.id);
+  const typeIndex =
+    node.shape === undefined ? indexes.typeIndex : addToSet(indexes.typeIndex, node.shape, node.id);
 
   let propertyEquality = indexes.propertyEquality;
 
@@ -499,12 +507,15 @@ function addNodeToReadModelIndexes(indexes: GraphIndexes, node: Node): GraphInde
 }
 
 /**
-Removes a deleted node's type and scalar properties from the read-model indexes, and cascades
+Removes a deleted node's shape and scalar properties from the read-model indexes, and cascades
 to every adjacency entry (both directions) touching it -- driven by the read-model's own prior
 adjacency state, not by re-deriving which edges were removed from the event.
 */
 function removeNodeFromReadModelIndexes(indexes: GraphIndexes, node: Node): GraphIndexes {
-  const typeIndex = removeFromSet(indexes.typeIndex, node.type, node.id);
+  const typeIndex =
+    node.shape === undefined
+      ? indexes.typeIndex
+      : removeFromSet(indexes.typeIndex, node.shape, node.id);
 
   let propertyEquality = indexes.propertyEquality;
 
@@ -523,19 +534,19 @@ function removeNodeFromReadModelIndexes(indexes: GraphIndexes, node: Node): Grap
 
   let adjacencyIn = indexes.adjacencyIn;
   const outBuckets =
-    indexes.adjacencyOut.get(node.id) ?? new Map<TypeId, ReadonlyMap<NodeId, number>>();
+    indexes.adjacencyOut.get(node.id) ?? new Map<ShapeId | null, ReadonlyMap<NodeId, number>>();
 
-  for (const [edgeType, targets] of outBuckets) {
+  for (const [edgeShape, targets] of outBuckets) {
     for (const target of targets.keys()) {
-      adjacencyIn = removeAllFromNestedCount(adjacencyIn, target, edgeType, node.id);
+      adjacencyIn = removeAllFromNestedCount(adjacencyIn, target, edgeShape, node.id);
     }
   }
   const inBuckets =
-    indexes.adjacencyIn.get(node.id) ?? new Map<TypeId, ReadonlyMap<NodeId, number>>();
+    indexes.adjacencyIn.get(node.id) ?? new Map<ShapeId | null, ReadonlyMap<NodeId, number>>();
 
-  for (const [edgeType, sources] of inBuckets) {
+  for (const [edgeShape, sources] of inBuckets) {
     for (const source of sources.keys()) {
-      adjacencyOut = removeAllFromNestedCount(adjacencyOut, source, edgeType, node.id);
+      adjacencyOut = removeAllFromNestedCount(adjacencyOut, source, edgeShape, node.id);
     }
   }
   const finalAdjacencyOut = new Map(adjacencyOut);
@@ -558,10 +569,11 @@ function removeNodeFromReadModelIndexes(indexes: GraphIndexes, node: Node): Grap
 Adds a newly-created edge's adjacency entries (incrementing, not just setting) in both directions.
 */
 function addEdgeToReadModelIndexes(indexes: GraphIndexes, edge: Edge): GraphIndexes {
+  const edgeShape = edge.shape ?? null;
   return {
     ...indexes,
-    adjacencyOut: incrementNestedCount(indexes.adjacencyOut, edge.source, edge.type, edge.target),
-    adjacencyIn: incrementNestedCount(indexes.adjacencyIn, edge.target, edge.type, edge.source),
+    adjacencyOut: incrementNestedCount(indexes.adjacencyOut, edge.source, edgeShape, edge.target),
+    adjacencyIn: incrementNestedCount(indexes.adjacencyIn, edge.target, edgeShape, edge.source),
   };
 }
 
@@ -570,10 +582,11 @@ Removes a deleted edge's adjacency entries (decrementing, not unconditionally cl
 directions -- a parallel edge to the same neighbour, if any, keeps that neighbour present.
 */
 function removeEdgeFromReadModelIndexes(indexes: GraphIndexes, edge: Edge): GraphIndexes {
+  const edgeShape = edge.shape ?? null;
   return {
     ...indexes,
-    adjacencyOut: decrementNestedCount(indexes.adjacencyOut, edge.source, edge.type, edge.target),
-    adjacencyIn: decrementNestedCount(indexes.adjacencyIn, edge.target, edge.type, edge.source),
+    adjacencyOut: decrementNestedCount(indexes.adjacencyOut, edge.source, edgeShape, edge.target),
+    adjacencyIn: decrementNestedCount(indexes.adjacencyIn, edge.target, edgeShape, edge.source),
   };
 }
 
@@ -682,17 +695,17 @@ export function incrementalUpdateIndexes(
 }
 
 function collectNeighbours(
-  adjacency: ReadonlyMap<NodeId, ReadonlyMap<TypeId, ReadonlyMap<NodeId, number>>>,
+  adjacency: ReadonlyMap<NodeId, ReadonlyMap<ShapeId | null, ReadonlyMap<NodeId, number>>>,
   nodeId: NodeId,
-  edgeType: TypeId | undefined,
+  edgeShape: ShapeId | null | undefined,
 ): ReadonlySet<NodeId> {
-  const byEdgeType = adjacency.get(nodeId);
-  if (!byEdgeType) return new Set();
-  if (edgeType !== undefined) return new Set(byEdgeType.get(edgeType)?.keys());
+  const byEdgeShape = adjacency.get(nodeId);
+  if (!byEdgeShape) return new Set();
+  if (edgeShape !== undefined) return new Set(byEdgeShape.get(edgeShape)?.keys());
 
   const combined = new Set<NodeId>();
 
-  for (const bucket of byEdgeType.values()) {
+  for (const bucket of byEdgeShape.values()) {
     for (const id of bucket.keys()) {
       combined.add(id);
     }
@@ -708,30 +721,38 @@ exists yet.
 */
 export function createIndexedReadModel(graph: Graph): ReadModelPort {
   return {
-    typedNodeIds: (type) => getGraphIndexes(graph).typeIndex.get(type) ?? new Set(),
-    neighbours: (nodeId, edgeType, direction) => {
+    typedNodeIds: (shape) => getGraphIndexes(graph).typeIndex.get(shape) ?? new Set(),
+    neighbours: (nodeId, edgeShape, direction) => {
       const indexes = getGraphIndexes(graph);
-      if (direction === 'out') return collectNeighbours(indexes.adjacencyOut, nodeId, edgeType);
-      if (direction === 'in') return collectNeighbours(indexes.adjacencyIn, nodeId, edgeType);
-      const out = collectNeighbours(indexes.adjacencyOut, nodeId, edgeType);
-      const inbound = collectNeighbours(indexes.adjacencyIn, nodeId, edgeType);
+      if (direction === 'out') return collectNeighbours(indexes.adjacencyOut, nodeId, edgeShape);
+      if (direction === 'in') return collectNeighbours(indexes.adjacencyIn, nodeId, edgeShape);
+      const out = collectNeighbours(indexes.adjacencyOut, nodeId, edgeShape);
+      const inbound = collectNeighbours(indexes.adjacencyIn, nodeId, edgeShape);
       // Set#union/#intersection (ES2025) are unavailable under this project's "ES2024" tsconfig
       // lib target -- see tsconfig.base.json.
       // eslint-disable-next-line unicorn/prefer-set-methods
       return new Set([...out, ...inbound]);
     },
-    nodesWhereEquals: (property, value, type) => {
+    nodesWhereEquals: (property, value, shape) => {
       if (!isScalarValue(value)) return new Set(); // arrays are never indexed
       const indexes = getGraphIndexes(graph);
       const matches = indexes.propertyEquality.get(property)?.get(serializeScalarForIndex(value));
       if (!matches) return new Set();
-      if (type === undefined) return matches;
-      const typed = indexes.typeIndex.get(type) ?? new Set();
+      if (shape === undefined) return matches;
+      const typed = indexes.typeIndex.get(shape) ?? new Set();
       // eslint-disable-next-line unicorn/prefer-set-methods -- Set#intersection is ES2025, see above
       return new Set([...matches].filter((id) => typed.has(id)));
     },
   };
 }
+
+const compareMapKeys = (a: unknown, b: unknown): number => {
+  if (a === b) return 0;
+  if (a === null) return -1;
+  return b === null ? 1 : String(a).localeCompare(String(b));
+};
+
+const tagMapKey = (key: unknown): string => (key === null ? 'null' : `s:${String(key)}`);
 
 /**
 Canonicalizes the read-model portion of `GraphIndexes` into a JSON string with sorted keys, so
@@ -742,8 +763,8 @@ function canonicalizeReadModelIndexes(indexes: GraphIndexes): string {
   const canonicalizeValue = (value: unknown): unknown => {
     if (value instanceof Map) {
       return [...value]
-        .toSorted(([a], [b]) => String(a).localeCompare(String(b)))
-        .map(([key, nested]) => [key, canonicalizeValue(nested)]);
+        .toSorted(([a], [b]) => compareMapKeys(a, b))
+        .map(([key, nested]) => [tagMapKey(key), canonicalizeValue(nested)]);
     }
     return value instanceof Set
       ? [...value].map(String).toSorted((a, b) => a.localeCompare(b))

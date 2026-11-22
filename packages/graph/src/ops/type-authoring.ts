@@ -91,7 +91,7 @@ export function createNamespace(
 
   const node: Node = {
     id: createNodeId(),
-    type: SYSTEM_IDS.NAMESPACE,
+    shape: SYSTEM_IDS.NAMESPACE,
     properties: new Map(Object.entries(properties)),
     metadata: {
       created: createInstant(),
@@ -144,7 +144,7 @@ function resolvePropertyInput(
   }
 
   const referenceNode = graph.nodes.get(input.propertyTypeId);
-  if (!referenceNode || referenceNode.type !== SYSTEM_IDS.PROPERTY_TYPE) {
+  if (!referenceNode || referenceNode.shape !== SYSTEM_IDS.PROPERTY_TYPE) {
     return error({
       path: ['properties', String(index), 'propertyTypeId'],
       message: `PropertyType '${input.propertyTypeId}' does not exist`,
@@ -218,7 +218,7 @@ function generateDefaultView(
   };
   const queryNode: Node = {
     id: queryId,
-    type: SYSTEM_IDS.QUERY_DEFINITION,
+    shape: SYSTEM_IDS.QUERY_DEFINITION,
     properties: new Map(Object.entries(queryProperties)),
     metadata: {
       created: createInstant(),
@@ -237,7 +237,7 @@ function generateDefaultView(
   };
   const viewNode: Node = {
     id: createNodeId(),
-    type: SYSTEM_IDS.VIEW_DEFINITION,
+    shape: SYSTEM_IDS.VIEW_DEFINITION,
     properties: new Map(Object.entries(viewProperties)),
     metadata: {
       created: createInstant(),
@@ -258,7 +258,7 @@ function generateDefaultView(
 
   const edge: Edge = {
     id: createEdgeId(),
-    type: SYSTEM_EDGE_TYPES.DEFAULT_VIEW,
+    shape: SYSTEM_EDGE_TYPES.DEFAULT_VIEW,
     source: nodeTypeNode.id,
     target: viewNode.id,
     properties: new Map(),
@@ -319,7 +319,7 @@ export function createNodeType(
 
   const node: Node = {
     id: createNodeId(),
-    type: SYSTEM_IDS.NODE_TYPE,
+    shape: SYSTEM_IDS.NODE_TYPE,
     properties: new Map(Object.entries(properties)),
     metadata: {
       created: createInstant(),
@@ -397,7 +397,7 @@ export function createEdgeType(
 
   const node: Node = {
     id: createNodeId(),
-    type: SYSTEM_IDS.EDGE_TYPE,
+    shape: SYSTEM_IDS.EDGE_TYPE,
     properties: new Map(Object.entries(properties)),
     metadata: {
       created: createInstant(),
@@ -478,7 +478,7 @@ export function createPropertyType(
 
   const node: Node = {
     id: createNodeId(),
-    type: SYSTEM_IDS.PROPERTY_TYPE,
+    shape: SYSTEM_IDS.PROPERTY_TYPE,
     properties: new Map(Object.entries(properties)),
     metadata: {
       created: createInstant(),

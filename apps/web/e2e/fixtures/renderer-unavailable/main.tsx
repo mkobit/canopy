@@ -6,7 +6,7 @@ import {
   asEdgeId,
   asGraphId,
   asNodeId,
-  asTypeId,
+  asShapeId,
   createGraph,
   createInstant,
   SYSTEM_DEVICE_ID,
@@ -53,7 +53,7 @@ const fixtureNode = (
   properties: ReadonlyMap<string, PropertyValue>,
 ): Node => ({
   id: asNodeId(id),
-  type: asTypeId(type),
+  shape: asShapeId(type),
   properties,
   metadata: {
     created: createInstant(),
@@ -134,7 +134,7 @@ const buildFixture = (
   const graph = addFixtureEdge(
     addFixtureEdge(graphWithNodes, {
       id: asEdgeId(`fixture:edge:override:${nodeSuffix}`),
-      type: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
+      shape: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
       source: contentNode.id,
       target: viewNode.id,
       properties: new Map(),
@@ -142,7 +142,7 @@ const buildFixture = (
     }),
     {
       id: asEdgeId(`fixture:edge:renderer:${nodeSuffix}`),
-      type: SYSTEM_EDGE_TYPES.USES_RENDERER,
+      shape: SYSTEM_EDGE_TYPES.USES_RENDERER,
       source: viewNode.id,
       target: rendererNode.id,
       properties: new Map(),

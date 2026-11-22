@@ -9,7 +9,7 @@ import {
   asEdgeId,
   asGraphId,
   asNodeId,
-  asTypeId,
+  asShapeId,
   createGraph,
   createInstant,
   removeEdge,
@@ -45,7 +45,7 @@ const metadata = {
 
 const buildNode = (id: string, properties: ReadonlyMap<string, PropertyValue>): Node => ({
   id: asNodeId(id),
-  type: asTypeId('user:nodetype:cache-test'),
+  shape: asShapeId('user:nodetype:cache-test'),
   properties,
   metadata,
 });
@@ -555,7 +555,7 @@ describe.serial(
 
       const targetNode: Node = {
         id: nodeId,
-        type: asTypeId('user:nodetype:dispatch'),
+        shape: asShapeId('user:nodetype:dispatch'),
         properties: new Map([['content', 'unchanged block body']]),
         metadata,
       };
@@ -590,19 +590,19 @@ describe.serial(
       graph = addNodeUnwrapped(graph, targetNode);
       graph = addNodeUnwrapped(graph, {
         id: viewAId,
-        type: SYSTEM_IDS.VIEW_DEFINITION,
+        shape: SYSTEM_IDS.VIEW_DEFINITION,
         properties: new Map([['name', 'View A']]),
         metadata,
       });
       graph = addNodeUnwrapped(graph, {
         id: viewBId,
-        type: SYSTEM_IDS.VIEW_DEFINITION,
+        shape: SYSTEM_IDS.VIEW_DEFINITION,
         properties: new Map([['name', 'View B']]),
         metadata,
       });
       graph = addNodeUnwrapped(graph, {
         id: renderer1Id,
-        type: SYSTEM_IDS.RENDERER,
+        shape: SYSTEM_IDS.RENDERER,
         properties: new Map([
           ['rendererKind', 'wasm'],
           ['entryPoint', plugin1Id],
@@ -611,7 +611,7 @@ describe.serial(
       });
       graph = addNodeUnwrapped(graph, {
         id: renderer2Id,
-        type: SYSTEM_IDS.RENDERER,
+        shape: SYSTEM_IDS.RENDERER,
         properties: new Map([
           ['rendererKind', 'wasm'],
           ['entryPoint', plugin2Id],
@@ -620,7 +620,7 @@ describe.serial(
       });
       graph = addNodeUnwrapped(graph, {
         id: plugin1Id,
-        type: asTypeId('canopy:system/plugin'),
+        shape: asShapeId('canopy:system/plugin'),
         properties: new Map([
           ['manifest', JSON.stringify({ capabilities: ['render:interactive', 'read:nodes'] })],
           ['workerGuestId', 'guest:one'],
@@ -629,7 +629,7 @@ describe.serial(
       });
       graph = addNodeUnwrapped(graph, {
         id: plugin2Id,
-        type: asTypeId('canopy:system/plugin'),
+        shape: asShapeId('canopy:system/plugin'),
         properties: new Map([
           ['manifest', JSON.stringify({ capabilities: ['render:interactive', 'read:nodes'] })],
           ['workerGuestId', 'guest:two'],
@@ -640,7 +640,7 @@ describe.serial(
       // Both View A and View B initially reference Renderer 1.
       graph = addEdgeUnwrapped(graph, {
         id: asEdgeId('user:edge:view-a-uses-1'),
-        type: SYSTEM_EDGE_TYPES.USES_RENDERER,
+        shape: SYSTEM_EDGE_TYPES.USES_RENDERER,
         source: viewAId,
         target: renderer1Id,
         properties: new Map(),
@@ -648,7 +648,7 @@ describe.serial(
       });
       graph = addEdgeUnwrapped(graph, {
         id: usesRenderer1EdgeId,
-        type: SYSTEM_EDGE_TYPES.USES_RENDERER,
+        shape: SYSTEM_EDGE_TYPES.USES_RENDERER,
         source: viewBId,
         target: renderer1Id,
         properties: new Map(),
@@ -656,7 +656,7 @@ describe.serial(
       });
       graph = addEdgeUnwrapped(graph, {
         id: overrideEdgeAId,
-        type: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
+        shape: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
         source: nodeId,
         target: viewAId,
         properties: new Map(),
@@ -675,7 +675,7 @@ describe.serial(
       // 1. Switch ViewDefinition (View A -> View B) on identical node content & same Renderer 1.
       const graphWithViewB = addEdgeUnwrapped(removeEdgeUnwrapped(graph, overrideEdgeAId), {
         id: overrideEdgeBId,
-        type: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
+        shape: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
         source: nodeId,
         target: viewBId,
         properties: new Map(),
@@ -700,7 +700,7 @@ describe.serial(
         removeEdgeUnwrapped(graphWithViewB, usesRenderer1EdgeId),
         {
           id: usesRenderer2EdgeId,
-          type: SYSTEM_EDGE_TYPES.USES_RENDERER,
+          shape: SYSTEM_EDGE_TYPES.USES_RENDERER,
           source: viewBId,
           target: renderer2Id,
           properties: new Map(),
@@ -737,7 +737,7 @@ describe.serial(
 
       const targetNode: Node = {
         id: nodeId,
-        type: asTypeId('user:nodetype:tier-switch'),
+        shape: asShapeId('user:nodetype:tier-switch'),
         properties: new Map([['content', 'same content across grant upgrade']]),
         metadata,
       };
@@ -751,13 +751,13 @@ describe.serial(
       graph = addNodeUnwrapped(graph, targetNode);
       graph = addNodeUnwrapped(graph, {
         id: viewId,
-        type: SYSTEM_IDS.VIEW_DEFINITION,
+        shape: SYSTEM_IDS.VIEW_DEFINITION,
         properties: new Map([['name', 'Tier Switch View']]),
         metadata,
       });
       graph = addNodeUnwrapped(graph, {
         id: rendererId,
-        type: SYSTEM_IDS.RENDERER,
+        shape: SYSTEM_IDS.RENDERER,
         properties: new Map([
           ['rendererKind', 'wasm'],
           ['entryPoint', pluginId],
@@ -766,7 +766,7 @@ describe.serial(
       });
       graph = addNodeUnwrapped(graph, {
         id: pluginId,
-        type: asTypeId('canopy:system/plugin'),
+        shape: asShapeId('canopy:system/plugin'),
         properties: new Map([
           ['manifest', JSON.stringify({ capabilities: ['render:raw-html', 'render:interactive'] })],
           ['workerGuestId', 'guest:tier-switch'],
@@ -775,7 +775,7 @@ describe.serial(
       });
       graph = addEdgeUnwrapped(graph, {
         id: asEdgeId('user:edge:tier-switch-uses'),
-        type: SYSTEM_EDGE_TYPES.USES_RENDERER,
+        shape: SYSTEM_EDGE_TYPES.USES_RENDERER,
         source: viewId,
         target: rendererId,
         properties: new Map(),
@@ -783,7 +783,7 @@ describe.serial(
       });
       graph = addEdgeUnwrapped(graph, {
         id: asEdgeId('user:edge:tier-switch-override'),
-        type: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
+        shape: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
         source: nodeId,
         target: viewId,
         properties: new Map(),

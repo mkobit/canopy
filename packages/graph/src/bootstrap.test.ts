@@ -15,28 +15,28 @@ describe('Meta-circular bootstrap', () => {
     // Check NodeType definition
     const nodeTypeDefinition = graph.nodes.get(SYSTEM_IDS.NODE_TYPE_DEF);
     expect(nodeTypeDefinition).toBeDefined();
-    expect(nodeTypeDefinition?.type).toBe(SYSTEM_IDS.NODE_TYPE);
+    expect(nodeTypeDefinition?.shape).toBe(SYSTEM_IDS.NODE_TYPE);
     expect(nodeTypeDefinition?.properties.get('name')).toEqual('Node Type');
     expect(nodeTypeDefinition?.properties.get('namespace')).toEqual('system');
 
     // Check EdgeType definition
     const edgeTypeDefinition = graph.nodes.get(SYSTEM_IDS.EDGE_TYPE_DEF);
     expect(edgeTypeDefinition).toBeDefined();
-    expect(edgeTypeDefinition?.type).toBe(SYSTEM_IDS.NODE_TYPE); // EdgeType definition is a NodeType
+    expect(edgeTypeDefinition?.shape).toBe(SYSTEM_IDS.NODE_TYPE); // EdgeType definition is a NodeType
     expect(edgeTypeDefinition?.properties.get('name')).toEqual('Edge Type');
     expect(edgeTypeDefinition?.properties.get('namespace')).toEqual('system');
 
     // Check Renderer definition
     const rendererDefinition = graph.nodes.get(SYSTEM_IDS.RENDERER_DEF);
     expect(rendererDefinition).toBeDefined();
-    expect(rendererDefinition?.type).toBe(SYSTEM_IDS.NODE_TYPE);
+    expect(rendererDefinition?.shape).toBe(SYSTEM_IDS.NODE_TYPE);
     expect(rendererDefinition?.properties.get('name')).toEqual('Renderer');
     expect(rendererDefinition?.properties.get('namespace')).toEqual('system');
 
     // Check Namespace definition (self-describing metatype for the Namespace node shape)
     const namespaceDefinition = graph.nodes.get(SYSTEM_IDS.NAMESPACE_DEF);
     expect(namespaceDefinition).toBeDefined();
-    expect(namespaceDefinition?.type).toBe(SYSTEM_IDS.NODE_TYPE);
+    expect(namespaceDefinition?.shape).toBe(SYSTEM_IDS.NODE_TYPE);
     expect(namespaceDefinition?.properties.get('name')).toEqual('Namespace');
     expect(namespaceDefinition?.properties.get('namespace')).toEqual('system');
     expect(
@@ -48,29 +48,29 @@ describe('Meta-circular bootstrap', () => {
     // Check migrated Namespace instance nodes
     const systemNs = graph.nodes.get(SYSTEM_IDS.NAMESPACE_SYSTEM);
     expect(systemNs).toBeDefined();
-    expect(systemNs?.type).toBe(SYSTEM_IDS.NAMESPACE);
+    expect(systemNs?.shape).toBe(SYSTEM_IDS.NAMESPACE);
     expect(systemNs?.properties.get('name')).toEqual('system');
     expect(systemNs?.properties.get('kind')).toEqual('system');
 
     const userNs = graph.nodes.get(SYSTEM_IDS.NAMESPACE_USER);
     expect(userNs).toBeDefined();
-    expect(userNs?.type).toBe(SYSTEM_IDS.NAMESPACE);
+    expect(userNs?.shape).toBe(SYSTEM_IDS.NAMESPACE);
     expect(userNs?.properties.get('name')).toEqual('user');
 
     const importedNs = graph.nodes.get(SYSTEM_IDS.NAMESPACE_IMPORTED);
     expect(importedNs).toBeDefined();
-    expect(importedNs?.type).toBe(SYSTEM_IDS.NAMESPACE);
+    expect(importedNs?.shape).toBe(SYSTEM_IDS.NAMESPACE);
     expect(importedNs?.properties.get('name')).toEqual('imported');
 
     const userSettingsNs = graph.nodes.get(SYSTEM_IDS.NAMESPACE_USER_SETTINGS);
     expect(userSettingsNs).toBeDefined();
-    expect(userSettingsNs?.type).toBe(SYSTEM_IDS.NAMESPACE);
+    expect(userSettingsNs?.shape).toBe(SYSTEM_IDS.NAMESPACE);
     expect(userSettingsNs?.properties.get('name')).toEqual('user-settings');
 
     // Check PropertyType definition
     const propertyTypeDefinition = graph.nodes.get(SYSTEM_IDS.PROPERTY_TYPE_DEF);
     expect(propertyTypeDefinition).toBeDefined();
-    expect(propertyTypeDefinition?.type).toBe(SYSTEM_IDS.NODE_TYPE);
+    expect(propertyTypeDefinition?.shape).toBe(SYSTEM_IDS.NODE_TYPE);
     expect(propertyTypeDefinition?.properties.get('name')).toEqual('Property Type');
     expect(propertyTypeDefinition?.properties.get('namespace')).toEqual('system');
     expect(
@@ -92,27 +92,27 @@ describe('Meta-circular bootstrap', () => {
     // Check Core Edge Types
     const childOf = graph.nodes.get(SYSTEM_IDS.EDGE_CHILD_OF);
     expect(childOf).toBeDefined();
-    expect(childOf?.type).toBe(SYSTEM_IDS.EDGE_TYPE);
+    expect(childOf?.shape).toBe(SYSTEM_IDS.EDGE_TYPE);
     expect(childOf?.properties.get('name')).toEqual('Child Of');
     expect(childOf?.properties.get('namespace')).toEqual('system');
 
     // Check Settings schemas
     const settingsSchemaDefinition = graph.nodes.get(SYSTEM_IDS.SETTINGS_SCHEMA_DEF);
     expect(settingsSchemaDefinition).toBeDefined();
-    expect(settingsSchemaDefinition?.type).toBe(SYSTEM_IDS.NODE_TYPE);
+    expect(settingsSchemaDefinition?.shape).toBe(SYSTEM_IDS.NODE_TYPE);
 
     const userSettingDefinition = graph.nodes.get(SYSTEM_IDS.USER_SETTING_DEF);
     expect(userSettingDefinition).toBeDefined();
-    expect(userSettingDefinition?.type).toBe(SYSTEM_IDS.NODE_TYPE);
+    expect(userSettingDefinition?.shape).toBe(SYSTEM_IDS.NODE_TYPE);
 
     const defaultView = graph.nodes.get(SYSTEM_IDS.SETTING_DEFAULT_VIEW);
     expect(defaultView).toBeDefined();
-    expect(defaultView?.type).toBe(SYSTEM_IDS.SETTINGS_SCHEMA);
+    expect(defaultView?.shape).toBe(SYSTEM_IDS.SETTINGS_SCHEMA);
     expect(defaultView?.properties.get('key')).toBe('default-view');
 
     const displayDensity = graph.nodes.get(SYSTEM_IDS.SETTING_DISPLAY_DENSITY);
     expect(displayDensity).toBeDefined();
-    expect(displayDensity?.type).toBe(SYSTEM_IDS.SETTINGS_SCHEMA);
+    expect(displayDensity?.shape).toBe(SYSTEM_IDS.SETTINGS_SCHEMA);
   });
 
   it('seeds renderers, view definitions, and default view mappings', () => {
@@ -121,23 +121,23 @@ describe('Meta-circular bootstrap', () => {
     // Check system edge types definitions
     const usesRendererDefinition = graph.nodes.get(SYSTEM_IDS.EDGE_USES_RENDERER);
     expect(usesRendererDefinition).toBeDefined();
-    expect(usesRendererDefinition?.type).toBe(SYSTEM_IDS.EDGE_TYPE);
+    expect(usesRendererDefinition?.shape).toBe(SYSTEM_IDS.EDGE_TYPE);
     expect(usesRendererDefinition?.properties.get('name')).toBe('uses_renderer');
 
     const viewOverrideDefinition = graph.nodes.get(SYSTEM_IDS.EDGE_VIEW_OVERRIDE);
     expect(viewOverrideDefinition).toBeDefined();
-    expect(viewOverrideDefinition?.type).toBe(SYSTEM_IDS.EDGE_TYPE);
+    expect(viewOverrideDefinition?.shape).toBe(SYSTEM_IDS.EDGE_TYPE);
     expect(viewOverrideDefinition?.properties.get('name')).toBe('view_override');
 
     const defaultViewEdgeDefinition = graph.nodes.get(SYSTEM_IDS.EDGE_DEFAULT_VIEW);
     expect(defaultViewEdgeDefinition).toBeDefined();
-    expect(defaultViewEdgeDefinition?.type).toBe(SYSTEM_IDS.EDGE_TYPE);
+    expect(defaultViewEdgeDefinition?.shape).toBe(SYSTEM_IDS.EDGE_TYPE);
     expect(defaultViewEdgeDefinition?.properties.get('name')).toBe('default_view');
 
     // Check system Renderers
     const textRenderer = graph.nodes.get(asNodeId('system:renderer:text'));
     expect(textRenderer).toBeDefined();
-    expect(textRenderer?.type).toBe(SYSTEM_IDS.RENDERER);
+    expect(textRenderer?.shape).toBe(SYSTEM_IDS.RENDERER);
     expect(textRenderer?.properties.get('name')).toBe('Text Renderer');
     expect(textRenderer?.properties.get('rendererKind')).toBe('system');
     expect(textRenderer?.properties.get('entryPoint')).toBe('system:text');
@@ -145,7 +145,7 @@ describe('Meta-circular bootstrap', () => {
 
     const codeRenderer = graph.nodes.get(asNodeId('system:renderer:code'));
     expect(codeRenderer).toBeDefined();
-    expect(codeRenderer?.type).toBe(SYSTEM_IDS.RENDERER);
+    expect(codeRenderer?.shape).toBe(SYSTEM_IDS.RENDERER);
     expect(codeRenderer?.properties.get('name')).toBe('Code Renderer');
     expect(codeRenderer?.properties.get('rendererKind')).toBe('system');
     expect(codeRenderer?.properties.get('entryPoint')).toBe('system:code');
@@ -153,7 +153,7 @@ describe('Meta-circular bootstrap', () => {
 
     const mdRenderer = graph.nodes.get(asNodeId('system:renderer:markdown'));
     expect(mdRenderer).toBeDefined();
-    expect(mdRenderer?.type).toBe(SYSTEM_IDS.RENDERER);
+    expect(mdRenderer?.shape).toBe(SYSTEM_IDS.RENDERER);
     expect(mdRenderer?.properties.get('name')).toBe('Markdown Renderer');
     // Re-pointed to the first-party Markdown WASM plugin (canopy-586).
     expect(mdRenderer?.properties.get('rendererKind')).toBe('wasm');
@@ -165,7 +165,7 @@ describe('Meta-circular bootstrap', () => {
     // The Markdown WASM plugin node the renderer points at is seeded.
     const mdPlugin = graph.nodes.get(asNodeId('system:node:plugin-canopy-markdown-renderer'));
     expect(mdPlugin).toBeDefined();
-    expect(mdPlugin?.type).toBe(SYSTEM_IDS.TYPE_PLUGIN);
+    expect(mdPlugin?.shape).toBe(SYSTEM_IDS.TYPE_PLUGIN);
     expect(mdPlugin?.properties.get('version')).toBe('1.0.0');
     const seededManifest = mdPlugin?.properties.get('manifest');
     expect(typeof seededManifest).toBe('string');
@@ -174,19 +174,19 @@ describe('Meta-circular bootstrap', () => {
     // Check system ViewDefinitions
     const textView = graph.nodes.get(asNodeId('system:view:text-block'));
     expect(textView).toBeDefined();
-    expect(textView?.type).toBe(SYSTEM_IDS.VIEW_DEFINITION);
+    expect(textView?.shape).toBe(SYSTEM_IDS.VIEW_DEFINITION);
     expect(textView?.properties.get('name')).toBe('Text Block View');
     expect(textView?.properties.get('layout')).toBe('document');
 
     const codeView = graph.nodes.get(asNodeId('system:view:code-block'));
     expect(codeView).toBeDefined();
-    expect(codeView?.type).toBe(SYSTEM_IDS.VIEW_DEFINITION);
+    expect(codeView?.shape).toBe(SYSTEM_IDS.VIEW_DEFINITION);
     expect(codeView?.properties.get('name')).toBe('Code Block View');
     expect(codeView?.properties.get('layout')).toBe('document');
 
     const mdView = graph.nodes.get(asNodeId('system:view:markdown'));
     expect(mdView).toBeDefined();
-    expect(mdView?.type).toBe(SYSTEM_IDS.VIEW_DEFINITION);
+    expect(mdView?.shape).toBe(SYSTEM_IDS.VIEW_DEFINITION);
     expect(mdView?.properties.get('name')).toBe('Markdown View');
     expect(mdView?.properties.get('layout')).toBe('document');
 
@@ -194,7 +194,7 @@ describe('Meta-circular bootstrap', () => {
     const findEdge = (type: string, source: string, target: string) => {
       return graph.edges
         .values()
-        .find((edge) => edge.type === type && edge.source === source && edge.target === target);
+        .find((edge) => edge.shape === type && edge.source === source && edge.target === target);
     };
 
     // Check uses_renderer edges

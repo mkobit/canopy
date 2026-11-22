@@ -1,22 +1,27 @@
 import type { Node } from './node';
+import type { Edge } from './edge';
 import type { GraphEvent, GraphResult } from './events';
-import type { TypeId, NodeId } from './identifiers';
+import type { ShapeId, NodeId } from './identifiers';
 import type { Graph } from './graph';
 import type { PropertyValue } from './properties';
 import type { Result } from './result';
-import { asTypeId, createInstant, createEdgeId } from './factories';
+import { asShapeId, createInstant, createEdgeId } from './factories';
 import { fromThrowable, err as error } from './result';
 import { addEdge } from './ops/edge';
 import { updateNode } from './ops/node';
 
 export interface WorkflowActionParameters {
-  readonly type?: TypeId;
-  readonly source?: NodeId;
-  readonly target?: NodeId;
-  readonly properties?: ReadonlyMap<string, PropertyValue>;
-  readonly nodeId?: NodeId;
-  readonly key?: string;
-  readonly value?: PropertyValue;
+  readonly shape?: ShapeId | undefined;
+  /**
+  @deprecated Use shape
+  */
+  readonly type?: ShapeId | undefined;
+  readonly source?: NodeId | undefined;
+  readonly target?: NodeId | undefined;
+  readonly properties?: ReadonlyMap<string, PropertyValue> | undefined;
+  readonly nodeId?: NodeId | undefined;
+  readonly key?: string | undefined;
+  readonly value?: PropertyValue | undefined;
 }
 
 export function executeWorkflowAction(
@@ -25,13 +30,14 @@ export function executeWorkflowAction(
   parameters: WorkflowActionParameters,
 ): Result<GraphResult<Graph>, Error> {
   if (action === 'create-edge') {
-    if (!parameters.type || !parameters.source || !parameters.target) {
+    const edgeShape = parameters.shape ?? parameters.type;
+    if (!edgeShape || !parameters.source || !parameters.target) {
       return error(new Error("Missing required parameters for 'create-edge' action"));
     }
 
-    const edge = {
+    const edge: Edge = {
       id: createEdgeId(),
-      type: parameters.type,
+      shape: edgeShape,
       source: parameters.source,
       target: parameters.target,
       properties: new Map(parameters.properties),
@@ -90,7 +96,7 @@ export interface WorkflowTriggerRegistry {
 
 export function createWorkflowTriggerRegistry(): WorkflowTriggerRegistry {
   const triggersCell = {
-    current: new Map<TypeId, readonly Node[]>() as ReadonlyMap<TypeId, readonly Node[]>,
+    current: new Map<ShapeId, readonly Node[]>() as ReadonlyMap<ShapeId, readonly Node[]>,
   };
 
   const addTrigger = (node: Node): boolean => {
@@ -105,10 +111,18 @@ export function createWorkflowTriggerRegistry(): WorkflowTriggerRegistry {
     }
 
     const condition = parsedResult.value;
-    if (typeof condition === 'object' && condition !== null && 'typeId' in condition) {
-      const typeId = asTypeId((condition as Readonly<{ typeId: string }>).typeId);
-      const current = triggersCell.current.get(typeId) ?? [];
-      triggersCell.current = new Map([...triggersCell.current, [typeId, [...current, node]]]);
+    if (
+      typeof condition === 'object' &&
+      condition !== null &&
+      ('shapeId' in condition || 'typeId' in condition)
+    ) {
+      const rawShapeId =
+        'shapeId' in condition && typeof condition.shapeId === 'string'
+          ? condition.shapeId
+          : (condition as Readonly<{ typeId: string }>).typeId;
+      const shapeId = asShapeId(rawShapeId);
+      const current = triggersCell.current.get(shapeId) ?? [];
+      triggersCell.current = new Map([...triggersCell.current, [shapeId, [...current, node]]]);
       return true;
     }
 
@@ -116,7 +130,9 @@ export function createWorkflowTriggerRegistry(): WorkflowTriggerRegistry {
   };
 
   const getTriggersForEvent = (event: GraphEvent): readonly Node[] => {
-    return event.type === 'NodeCreated' ? (triggersCell.current.get(event.nodeType) ?? []) : [];
+    return event.type === 'NodeCreated' && event.shapeId !== undefined
+      ? (triggersCell.current.get(event.shapeId) ?? [])
+      : [];
   };
 
   return {

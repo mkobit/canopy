@@ -98,7 +98,7 @@ export class WizardSession implements WizardSessionClass {
       const event = {
         tag: 'node-created' as const,
         val: {
-          eventId: 'evt_mock_node',
+          eventId: '123e4567-e89b-42d3-a456-426614174010',
           id: 'node_mock_plugin_output',
           nodeType: 'mock_output',
           properties: [
@@ -108,7 +108,7 @@ export class WizardSession implements WizardSessionClass {
             },
           ],
           timestamp: new Date().toISOString(),
-          deviceId: 'host_device',
+          deviceId: '123e4567-e89b-42d3-a456-426614174011',
         },
       };
       return {

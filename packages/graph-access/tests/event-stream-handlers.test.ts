@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { asDeviceId, asGraphId, asNodeId, asTypeId, createGraphSession } from '@canopy/graph';
+import { asDeviceId, asGraphId, asNodeId, asShapeId, createGraphSession } from '@canopy/graph';
 import { createInMemoryEventStore } from '@canopy/storage';
 import {
   createGraphAccessContext,
@@ -11,7 +11,7 @@ import {
 import type { EventStreamMessage } from '../src/graph-access-payloads';
 
 const graphId = asGraphId('g1');
-const deviceId = asDeviceId('device-1');
+const deviceId = asDeviceId('00000000-0000-4000-8000-000000000001');
 
 const setupSessionContext = async () => {
   const eventLogStore = createInMemoryEventStore();
@@ -37,7 +37,7 @@ describe('Real-Time Event Stream Subscriber', () => {
 
     const request = createGraphAccessRequest('req-1', context, {
       id: asNodeId('n1'),
-      type: asTypeId('doc'),
+      type: asShapeId('doc'),
       properties: { title: 'Live Streaming Node' },
     });
     const result = await executeCreateNode(request);
@@ -70,7 +70,7 @@ describe('Real-Time Event Stream Subscriber', () => {
     for (let index = 1; index <= 5; index++) {
       const request = createGraphAccessRequest(`req-overflow-${index}`, context, {
         id: asNodeId(`n-overflow-${index}`),
-        type: asTypeId('doc'),
+        type: asShapeId('doc'),
         properties: { count: index },
       });
       await executeCreateNode(request);
@@ -92,7 +92,7 @@ describe('Event Catch-Up Replay Handler', () => {
     for (let index = 1; index <= 3; index++) {
       const request = createGraphAccessRequest(`req-replay-${index}`, context, {
         id: asNodeId(`n-replay-${index}`),
-        type: asTypeId('doc'),
+        type: asShapeId('doc'),
         properties: { count: index },
       });
       const result = await executeCreateNode(request);
@@ -125,7 +125,7 @@ describe('Event Catch-Up Replay Handler', () => {
     for (let index = 1; index <= 15; index++) {
       const request = createGraphAccessRequest(`req-limit-${index}`, context, {
         id: asNodeId(`n-limit-${index}`),
-        type: asTypeId('doc'),
+        type: asShapeId('doc'),
         properties: { count: index },
       });
       await executeCreateNode(request);

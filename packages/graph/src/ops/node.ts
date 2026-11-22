@@ -1,6 +1,6 @@
 import type { Graph } from '../graph';
 import type { Node } from '../node';
-import type { NodeId, DeviceId } from '../identifiers';
+import type { NodeId, DeviceId, BatchId } from '../identifiers';
 import type { Result } from '../result';
 import type { GraphEvent, GraphResult } from '../events';
 import type { PropertyValue } from '../properties';
@@ -11,9 +11,9 @@ import { isSystemNodeId } from '../system';
 
 export type NodeOperationOptions = Readonly<{
   deviceId: DeviceId;
-  validate?: boolean;
-  batchId?: string;
-  migrationId?: string;
+  validate?: boolean | undefined;
+  batchId?: BatchId | undefined;
+  migrationId?: string | undefined;
 }>;
 
 /**
@@ -30,15 +30,17 @@ export function addNode(
     return error(new Error(`Node with ID ${node.id} already exists`));
   }
 
-  const definitionNode = getNodeTypeDefinition(graph, node.type);
-  if (definitionNode) {
-    const definition = extractNodeTypeDefinition(graph, definitionNode);
-    if (definition.status === 'inactive') {
-      return error(
-        new Error(
-          `Node validation failed: type: Node type '${node.type}' is inactive (TYPE_INACTIVE)`,
-        ),
-      );
+  if (node.shape !== undefined) {
+    const definitionNode = getNodeTypeDefinition(graph, node.shape);
+    if (definitionNode) {
+      const definition = extractNodeTypeDefinition(graph, definitionNode);
+      if (definition.status === 'inactive') {
+        return error(
+          new Error(
+            `Node validation failed: type: Node type '${node.shape}' is inactive (TYPE_INACTIVE)`,
+          ),
+        );
+      }
     }
   }
 
@@ -57,6 +59,7 @@ export function addNode(
   const newGraph = {
     ...graph,
     nodes: newNodes,
+    _indexes: undefined,
     metadata: {
       ...graph.metadata,
       modified: createInstant(),
@@ -68,7 +71,7 @@ export function addNode(
     type: 'NodeCreated',
     eventId: createEventId(),
     id: node.id,
-    nodeType: node.type,
+    ...(node.shape !== undefined && { shapeId: node.shape }),
     properties: node.properties,
     timestamp: createInstant(),
     deviceId: options.deviceId,
@@ -130,6 +133,7 @@ export function removeNode(
     ...graph,
     nodes: newNodes,
     edges: newEdges,
+    _indexes: undefined,
     metadata: {
       ...graph.metadata,
       modified: createInstant(),
@@ -177,6 +181,10 @@ export function updateNode(
     return error(new Error(`Cannot change node ID during update`));
   }
 
+  if (updatedNode.shape !== existingNode.shape) {
+    return error(new Error(`Cannot change node shape during update`));
+  }
+
   if (options.validate) {
     const result = validateNode(graph, updatedNode);
     if (!result.valid) {
@@ -205,6 +213,7 @@ export function updateNode(
   const newGraph = {
     ...graph,
     nodes: newNodes,
+    _indexes: undefined,
     metadata: {
       ...graph.metadata,
       modified: createInstant(),

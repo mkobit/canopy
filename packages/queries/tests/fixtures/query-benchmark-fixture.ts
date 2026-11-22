@@ -3,7 +3,7 @@ import type {
   GraphEvent,
   NodeId,
   EdgeId,
-  TypeId,
+  ShapeId,
   PropertyValue,
   Node,
   Edge,
@@ -13,16 +13,17 @@ import {
   createEdgeId,
   createEventId,
   createInstant,
-  asTypeId,
+  asShapeId,
+  asBatchId,
   createGraphId,
   SYSTEM_DEVICE_ID,
   zeroRevision,
 } from '@canopy/graph';
 
-export type NodeTypeId = TypeId;
-export type EdgeTypeId = TypeId;
-export const asNodeTypeId = asTypeId;
-export const asEdgeTypeId = asTypeId;
+export type NodeTypeId = ShapeId;
+export type EdgeTypeId = ShapeId;
+export const asNodeTypeId = asShapeId;
+export const asEdgeTypeId = asShapeId;
 
 export interface QueryBenchmarkFixtureOptions {
   readonly nodeCount: number;
@@ -67,7 +68,7 @@ export function generateQueryBenchmarkFixture(
 
     nodesMap.set(nodeId, {
       id: nodeId,
-      type: nodeTypeId,
+      shape: nodeTypeId,
       properties,
       metadata: {
         created: graphInstant,
@@ -80,11 +81,11 @@ export function generateQueryBenchmarkFixture(
       type: 'NodeCreated',
       eventId: createEventId(),
       id: nodeId,
-      nodeType: nodeTypeId,
+      shapeId: nodeTypeId,
       properties,
       timestamp: graphInstant,
       deviceId: SYSTEM_DEVICE_ID,
-      batchId: 'benchmark-batch',
+      batchId: asBatchId('benchmark-batch'),
     });
   }
 
@@ -103,7 +104,7 @@ export function generateQueryBenchmarkFixture(
 
     edgesMap.set(edgeId, {
       id: edgeId,
-      type: edgeTypeId,
+      shape: edgeTypeId,
       source: sourceId,
       target: targetId,
       properties: new Map(),
@@ -118,13 +119,13 @@ export function generateQueryBenchmarkFixture(
       type: 'EdgeCreated',
       eventId: createEventId(),
       id: edgeId,
-      edgeType: edgeTypeId,
+      shapeId: edgeTypeId,
       source: sourceId,
       target: targetId,
       properties: new Map(),
       timestamp: graphInstant,
       deviceId: SYSTEM_DEVICE_ID,
-      batchId: 'benchmark-batch',
+      batchId: asBatchId('benchmark-batch'),
     });
   }
 

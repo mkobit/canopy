@@ -3,7 +3,7 @@ import {
   createGraph,
   asGraphId,
   asNodeId,
-  asTypeId,
+  asShapeId,
   asEdgeId,
   asNamespace,
   unwrap,
@@ -23,13 +23,13 @@ describe('View resolution engine', () => {
     let graph = unwrap(createGraph(asGraphId('test-graph'), 'Test Graph'));
 
     const nodeId = asNodeId('user:node:1');
-    const typeId = asTypeId('user:nodetype:custom');
+    const typeId = asShapeId('user:nodetype:custom');
     const namespace = asNamespace('user');
 
     // 1. Create a ViewDefinition node
     const viewNode: Node = {
       id: asNodeId('user:view:override-target'),
-      type: SYSTEM_IDS.VIEW_DEFINITION,
+      shape: SYSTEM_IDS.VIEW_DEFINITION,
       properties: new Map([
         ['name', 'Override View'],
         ['layout', 'list'],
@@ -45,7 +45,7 @@ describe('View resolution engine', () => {
     // 2. Create the target node
     const targetNode: Node = {
       id: nodeId,
-      type: typeId,
+      shape: typeId,
       properties: new Map(),
       metadata: {
         created: createInstant(),
@@ -58,7 +58,7 @@ describe('View resolution engine', () => {
     // 3. Create the VIEW_OVERRIDE edge
     const overrideEdge: Edge = {
       id: asEdgeId('user:edge:override'),
-      type: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
+      shape: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
       source: nodeId,
       target: viewNode.id,
       properties: new Map(),
@@ -80,13 +80,13 @@ describe('View resolution engine', () => {
     let graph = unwrap(createGraph(asGraphId('test-graph'), 'Test Graph'));
 
     const nodeId = asNodeId('user:node:1');
-    const typeId = asTypeId('user:nodetype:custom');
+    const typeId = asShapeId('user:nodetype:custom');
     const namespace = asNamespace('user');
 
     // 1. Create a ViewDefinition node
     const viewNode: Node = {
       id: asNodeId('user:view:setting-target'),
-      type: SYSTEM_IDS.VIEW_DEFINITION,
+      shape: SYSTEM_IDS.VIEW_DEFINITION,
       properties: new Map([
         ['name', 'Setting View'],
         ['layout', 'grid'],
@@ -102,7 +102,7 @@ describe('View resolution engine', () => {
     // 2. Create the target node
     const targetNode: Node = {
       id: nodeId,
-      type: typeId,
+      shape: typeId,
       properties: new Map(),
       metadata: {
         created: createInstant(),
@@ -115,7 +115,7 @@ describe('View resolution engine', () => {
     // 3. Create a UserSetting node scope='node' for default-view pointing to the viewNode.id
     const userSettingNode: Node = {
       id: asNodeId('user:setting:default-view-override'),
-      type: SYSTEM_IDS.USER_SETTING,
+      shape: SYSTEM_IDS.USER_SETTING,
       properties: new Map([
         ['schemaId', SYSTEM_IDS.SETTING_DEFAULT_VIEW],
         ['scopeType', 'node'],
@@ -140,13 +140,13 @@ describe('View resolution engine', () => {
     let graph = unwrap(createGraph(asGraphId('test-graph'), 'Test Graph'));
 
     const nodeId = asNodeId('user:node:1');
-    const typeId = asTypeId('user:nodetype:custom');
+    const typeId = asShapeId('user:nodetype:custom');
     const namespace = asNamespace('user');
 
     // 1. Create a ViewDefinition node
     const viewNode: Node = {
       id: asNodeId('user:view:type-default-target'),
-      type: SYSTEM_IDS.VIEW_DEFINITION,
+      shape: SYSTEM_IDS.VIEW_DEFINITION,
       properties: new Map([
         ['name', 'Type Default View'],
         ['layout', 'board'],
@@ -162,7 +162,7 @@ describe('View resolution engine', () => {
     // 2. Create the Node Type definition node (using typeId as the ID)
     const typeDefinitionNode: Node = {
       id: asNodeId(typeId),
-      type: SYSTEM_IDS.NODE_TYPE,
+      shape: SYSTEM_IDS.NODE_TYPE,
       properties: new Map([['name', 'Custom Type Definition']]),
       metadata: {
         created: createInstant(),
@@ -175,7 +175,7 @@ describe('View resolution engine', () => {
     // 3. Create the target node
     const targetNode: Node = {
       id: nodeId,
-      type: typeId,
+      shape: typeId,
       properties: new Map(),
       metadata: {
         created: createInstant(),
@@ -188,7 +188,7 @@ describe('View resolution engine', () => {
     // 4. Create the DEFAULT_VIEW edge from typeDefinitionNode to viewNode
     const defaultViewEdge: Edge = {
       id: asEdgeId('user:edge:default-view'),
-      type: SYSTEM_EDGE_TYPES.DEFAULT_VIEW,
+      shape: SYSTEM_EDGE_TYPES.DEFAULT_VIEW,
       source: typeDefinitionNode.id,
       target: viewNode.id,
       properties: new Map(),
@@ -209,7 +209,7 @@ describe('View resolution engine', () => {
   it('returns a failed Result when no override or default exists', () => {
     const graph = unwrap(createGraph(asGraphId('test-graph'), 'Test Graph'));
     const nodeId = asNodeId('user:node:1');
-    const typeId = asTypeId('user:nodetype:custom');
+    const typeId = asShapeId('user:nodetype:custom');
     const namespace = asNamespace('user');
 
     const result = resolveViewDefinition(graph, nodeId, typeId, namespace);
@@ -234,16 +234,16 @@ describe('View resolution engine', () => {
     const nodeType = graph.nodes
       .values()
       .find(
-        (node) => node.type === SYSTEM_IDS.NODE_TYPE && node.properties.get('name') === 'Widget',
+        (node) => node.shape === SYSTEM_IDS.NODE_TYPE && node.properties.get('name') === 'Widget',
       );
     if (!nodeType) throw new Error('expected authored NodeType');
-    const typeId = asTypeId(nodeType.id);
+    const typeId = asShapeId(nodeType.id);
 
     // An instance of the authored type carries the NodeType node id as its type.
     const instanceId = asNodeId('user:node:widget-1');
     const instance: Node = {
       id: instanceId,
-      type: typeId,
+      shape: typeId,
       properties: new Map(),
       metadata: {
         created: createInstant(),
@@ -275,15 +275,15 @@ describe('View resolution engine', () => {
     const nodeType = graph.nodes
       .values()
       .find(
-        (node) => node.type === SYSTEM_IDS.NODE_TYPE && node.properties.get('name') === 'Widget',
+        (node) => node.shape === SYSTEM_IDS.NODE_TYPE && node.properties.get('name') === 'Widget',
       );
     if (!nodeType) throw new Error('expected authored NodeType');
-    const typeId = asTypeId(nodeType.id);
+    const typeId = asShapeId(nodeType.id);
 
     // A hand-authored override view + instance with a view_override edge to it.
     const overrideView: Node = {
       id: asNodeId('user:view:override-target'),
-      type: SYSTEM_IDS.VIEW_DEFINITION,
+      shape: SYSTEM_IDS.VIEW_DEFINITION,
       properties: new Map([
         ['name', 'Override View'],
         ['layout', 'list'],
@@ -299,7 +299,7 @@ describe('View resolution engine', () => {
     const instanceId = asNodeId('user:node:widget-1');
     const instance: Node = {
       id: instanceId,
-      type: typeId,
+      shape: typeId,
       properties: new Map(),
       metadata: {
         created: createInstant(),
@@ -311,7 +311,7 @@ describe('View resolution engine', () => {
 
     const overrideEdge: Edge = {
       id: asEdgeId('user:edge:override'),
-      type: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
+      shape: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
       source: instanceId,
       target: overrideView.id,
       properties: new Map(),
@@ -326,5 +326,55 @@ describe('View resolution engine', () => {
     const result = resolveViewDefinition(graph, instanceId, typeId, asNamespace('user'));
     expect(result.ok).toBe(true);
     expect(unwrap(result).id).toBe(overrideView.id);
+  });
+
+  it('resolves node-level override for an open node (nodeType undefined) and errors when none exists', () => {
+    let graph = unwrap(createGraph(asGraphId('test-graph'), 'Test Graph'));
+    const openNodeId = asNodeId('user:node:open-1');
+    const openNode: Node = {
+      id: openNodeId,
+      properties: new Map(),
+      metadata: {
+        created: createInstant(),
+        modified: createInstant(),
+        modifiedBy: SYSTEM_DEVICE_ID,
+      },
+    };
+    graph = unwrap(addNode(graph, openNode, { deviceId: SYSTEM_DEVICE_ID })).graph;
+
+    expect(resolveViewDefinition(graph, openNodeId, undefined, asNamespace('user')).ok).toBe(false);
+
+    const viewNode: Node = {
+      id: asNodeId('user:view:open-override'),
+      shape: SYSTEM_IDS.VIEW_DEFINITION,
+      properties: new Map([
+        ['name', 'Open Override View'],
+        ['layout', 'document'],
+      ]),
+      metadata: {
+        created: createInstant(),
+        modified: createInstant(),
+        modifiedBy: SYSTEM_DEVICE_ID,
+      },
+    };
+    graph = unwrap(addNode(graph, viewNode, { deviceId: SYSTEM_DEVICE_ID })).graph;
+
+    const overrideEdge: Edge = {
+      id: asEdgeId('user:edge:open-override'),
+      shape: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
+      source: openNodeId,
+      target: viewNode.id,
+      properties: new Map(),
+      metadata: {
+        created: createInstant(),
+        modified: createInstant(),
+        modifiedBy: SYSTEM_DEVICE_ID,
+      },
+    };
+    graph = unwrap(addEdge(graph, overrideEdge, { deviceId: SYSTEM_DEVICE_ID })).graph;
+
+    const result = resolveViewDefinition(graph, openNodeId, undefined, asNamespace('user'));
+    expect(result.ok).toBe(true);
+    expect(unwrap(result).id).toBe(viewNode.id);
   });
 });

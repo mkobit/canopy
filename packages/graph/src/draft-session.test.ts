@@ -5,7 +5,7 @@ import { createDraftSession } from './draft-session';
 import {
   createGraphId,
   createNodeId,
-  asTypeId,
+  asShapeId,
   createEventId,
   asDeviceId,
   createInstant,
@@ -61,7 +61,7 @@ function nodeCreatedEvent(overrides: Partial<NodeCreated> = {}): NodeCreated {
     type: 'NodeCreated',
     eventId: createEventId(),
     id: createNodeId(),
-    nodeType: asTypeId('test-type'),
+    shapeId: asShapeId('test-type'),
     properties: new Map([['name', 'a']]),
     timestamp: createInstant(),
     deviceId: otherDeviceId,

@@ -1,4 +1,4 @@
-import type { Edge, Node, NodeId, TypeId } from '@canopy/graph';
+import type { Edge, Node, NodeId, ShapeId } from '@canopy/graph';
 import { err, ok } from '@canopy/graph';
 import type { QueryStep } from '@canopy/queries';
 import { executeQuery as executeQueryEngine } from '@canopy/queries';
@@ -21,7 +21,7 @@ import { createGraphAccessError } from './result-errors';
 // Maps a graph node to API payload format.
 const mapNodeToPayload = (node: Node): GraphAccessNodePayload => ({
   id: node.id,
-  type: node.type,
+  ...(node.shape !== undefined && { type: node.shape }),
   properties: Object.fromEntries(node.properties),
   createdAt: node.metadata.created,
   updatedAt: node.metadata.modified,
@@ -30,7 +30,7 @@ const mapNodeToPayload = (node: Node): GraphAccessNodePayload => ({
 // Maps a graph edge to API payload format.
 const mapEdgeToPayload = (edge: Edge): GraphAccessEdgePayload => ({
   id: edge.id,
-  type: edge.type,
+  ...(edge.shape !== undefined && { type: edge.shape }),
   source: edge.source,
   target: edge.target,
   properties: Object.fromEntries(edge.properties),
@@ -41,9 +41,9 @@ const resolveNextNodeId = (
   edge: Edge,
   currentId: string,
   direction: 'in' | 'out' | 'both',
-  edgeType?: TypeId,
+  edgeType?: ShapeId,
 ): string | undefined => {
-  if (edgeType && edge.type !== edgeType) return undefined;
+  if (edgeType && edge.shape !== edgeType) return undefined;
   if ((direction === 'out' || direction === 'both') && edge.source === currentId) {
     return edge.target;
   }
@@ -103,7 +103,7 @@ export const executeEdgeQuery = (
 
   const matchingEdges = allEdges
     .filter((edge) => {
-      if (type && edge.type !== type) return false;
+      if (type && edge.shape !== type) return false;
       if (source && edge.source !== source) return false;
       if (target && edge.target !== target) return false;
 
@@ -169,7 +169,7 @@ interface TraversalState {
 interface TraversalContext {
   readonly nodes: ReadonlyMap<string, Node>;
   readonly direction: 'in' | 'out' | 'both';
-  readonly edgeType: TypeId | undefined;
+  readonly edgeType: ShapeId | undefined;
   readonly effectiveMaxCost: number;
 }
 
@@ -355,7 +355,7 @@ export const executeQuery = {
   },
   getNodes: (
     context: GraphAccessContext,
-    options: Readonly<{ type?: TypeId | undefined; limit?: number | undefined }>,
+    options: Readonly<{ type?: ShapeId | undefined; limit?: number | undefined }>,
   ): GraphAccessResponse<readonly GraphAccessNodePayload[]> => {
     return executeNodeQuery(
       createGraphAccessRequest('gql-get-nodes', context, {
@@ -369,7 +369,7 @@ export const executeQuery = {
     options: Readonly<{
       source?: NodeId | undefined;
       target?: NodeId | undefined;
-      type?: TypeId | undefined;
+      type?: ShapeId | undefined;
     }>,
   ): GraphAccessResponse<readonly GraphAccessEdgePayload[]> => {
     return executeEdgeQuery(
@@ -384,7 +384,7 @@ export const executeQuery = {
     context: GraphAccessContext,
     options: Readonly<{
       startNodeIds: readonly NodeId[];
-      edgeType?: TypeId | undefined;
+      edgeType?: ShapeId | undefined;
       maxDepth?: number | undefined;
     }>,
   ): GraphAccessResponse<GraphAccessTraversalPayload> => {

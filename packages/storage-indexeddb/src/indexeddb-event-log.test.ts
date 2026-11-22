@@ -3,7 +3,8 @@ import {
   unwrap,
   createEventId,
   createNodeId,
-  asTypeId,
+  createEdgeId,
+  asShapeId,
   asDeviceId,
   createInstant,
 } from '@canopy/graph';
@@ -20,7 +21,7 @@ describe('IndexedDBEventLog', () => {
     type: 'NodeCreated',
     eventId: createEventId(),
     id: createNodeId(),
-    nodeType: asTypeId('test-node'),
+    shapeId: asShapeId('test-node'),
     properties: new Map(),
     timestamp,
     deviceId,
@@ -119,5 +120,74 @@ describe('IndexedDBEventLog', () => {
 
     const result2 = unwrap(await store.getEvents('graph2'));
     expect(result2).toEqual([event2]);
+  });
+
+  it('returns empty list for inverted/equal bounds and zero limit without DataError', async () => {
+    const event1 = createTestEvent();
+    const event2 = createTestEvent();
+    await store.appendEvents('graph1', [event1, event2]);
+
+    expect(
+      unwrap(await store.getEvents('graph1', { after: event2.eventId, before: event1.eventId })),
+    ).toEqual([]);
+    expect(
+      unwrap(await store.getEvents('graph1', { after: event1.eventId, before: event1.eventId })),
+    ).toEqual([]);
+    expect(unwrap(await store.getEvents('graph1', { limit: 0 }))).toEqual([]);
+  });
+
+  it('upcasts legacy nodeType/edgeType and canopy:open sentinel and round-trips open entities', async () => {
+    const n1 = createNodeId();
+    const n2 = createNodeId();
+    const legacyNode = {
+      type: 'NodeCreated',
+      eventId: createEventId(),
+      id: n1,
+      nodeType: 'legacy:node',
+      properties: new Map([['k', 'v']]),
+      timestamp,
+      deviceId,
+    } as unknown as GraphEvent;
+
+    const legacySentinel = {
+      type: 'NodeCreated',
+      eventId: createEventId(),
+      id: n2,
+      nodeType: 'canopy:open',
+      properties: new Map(),
+      timestamp,
+      deviceId,
+    } as unknown as GraphEvent;
+
+    const legacyEdge = {
+      type: 'EdgeCreated',
+      eventId: createEventId(),
+      id: createEdgeId(),
+      edgeType: 'legacy:edge',
+      source: n1,
+      target: n2,
+      properties: new Map(),
+      timestamp,
+      deviceId,
+    } as unknown as GraphEvent;
+
+    const openEdge: GraphEvent = {
+      type: 'EdgeCreated',
+      eventId: createEventId(),
+      id: createEdgeId(),
+      source: n1,
+      target: n2,
+      properties: new Map(),
+      timestamp,
+      deviceId,
+    };
+
+    await store.appendEvents('legacy-graph', [legacyNode, legacySentinel, legacyEdge, openEdge]);
+    const events = unwrap(await store.getEvents('legacy-graph'));
+    expect(events).toHaveLength(4);
+    expect(events[0]?.type === 'NodeCreated' && events[0].shapeId).toBe(asShapeId('legacy:node'));
+    expect(events[1]?.type === 'NodeCreated' && events[1].shapeId).toBeUndefined();
+    expect(events[2]?.type === 'EdgeCreated' && events[2].shapeId).toBe(asShapeId('legacy:edge'));
+    expect(events[3]?.type === 'EdgeCreated' && events[3].shapeId).toBeUndefined();
   });
 });

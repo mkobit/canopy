@@ -171,7 +171,7 @@ export const NodePage = () => {
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-500">Node Type</label>
               <div className="text-lg font-mono text-gray-800 bg-gray-50 p-2 rounded border">
-                {currentNode.type}
+                {currentNode.shape ?? 'Open'}
               </div>
             </div>
 
@@ -239,7 +239,7 @@ export const NodePage = () => {
                           className="p-3 border rounded-md hover:bg-gray-50 cursor-pointer flex justify-between items-center"
                         >
                           <div className="flex flex-col">
-                            <span className="text-sm text-gray-500">{edge.type}</span>
+                            <span className="text-sm text-gray-500">{edge.shape ?? 'Open'}</span>
                             <span className="font-medium">
                               {(() => {
                                 const nameProperty = otherNode?.properties.get('name');

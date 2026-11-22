@@ -35,7 +35,7 @@ describe('createNamespace', () => {
     const created = result.value.value.nodes
       .values()
       .find(
-        (node) => node.type === SYSTEM_IDS.NAMESPACE && node.properties.get('name') === 'research',
+        (node) => node.shape === SYSTEM_IDS.NAMESPACE && node.properties.get('name') === 'research',
       );
     expect(created).toBeDefined();
     expect(created?.properties.get('kind')).toBe('user');
@@ -90,7 +90,7 @@ describe('createPropertyType', () => {
       .values()
       .find(
         (node) =>
-          node.type === SYSTEM_IDS.PROPERTY_TYPE && node.properties.get('name') === 'priority',
+          node.shape === SYSTEM_IDS.PROPERTY_TYPE && node.properties.get('name') === 'priority',
       );
     expect(created?.properties.get('valueKind')).toBe('number');
   });
@@ -157,7 +157,7 @@ describe('createNodeType', () => {
       .values()
       .find(
         (node) =>
-          node.type === SYSTEM_IDS.PROPERTY_TYPE && node.properties.get('name') === 'priority',
+          node.shape === SYSTEM_IDS.PROPERTY_TYPE && node.properties.get('name') === 'priority',
       )?.id;
     if (!propertyTypeId) throw new Error('expected propertyTypeId');
 
@@ -179,7 +179,9 @@ describe('createNodeType', () => {
 
     const created = result.value.value.nodes
       .values()
-      .find((node) => node.type === SYSTEM_IDS.NODE_TYPE && node.properties.get('name') === 'Task');
+      .find(
+        (node) => node.shape === SYSTEM_IDS.NODE_TYPE && node.properties.get('name') === 'Task',
+      );
     const storedProperties = created?.properties.get('properties');
     expect(typeof storedProperties).toBe('string');
     const parsed = JSON.parse(storedProperties as string) as readonly {
@@ -288,7 +290,7 @@ describe('createNodeType default view generation', () => {
     const first = result.value.events[0];
     expect(first?.type).toBe('NodeCreated');
     if (first?.type !== 'NodeCreated') throw new Error('expected NodeCreated');
-    expect(first.nodeType).toBe(SYSTEM_IDS.NODE_TYPE);
+    expect(first.shapeId).toBe(SYSTEM_IDS.NODE_TYPE);
   });
 
   it('generates a table view with one displayProperty per declared property', () => {
@@ -299,7 +301,7 @@ describe('createNodeType default view generation', () => {
       .values()
       .find(
         (node) =>
-          node.type === SYSTEM_IDS.VIEW_DEFINITION &&
+          node.shape === SYSTEM_IDS.VIEW_DEFINITION &&
           node.properties.get('name') === 'Task (table)',
       );
     expect(view).toBeDefined();
@@ -315,18 +317,21 @@ describe('createNodeType default view generation', () => {
 
     const nodeType = finalGraph.nodes
       .values()
-      .find((node) => node.type === SYSTEM_IDS.NODE_TYPE && node.properties.get('name') === 'Task');
+      .find(
+        (node) => node.shape === SYSTEM_IDS.NODE_TYPE && node.properties.get('name') === 'Task',
+      );
     const query = finalGraph.nodes
       .values()
       .find(
         (node) =>
-          node.type === SYSTEM_IDS.QUERY_DEFINITION && node.properties.get('name') === 'Task (all)',
+          node.shape === SYSTEM_IDS.QUERY_DEFINITION &&
+          node.properties.get('name') === 'Task (all)',
       );
     const view = finalGraph.nodes
       .values()
       .find(
         (node) =>
-          node.type === SYSTEM_IDS.VIEW_DEFINITION &&
+          node.shape === SYSTEM_IDS.VIEW_DEFINITION &&
           node.properties.get('name') === 'Task (table)',
       );
     if (!nodeType || !query || !view) throw new Error('expected generated definitions');
@@ -345,7 +350,7 @@ describe('createNodeType default view generation', () => {
       .values()
       .find(
         (candidate) =>
-          candidate.type === SYSTEM_EDGE_TYPES.DEFAULT_VIEW && candidate.source === nodeType.id,
+          candidate.shape === SYSTEM_EDGE_TYPES.DEFAULT_VIEW && candidate.source === nodeType.id,
       );
     expect(edge).toBeDefined();
     expect(edge?.target).toBe(view.id);
@@ -363,7 +368,7 @@ describe('createNodeType default view generation', () => {
       .values()
       .find(
         (node) =>
-          node.type === SYSTEM_IDS.VIEW_DEFINITION &&
+          node.shape === SYSTEM_IDS.VIEW_DEFINITION &&
           node.properties.get('name') === 'Marker (table)',
       );
     expect(view).toBeDefined();
@@ -407,7 +412,8 @@ describe('createEdgeType', () => {
     const created = result.value.value.nodes
       .values()
       .find(
-        (node) => node.type === SYSTEM_IDS.EDGE_TYPE && node.properties.get('name') === 'RelatesTo',
+        (node) =>
+          node.shape === SYSTEM_IDS.EDGE_TYPE && node.properties.get('name') === 'RelatesTo',
       );
     expect(created?.properties.get('sourceTypes')).toEqual([SYSTEM_IDS.NODE_TYPE]);
     expect(created?.properties.get('targetTypes')).toEqual([SYSTEM_IDS.NODE_TYPE]);
@@ -484,7 +490,7 @@ describe('createPropertyType', () => {
       .values()
       .find(
         (node) =>
-          node.type === SYSTEM_IDS.PROPERTY_TYPE && node.properties.get('name') === 'priority',
+          node.shape === SYSTEM_IDS.PROPERTY_TYPE && node.properties.get('name') === 'priority',
       );
 
     expect(createdNode).toBeDefined();

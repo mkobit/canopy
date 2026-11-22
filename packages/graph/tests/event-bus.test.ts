@@ -1,20 +1,20 @@
 import { describe, expect, test, mock } from 'bun:test';
 import { onNodeCreated } from '../src/event-bus';
-import { asTypeId, asNodeId, asEventId, asDeviceId, asInstant } from '@canopy/graph';
+import { asShapeId, asNodeId, asEventId, asDeviceId, asInstant } from '@canopy/graph';
 import type { NodeCreated, NodeDeleted, PropertyValue } from '@canopy/graph';
 
 describe('EventBus Helpers', () => {
   describe('onNodeCreated', () => {
     test('invokes callback for NodeCreated event with matching typeId', () => {
       const callback = mock(() => 'matched');
-      const targetTypeId = asTypeId('type-A');
+      const targetTypeId = asShapeId('type-A');
       const handler = onNodeCreated(targetTypeId, callback);
 
       const matchingEvent: NodeCreated = {
         type: 'NodeCreated',
         eventId: asEventId('e-1'),
         id: asNodeId('n-1'),
-        nodeType: targetTypeId,
+        shapeId: targetTypeId,
         properties: new Map<string, PropertyValue>(),
         timestamp: asInstant('2024-01-01T00:00:00Z'),
         deviceId: asDeviceId('d-1'),
@@ -29,15 +29,15 @@ describe('EventBus Helpers', () => {
 
     test('ignores NodeCreated events with non-matching typeId', () => {
       const callback = mock();
-      const targetTypeId = asTypeId('type-A');
-      const otherTypeId = asTypeId('type-B');
+      const targetTypeId = asShapeId('type-A');
+      const otherTypeId = asShapeId('type-B');
       const handler = onNodeCreated(targetTypeId, callback);
 
       const nonMatchingEvent: NodeCreated = {
         type: 'NodeCreated',
         eventId: asEventId('e-1'),
         id: asNodeId('n-1'),
-        nodeType: otherTypeId,
+        shapeId: otherTypeId,
         properties: new Map<string, PropertyValue>(),
         timestamp: asInstant('2024-01-01T00:00:00Z'),
         deviceId: asDeviceId('d-1'),
@@ -50,7 +50,7 @@ describe('EventBus Helpers', () => {
 
     test('ignores non-NodeCreated events', () => {
       const callback = mock();
-      const targetTypeId = asTypeId('type-A');
+      const targetTypeId = asShapeId('type-A');
       const handler = onNodeCreated(targetTypeId, callback);
 
       const otherEvent: NodeDeleted = {
@@ -68,15 +68,15 @@ describe('EventBus Helpers', () => {
 
     test('handles batch of events correctly', () => {
       const callback = mock();
-      const targetTypeId = asTypeId('type-A');
-      const otherTypeId = asTypeId('type-B');
+      const targetTypeId = asShapeId('type-A');
+      const otherTypeId = asShapeId('type-B');
       const handler = onNodeCreated(targetTypeId, callback);
 
       const matchingEvent1: NodeCreated = {
         type: 'NodeCreated',
         eventId: asEventId('e-1'),
         id: asNodeId('n-1'),
-        nodeType: targetTypeId,
+        shapeId: targetTypeId,
         properties: new Map<string, PropertyValue>(),
         timestamp: asInstant('2024-01-01T00:00:00Z'),
         deviceId: asDeviceId('d-1'),
@@ -86,7 +86,7 @@ describe('EventBus Helpers', () => {
         type: 'NodeCreated',
         eventId: asEventId('e-2'),
         id: asNodeId('n-2'),
-        nodeType: otherTypeId,
+        shapeId: otherTypeId,
         properties: new Map<string, PropertyValue>(),
         timestamp: asInstant('2024-01-01T00:00:00Z'),
         deviceId: asDeviceId('d-1'),
@@ -96,7 +96,7 @@ describe('EventBus Helpers', () => {
         type: 'NodeCreated',
         eventId: asEventId('e-3'),
         id: asNodeId('n-3'),
-        nodeType: targetTypeId,
+        shapeId: targetTypeId,
         properties: new Map<string, PropertyValue>(),
         timestamp: asInstant('2024-01-01T00:00:00Z'),
         deviceId: asDeviceId('d-1'),

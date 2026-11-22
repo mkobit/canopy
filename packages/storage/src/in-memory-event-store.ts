@@ -1,5 +1,5 @@
 import type { GraphEvent, Result } from '@canopy/graph';
-import { ok } from '@canopy/graph';
+import { decodeStoredEvent, err, ok } from '@canopy/graph';
 import type { EventLogStore, EventLogQueryOptions } from './types';
 
 export const createInMemoryEventStore = (): EventLogStore => {
@@ -38,7 +38,15 @@ export const createInMemoryEventStore = (): EventLogStore => {
       graphId: string,
       options?: EventLogQueryOptions,
     ): Promise<Result<readonly GraphEvent[], Error>> => {
-      const events = graphs.get(graphId) ?? [];
+      const rawEvents = graphs.get(graphId) ?? [];
+      const decodedResults = rawEvents.map((event_) => decodeStoredEvent(event_));
+      const firstError = decodedResults.find((result) => !result.ok);
+      if (firstError && !firstError.ok) {
+        return Promise.resolve(err(new Error(firstError.error.message)));
+      }
+      const events = decodedResults
+        .map((result) => (result as { readonly ok: true; readonly value: GraphEvent | null }).value)
+        .filter((event_): event_ is GraphEvent => event_ !== null);
 
       if (!options) {
         return Promise.resolve(ok(events));

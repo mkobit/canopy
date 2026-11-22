@@ -9,7 +9,7 @@ import type {
   Result,
   ScalarValue,
 } from '@canopy/graph';
-import { ok, err, asTypeId, createIndexedReadModel } from '@canopy/graph';
+import { ok, err, asShapeId, createIndexedReadModel } from '@canopy/graph';
 import type { Query, Filter, Sort, QueryStep } from './model';
 import { reduce, filter, unique, flatMap, map } from 'remeda';
 
@@ -36,14 +36,16 @@ export function executeQuery(graph: Graph, query: Query): Result<QueryResult, Er
 
       switch (step.kind) {
         case 'node-scan': {
+          const scanShape = step.shape ?? step.type;
           return {
-            items: step.type ? scanNodesIndexed(readModel, graph, step.type) : scanNodes(graph),
+            items: scanShape ? scanNodesIndexed(readModel, graph, scanShape) : scanNodes(graph),
             isNodeContext: true,
           };
         }
         case 'edge-scan': {
+          const scanShape = step.shape ?? step.type;
           return {
-            items: scanEdges(graph, step.type),
+            items: scanEdges(graph, scanShape),
             isNodeContext: false,
           };
         }
@@ -65,12 +67,13 @@ export function executeQuery(graph: Graph, query: Query): Result<QueryResult, Er
               error: new Error('Traversal can only be performed on nodes.'),
             };
           }
+          const edgeShape = step.shape ?? step.edgeType;
           return {
             items: traverseIndexed(
               readModel,
               graph,
               accumulator.items as readonly Node[],
-              step.edgeType,
+              edgeShape,
               step.direction,
             ),
             isNodeContext: true, // Traversal returns nodes
@@ -89,19 +92,14 @@ export function executeQuery(graph: Graph, query: Query): Result<QueryResult, Er
           };
         }
         case 'project': {
-          const rows = map(accumulator.items, (item) => {
-            return reduce(
+          const rows = map(accumulator.items, (item) =>
+            reduce(
               step.properties,
-              (row, property) => {
-                return { ...row, [property]: getItemFieldValue(item, property) };
-              },
+              (row, property) => ({ ...row, [property]: getItemFieldValue(item, property) }),
               {} as Readonly<Record<string, unknown>>,
-            );
-          });
-          return {
-            ...accumulator,
-            rows,
-          };
+            ),
+          );
+          return { ...accumulator, rows };
         }
         default: {
           return accumulator;
@@ -139,10 +137,10 @@ export function executeQueryScanOnly(graph: Graph, query: Query): Result<QueryRe
 
       switch (step.kind) {
         case 'node-scan': {
-          return { items: scanNodes(graph, step.type), isNodeContext: true };
+          return { items: scanNodes(graph, step.shape ?? step.type), isNodeContext: true };
         }
         case 'edge-scan': {
-          return { items: scanEdges(graph, step.type), isNodeContext: false };
+          return { items: scanEdges(graph, step.shape ?? step.type), isNodeContext: false };
         }
         case 'filter': {
           return { ...accumulator, items: applyFilter(accumulator.items, step.predicate) };
@@ -158,7 +156,7 @@ export function executeQueryScanOnly(graph: Graph, query: Query): Result<QueryRe
             items: traverse(
               graph,
               accumulator.items as readonly Node[],
-              step.edgeType,
+              step.shape ?? step.edgeType,
               step.direction,
             ),
             isNodeContext: true,
@@ -199,21 +197,21 @@ export function executeQueryScanOnly(graph: Graph, query: Query): Result<QueryRe
   return ok(result.rows === undefined ? baseResult : { ...baseResult, rows: result.rows });
 }
 
-function scanNodes(graph: Graph, type?: string): readonly Node[] {
+function scanNodes(graph: Graph, shape?: string): readonly Node[] {
   const nodes = [...graph.nodes.values()];
-  return type ? filter(nodes, (node) => node.type === type) : nodes;
+  return shape ? filter(nodes, (node) => node.shape === shape) : nodes;
 }
 
 /**
-Resolves a `node-scan` by type through the read model's type index instead of a full scan.
+Resolves a `node-scan` by shape through the read model's type index instead of a full scan.
 */
-function scanNodesIndexed(readModel: ReadModelPort, graph: Graph, type: string): readonly Node[] {
-  return resolveNodeIds(graph, readModel.typedNodeIds(asTypeId(type)));
+function scanNodesIndexed(readModel: ReadModelPort, graph: Graph, shape: string): readonly Node[] {
+  return resolveNodeIds(graph, readModel.typedNodeIds(asShapeId(shape)));
 }
 
-function scanEdges(graph: Graph, type?: string): readonly Edge[] {
+function scanEdges(graph: Graph, shape?: string): readonly Edge[] {
   const edges = [...graph.edges.values()];
-  return type ? filter(edges, (edge) => edge.type === type) : edges;
+  return shape ? filter(edges, (edge) => edge.shape === shape) : edges;
 }
 
 function resolveNodeIds(graph: Graph, ids: Iterable<NodeId>): readonly Node[] {
@@ -225,18 +223,18 @@ function resolveNodeIds(graph: Graph, ids: Iterable<NodeId>): readonly Node[] {
 /**
 Resolves a `traversal` step through the read model's adjacency index instead of scanning every
 edge once per hop. Semantically identical to `traverse` below (same per-node out/in/both union,
-same edge-type narrowing, same dedup-by-id), just sourced from the index.
+same edge-shape narrowing, same dedup-by-id), just sourced from the index.
 */
 function traverseIndexed(
   readModel: ReadModelPort,
   graph: Graph,
   nodes: readonly Node[],
-  edgeType: string | undefined,
+  edgeShape: string | undefined,
   direction: 'out' | 'in' | 'both',
 ): readonly Node[] {
-  const typeId = edgeType ? asTypeId(edgeType) : undefined;
+  const shapeId = edgeShape ? asShapeId(edgeShape) : undefined;
   const neighbourIds = new Set(
-    flatMap(nodes, (node) => [...readModel.neighbours(node.id, typeId, direction)]),
+    flatMap(nodes, (node) => [...readModel.neighbours(node.id, shapeId, direction)]),
   );
   return resolveNodeIds(graph, neighbourIds);
 }
@@ -260,6 +258,15 @@ function applyFilterIndexed(
     return applyFilter(items, predicate);
   }
   const { value } = predicate;
+  if (predicate.property === 'shape' || predicate.property === 'type') {
+    if (typeof value !== 'string') {
+      return applyFilter(items, predicate);
+    }
+    const nodes = items as readonly Node[];
+    const candidateIds = new Set(readModel.typedNodeIds(asShapeId(value)));
+    const candidates = filter(nodes, (node) => candidateIds.has(node.id));
+    return applyFilter(candidates, predicate);
+  }
   if (typeof value !== 'string' && typeof value !== 'number' && typeof value !== 'boolean') {
     return applyFilter(items, predicate);
   }
@@ -276,6 +283,7 @@ function applyFilter(items: readonly GraphItem[], predicate: Filter): readonly G
     // Let's try a different approach to avoid `let`.
     // We can use a helper function to extract value.
     const getPropertyValue = (): unknown => {
+      if (predicate.property === 'shape' || predicate.property === 'type') return item.shape;
       if ('source' in item && predicate.property === 'source') return item.source;
       if ('target' in item && predicate.property === 'target') return item.target;
 
@@ -345,7 +353,7 @@ function traverse(
 
   return unique(
     flatMap(edges, (edge: Edge) => {
-      if (edgeType && edge.type !== edgeType) return [];
+      if (edgeType && edge.shape !== edgeType) return [];
 
       const isSourceMatches = nodeIds.has(edge.source);
       const isTargetMatches = nodeIds.has(edge.target);
@@ -374,7 +382,7 @@ function traverse(
 }
 
 function getItemFieldValue(item: GraphItem, property: string): unknown {
-  if (property === 'type') return item.type;
+  if (property === 'shape' || property === 'type') return item.shape;
   if (property.startsWith('metadata.')) {
     const metaKey = property.slice('metadata.'.length) as keyof typeof item.metadata;
     return item.metadata[metaKey];
