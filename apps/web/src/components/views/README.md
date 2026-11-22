@@ -14,7 +14,7 @@ This directory implements three stateless React view layout components (`CardsLa
 
 - All exported `*Data` and `*Events` prop fields are `readonly`.
 - `[cards-layout.tsx:CardsLayout]`, `[list-layout.tsx:ListLayout]`, `[table-layout.tsx:TableLayout]` Render `'No nodes found.'` when `nodes.length === 0`.
-- `[list-layout.tsx:groupNodes]` Groups by `node.type` when `groupBy === 'type'`, otherwise by string value of `node.properties.get(groupBy)` or `'Ungrouped'`, and sorts group keys via `localeCompare` without mutating input.
+- `[list-layout.tsx:groupNodes]` Groups by `node.shape ?? 'Open'` when `groupBy === 'type'`, otherwise by string value of `node.properties.get(groupBy)` or `'Ungrouped'`, and sorts group keys via `localeCompare` without mutating input.
 - `[list-layout.tsx:NodeListItem]` Displays string property `'name'` or falls back to `` `${node.id.slice(0, 8)}…` ``.
 - `[table-layout.tsx:TableLayout]` Defaults columns to `['name', 'description']` when `displayProperties` is `undefined` or empty, always renders a leading `'Type'` column, and renders `'—'` when `node.properties.get(col) === undefined`.
 

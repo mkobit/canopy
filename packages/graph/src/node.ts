@@ -1,15 +1,15 @@
-import type { NodeId, TypeId } from './identifiers';
+import type { NodeId, ShapeId } from './identifiers';
 import type { TemporalMetadata } from './temporal';
 import type { PropertyMap } from './properties';
 
 /**
 A node in the graph.
 Nodes are the primary entities—everything is a node.
-Generic parameter T allows narrowing to specific node types.
+Generic parameter S allows narrowing to specific node shapes.
 */
-export type Node<T extends TypeId = TypeId> = Readonly<{
+export type Node<S extends ShapeId = ShapeId> = Readonly<{
   id: NodeId;
-  type: T;
+  shape?: S | undefined;
   properties: PropertyMap;
   metadata: TemporalMetadata;
 }>;

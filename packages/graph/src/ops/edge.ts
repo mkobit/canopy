@@ -1,6 +1,6 @@
 import type { Graph } from '../graph';
 import type { Edge } from '../edge';
-import type { EdgeId, DeviceId, NodeId, TypeId } from '../identifiers';
+import type { EdgeId, DeviceId, NodeId, ShapeId, BatchId } from '../identifiers';
 import type { Result } from '../result';
 import type { GraphEvent, GraphResult, EdgeCreated } from '../events';
 import type { PropertyValue } from '../properties';
@@ -10,9 +10,9 @@ import { validateEdge } from '../validation';
 
 export type EdgeOperationOptions = Readonly<{
   deviceId: DeviceId;
-  validate?: boolean;
-  batchId?: string;
-  migrationId?: string;
+  validate?: boolean | undefined;
+  batchId?: BatchId | undefined;
+  migrationId?: string | undefined;
 }>;
 
 /**
@@ -21,11 +21,20 @@ Returns Error if source or target nodes do not exist.
 */
 export function createEdgeAction(
   graph: Graph,
-  parameters: Readonly<{ source: NodeId; target: NodeId; type: TypeId }>,
+  parameters: Readonly<{
+    source: NodeId;
+    target: NodeId;
+    shape?: ShapeId | undefined;
+    /**
+    @deprecated Use shape
+    */
+    type?: ShapeId | undefined;
+  }>,
 ): Result<Readonly<{ graph: Graph; event: EdgeCreated }>, Error> {
+  const effectiveShape = parameters.shape ?? parameters.type;
   const edge: Edge = {
     id: createEdgeId(),
-    type: parameters.type,
+    ...(effectiveShape !== undefined && { shape: effectiveShape }),
     source: parameters.source,
     target: parameters.target,
     properties: new Map(),
@@ -88,6 +97,7 @@ export function addEdge(
   const newGraph = {
     ...graph,
     edges: newEdges,
+    _indexes: undefined,
     metadata: {
       ...graph.metadata,
       modified: createInstant(),
@@ -99,7 +109,7 @@ export function addEdge(
     type: 'EdgeCreated',
     eventId: createEventId(),
     id: edge.id,
-    edgeType: edge.type,
+    ...(edge.shape !== undefined && { shapeId: edge.shape }),
     source: edge.source,
     target: edge.target,
     properties: edge.properties,
@@ -138,6 +148,7 @@ export function removeEdge(
   const newGraph = {
     ...graph,
     edges: newEdges,
+    _indexes: undefined,
     metadata: {
       ...graph.metadata,
       modified: createInstant(),
@@ -185,6 +196,10 @@ export function updateEdge(
     return error(new Error(`Cannot change edge ID during update`));
   }
 
+  if (updatedEdge.shape !== existingEdge.shape) {
+    return error(new Error(`Cannot change edge shape during update`));
+  }
+
   // Verify source/target still exist (in case they were changed, though usually they shouldn't be)
   if (!graph.nodes.has(updatedEdge.source)) {
     return error(new Error(`Source node ${updatedEdge.source} not found`));
@@ -194,7 +209,7 @@ export function updateEdge(
   }
 
   if (options.validate) {
-    const result = validateEdge(graph, updatedEdge);
+    const result = validateEdge(graph, updatedEdge, 'update');
     if (!result.valid) {
       const msgs = result.errors
         .map((error_) => `${error_.path.join('.')}: ${error_.message}`)
@@ -221,6 +236,7 @@ export function updateEdge(
   const newGraph = {
     ...graph,
     edges: newEdges,
+    _indexes: undefined,
     metadata: {
       ...graph.metadata,
       modified: createInstant(),

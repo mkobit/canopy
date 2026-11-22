@@ -5,7 +5,7 @@ import { createGraph } from '../src/create-graph';
 import { SYSTEM_IDS } from '../src/system';
 import {
   createNodeId,
-  asTypeId,
+  asShapeId,
   asNamespace,
   createInstant,
   PropertyValue,
@@ -15,7 +15,7 @@ import {
   asNodeId,
   unwrap,
   NodeId,
-  TypeId,
+  ShapeId,
 } from '@canopy/graph';
 
 function createNode(properties: Record<string, unknown> = {}): Node {
@@ -25,11 +25,11 @@ function createNode(properties: Record<string, unknown> = {}): Node {
       : properties;
   const filteredProperties = { ...innerProperties };
   delete (filteredProperties as Record<string, unknown>).id;
-  delete (filteredProperties as Record<string, unknown>).type;
+  delete (filteredProperties as Record<string, unknown>).shape;
 
   return {
     id: (properties.id as NodeId) ?? createNodeId(),
-    type: (properties.type as TypeId) ?? asTypeId('test-type'),
+    shape: (properties.shape as ShapeId) ?? asShapeId('test-type'),
     properties: new Map<string, PropertyValue>(
       Object.entries(filteredProperties) as [string, PropertyValue][],
     ),
@@ -48,7 +48,7 @@ describe('namespace utilities', () => {
     // Create a type with 'imported' namespace
     const importedType = createNode({
       id: asNodeId('type-imported'),
-      type: SYSTEM_IDS.NODE_TYPE,
+      shape: SYSTEM_IDS.SHAPE,
       properties: {
         name: 'ImportedType',
         namespace: 'imported',
@@ -58,7 +58,7 @@ describe('namespace utilities', () => {
     // Create a type with no namespace (defaults to user)
     const normalType = createNode({
       id: asNodeId('type-normal'),
-      type: SYSTEM_IDS.NODE_TYPE,
+      shape: SYSTEM_IDS.SHAPE,
       properties: {
         name: 'NormalType',
       },
@@ -75,7 +75,7 @@ describe('namespace utilities', () => {
 
     // Node 1: uses imported type, no override -> imported
     const node1 = createNode({
-      type: asTypeId('type-imported'),
+      shape: asShapeId('type-imported'),
     });
     graph = unwrap(
       addNode(graph, node1, { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') }),
@@ -83,7 +83,7 @@ describe('namespace utilities', () => {
 
     // Node 2: uses imported type, overrides to 'user-settings'
     const node2 = createNode({
-      type: asTypeId('type-imported'),
+      shape: asShapeId('type-imported'),
       properties: {
         namespace: 'user-settings',
       },
@@ -94,7 +94,7 @@ describe('namespace utilities', () => {
 
     // Node 3: uses normal type, overrides to 'imported'
     const node3 = createNode({
-      type: asTypeId('type-normal'),
+      shape: asShapeId('type-normal'),
       properties: {
         namespace: 'imported',
       },
@@ -105,7 +105,7 @@ describe('namespace utilities', () => {
 
     // Node 4: uses normal type, no override -> user
     const node4 = createNode({
-      type: asTypeId('type-normal'),
+      shape: asShapeId('type-normal'),
     });
     graph = unwrap(
       addNode(graph, node4, { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') }),

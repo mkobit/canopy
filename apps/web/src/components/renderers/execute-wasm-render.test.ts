@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'bun:test';
 import {
   asGraphId,
   asNodeId,
-  asTypeId,
+  asShapeId,
   createGraph,
   createInstant,
   SYSTEM_DEVICE_ID,
@@ -20,7 +20,7 @@ const graph = unwrap(createGraph(asGraphId('test-graph'), 'Test Graph'));
 
 const createContentNode = (content: string): Node => ({
   id: asNodeId('user:node:content-1'),
-  type: asTypeId('user:nodetype:note'),
+  shape: asShapeId('user:nodetype:note'),
   properties: new Map([['content', content]]),
   metadata: {
     created: createInstant(),
@@ -31,7 +31,7 @@ const createContentNode = (content: string): Node => ({
 
 const createPluginNode = (id: string, properties: ReadonlyMap<string, string>): Node => ({
   id: asNodeId(id),
-  type: asTypeId('canopy:system/plugin'),
+  shape: asShapeId('canopy:system/plugin'),
   properties: new Map(properties),
   metadata: {
     created: createInstant(),

@@ -12,8 +12,7 @@ import type {
   GraphSession,
   ValidationError,
   CreateNamespaceInput,
-  CreateNodeTypeInput,
-  CreateEdgeTypeInput,
+  CreateShapeInput,
   CreatePropertyTypeInput,
 } from '@canopy/graph';
 import {
@@ -29,13 +28,12 @@ import {
   updateNode,
   removeNode,
   createNamespace as createNamespaceOp,
-  createNodeType as createNodeTypeOp,
-  createEdgeType as createEdgeTypeOp,
+  createShape as createShapeOp,
   createPropertyType as createPropertyTypeOp,
 } from '@canopy/graph';
 import { useStorage } from './storage-context';
 import { z } from 'zod';
-import { TypeIdSchema, PropertyValueSchema } from '@canopy/graph';
+import { ShapeIdSchema, PropertyValueSchema } from '@canopy/graph';
 
 function validationErrorToError(validationError: ValidationError): Error {
   return new Error(
@@ -55,7 +53,7 @@ async function commitCreatedNode(
   if (!opResult.ok) return err(validationErrorToError(opResult.error));
 
   const commitResult = await session.commit(opResult.value.events);
-  if (!commitResult.ok) return commitResult;
+  if (!commitResult.ok) return err(new Error(commitResult.error.message));
 
   const created = opResult.value.events.find((event) => event.type === 'NodeCreated');
   return created ? ok(created.id) : err(new Error('Expected op to produce a NodeCreated event'));
@@ -86,8 +84,12 @@ interface GraphContextActions {
   ) => Promise<Result<void, Error>>;
   readonly deleteNode: (nodeId: NodeId) => Promise<Result<void, Error>>;
   readonly createNamespace: (input: CreateNamespaceInput) => Promise<Result<NodeId, Error>>;
-  readonly createNodeType: (input: CreateNodeTypeInput) => Promise<Result<NodeId, Error>>;
-  readonly createEdgeType: (input: CreateEdgeTypeInput) => Promise<Result<NodeId, Error>>;
+  readonly createNodeType: (
+    input: Omit<CreateShapeInput, 'entityKind'>,
+  ) => Promise<Result<NodeId, Error>>;
+  readonly createEdgeType: (
+    input: Omit<CreateShapeInput, 'entityKind'>,
+  ) => Promise<Result<NodeId, Error>>;
   readonly createPropertyType: (input: CreatePropertyTypeInput) => Promise<Result<NodeId, Error>>;
   readonly session: GraphSession | null;
 }
@@ -95,12 +97,12 @@ interface GraphContextActions {
 type GraphContextType = GraphContextState & GraphContextActions;
 
 const CreateNodeInputSchema = z.object({
-  type: TypeIdSchema,
+  type: ShapeIdSchema,
   properties: z.record(z.string(), PropertyValueSchema).optional(),
 });
 
 const CreateEdgeInputSchema = z.object({
-  type: TypeIdSchema,
+  type: ShapeIdSchema,
   properties: z.record(z.string(), PropertyValueSchema).optional(),
 });
 
@@ -199,7 +201,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
         );
         const node: Node = {
           id: createNodeId(),
-          type: input.type,
+          shape: input.type,
           properties: propertiesMap,
           metadata: { created: createInstant(), modified: createInstant(), modifiedBy: deviceId },
         };
@@ -210,7 +212,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
 
         const commitResult = await session.commit(opResult.value.events);
 
-        if (!commitResult.ok) throw commitResult.error;
+        if (!commitResult.ok) throw new Error(commitResult.error.message);
 
         return node.id;
       });
@@ -235,7 +237,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
         );
         const edge: Edge = {
           id: createEdgeId(),
-          type: input.type,
+          shape: input.type,
           source,
           target,
           properties: propertiesMap,
@@ -248,7 +250,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
 
         const commitResult = await session.commit(opResult.value.events);
 
-        if (!commitResult.ok) throw commitResult.error;
+        if (!commitResult.ok) throw new Error(commitResult.error.message);
 
         return edge.id;
       });
@@ -273,7 +275,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
       if (!opResult.ok) return err(opResult.error);
 
       const commitResult = await session.commit(opResult.value.events);
-      return commitResult.ok ? ok(undefined) : err(commitResult.error);
+      return commitResult.ok ? ok(undefined) : err(new Error(commitResult.error.message));
     },
     [deviceId],
   );
@@ -287,7 +289,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
       if (!opResult.ok) return err(opResult.error);
 
       const commitResult = await session.commit(opResult.value.events);
-      return commitResult.ok ? ok(undefined) : err(commitResult.error);
+      return commitResult.ok ? ok(undefined) : err(new Error(commitResult.error.message));
     },
     [deviceId],
   );
@@ -303,20 +305,26 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
   );
 
   const createNodeType = useCallback(
-    (input: CreateNodeTypeInput): Promise<Result<NodeId, Error>> => {
+    (input: Omit<CreateShapeInput, 'entityKind'>): Promise<Result<NodeId, Error>> => {
       const session = sessionReference.current;
       return session
-        ? commitCreatedNode(session, createNodeTypeOp(session.graph(), input, { deviceId }))
+        ? commitCreatedNode(
+            session,
+            createShapeOp(session.graph(), { ...input, entityKind: 'node' }, { deviceId }),
+          )
         : Promise.resolve(err(new Error('No graph loaded')));
     },
     [deviceId],
   );
 
   const createEdgeType = useCallback(
-    (input: CreateEdgeTypeInput): Promise<Result<NodeId, Error>> => {
+    (input: Omit<CreateShapeInput, 'entityKind'>): Promise<Result<NodeId, Error>> => {
       const session = sessionReference.current;
       return session
-        ? commitCreatedNode(session, createEdgeTypeOp(session.graph(), input, { deviceId }))
+        ? commitCreatedNode(
+            session,
+            createShapeOp(session.graph(), { ...input, entityKind: 'edge' }, { deviceId }),
+          )
         : Promise.resolve(err(new Error('No graph loaded')));
     },
     [deviceId],

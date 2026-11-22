@@ -9,7 +9,7 @@ import {
 } from '../src/stored';
 import {
   createNodeId,
-  asTypeId,
+  asShapeId,
   createInstant,
   createGraphId,
   unwrap,
@@ -29,7 +29,7 @@ describe('Stored Queries', () => {
     const result = unwrap(
       saveQueryDefinition(graph, 'High Priority Tasks', q, {
         description: 'Finds all high priority tasks',
-        nodeTypes: [asTypeId('node:type:task')],
+        nodeTypes: [asShapeId('node:type:task')],
         parameters: [],
         deviceId: asDeviceId('00000000-0000-0000-0000-000000000000'),
       }),
@@ -53,7 +53,7 @@ describe('Stored Queries', () => {
     let graph = unwrap(createGraph(createGraphId(), 'Test Graph'));
 
     // Add some sample data
-    const taskType = asTypeId('node:type:task');
+    const taskType = asShapeId('node:type:task');
     const task1 = createNodeId();
     const task2 = createNodeId();
 
@@ -62,7 +62,7 @@ describe('Stored Queries', () => {
         graph,
         {
           id: task1,
-          type: taskType,
+          shape: taskType,
           properties: new Map([
             ['name', 'Task 1'],
             ['priority', 'high'],
@@ -82,7 +82,7 @@ describe('Stored Queries', () => {
         graph,
         {
           id: task2,
-          type: taskType,
+          shape: taskType,
           properties: new Map([
             ['name', 'Task 2'],
             ['priority', 'low'],

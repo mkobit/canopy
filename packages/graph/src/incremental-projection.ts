@@ -4,10 +4,11 @@ import type { Node } from './node';
 import type { Edge } from './edge';
 import type { NodeId, EdgeId, EventId } from './identifiers';
 import type { Instant } from './temporal';
-import { lwwWins, projectGraph } from './projection';
+import { lwwWins, projectGraph, sortEventsCausally } from './projection';
 import type { Result } from './result';
-import { ok, err as error } from './result';
-import { validateNode, validateEdge } from './validation';
+import { ok } from './result';
+import { validateBatch, type CommitError } from './batch-validation';
+import { createBatchId } from './factories';
 import { incrementalUpdateIndexes } from './indexes';
 import { accumulateRevision } from './revision';
 
@@ -207,7 +208,7 @@ function applyOneEventInternal(
 
       const node: Node = {
         id: event.id,
-        type: event.nodeType,
+        ...(event.shapeId !== undefined && { shape: event.shapeId }),
         properties: event.properties,
         metadata: {
           created: event.timestamp,
@@ -364,7 +365,7 @@ function applyOneEventInternal(
 
       const edge: Edge = {
         id: event.id,
-        type: event.edgeType,
+        ...(event.shapeId !== undefined && { shape: event.shapeId }),
         source: event.source,
         target: event.target,
         properties: event.properties,
@@ -576,7 +577,7 @@ function attemptGroup(
   edgeMeta: ReadonlyMap<EdgeId, EntityMergeMeta>,
   events: readonly GraphEvent[],
 ): GroupAttempt {
-  const sorted = [...events].toSorted((a, b) => a.eventId.localeCompare(b.eventId));
+  const sorted = sortEventsCausally(events);
 
   const createdInGroup = new Set<string>();
 
@@ -789,45 +790,6 @@ export function mergeEvents(
   return { state: workingState, graph: workingGraph, applied, stale };
 }
 
-function validateDraftEvents(graph: Graph, events: readonly GraphEvent[]): Result<void, Error> {
-  const dryRun = projectGraph(events, graph);
-  if (!dryRun.ok) return dryRun;
-  const dryRunGraph = dryRun.value;
-
-  const touchedNodeIds = new Set<NodeId>();
-  const touchedEdgeIds = new Set<EdgeId>();
-
-  for (const event of events) {
-    if (event.type === 'NodeCreated' || event.type === 'NodePropertiesUpdated') {
-      touchedNodeIds.add(event.id);
-    } else if (event.type === 'EdgeCreated' || event.type === 'EdgePropertiesUpdated') {
-      touchedEdgeIds.add(event.id);
-    }
-  }
-
-  for (const id of touchedNodeIds) {
-    const node = dryRunGraph.nodes.get(id);
-    if (!node) continue;
-    const result = validateNode(dryRunGraph, node);
-    if (!result.valid) {
-      const detail = result.errors.map((error_) => error_.message).join(', ');
-      return error(new Error(`Node ${id} failed validation: ${detail}`));
-    }
-  }
-
-  for (const id of touchedEdgeIds) {
-    const edge = dryRunGraph.edges.get(id);
-    if (!edge) continue;
-    const result = validateEdge(dryRunGraph, edge);
-    if (!result.valid) {
-      const detail = result.errors.map((error_) => error_.message).join(', ');
-      return error(new Error(`Edge ${id} failed validation: ${detail}`));
-    }
-  }
-
-  return ok(undefined);
-}
-
 /**
 Projects a combined graph overlaying staged draft events on top of a parent graph.
 */
@@ -846,12 +808,14 @@ export function applyDraftEvents(
   parentGraph: Graph,
   currentDraftEvents: readonly GraphEvent[],
   newEvents: readonly GraphEvent[],
-): Result<readonly GraphEvent[], Error> {
+): Result<readonly GraphEvent[], Error | CommitError> {
   const currentProjectionResult = projectDraftOverlay(parentGraph, currentDraftEvents);
   if (!currentProjectionResult.ok) {
     return currentProjectionResult;
   }
 
-  const validation = validateDraftEvents(currentProjectionResult.value, newEvents);
+  const batchId =
+    newEvents.find((event) => event.batchId !== undefined)?.batchId ?? createBatchId();
+  const validation = validateBatch(currentProjectionResult.value, newEvents, batchId);
   return validation.ok ? ok([...currentDraftEvents, ...newEvents]) : validation;
 }

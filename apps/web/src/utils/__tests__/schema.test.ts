@@ -2,11 +2,11 @@ import { describe, it, expect } from 'bun:test';
 import {
   asGraphId,
   asNamespace,
+  asShapeId,
   createDeviceId,
   createGraph,
   createNamespace,
-  createNodeType,
-  createEdgeType,
+  createShape,
   createPropertyType,
   unwrap,
   type Graph,
@@ -57,7 +57,11 @@ describe('listNodeTypesIn / listAllNodeTypes', () => {
   it('scopes NodeTypes to their namespace and finds them across all namespaces', () => {
     const graph = bootstrappedGraph();
     const result = unwrap(
-      createNodeType(graph, { name: 'task', namespace: 'user', properties: [] }, OPTIONS),
+      createShape(
+        graph,
+        { name: 'task', namespace: 'user', entityKind: 'node', properties: [] },
+        OPTIONS,
+      ),
     );
 
     const userTypes = listNodeTypesIn(result.graph, 'user');
@@ -71,7 +75,11 @@ describe('listEdgeTypesIn', () => {
   it('carries sourceTypes/targetTypes through', () => {
     const graph = bootstrappedGraph();
     const nodeTypeResult = unwrap(
-      createNodeType(graph, { name: 'task', namespace: 'user', properties: [] }, OPTIONS),
+      createShape(
+        graph,
+        { name: 'task', namespace: 'user', entityKind: 'node', properties: [] },
+        OPTIONS,
+      ),
     );
     const taskTypeId = nodeTypeResult.graph.nodes
       .values()
@@ -80,14 +88,15 @@ describe('listEdgeTypesIn', () => {
     if (!taskTypeId) return;
 
     const edgeResult = unwrap(
-      createEdgeType(
+      createShape(
         nodeTypeResult.graph,
         {
           name: 'blocks',
           namespace: 'user',
+          entityKind: 'edge',
           properties: [],
-          sourceTypes: [taskTypeId],
-          targetTypes: [taskTypeId],
+          sourceTypes: [asShapeId(taskTypeId)],
+          targetTypes: [asShapeId(taskTypeId)],
         },
         OPTIONS,
       ),

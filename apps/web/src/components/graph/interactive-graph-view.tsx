@@ -76,7 +76,7 @@ export const InteractiveGraphView = () => {
       source: edge.source,
       target: edge.target,
       type: 'customEdge',
-      label: edge.type,
+      label: edge.shape ?? '',
       markerEnd: {
         type: MarkerType.ArrowClosed,
         color: '#cbd5e1',

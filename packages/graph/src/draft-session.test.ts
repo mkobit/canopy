@@ -5,7 +5,6 @@ import { createDraftSession } from './draft-session';
 import {
   createGraphId,
   createNodeId,
-  asTypeId,
   createEventId,
   asDeviceId,
   createInstant,
@@ -61,7 +60,6 @@ function nodeCreatedEvent(overrides: Partial<NodeCreated> = {}): NodeCreated {
     type: 'NodeCreated',
     eventId: createEventId(),
     id: createNodeId(),
-    nodeType: asTypeId('test-type'),
     properties: new Map([['name', 'a']]),
     timestamp: createInstant(),
     deviceId: otherDeviceId,
@@ -93,7 +91,7 @@ describe('DraftSession', () => {
       expect(getNodeResult.value.id).toBe(event.id);
     }
 
-    const queryResult = draftSession.queryNodes('test-type');
+    const queryResult = draftSession.queryNodes('a');
     expect(queryResult.ok).toBe(true);
     if (queryResult.ok) {
       expect(queryResult.value.some((n) => n.id === event.id)).toBe(true);

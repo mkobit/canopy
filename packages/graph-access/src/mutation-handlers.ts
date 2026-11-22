@@ -1,5 +1,6 @@
-import type { GraphEvent, PropertyValue } from '@canopy/graph';
+import type { CommitError, GraphEvent, PropertyValue } from '@canopy/graph';
 import { createEdgeId, createEventId, createInstant, createNodeId, err, ok } from '@canopy/graph';
+import type { GraphAccessErrorCategory } from './result-errors';
 import type {
   GraphAccessEdgePayload,
   GraphAccessNodePayload,
@@ -21,6 +22,22 @@ const convertPropertiesToMap = (
   properties: Readonly<Record<string, PropertyValue>>,
 ): ReadonlyMap<string, PropertyValue> => new Map(Object.entries(properties));
 
+const mapCommitErrorToCategory = (commitError: CommitError): GraphAccessErrorCategory => {
+  switch (commitError.kind) {
+    case 'validation':
+    case 'batch':
+    case 'projection': {
+      return 'VALIDATION_ERROR';
+    }
+    case 'system-node': {
+      return 'FORBIDDEN';
+    }
+    case 'storage': {
+      return 'INTERNAL_ERROR';
+    }
+  }
+};
+
 // Creates a new graph node within a session context.
 export const executeCreateNode = async (
   request: GraphAccessRequest<NodeCreatePayload>,
@@ -35,7 +52,8 @@ export const executeCreateNode = async (
     );
   }
 
-  const { id, type, properties } = request.payload;
+  const { id, shapeId: explicitShapeId, type, properties } = request.payload;
+  const shapeId = explicitShapeId ?? type;
   const nodeId = id ?? createNodeId();
 
   const currentGraph = session.graph();
@@ -52,7 +70,7 @@ export const executeCreateNode = async (
     type: 'NodeCreated',
     eventId,
     id: nodeId,
-    nodeType: type,
+    ...(shapeId !== undefined && { shapeId }),
     properties: convertPropertiesToMap(properties),
     timestamp: now,
     deviceId: currentGraph.metadata.modifiedBy,
@@ -60,7 +78,12 @@ export const executeCreateNode = async (
 
   const commitResult = await session.commit([event]);
   if (!commitResult.ok) {
-    return err(createGraphAccessError('VALIDATION_ERROR', commitResult.error.message));
+    return err(
+      createGraphAccessError(
+        mapCommitErrorToCategory(commitResult.error),
+        commitResult.error.message,
+      ),
+    );
   }
 
   const updatedGraph = session.graph();
@@ -71,7 +94,7 @@ export const executeCreateNode = async (
 
   return ok({
     id: createdNode.id,
-    type: createdNode.type,
+    ...(createdNode.shape !== undefined && { type: createdNode.shape }),
     properties: Object.fromEntries(createdNode.properties),
     createdAt: createdNode.metadata.created,
     updatedAt: createdNode.metadata.modified,
@@ -112,7 +135,12 @@ export const executeUpdateNodeProperties = async (
 
   const commitResult = await session.commit([event]);
   if (!commitResult.ok) {
-    return err(createGraphAccessError('VALIDATION_ERROR', commitResult.error.message));
+    return err(
+      createGraphAccessError(
+        mapCommitErrorToCategory(commitResult.error),
+        commitResult.error.message,
+      ),
+    );
   }
 
   const updatedGraph = session.graph();
@@ -123,7 +151,7 @@ export const executeUpdateNodeProperties = async (
 
   return ok({
     id: updatedNode.id,
-    type: updatedNode.type,
+    ...(updatedNode.shape !== undefined && { type: updatedNode.shape }),
     properties: Object.fromEntries(updatedNode.properties),
     createdAt: updatedNode.metadata.created,
     updatedAt: updatedNode.metadata.modified,
@@ -175,7 +203,12 @@ export const executeDeleteNode = async (
   const events: readonly GraphEvent[] = [nodeEvent, ...edgeEvents];
   const commitResult = await session.commit(events);
   if (!commitResult.ok) {
-    return err(createGraphAccessError('VALIDATION_ERROR', commitResult.error.message));
+    return err(
+      createGraphAccessError(
+        mapCommitErrorToCategory(commitResult.error),
+        commitResult.error.message,
+      ),
+    );
   }
 
   return ok({
@@ -199,7 +232,8 @@ export const executeCreateEdge = async (
     );
   }
 
-  const { id, type, source, target, properties = {} } = request.payload;
+  const { id, shapeId: explicitShapeId, type, source, target, properties = {} } = request.payload;
+  const shapeId = explicitShapeId ?? type;
   const edgeId = id ?? createEdgeId();
   const currentGraph = session.graph();
 
@@ -223,7 +257,7 @@ export const executeCreateEdge = async (
     type: 'EdgeCreated',
     eventId: createEventId(),
     id: edgeId,
-    edgeType: type,
+    ...(shapeId !== undefined && { shapeId }),
     source,
     target,
     properties: convertPropertiesToMap(properties),
@@ -233,7 +267,12 @@ export const executeCreateEdge = async (
 
   const commitResult = await session.commit([event]);
   if (!commitResult.ok) {
-    return err(createGraphAccessError('VALIDATION_ERROR', commitResult.error.message));
+    return err(
+      createGraphAccessError(
+        mapCommitErrorToCategory(commitResult.error),
+        commitResult.error.message,
+      ),
+    );
   }
 
   const updatedGraph = session.graph();
@@ -244,7 +283,7 @@ export const executeCreateEdge = async (
 
   return ok({
     id: createdEdge.id,
-    type: createdEdge.type,
+    ...(createdEdge.shape !== undefined && { type: createdEdge.shape }),
     source: createdEdge.source,
     target: createdEdge.target,
     properties: Object.fromEntries(createdEdge.properties),
@@ -283,7 +322,12 @@ export const executeDeleteEdge = async (
 
   const commitResult = await session.commit([event]);
   if (!commitResult.ok) {
-    return err(createGraphAccessError('VALIDATION_ERROR', commitResult.error.message));
+    return err(
+      createGraphAccessError(
+        mapCommitErrorToCategory(commitResult.error),
+        commitResult.error.message,
+      ),
+    );
   }
 
   return ok({

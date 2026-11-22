@@ -10,7 +10,7 @@ import {
 } from '../src/plugin-validation';
 import { SYSTEM_IDS } from '../src/system';
 import {
-  asTypeId,
+  asShapeId,
   createNodeId,
   createGraphId,
   createInstant,
@@ -24,7 +24,7 @@ import type { Node } from '@canopy/graph';
 function createTestNode(properties: Record<string, unknown>): Node {
   return {
     id: createNodeId(),
-    type: asTypeId('test'),
+    shape: asShapeId('test'),
     metadata: {
       created: createInstant(),
       modified: createInstant(),
@@ -246,7 +246,7 @@ describe('node validation integration for Plugin nodes', () => {
     const g = unwrap(createGraph(createGraphId(), 'System Graph'));
 
     const validPlugin = createTestNode({
-      type: SYSTEM_IDS.TYPE_PLUGIN,
+      shape: SYSTEM_IDS.TYPE_PLUGIN,
       properties: {
         wasm_binary: 'AGFzbQAAAAEAAAAB',
         manifest: JSON.stringify({
@@ -267,7 +267,7 @@ describe('node validation integration for Plugin nodes', () => {
     const g = unwrap(createGraph(createGraphId(), 'System Graph'));
 
     const invalidPlugin = createTestNode({
-      type: SYSTEM_IDS.TYPE_PLUGIN,
+      shape: SYSTEM_IDS.TYPE_PLUGIN,
       properties: {
         wasm_binary: 'SGVsbG8gd29ybGQ=', // Missing magic header
         manifest: '{"name": "my-plugin"', // Invalid JSON
@@ -311,7 +311,7 @@ describe('node validation integration for Plugin nodes', () => {
 
         const node = createTestNode({
           id: nodeData.id,
-          type: SYSTEM_IDS.TYPE_PLUGIN,
+          shape: SYSTEM_IDS.TYPE_PLUGIN,
           properties: {
             wasm_binary: nodeData.properties.wasm_binary,
             manifest: nodeData.properties.manifest,

@@ -5,7 +5,7 @@ import type {
   NodeId,
   PropertyValue,
   Result,
-  TypeId,
+  ShapeId,
 } from '@canopy/graph';
 import type { Filter, Sort } from '@canopy/queries';
 import type { GraphAccessContext } from './graph-access-context';
@@ -13,7 +13,7 @@ import type { GraphAccessError } from './result-errors';
 
 export type NodeQueryPayload = Readonly<{
   id?: NodeId | undefined;
-  type?: TypeId | undefined;
+  type?: ShapeId | undefined;
   filter?: Filter | undefined;
   sort?: Sort | undefined;
   limit?: number | undefined;
@@ -21,7 +21,7 @@ export type NodeQueryPayload = Readonly<{
 
 export type EdgeQueryPayload = Readonly<{
   id?: EdgeId | undefined;
-  type?: TypeId | undefined;
+  type?: ShapeId | undefined;
   source?: NodeId | undefined;
   target?: NodeId | undefined;
   direction?: 'in' | 'out' | 'both' | undefined;
@@ -36,7 +36,7 @@ export type PropertyLookupPayload = Readonly<{
 
 export type TraversalQueryPayload = Readonly<{
   startNodeIds: readonly NodeId[];
-  edgeType?: TypeId | undefined;
+  edgeType?: ShapeId | undefined;
   direction?: 'in' | 'out' | 'both' | undefined;
   maxDepth?: number | undefined;
   maxCost?: number | undefined;
@@ -49,7 +49,8 @@ export type PropertyLookupResult = Readonly<{
 
 export type NodeCreatePayload = Readonly<{
   id?: NodeId;
-  type: TypeId;
+  shapeId?: ShapeId | undefined;
+  type?: ShapeId | undefined;
   properties: Readonly<Record<string, PropertyValue>>;
 }>;
 
@@ -64,7 +65,8 @@ export type NodeDeletePayload = Readonly<{
 
 export type EdgeCreatePayload = Readonly<{
   id?: EdgeId;
-  type: TypeId;
+  shapeId?: ShapeId | undefined;
+  type?: ShapeId | undefined;
   source: NodeId;
   target: NodeId;
   properties?: Readonly<Record<string, PropertyValue>>;
@@ -91,7 +93,7 @@ export type GraphAccessResponse<TData = unknown, TError = GraphAccessError> = Re
 
 export type GraphAccessNodePayload = Readonly<{
   id: NodeId;
-  type: TypeId;
+  type?: ShapeId | undefined;
   properties: Readonly<Record<string, PropertyValue>>;
   createdAt: string;
   updatedAt: string;
@@ -99,7 +101,7 @@ export type GraphAccessNodePayload = Readonly<{
 
 export type GraphAccessEdgePayload = Readonly<{
   id: EdgeId;
-  type: TypeId;
+  type?: ShapeId | undefined;
   source: NodeId;
   target: NodeId;
   properties: Readonly<Record<string, PropertyValue>>;

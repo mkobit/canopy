@@ -8,7 +8,7 @@ import {
   type PropertyValue,
   type PropertyValueKind,
   type ScalarValue,
-  type TypeId,
+  type ShapeId,
 } from '@canopy/graph';
 import { PropertyInput } from '../properties/property-input';
 import type { NodeTypeOption } from '../../utils/node-types';
@@ -16,16 +16,21 @@ import type { NodeTypeOption } from '../../utils/node-types';
 export interface NewNodeDialogProperties {
   readonly open: boolean;
   readonly nodeTypes: readonly NodeTypeOption[];
-  readonly onSubmit: (type: TypeId, properties: Readonly<Record<string, PropertyValue>>) => unknown;
+  readonly onSubmit: (
+    type: ShapeId,
+    properties: Readonly<Record<string, PropertyValue>>,
+  ) => unknown;
   readonly onCancel: () => unknown;
 }
 
 function getInitialValue(kind: PropertyValueKind): PropertyValue {
   switch (kind) {
-    case 'text': {
+    case 'text':
+    case 'url': {
       return '';
     }
-    case 'number': {
+    case 'number':
+    case 'integer': {
       return 0;
     }
     case 'boolean': {
@@ -71,7 +76,7 @@ function isEmpty(value: PropertyValue, kind: PropertyValueKind): boolean {
 const TypeSelect: React.FC<
   Readonly<{
     nodeTypes: readonly NodeTypeOption[];
-    selectedTypeId: TypeId | null;
+    selectedTypeId: ShapeId | null;
     onChange: (next: NodeTypeOption) => unknown;
   }>
 > = ({ nodeTypes, selectedTypeId = null, onChange }) => (
@@ -116,7 +121,7 @@ const PropertyField: React.FC<
 
 function useNewNodeDialogState(open: boolean, nodeTypes: readonly NodeTypeOption[]) {
   const dialogReference = useRef<HTMLDialogElement>(null);
-  const [selectedTypeId, setSelectedTypeId] = useState<TypeId | null>(null);
+  const [selectedTypeId, setSelectedTypeId] = useState<ShapeId | null>(null);
   const [values, setValues] = useState<Record<string, PropertyValue>>({});
 
   const selectedType = useMemo(

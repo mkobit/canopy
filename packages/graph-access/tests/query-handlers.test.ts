@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import {
+  SYSTEM_IDS,
   addEdge,
   addNode,
   asDeviceId,
@@ -7,8 +8,9 @@ import {
   asGraphId,
   asInstant,
   asNodeId,
-  asTypeId,
+  asShapeId,
   createDeviceId,
+  createEventId,
   createGraph,
   createGraphSession,
   unwrap,
@@ -29,7 +31,7 @@ const deviceId = createDeviceId();
 const setupTestGraph = () => {
   const node1 = {
     id: asNodeId('n1'),
-    type: asTypeId('doc'),
+    shape: asShapeId('doc'),
     properties: new Map([['title', 'Doc 1']]),
     metadata: {
       created: asInstant('2026-01-01T00:00:00.000Z'),
@@ -39,7 +41,7 @@ const setupTestGraph = () => {
   };
   const node2 = {
     id: asNodeId('n2'),
-    type: asTypeId('doc'),
+    shape: asShapeId('doc'),
     properties: new Map([['title', 'Doc 2']]),
     metadata: {
       created: asInstant('2026-01-01T00:00:00.000Z'),
@@ -49,7 +51,7 @@ const setupTestGraph = () => {
   };
   const node3 = {
     id: asNodeId('n3'),
-    type: asTypeId('tag'),
+    shape: asShapeId('tag'),
     properties: new Map([['name', 'Tag 1']]),
     metadata: {
       created: asInstant('2026-01-01T00:00:00.000Z'),
@@ -59,7 +61,7 @@ const setupTestGraph = () => {
   };
   const edge1 = {
     id: asEdgeId('e1'),
-    type: asTypeId('links'),
+    shape: asShapeId('links'),
     source: node1.id,
     target: node2.id,
     properties: new Map([['weight', 1]]),
@@ -71,7 +73,7 @@ const setupTestGraph = () => {
   };
   const cycleEdge = {
     id: asEdgeId('e2'),
-    type: asTypeId('links'),
+    shape: asShapeId('links'),
     source: node2.id,
     target: node1.id,
     properties: new Map(),
@@ -112,15 +114,31 @@ describe('Query execution handlers', () => {
     const session = createGraphSession(
       eventLogStore,
       asGraphId('current-session-graph'),
-      asDeviceId('current-session-device'),
+      asDeviceId('00000000-0000-4000-8000-000000000001'),
     );
     await session.load();
+    await session.commit([
+      {
+        type: 'NodeCreated',
+        eventId: createEventId(),
+        id: asNodeId('doc'),
+        shapeId: SYSTEM_IDS.SHAPE,
+        properties: new Map<string, string | boolean>([
+          ['name', 'Doc'],
+          ['namespace', 'user'],
+          ['entityKind', 'node'],
+          ['closed', false],
+        ]),
+        timestamp: asInstant('2026-01-01T00:00:00.000Z'),
+        deviceId,
+      },
+    ]);
     const context = createGraphAccessContext({ graph: session.graph(), session });
 
     const createResult = await executeCreateNode(
       createGraphAccessRequest('req-current-session-create', context, {
         id: asNodeId('current-session-node'),
-        type: asTypeId('doc'),
+        type: asShapeId('doc'),
         properties: { title: 'Committed node' },
       }),
     );
@@ -136,7 +154,7 @@ describe('Query execution handlers', () => {
       value: [
         expect.objectContaining({
           id: asNodeId('current-session-node'),
-          type: asTypeId('doc'),
+          type: asShapeId('doc'),
           properties: { title: 'Committed node' },
         }),
       ],
@@ -158,7 +176,7 @@ describe('Query execution handlers', () => {
   test('executeNodeQuery filters by type', () => {
     const graph = setupTestGraph();
     const context = createGraphAccessContext({ graph });
-    const request = createGraphAccessRequest('req-3', context, { type: asTypeId('doc') });
+    const request = createGraphAccessRequest('req-3', context, { type: asShapeId('doc') });
 
     const result = executeNodeQuery(request);
     expect(result.ok).toBe(true);
@@ -265,5 +283,66 @@ describe('Query execution handlers', () => {
     if (!result.ok) {
       expect(result.error.category).toBe('RESOURCE_EXHAUSTED');
     }
+  });
+
+  test('executeNodeQuery and executeEdgeQuery preserve undefined shape for open entities', () => {
+    const baseGraph = unwrap(createGraph(asGraphId('open-q-g'), 'Open Query Graph'));
+    const timestamp = asInstant('2026-01-01T00:00:00.000Z');
+    const withN1 = unwrap(
+      addNode(
+        baseGraph,
+        {
+          id: asNodeId('open-n1'),
+          properties: new Map([['title', 'Open Note']]),
+          metadata: { created: timestamp, modified: timestamp, modifiedBy: deviceId },
+        },
+        { deviceId },
+      ),
+    ).graph;
+    const withN2 = unwrap(
+      addNode(
+        withN1,
+        {
+          id: asNodeId('open-n2'),
+          properties: new Map(),
+          metadata: { created: timestamp, modified: timestamp, modifiedBy: deviceId },
+        },
+        { deviceId },
+      ),
+    ).graph;
+    const graphWithOpenEdge = unwrap(
+      addEdge(
+        withN2,
+        {
+          id: asEdgeId('open-e1'),
+          source: asNodeId('open-n1'),
+          target: asNodeId('open-n2'),
+          properties: new Map(),
+          metadata: { created: timestamp, modified: timestamp, modifiedBy: deviceId },
+        },
+        { deviceId },
+      ),
+    ).graph;
+    const context = createGraphAccessContext({ graph: graphWithOpenEdge });
+
+    const nodeResult = executeNodeQuery(
+      createGraphAccessRequest('req-open-node-q', context, { id: asNodeId('open-n1') }),
+    );
+    expect(nodeResult.ok).toBe(true);
+    if (nodeResult.ok) {
+      expect(nodeResult.value).toHaveLength(1);
+      expect(nodeResult.value[0]?.type).toBeUndefined();
+    }
+
+    const edgeResult = executeEdgeQuery(
+      createGraphAccessRequest('req-open-edge-q', context, { id: asEdgeId('open-e1') }),
+    );
+    expect(edgeResult.ok).toBe(true);
+    if (!edgeResult.ok) {
+      return;
+    }
+
+    expect(edgeResult.value).toHaveLength(1);
+    expect(edgeResult.value[0]?.type).toBeUndefined();
   });
 });

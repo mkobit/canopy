@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach } from 'bun:test';
 import {
   asNodeId,
-  asTypeId,
+  asShapeId,
   createInstant,
   SYSTEM_DEVICE_ID,
   type Node,
@@ -12,7 +12,7 @@ import { setRenderGrantForPlugin } from './render-grants';
 
 const buildPluginNode = (properties: Record<string, PropertyValue>): Node => ({
   id: asNodeId('plugin:a'),
-  type: asTypeId('canopy:system/plugin'),
+  shape: asShapeId('canopy:system/plugin'),
   properties: new Map(Object.entries(properties)),
   metadata: { created: createInstant(), modified: createInstant(), modifiedBy: SYSTEM_DEVICE_ID },
 });

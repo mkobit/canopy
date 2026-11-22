@@ -1,11 +1,15 @@
 import { describe, expect, test } from 'bun:test';
 import {
+  SYSTEM_IDS,
   asDeviceId,
   asEdgeId,
   asGraphId,
   asNodeId,
-  asTypeId,
+  asShapeId,
+  createEventId,
   createGraphSession,
+  createInstant,
+  type EventLogStore,
 } from '@canopy/graph';
 import { createInMemoryEventStore } from '@canopy/storage';
 import {
@@ -18,12 +22,61 @@ import {
 } from '@canopy/graph-access';
 
 const graphId = asGraphId('concurrency-g1');
-const deviceId1 = asDeviceId('device-1');
-const deviceId2 = asDeviceId('device-2');
+const deviceId1 = asDeviceId('00000000-0000-4000-8000-000000000001');
+const deviceId2 = asDeviceId('00000000-0000-4000-8000-000000000002');
+
+async function seedShapes(eventLogStore: EventLogStore): Promise<void> {
+  const ts = createInstant();
+  await eventLogStore.appendEvents(graphId, [
+    {
+      type: 'NodeCreated',
+      eventId: createEventId(),
+      id: asNodeId('doc'),
+      shapeId: SYSTEM_IDS.SHAPE,
+      properties: new Map<string, string | boolean>([
+        ['name', 'Doc'],
+        ['namespace', 'user'],
+        ['entityKind', 'node'],
+        ['closed', false],
+      ]),
+      timestamp: ts,
+      deviceId: deviceId1,
+    },
+    {
+      type: 'NodeCreated',
+      eventId: createEventId(),
+      id: asNodeId('item'),
+      shapeId: SYSTEM_IDS.SHAPE,
+      properties: new Map<string, string | boolean>([
+        ['name', 'Item'],
+        ['namespace', 'user'],
+        ['entityKind', 'node'],
+        ['closed', false],
+      ]),
+      timestamp: ts,
+      deviceId: deviceId1,
+    },
+    {
+      type: 'NodeCreated',
+      eventId: createEventId(),
+      id: asNodeId('rel'),
+      shapeId: SYSTEM_IDS.SHAPE,
+      properties: new Map<string, string | boolean>([
+        ['name', 'Rel'],
+        ['namespace', 'user'],
+        ['entityKind', 'edge'],
+        ['closed', false],
+      ]),
+      timestamp: ts,
+      deviceId: deviceId1,
+    },
+  ]);
+}
 
 describe('CAS & Concurrency Stress Verification', () => {
   test('atomic compare-and-swap (CAS): rejects concurrent commits with outdated sequence number', async () => {
     const eventLogStore = createInMemoryEventStore();
+    await seedShapes(eventLogStore);
     const session1 = createGraphSession(eventLogStore, graphId, deviceId1);
     const session2 = createGraphSession(eventLogStore, graphId, deviceId2);
 
@@ -37,7 +90,7 @@ describe('CAS & Concurrency Stress Verification', () => {
     const createResult = await executeCreateNode(
       createGraphAccessRequest('req-init', context1, {
         id: asNodeId('node-cas-1'),
-        type: asTypeId('doc'),
+        type: asShapeId('doc'),
         properties: { version: 1 },
       }),
     );
@@ -79,6 +132,7 @@ describe('CAS & Concurrency Stress Verification', () => {
 
   test('high-throughput parallel node creations result in zero state corruption or lost updates', async () => {
     const eventLogStore = createInMemoryEventStore();
+    await seedShapes(eventLogStore);
     const session = createGraphSession(eventLogStore, graphId, deviceId1);
     await session.load();
     const initialNodeCount = session.graph().nodes.size;
@@ -89,7 +143,7 @@ describe('CAS & Concurrency Stress Verification', () => {
       executeCreateNode(
         createGraphAccessRequest(`req-stress-${index}`, context, {
           id: asNodeId(`stress-node-${index}`),
-          type: asTypeId('item'),
+          type: asShapeId('item'),
           properties: { index: index },
         }),
       ),
@@ -109,6 +163,7 @@ describe('CAS & Concurrency Stress Verification', () => {
 
   test('interleaved edge creation and node deletion preserves referential integrity', async () => {
     const eventLogStore = createInMemoryEventStore();
+    await seedShapes(eventLogStore);
     const session = createGraphSession(eventLogStore, graphId, deviceId1);
     await session.load();
     const context = createGraphAccessContext({ graph: session.graph(), session });
@@ -117,14 +172,14 @@ describe('CAS & Concurrency Stress Verification', () => {
     await executeCreateNode(
       createGraphAccessRequest('req-n1', context, {
         id: asNodeId('n1'),
-        type: asTypeId('doc'),
+        type: asShapeId('doc'),
         properties: {},
       }),
     );
     await executeCreateNode(
       createGraphAccessRequest('req-n2', context, {
         id: asNodeId('n2'),
-        type: asTypeId('doc'),
+        type: asShapeId('doc'),
         properties: {},
       }),
     );
@@ -133,7 +188,7 @@ describe('CAS & Concurrency Stress Verification', () => {
     await executeCreateEdge(
       createGraphAccessRequest('req-e1', context, {
         id: asEdgeId('e1'),
-        type: asTypeId('rel'),
+        type: asShapeId('rel'),
         source: asNodeId('n1'),
         target: asNodeId('n2'),
       }),
@@ -155,7 +210,7 @@ describe('CAS & Concurrency Stress Verification', () => {
     const failEdgeResult = await executeCreateEdge(
       createGraphAccessRequest('req-fail-edge', context, {
         id: asEdgeId('e2'),
-        type: asTypeId('rel'),
+        type: asShapeId('rel'),
         source: asNodeId('n1'),
         target: asNodeId('n2'),
       }),
@@ -168,6 +223,7 @@ describe('CAS & Concurrency Stress Verification', () => {
 
   test('concurrent node deletion across separate sessions is safely rejected or handled', async () => {
     const eventLogStore = createInMemoryEventStore();
+    await seedShapes(eventLogStore);
     const session1 = createGraphSession(eventLogStore, graphId, deviceId1);
     const session2 = createGraphSession(eventLogStore, graphId, deviceId2);
 
@@ -177,7 +233,7 @@ describe('CAS & Concurrency Stress Verification', () => {
     await executeCreateNode(
       createGraphAccessRequest('n-a', context1, {
         id: asNodeId('a'),
-        type: asTypeId('doc'),
+        type: asShapeId('doc'),
         properties: {},
       }),
     );

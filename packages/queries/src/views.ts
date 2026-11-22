@@ -6,9 +6,11 @@ import type {
   ScalarValue,
   Result,
   DeviceId,
+  BatchId,
 } from '@canopy/graph';
 import { executeQuery } from './engine';
 import {
+  asBatchId,
   createNodeId,
   createInstant,
   ok,
@@ -16,6 +18,7 @@ import {
   fromThrowable,
   asNodeId,
   SYSTEM_IDS,
+  isSystemNodeId,
   addNode,
   SYSTEM_DEVICE_ID,
 } from '@canopy/graph';
@@ -35,7 +38,7 @@ export interface ViewDefinition {
 
 export type SaveViewOptions = Readonly<{
   deviceId: DeviceId;
-  batchId?: string;
+  batchId?: BatchId | string;
   migrationId?: string;
 }>;
 
@@ -89,7 +92,7 @@ export function saveViewDefinition(
 
   const node: Node = {
     id: nodeId,
-    type: SYSTEM_IDS.VIEW_DEFINITION,
+    shape: SYSTEM_IDS.VIEW_DEFINITION,
     properties,
     metadata: {
       created: createInstant(),
@@ -100,7 +103,7 @@ export function saveViewDefinition(
 
   const newGraphResult = addNode(graph, node, {
     deviceId: options.deviceId,
-    ...(options.batchId !== undefined && { batchId: options.batchId }),
+    ...(options.batchId !== undefined && { batchId: asBatchId(options.batchId) }),
     ...(options.migrationId !== undefined && { migrationId: options.migrationId }),
   });
   return newGraphResult.ok
@@ -114,7 +117,7 @@ export function getViewDefinition(graph: Graph, nodeId: NodeId): Result<ViewDefi
     return err(new Error(`View definition node ${nodeId} not found`));
   }
 
-  if (node.type !== SYSTEM_IDS.VIEW_DEFINITION) {
+  if (node.shape !== SYSTEM_IDS.VIEW_DEFINITION) {
     return err(new Error(`Node ${nodeId} is not a View Definition`));
   }
 
@@ -163,21 +166,11 @@ export function getViewDefinition(graph: Graph, nodeId: NodeId): Result<ViewDefi
 }
 
 export function listViewDefinitions(graph: Graph): readonly Node[] {
-  return [...graph.nodes.values()].filter((node) => node.type === SYSTEM_IDS.VIEW_DEFINITION);
+  return [...graph.nodes.values()].filter((node) => node.shape === SYSTEM_IDS.VIEW_DEFINITION);
 }
 
-const SYSTEM_ID_PREFIXES = [
-  'node:type:',
-  'edge:type:',
-  'meta:',
-  'query:system:',
-  'view:system:',
-  'system:',
-  'namespace:',
-] as const;
-
 export function isSystemNode(node: Node): boolean {
-  return SYSTEM_ID_PREFIXES.some((prefix) => node.id.startsWith(prefix));
+  return isSystemNodeId(node.id);
 }
 
 export function executeView(

@@ -44,7 +44,7 @@ export function executeCypherQuery(
 
 export function validateCypherQuery(_query: string | QueryNode): ValidationResult {
   // Stub implementation
-  return { valid: true, errors: [] };
+  return { valid: true, errors: [], warnings: [] };
 }
 
 export function createCypherQueryEngine(): QueryEngine {

@@ -6,7 +6,7 @@ import {
   createEventId,
   createInstant,
   createDeviceId,
-  asTypeId,
+  asShapeId,
 } from '@canopy/graph';
 
 describe('createEventBus', () => {
@@ -14,7 +14,7 @@ describe('createEventBus', () => {
     type: 'NodeCreated',
     eventId: createEventId(),
     id: createNodeId(),
-    nodeType: asTypeId('test'),
+    shapeId: asShapeId('test'),
     properties: new Map(),
     timestamp: createInstant(),
     deviceId: createDeviceId(),

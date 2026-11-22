@@ -5,7 +5,7 @@ import { addNode } from './ops';
 import { SYSTEM_IDS } from './system';
 import {
   asNodeId,
-  asTypeId,
+  asShapeId,
   createNodeId,
   createGraphId,
   createInstant,
@@ -18,7 +18,7 @@ import type { PropertyDefinition, PropertyValue, Node } from './index';
 function createNode(properties: Record<string, unknown>): Node {
   return {
     id: createNodeId(),
-    type: asTypeId('test'),
+    shape: asShapeId('test'),
     metadata: {
       created: createInstant(),
       modified: createInstant(),
@@ -40,9 +40,11 @@ function createGraphWithCustomType(
 
   const typeNode = createNode({
     id: asNodeId('type-test'),
-    type: SYSTEM_IDS.NODE_TYPE,
+    shape: SYSTEM_IDS.SHAPE,
     properties: {
       name: 'TestType',
+      entityKind: 'node',
+      closed: false,
       properties: JSON.stringify([propertyDefinition]),
     },
   });
@@ -71,7 +73,7 @@ describe('validation constraints', () => {
         choices: ['red', 'green', 'blue'],
       });
       const node = createNode({
-        type: asTypeId('type-test'),
+        shape: asShapeId('type-test'),
         properties: { color: 'green' },
       });
       const result = validateNode(g, node);
@@ -87,7 +89,7 @@ describe('validation constraints', () => {
         choices: ['red', 'green', 'blue'],
       });
       const node = createNode({
-        type: asTypeId('type-test'),
+        shape: asShapeId('type-test'),
         properties: { color: 'yellow' },
       });
       const result = validateNode(g, node);
@@ -108,7 +110,7 @@ describe('validation constraints', () => {
         choices: ['red', 'green', 'blue'],
       });
       const node = createNode({
-        type: asTypeId('type-test'),
+        shape: asShapeId('type-test'),
         properties: { colors: ['red', 'blue'] },
       });
       const result = validateNode(g, node);
@@ -124,7 +126,7 @@ describe('validation constraints', () => {
         choices: ['red', 'green', 'blue'],
       });
       const node = createNode({
-        type: asTypeId('type-test'),
+        shape: asShapeId('type-test'),
         properties: { colors: ['red', 'yellow', 'blue'] },
       });
       const result = validateNode(g, node);
@@ -147,7 +149,7 @@ describe('validation constraints', () => {
         regex: String.raw`^A-\d+$`,
       });
       const node = createNode({
-        type: asTypeId('type-test'),
+        shape: asShapeId('type-test'),
         properties: { code: 'A-123' },
       });
       const result = validateNode(g, node);
@@ -163,7 +165,7 @@ describe('validation constraints', () => {
         regex: String.raw`^A-\d+$`,
       });
       const node = createNode({
-        type: asTypeId('type-test'),
+        shape: asShapeId('type-test'),
         properties: { code: 'B-123' },
       });
       const result = validateNode(g, node);
@@ -184,7 +186,7 @@ describe('validation constraints', () => {
         regex: String.raw`^A-\d+$`,
       });
       const node = createNode({
-        type: asTypeId('type-test'),
+        shape: asShapeId('type-test'),
         properties: { codes: ['A-1', 'A-2'] },
       });
       const result = validateNode(g, node);
@@ -200,7 +202,7 @@ describe('validation constraints', () => {
         regex: String.raw`^A-\d+$`,
       });
       const node = createNode({
-        type: asTypeId('type-test'),
+        shape: asShapeId('type-test'),
         properties: { codes: ['A-1', 'B-2'] },
       });
       const result = validateNode(g, node);
@@ -221,7 +223,7 @@ describe('validation constraints', () => {
         regex: '[invalid-regex',
       });
       const node = createNode({
-        type: asTypeId('type-test'),
+        shape: asShapeId('type-test'),
         properties: { code: 'A-123' },
       });
       const result = validateNode(g, node);
@@ -229,7 +231,7 @@ describe('validation constraints', () => {
       expect(result.errors).toHaveLength(1);
       const [firstError] = result.errors;
       if (firstError === undefined) throw new Error('Expected error');
-      expect(firstError.message).toContain('invalid regular expression constraint');
+      expect(firstError.message).toContain('Invalid regular expression');
     });
   });
 
@@ -243,7 +245,7 @@ describe('validation constraints', () => {
         min: 10,
       });
       const node = createNode({
-        type: asTypeId('type-test'),
+        shape: asShapeId('type-test'),
         properties: { val: 10 },
       });
       expect(validateNode(g, node).valid).toBe(true);
@@ -258,7 +260,7 @@ describe('validation constraints', () => {
         min: 10,
       });
       const node = createNode({
-        type: asTypeId('type-test'),
+        shape: asShapeId('type-test'),
         properties: { val: 9 },
       });
       const result = validateNode(g, node);
@@ -277,7 +279,7 @@ describe('validation constraints', () => {
         min: 3,
       });
       const node = createNode({
-        type: asTypeId('type-test'),
+        shape: asShapeId('type-test'),
         properties: { val: 'abc' },
       });
       expect(validateNode(g, node).valid).toBe(true);
@@ -292,7 +294,7 @@ describe('validation constraints', () => {
         min: 3,
       });
       const node = createNode({
-        type: asTypeId('type-test'),
+        shape: asShapeId('type-test'),
         properties: { val: 'ab' },
       });
       const result = validateNode(g, node);
@@ -311,7 +313,7 @@ describe('validation constraints', () => {
         min: 2,
       });
       const node = createNode({
-        type: asTypeId('type-test'),
+        shape: asShapeId('type-test'),
         properties: { val: ['a', 'b'] },
       });
       expect(validateNode(g, node).valid).toBe(true);
@@ -326,7 +328,7 @@ describe('validation constraints', () => {
         min: 2,
       });
       const node = createNode({
-        type: asTypeId('type-test'),
+        shape: asShapeId('type-test'),
         properties: { val: ['a'] },
       });
       const result = validateNode(g, node);
@@ -347,7 +349,7 @@ describe('validation constraints', () => {
         max: 10,
       });
       const node = createNode({
-        type: asTypeId('type-test'),
+        shape: asShapeId('type-test'),
         properties: { val: 10 },
       });
       expect(validateNode(g, node).valid).toBe(true);
@@ -362,7 +364,7 @@ describe('validation constraints', () => {
         max: 10,
       });
       const node = createNode({
-        type: asTypeId('type-test'),
+        shape: asShapeId('type-test'),
         properties: { val: 11 },
       });
       const result = validateNode(g, node);
@@ -381,7 +383,7 @@ describe('validation constraints', () => {
         max: 3,
       });
       const node = createNode({
-        type: asTypeId('type-test'),
+        shape: asShapeId('type-test'),
         properties: { val: 'abc' },
       });
       expect(validateNode(g, node).valid).toBe(true);
@@ -396,7 +398,7 @@ describe('validation constraints', () => {
         max: 3,
       });
       const node = createNode({
-        type: asTypeId('type-test'),
+        shape: asShapeId('type-test'),
         properties: { val: 'abcd' },
       });
       const result = validateNode(g, node);
@@ -415,7 +417,7 @@ describe('validation constraints', () => {
         max: 2,
       });
       const node = createNode({
-        type: asTypeId('type-test'),
+        shape: asShapeId('type-test'),
         properties: { val: ['a', 'b'] },
       });
       expect(validateNode(g, node).valid).toBe(true);
@@ -430,7 +432,7 @@ describe('validation constraints', () => {
         max: 2,
       });
       const node = createNode({
-        type: asTypeId('type-test'),
+        shape: asShapeId('type-test'),
         properties: { val: ['a', 'b', 'c'] },
       });
       const result = validateNode(g, node);
@@ -451,7 +453,7 @@ describe('validation constraints', () => {
         regex: '^A+$',
       });
       const node = createNode({
-        type: asTypeId('type-test'),
+        shape: asShapeId('type-test'),
         properties: { code: 'A'.repeat(8192) },
       });
       const result = validateNode(g, node);
@@ -467,7 +469,7 @@ describe('validation constraints', () => {
         regex: '^A+$',
       });
       const node = createNode({
-        type: asTypeId('type-test'),
+        shape: asShapeId('type-test'),
         properties: { code: 'A'.repeat(8193) },
       });
       const result = validateNode(g, node);
@@ -488,7 +490,7 @@ describe('validation constraints', () => {
         regex: '^A+$',
       });
       const node = createNode({
-        type: asTypeId('type-test'),
+        shape: asShapeId('type-test'),
         properties: { codes: ['A'.repeat(8193)] },
       });
       const result = validateNode(g, node);
@@ -524,7 +526,7 @@ describe('validation constraints', () => {
         nullable: true,
       });
       const node = createNode({
-        type: asTypeId('type-test'),
+        shape: asShapeId('type-test'),
         properties: { code: null },
       });
       const result = validateNode(g, node);
@@ -540,7 +542,7 @@ describe('validation constraints', () => {
         nullable: false,
       });
       const node = createNode({
-        type: asTypeId('type-test'),
+        shape: asShapeId('type-test'),
         properties: { code: null },
       });
       const result = validateNode(g, node);
@@ -560,7 +562,7 @@ describe('validation constraints', () => {
         nullable: undefined,
       });
       const node = createNode({
-        type: asTypeId('type-test'),
+        shape: asShapeId('type-test'),
         properties: { code: null },
       });
       const result = validateNode(g, node);
@@ -582,7 +584,7 @@ describe('validation constraints', () => {
         cardinality: 'one',
       });
       const node = createNode({
-        type: asTypeId('type-test'),
+        shape: asShapeId('type-test'),
         properties: { tag: 'urgent' },
       });
       const result = validateNode(g, node);
@@ -598,7 +600,7 @@ describe('validation constraints', () => {
         cardinality: 'one',
       });
       const node = createNode({
-        type: asTypeId('type-test'),
+        shape: asShapeId('type-test'),
         properties: { tag: ['urgent', 'bug'] },
       });
       const result = validateNode(g, node);
@@ -618,7 +620,7 @@ describe('validation constraints', () => {
         cardinality: 'many',
       });
       const node = createNode({
-        type: asTypeId('type-test'),
+        shape: asShapeId('type-test'),
         properties: { tags: ['urgent', 'bug'] },
       });
       const result = validateNode(g, node);
@@ -634,7 +636,7 @@ describe('validation constraints', () => {
         cardinality: 'many',
       });
       const node = createNode({
-        type: asTypeId('type-test'),
+        shape: asShapeId('type-test'),
         properties: { tags: 'urgent' },
       });
       const result = validateNode(g, node);
@@ -656,7 +658,7 @@ describe('validation constraints', () => {
         choices: ['draft', 'published', 'archived'],
       });
       const node = createNode({
-        type: asTypeId('type-test'),
+        shape: asShapeId('type-test'),
         properties: { status: 'published' },
       });
       const result = validateNode(g, node);
@@ -672,7 +674,7 @@ describe('validation constraints', () => {
         choices: ['draft', 'published', 'archived'],
       });
       const node = createNode({
-        type: asTypeId('type-test'),
+        shape: asShapeId('type-test'),
         properties: { status: 'deleted' },
       });
       const result = validateNode(g, node);
@@ -694,7 +696,7 @@ describe('validation constraints', () => {
         choices: ['frontend', 'backend', 'docs'],
       });
       const node = createNode({
-        type: asTypeId('type-test'),
+        shape: asShapeId('type-test'),
         properties: { labels: ['frontend', 'invalid-label'] },
       });
       const result = validateNode(g, node);
@@ -709,10 +711,10 @@ describe('validation constraints', () => {
 
   describe('typed-reference targetTypeId constraint', () => {
     it('accepts reference targeting a node of matching targetTypeId', () => {
-      const targetType = asTypeId('node:type:book');
+      const targetType = asShapeId('node:type:book');
       const targetNode = createNode({
         id: asNodeId('book-1'),
-        type: targetType,
+        shape: targetType,
         properties: { title: 'Dune' },
       });
       const g = createGraphWithCustomType(
@@ -726,7 +728,7 @@ describe('validation constraints', () => {
         [targetNode],
       );
       const node = createNode({
-        type: asTypeId('type-test'),
+        shape: asShapeId('type-test'),
         properties: { bookRef: asNodeId('book-1') },
       });
       const result = validateNode(g, node);
@@ -734,11 +736,11 @@ describe('validation constraints', () => {
     });
 
     it('rejects reference targeting a node of mismatched type', () => {
-      const targetType = asTypeId('node:type:book');
-      const wrongType = asTypeId('node:type:movie');
+      const targetType = asShapeId('node:type:book');
+      const wrongType = asShapeId('node:type:movie');
       const targetNode = createNode({
         id: asNodeId('movie-1'),
-        type: wrongType,
+        shape: wrongType,
         properties: { title: 'Inception' },
       });
       const g = createGraphWithCustomType(
@@ -752,7 +754,7 @@ describe('validation constraints', () => {
         [targetNode],
       );
       const node = createNode({
-        type: asTypeId('type-test'),
+        shape: asShapeId('type-test'),
         properties: { bookRef: asNodeId('movie-1') },
       });
       const result = validateNode(g, node);
@@ -760,11 +762,13 @@ describe('validation constraints', () => {
       expect(result.errors).toHaveLength(1);
       const [firstError] = result.errors;
       if (firstError === undefined) throw new Error('Expected error');
-      expect(firstError.message).toContain("has type 'node:type:movie', expected 'node:type:book'");
+      expect(firstError.message).toContain(
+        "has shape 'node:type:movie', expected 'node:type:book'",
+      );
     });
 
     it('rejects reference targeting a non-existent node', () => {
-      const targetType = asTypeId('node:type:book');
+      const targetType = asShapeId('node:type:book');
       const g = createGraphWithCustomType({
         name: 'bookRef',
         valueKind: 'reference',
@@ -773,7 +777,7 @@ describe('validation constraints', () => {
         targetTypeId: targetType,
       });
       const node = createNode({
-        type: asTypeId('type-test'),
+        shape: asShapeId('type-test'),
         properties: { bookRef: asNodeId('missing-book') },
       });
       const result = validateNode(g, node);
@@ -787,16 +791,16 @@ describe('validation constraints', () => {
 
   describe('validatePropertyByType with constraints', () => {
     it('extracts and enforces cardinality, choices, and targetTypeId from PropertyType node', () => {
-      const targetType = asTypeId('node:type:author');
+      const targetType = asShapeId('node:type:author');
       const authorNode = createNode({
         id: asNodeId('author-1'),
-        type: targetType,
+        shape: targetType,
         properties: { name: 'Asimov' },
       });
 
       const propertyTypeNode = createNode({
         id: asNodeId('prop-author'),
-        type: SYSTEM_IDS.PROPERTY_TYPE,
+        shape: SYSTEM_IDS.PROPERTY_TYPE,
         properties: {
           name: 'author',
           valueKind: 'reference',
@@ -825,6 +829,27 @@ describe('validation constraints', () => {
       ]);
       expect(invalidResult.valid).toBe(false);
       expect(invalidResult.errors[0]?.message).toContain("expected cardinality 'one'");
+    });
+
+    it('passes validation for an open node without shape', () => {
+      const g = createGraphWithCustomType({
+        name: 'requiredProp',
+        valueKind: 'text',
+        required: true,
+        description: undefined,
+      });
+      const openNode: Node = {
+        id: createNodeId(),
+        properties: new Map([['freeform', 'value']]),
+        metadata: {
+          created: createInstant(),
+          modified: createInstant(),
+          modifiedBy: asDeviceId('00000000-0000-0000-0000-000000000000'),
+        },
+      };
+      const result = validateNode(g, openNode);
+      expect(result.valid).toBe(true);
+      expect(result.errors).toHaveLength(0);
     });
   });
 });

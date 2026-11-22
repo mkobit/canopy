@@ -6,7 +6,7 @@ import {
   PlainDateSchema,
   PropertyValueSchema,
 } from '../src/schemas';
-import { asTypeId, asPlainDate, asNodeId, asInstant } from '@canopy/graph';
+import { asShapeId, asPlainDate, asNodeId, asInstant } from '@canopy/graph';
 import type { NodeId } from '@canopy/graph';
 
 describe('Zod Schemas', () => {
@@ -34,7 +34,7 @@ describe('Zod Schemas', () => {
   it('should validate Node', () => {
     const nodeData = {
       id: '123e4567-e89b-12d3-a456-426614174000',
-      type: 'Person',
+      shape: 'Person',
       properties: new Map(),
       metadata: {
         created: '2023-10-27T10:00:00.000Z',
@@ -45,13 +45,30 @@ describe('Zod Schemas', () => {
 
     const parsed = NodeSchema.parse(nodeData);
     expect(parsed.id).toBe(asNodeId(nodeData.id));
+    expect(parsed.shape).toBe(asShapeId('Person'));
     expect(parsed.properties).toBeInstanceOf(Map);
+  });
+
+  it('should validate open Node without shape', () => {
+    const openNode = {
+      id: '123e4567-e89b-12d3-a456-426614174001',
+      properties: { title: 'Note' },
+      metadata: {
+        created: '2023-10-27T10:00:00.000Z',
+        modified: '2023-10-27T10:00:00.000Z',
+        modifiedBy: '00000000-0000-0000-0000-000000000000',
+      },
+    };
+
+    const parsed = NodeSchema.parse(openNode);
+    expect(parsed.shape).toBeUndefined();
+    expect(parsed.properties.get('title')).toBe('Note');
   });
 
   it('should validate Node from JSON object', () => {
     const jsonNode = {
       id: '123e4567-e89b-12d3-a456-426614174000',
-      type: 'Person',
+      shape: 'Person',
       properties: {
         name: 'Alice',
         age: 30,
@@ -81,7 +98,7 @@ describe('Zod Schemas', () => {
       nodes: {
         '123e4567-e89b-12d3-a456-426614174000': {
           id: '123e4567-e89b-12d3-a456-426614174000',
-          type: 'Person',
+          shape: 'Person',
           properties: {},
           metadata: {
             created: '2023-10-27T10:00:00.000Z',
@@ -98,7 +115,7 @@ describe('Zod Schemas', () => {
     expect(parsed.nodes.size).toBe(1);
     // Cast key to string to avoid branded type issue in test
     expect(
-      parsed.nodes.get('123e4567-e89b-12d3-a456-426614174000' as unknown as NodeId)?.type,
-    ).toBe(asTypeId('Person'));
+      parsed.nodes.get('123e4567-e89b-12d3-a456-426614174000' as unknown as NodeId)?.shape,
+    ).toBe(asShapeId('Person'));
   });
 });

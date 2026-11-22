@@ -19,7 +19,16 @@
 import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
 import { useGraph } from './graph-context';
 import type { DraftSession, GraphEvent } from '@canopy/graph';
-import { createDraftSession, SYSTEM_IDS } from '@canopy/graph';
+import {
+  asBatchId,
+  asDeviceId,
+  asEventId,
+  asInstant,
+  asNodeId,
+  asShapeId,
+  createDraftSession,
+  SYSTEM_IDS,
+} from '@canopy/graph';
 import { DraftSessionHandle } from '../plugin/draft-session-shim';
 import * as mockPlugin from '../plugin/mock/guest';
 
@@ -107,7 +116,7 @@ export const PluginProvider: React.FC<{ readonly children: React.ReactNode }> = 
 
     const plugins: PluginManifest[] = [];
     for (const node of graph.nodes.values()) {
-      if (node.type !== SYSTEM_IDS.TYPE_PLUGIN) {
+      if (node.shape !== SYSTEM_IDS.TYPE_PLUGIN) {
         continue;
       }
 
@@ -240,15 +249,23 @@ export const PluginProvider: React.FC<{ readonly children: React.ReactNode }> = 
                 properties.set(entry.name, value);
               }
             }
+            const shapeId =
+              typeof event_.val.nodeType === 'string' &&
+              event_.val.nodeType.length > 0 &&
+              event_.val.nodeType !== 'canopy:open'
+                ? asShapeId(event_.val.nodeType)
+                : undefined;
             return {
               type: 'NodeCreated',
-              eventId: eventIdString,
-              id: event_.val.id,
-              nodeType: event_.val.nodeType,
+              eventId: asEventId(eventIdString),
+              id: asNodeId(event_.val.id),
+              ...(shapeId !== undefined && { shapeId }),
               properties,
-              timestamp: timestampString,
-              deviceId: deviceIdString,
-              batchId: event_.val.batchId,
+              timestamp: asInstant(timestampString),
+              deviceId: asDeviceId(deviceIdString),
+              ...(typeof event_.val.batchId === 'string' && {
+                batchId: asBatchId(event_.val.batchId),
+              }),
             };
           } else if (event_.tag === 'node-properties-updated') {
             const changes = new Map<string, any>();
@@ -263,12 +280,14 @@ export const PluginProvider: React.FC<{ readonly children: React.ReactNode }> = 
             }
             return {
               type: 'NodePropertiesUpdated',
-              eventId: eventIdString,
-              id: event_.val.id,
+              eventId: asEventId(eventIdString),
+              id: asNodeId(event_.val.id),
               changes,
-              timestamp: timestampString,
-              deviceId: deviceIdString,
-              batchId: event_.val.batchId,
+              timestamp: asInstant(timestampString),
+              deviceId: asDeviceId(deviceIdString),
+              ...(typeof event_.val.batchId === 'string' && {
+                batchId: asBatchId(event_.val.batchId),
+              }),
             };
           }
           throw new Error(`Unsupported event tag: ${event_.tag}`);

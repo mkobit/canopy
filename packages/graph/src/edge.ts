@@ -1,4 +1,4 @@
-import type { EdgeId, NodeId, TypeId } from './identifiers';
+import type { EdgeId, NodeId, ShapeId } from './identifiers';
 import type { TemporalMetadata } from './temporal';
 import type { PropertyMap } from './properties';
 
@@ -9,9 +9,9 @@ Edges are first-class citizens with their own typed properties.
 Edges are always directional (source → target).
 Bidirectional traversal is a query concern, not a data concern.
 */
-export type Edge<T extends TypeId = TypeId> = Readonly<{
+export type Edge<S extends ShapeId = ShapeId> = Readonly<{
   id: EdgeId;
-  type: T;
+  shape?: S | undefined;
   source: NodeId;
   target: NodeId;
   properties: PropertyMap;

@@ -3,7 +3,7 @@ import { generateGraphVault, generateVault } from '../graph-generators';
 import { generateNodePayload } from '../node-generators';
 import { generateSchemaPayload } from '../schema-generators';
 import { generateQueryPayload } from '../query-generators';
-import { SYSTEM_EDGE_TYPES } from '@canopy/graph';
+import { SYSTEM_EDGE_SHAPES } from '@canopy/graph';
 
 describe('Property-Based Vault Generators', () => {
   test('generates deterministic vault when seed is specified', () => {
@@ -42,7 +42,7 @@ describe('Property-Based Vault Generators', () => {
   test('generates node payload with proper properties', () => {
     const payload = generateNodePayload(0, 42);
     expect(payload.id).toBeDefined();
-    expect(payload.type).toBeDefined();
+    expect(payload.shape).toBeDefined();
     expect(payload.properties).toBeDefined();
     expect(payload.properties.title).toBeDefined();
   });
@@ -59,12 +59,12 @@ describe('Property-Based Vault Generators', () => {
     expect(vault.edges.size).toBeGreaterThan(0);
 
     const defaultViewEdges = [...vault.edges.values()].filter(
-      (edge) => edge.type === SYSTEM_EDGE_TYPES.DEFAULT_VIEW,
+      (edge) => edge.shape === SYSTEM_EDGE_SHAPES.DEFAULT_VIEW,
     );
     expect(defaultViewEdges.length).toBeGreaterThan(0);
 
     const usesRendererEdges = [...vault.edges.values()].filter(
-      (edge) => edge.type === SYSTEM_EDGE_TYPES.USES_RENDERER,
+      (edge) => edge.shape === SYSTEM_EDGE_SHAPES.USES_RENDERER,
     );
     expect(usesRendererEdges.length).toBeGreaterThan(0);
   });

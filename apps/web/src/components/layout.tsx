@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { SideNavBar, NewNodeDialog, WizardDialog, CommandPalette } from '.';
 import { useGraph } from '../context/graph-context';
-import type { PropertyValue, TypeId } from '@canopy/graph';
+import type { PropertyValue, ShapeId } from '@canopy/graph';
 import { withResultAlert } from '../utils/handlers';
 import { showAlert } from '../utils/dialogs';
 import { listAllowedNodeTypes } from '../utils/node-types';
@@ -33,7 +33,7 @@ export const Layout = () => {
   };
 
   const handleSubmitNewNode = (
-    type: TypeId,
+    type: ShapeId,
     properties: Readonly<Record<string, PropertyValue>>,
   ) => {
     if (!graph) return undefined;

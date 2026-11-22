@@ -7,12 +7,29 @@ import { createWasmAdapter } from '../src/wasm/wasm-adapter';
 import { DEFAULT_WASM_FUEL_LIMIT } from '../src/wasm/sandboxed-executor';
 
 const graphId = asGraphId('wasm-adapter-graph');
-const deviceId = asDeviceId('wasm-adapter-device');
+const deviceId = asDeviceId('00000000-0000-4000-8000-000000000001');
 
 const setupTestContext = async () => {
   const eventLogStore = createInMemoryEventStore();
   const session = createGraphSession(eventLogStore, graphId, deviceId);
   await session.load();
+  const { SYSTEM_IDS, asNodeId, createEventId, createInstant } = await import('@canopy/graph');
+  await session.commit([
+    {
+      type: 'NodeCreated',
+      eventId: createEventId(),
+      id: asNodeId('msg'),
+      shapeId: SYSTEM_IDS.SHAPE,
+      properties: new Map<string, string | boolean>([
+        ['name', 'Msg'],
+        ['namespace', 'user'],
+        ['entityKind', 'node'],
+        ['closed', false],
+      ]),
+      timestamp: createInstant(),
+      deviceId,
+    },
+  ]);
 
   return createGraphAccessContext({
     graph: session.graph(),

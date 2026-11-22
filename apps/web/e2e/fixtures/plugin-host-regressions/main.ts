@@ -104,7 +104,7 @@ const run = async (): Promise<void> => {
   const session = createGraphSession(
     eventLogStore,
     graphId,
-    asDeviceId('plugin-host-regressions-device'),
+    asDeviceId('00000000-0000-4000-8000-000000000001'),
   );
   await session.load();
   const context = createGraphAccessContext({ graph: session.graph(), session, eventLogStore });

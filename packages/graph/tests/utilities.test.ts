@@ -2,7 +2,7 @@ import { describe, it, expect } from 'bun:test';
 import { findNode } from '../src/utilities';
 import {
   asNodeId,
-  asTypeId,
+  asShapeId,
   createInstant,
   createGraphId,
   asDeviceId,
@@ -16,7 +16,7 @@ describe('findNode', () => {
   function mockNode(id: string, name: string): Node {
     return {
       id: asNodeId(id),
-      type: asTypeId('test'),
+      shape: asShapeId('test'),
       properties: new Map([['name', name]]),
       metadata: {
         created: createInstant(),

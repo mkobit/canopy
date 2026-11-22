@@ -55,7 +55,7 @@ describe('addUserSetting', () => {
     expect(event?.type).toBe('NodeCreated');
 
     if (event && event.type === 'NodeCreated') {
-      expect(event.nodeType).toBe(SYSTEM_IDS.USER_SETTING);
+      expect(event.shapeId).toBe(SYSTEM_IDS.USER_SETTING);
       expect(event.properties.get('schemaId')).toBe(schemaId);
       expect(event.properties.get('scopeType')).toBe('global');
       expect(event.properties.has('scopeTarget')).toBe(false);
@@ -70,7 +70,7 @@ describe('addUserSetting', () => {
     expect(graphResult.graph.nodes.size).toBe(1);
     const nodes = [...graphResult.graph.nodes.values()];
     const node = nodes[0];
-    expect(node?.type).toBe(SYSTEM_IDS.USER_SETTING);
+    expect(node?.shape).toBe(SYSTEM_IDS.USER_SETTING);
     expect(node?.properties.get('schemaId')).toBe(schemaId);
   });
 

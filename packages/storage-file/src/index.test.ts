@@ -5,9 +5,17 @@ import {
   unwrap,
   createEventId,
   createNodeId,
-  asTypeId,
+  createEdgeId,
+  createGraphId,
+  createGraphSession,
+  createIndexedReadModel,
+  canonicalizeUri,
+  asShapeId,
+  asBatchId,
   asDeviceId,
   createInstant,
+  SYSTEM_IDS,
+  SYSTEM_EDGE_SHAPES,
 } from '@canopy/graph';
 import type { GraphEvent } from '@canopy/graph';
 import {
@@ -33,7 +41,7 @@ describe('FileEventLog', () => {
     type: 'NodeCreated',
     eventId: createEventId(),
     id: createNodeId(),
-    nodeType: asTypeId('test-node'),
+    shapeId: asShapeId('test-node'),
     properties: new Map(),
     timestamp,
     deviceId,
@@ -204,7 +212,7 @@ describe('FileEventLog', () => {
     });
     await unwrap(await batchStore.init());
 
-    const batchId = 'batch-1';
+    const batchId = asBatchId('batch-1');
     const event1 = { ...createTestEvent(), batchId };
     const event2 = { ...createTestEvent(), batchId };
     const event3 = { ...createTestEvent(), batchId };
@@ -491,6 +499,380 @@ describe('FileEventLog', () => {
       );
       const localManifest = JSON.parse(manifestContent);
       expect(localManifest.watermarks[remoteDeviceId as string]).toBe(event3.eventId);
+    });
+  });
+
+  describe('legacy event upcasting and active-segment sealing', () => {
+    it('replays legacy JSONL events and seals a legacy active segment without rewriting it', async () => {
+      await unwrap(await store.close());
+      const restartDirectory = path.join(temporaryDirectory, 'legacy-vault');
+      const deviceDirectory = path.join(restartDirectory, 'events/device-legacy');
+      await fs.mkdir(deviceDirectory, { recursive: true });
+
+      const node1Id = createNodeId();
+      const node2Id = createNodeId();
+      const legacyEvent1 = {
+        type: 'NodeCreated',
+        eventId: createEventId(),
+        id: node1Id,
+        nodeType: 'legacy:note',
+        properties: { title: 'Legacy' },
+        timestamp,
+        deviceId,
+      };
+      const legacyEvent2 = {
+        type: 'NodeCreated',
+        eventId: createEventId(),
+        id: node2Id,
+        nodeType: 'canopy:open',
+        properties: {},
+        timestamp,
+        deviceId,
+      };
+      const legacyEdge = {
+        type: 'EdgeCreated',
+        eventId: createEventId(),
+        id: createEdgeId(),
+        edgeType: 'legacy:rel',
+        source: node1Id,
+        target: node2Id,
+        properties: {},
+        timestamp,
+        deviceId,
+      };
+
+      const legacyFilename = `${legacyEvent1.eventId}.jsonl`;
+      const originalContent =
+        [legacyEvent1, legacyEvent2, legacyEdge].map((event) => JSON.stringify(event)).join('\n') +
+        '\n';
+
+      await fs.writeFile(
+        path.join(restartDirectory, 'canopy.json'),
+        JSON.stringify({ version: 1, graphId: 'legacy-graph', name: 'legacy-graph' }),
+        'utf8',
+      );
+      await fs.writeFile(
+        path.join(deviceDirectory, 'manifest.json'),
+        JSON.stringify({ sealed: [], lastEventId: legacyEdge.eventId, watermarks: {} }),
+        'utf8',
+      );
+      await fs.writeFile(path.join(deviceDirectory, legacyFilename), originalContent, 'utf8');
+
+      const legacyStore = createFileEventLog({
+        rootDir: restartDirectory,
+        deviceId: 'device-legacy',
+        maxEventsPerSegment: 100,
+        maxBytesPerSegment: 65_536,
+      });
+      await unwrap(await legacyStore.init());
+
+      const beforeAppend = unwrap(await legacyStore.getEvents('legacy-graph'));
+      expect(beforeAppend).toHaveLength(3);
+      expect(beforeAppend[0]?.type === 'NodeCreated' && beforeAppend[0].shapeId).toBe(
+        asShapeId('legacy:note'),
+      );
+      expect(beforeAppend[1]?.type === 'NodeCreated' && beforeAppend[1].shapeId).toBeUndefined();
+      expect(beforeAppend[2]?.type === 'EdgeCreated' && beforeAppend[2].shapeId).toBe(
+        asShapeId('legacy:rel'),
+      );
+
+      // Appending a modern event must seal the legacy active segment without modifying it on disk
+      const modernOpenNode: GraphEvent = {
+        type: 'NodeCreated',
+        eventId: createEventId(),
+        id: createNodeId(),
+        properties: new Map([['kind', 'open']]),
+        timestamp,
+        deviceId,
+      };
+      await unwrap(await legacyStore.appendEvents('legacy-graph', [modernOpenNode]));
+
+      const afterDiskLegacy = await fs.readFile(path.join(deviceDirectory, legacyFilename), 'utf8');
+      expect(afterDiskLegacy).toBe(originalContent);
+
+      const manifestAfter = JSON.parse(
+        await fs.readFile(path.join(deviceDirectory, 'manifest.json'), 'utf8'),
+      ) as { sealed: readonly string[] };
+      expect(manifestAfter.sealed).toContain(legacyFilename);
+
+      const afterAppend = unwrap(await legacyStore.getEvents('legacy-graph'));
+      expect(afterAppend).toHaveLength(4);
+      expect(afterAppend[3]?.type === 'NodeCreated' && afterAppend[3].shapeId).toBeUndefined();
+
+      await unwrap(await legacyStore.close());
+    });
+  });
+
+  describe('Concurrency and Journeys 1-3 over storage-file', () => {
+    it('serializes concurrent appendEvents and reconcile calls without manifest corruption', async () => {
+      const remoteDirectory = path.join(temporaryDirectory, 'events/device-2');
+      await fs.mkdir(remoteDirectory, { recursive: true });
+      const remoteEvent1 = createTestEvent();
+      const remoteEvent2 = createTestEvent();
+      await fs.writeFile(
+        path.join(remoteDirectory, '1.jsonl'),
+        `${serializeEventForTest(remoteEvent1)}\n${serializeEventForTest(remoteEvent2)}\n`,
+        'utf8',
+      );
+      await fs.writeFile(
+        path.join(remoteDirectory, 'manifest.json'),
+        JSON.stringify({ sealed: ['1.jsonl'], lastEventId: remoteEvent2.eventId, watermarks: {} }),
+        'utf8',
+      );
+
+      const localEvents = Array.from({ length: 6 }, () => createTestEvent());
+      const ops = [
+        store.appendEvents('graph1', localEvents.slice(0, 2)),
+        store.reconcile('graph1'),
+        store.appendEvents('graph1', localEvents.slice(2, 4)),
+        store.reconcile('graph1'),
+        store.appendEvents('graph1', localEvents.slice(4, 6)),
+      ];
+
+      const results = await Promise.all(ops);
+      expect(results.every((result) => result.ok)).toBe(true);
+
+      const stored = unwrap(await store.getEvents('graph1'));
+      const ids = new Set(stored.map((event) => event.eventId));
+      for (const localEvent of localEvents) {
+        expect(ids.has(localEvent.eventId)).toBe(true);
+      }
+      expect(ids.has(remoteEvent1.eventId)).toBe(true);
+      expect(ids.has(remoteEvent2.eventId)).toBe(true);
+    });
+
+    it('Journey 1: atomic multi-entity capture with open and shaped nodes/edges in one batch', async () => {
+      const graphId = createGraphId();
+      const session = createGraphSession(store, graphId, deviceId);
+      await session.load();
+
+      const openNodeId = createNodeId();
+      const shapeId = asShapeId('shape:journey1:note');
+      const shapedNodeId = createNodeId();
+      const edgeId = createEdgeId();
+      const now = createInstant();
+
+      const commitResult = await session.commit([
+        {
+          type: 'NodeCreated',
+          eventId: createEventId(),
+          id: shapeId as unknown as ReturnType<typeof createNodeId>,
+          shapeId: SYSTEM_IDS.SHAPE,
+          properties: new Map<string, string | boolean>([
+            ['name', 'JourneyNote'],
+            ['namespace', 'user'],
+            ['entityKind', 'node'],
+            ['closed', false],
+          ]),
+          timestamp: now,
+          deviceId,
+        },
+        {
+          type: 'NodeCreated',
+          eventId: createEventId(),
+          id: openNodeId,
+          properties: new Map([['rawText', 'Unshaped clip']]),
+          timestamp: now,
+          deviceId,
+        },
+        {
+          type: 'NodeCreated',
+          eventId: createEventId(),
+          id: shapedNodeId,
+          shapeId,
+          properties: new Map([['title', 'Structured note']]),
+          timestamp: now,
+          deviceId,
+        },
+        {
+          type: 'EdgeCreated',
+          eventId: createEventId(),
+          id: edgeId,
+          source: openNodeId,
+          target: shapedNodeId,
+          properties: new Map(),
+          timestamp: now,
+          deviceId,
+        },
+      ]);
+
+      expect(commitResult.ok).toBe(true);
+      if (!commitResult.ok) return;
+      expect(
+        commitResult.value.events.every((event) => event.batchId === commitResult.value.batchId),
+      ).toBe(true);
+
+      const reloaded = createGraphSession(store, graphId, deviceId);
+      await reloaded.load();
+      expect(reloaded.graph().nodes.get(openNodeId)?.shape).toBeUndefined();
+      expect(reloaded.graph().nodes.get(shapedNodeId)?.shape).toBe(shapeId);
+      expect(reloaded.graph().edges.get(edgeId)?.shape).toBeUndefined();
+    });
+
+    it('Journey 2: immutable raw capture to derived lineage via derived-from and supersedes', async () => {
+      const graphId = createGraphId();
+      const session = createGraphSession(store, graphId, deviceId);
+      await session.load();
+
+      const rawId = createNodeId();
+      const derivedShapeId = asShapeId('shape:journey2:derived-note');
+      const derivedId = createNodeId();
+      const derivedV2Id = createNodeId();
+      const now = createInstant();
+
+      const rawCommit = await session.commit([
+        {
+          type: 'NodeCreated',
+          eventId: createEventId(),
+          id: rawId,
+          properties: new Map([['body', 'Original raw capture']]),
+          timestamp: now,
+          deviceId,
+        },
+      ]);
+      expect(rawCommit.ok).toBe(true);
+
+      const lineageCommit = await session.commit([
+        {
+          type: 'NodeCreated',
+          eventId: createEventId(),
+          id: derivedShapeId as unknown as ReturnType<typeof createNodeId>,
+          shapeId: SYSTEM_IDS.SHAPE,
+          properties: new Map<string, string | boolean>([
+            ['name', 'DerivedNote'],
+            ['namespace', 'user'],
+            ['entityKind', 'node'],
+            ['closed', false],
+          ]),
+          timestamp: now,
+          deviceId,
+        },
+        {
+          type: 'NodeCreated',
+          eventId: createEventId(),
+          id: derivedId,
+          shapeId: derivedShapeId,
+          properties: new Map([['title', 'Derived Note v1']]),
+          timestamp: now,
+          deviceId,
+        },
+        {
+          type: 'EdgeCreated',
+          eventId: createEventId(),
+          id: createEdgeId(),
+          shapeId: SYSTEM_EDGE_SHAPES.DERIVED_FROM,
+          source: derivedId,
+          target: rawId,
+          properties: new Map([['reason', 'extracted-note']]),
+          timestamp: now,
+          deviceId,
+        },
+        {
+          type: 'NodeCreated',
+          eventId: createEventId(),
+          id: derivedV2Id,
+          shapeId: derivedShapeId,
+          properties: new Map([['title', 'Derived Note v2']]),
+          timestamp: now,
+          deviceId,
+        },
+        {
+          type: 'EdgeCreated',
+          eventId: createEventId(),
+          id: createEdgeId(),
+          shapeId: SYSTEM_EDGE_SHAPES.SUPERSEDES,
+          source: derivedV2Id,
+          target: derivedId,
+          properties: new Map([['reason', 'refined']]),
+          timestamp: now,
+          deviceId,
+        },
+      ]);
+      expect(lineageCommit.ok).toBe(true);
+
+      const reloaded = createGraphSession(store, graphId, deviceId);
+      await reloaded.load();
+      expect(reloaded.graph().nodes.get(rawId)?.properties.get('body')).toBe(
+        'Original raw capture',
+      );
+      const readModel = createIndexedReadModel(reloaded.graph());
+      expect(readModel.neighbours(derivedId, SYSTEM_EDGE_SHAPES.DERIVED_FROM, 'out')).toContain(
+        rawId,
+      );
+      expect(readModel.neighbours(derivedV2Id, SYSTEM_EDGE_SHAPES.SUPERSEDES, 'out')).toContain(
+        derivedId,
+      );
+    });
+
+    it('Journey 3: external URLs via local proxy nodes, O(1) uri lookup, and enrichment', async () => {
+      const graphId = createGraphId();
+      const session = createGraphSession(store, graphId, deviceId);
+      await session.load();
+
+      const canonicalResult = canonicalizeUri(
+        'https://en.wikipedia.org/wiki/Personal_knowledge_management#History',
+      );
+      expect(canonicalResult.ok).toBe(true);
+      if (!canonicalResult.ok) return;
+      const canonicalUri = canonicalResult.value;
+
+      const sourceNodeId = createNodeId();
+      const proxyNodeId = createNodeId();
+      const now = createInstant();
+
+      const initialCommit = await session.commit([
+        {
+          type: 'NodeCreated',
+          eventId: createEventId(),
+          id: sourceNodeId,
+          properties: new Map([['note', 'See PKM article']]),
+          timestamp: now,
+          deviceId,
+        },
+        {
+          type: 'NodeCreated',
+          eventId: createEventId(),
+          id: proxyNodeId,
+          shapeId: SYSTEM_IDS.PROXY,
+          properties: new Map([['uri', canonicalUri]]),
+          timestamp: now,
+          deviceId,
+        },
+        {
+          type: 'EdgeCreated',
+          eventId: createEventId(),
+          id: createEdgeId(),
+          shapeId: SYSTEM_EDGE_SHAPES.REFERENCES,
+          source: sourceNodeId,
+          target: proxyNodeId,
+          properties: new Map(),
+          timestamp: now,
+          deviceId,
+        },
+      ]);
+      expect(initialCommit.ok).toBe(true);
+
+      const readModel = createIndexedReadModel(session.graph());
+      const matches = readModel.nodesWhereEquals('uri', canonicalUri, SYSTEM_IDS.PROXY);
+      expect([...matches]).toEqual([proxyNodeId]);
+
+      const enrichCommit = await session.commit([
+        {
+          type: 'NodePropertiesUpdated',
+          eventId: createEventId(),
+          id: proxyNodeId,
+          changes: new Map([['title', 'Personal knowledge management - Wikipedia']]),
+          timestamp: createInstant(),
+          deviceId,
+        },
+      ]);
+      expect(enrichCommit.ok).toBe(true);
+
+      const reloaded = createGraphSession(store, graphId, deviceId);
+      await reloaded.load();
+      expect(reloaded.graph().nodes.get(proxyNodeId)?.properties.get('title')).toBe(
+        'Personal knowledge management - Wikipedia',
+      );
     });
   });
 });

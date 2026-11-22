@@ -58,7 +58,7 @@ export const SearchPage = () => {
                   <h3 className="text-lg font-semibold text-gray-900">
                     {typeof name === 'string' ? name : 'Untitled Node'}
                   </h3>
-                  <p className="text-sm text-gray-500 font-mono mt-1">{node.type}</p>
+                  <p className="text-sm text-gray-500 font-mono mt-1">{node.shape ?? 'Open'}</p>
                 </div>
               </div>
               {typeof desc === 'string' && (

@@ -6,12 +6,57 @@ import { createWasmHostBindings } from '../src/wasm/host-bindings';
 import { createFuelMeter, createReentrancyGuard } from '../src/wasm/sandboxed-executor';
 
 const graphId = asGraphId('wasm-graph-1');
-const deviceId = asDeviceId('wasm-device-1');
+const deviceId = asDeviceId('00000000-0000-4000-8000-000000000001');
 
 const setupTestContext = async () => {
   const eventLogStore = createInMemoryEventStore();
   const session = createGraphSession(eventLogStore, graphId, deviceId);
   await session.load();
+  const { SYSTEM_IDS, asNodeId, createEventId, createInstant } = await import('@canopy/graph');
+  await session.commit([
+    {
+      type: 'NodeCreated',
+      eventId: createEventId(),
+      id: asNodeId('document'),
+      shapeId: SYSTEM_IDS.SHAPE,
+      properties: new Map<string, string | boolean>([
+        ['name', 'Document'],
+        ['namespace', 'user'],
+        ['entityKind', 'node'],
+        ['closed', false],
+      ]),
+      timestamp: createInstant(),
+      deviceId,
+    },
+    {
+      type: 'NodeCreated',
+      eventId: createEventId(),
+      id: asNodeId('doc'),
+      shapeId: SYSTEM_IDS.SHAPE,
+      properties: new Map<string, string | boolean>([
+        ['name', 'Doc'],
+        ['namespace', 'user'],
+        ['entityKind', 'node'],
+        ['closed', false],
+      ]),
+      timestamp: createInstant(),
+      deviceId,
+    },
+    {
+      type: 'NodeCreated',
+      eventId: createEventId(),
+      id: asNodeId('links'),
+      shapeId: SYSTEM_IDS.SHAPE,
+      properties: new Map<string, string | boolean>([
+        ['name', 'Links'],
+        ['namespace', 'user'],
+        ['entityKind', 'edge'],
+        ['closed', false],
+      ]),
+      timestamp: createInstant(),
+      deviceId,
+    },
+  ]);
 
   const context = createGraphAccessContext({
     graph: session.graph(),

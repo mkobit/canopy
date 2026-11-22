@@ -17,10 +17,12 @@ type PropertyInputProperties = PropertyInputData & PropertyInputEvents;
 
 const getDefaultItem = (kind?: PropertyValueKind): ScalarValue => {
   switch (kind) {
-    case 'text': {
+    case 'text':
+    case 'url': {
       return '';
     }
-    case 'number': {
+    case 'number':
+    case 'integer': {
       return 0;
     }
     case 'boolean': {
@@ -136,7 +138,8 @@ const ScalarInput: React.FC<
   const activeKind = kind || inferKind(value);
 
   switch (activeKind) {
-    case 'text': {
+    case 'text':
+    case 'url': {
       return (
         <input
           type="text"
@@ -149,7 +152,8 @@ const ScalarInput: React.FC<
         />
       );
     }
-    case 'number': {
+    case 'number':
+    case 'integer': {
       return (
         <input
           type="number"

@@ -1,4 +1,4 @@
-import type { NodeId, TypeId } from './identifiers';
+import type { NodeId, ShapeId } from './identifiers';
 import type { PropertyValue } from './properties';
 import type { QueryResult } from './graph';
 import type { Result } from './result';
@@ -24,26 +24,26 @@ kernel never needs to know the shape of a query pipeline defined elsewhere (e.g.
 */
 export interface ReadModelPort<TPipeline = never> {
   /**
-  All node IDs of the given type.
+  All node IDs of the given shape.
   */
-  readonly typedNodeIds: (type: TypeId) => Iterable<NodeId>;
+  readonly typedNodeIds: (shape: ShapeId) => Iterable<NodeId>;
   /**
-  Node IDs connected to `nodeId` by edges of `edgeType` (or any type, if undefined) in `direction`.
+  Node IDs connected to `nodeId` by edges of `edgeShape` (or any shape if `undefined`, or open edges only if `null`) in `direction`.
   */
   readonly neighbours: (
     nodeId: NodeId,
-    edgeType: TypeId | undefined,
+    edgeShape: ShapeId | null | undefined,
     direction: EdgeDirection,
   ) => Iterable<NodeId>;
   /**
-  Node IDs (optionally narrowed to `type`) whose `property` equals `value`.
+  Node IDs (optionally narrowed to `shape`) whose `property` equals `value`.
   Scalar equality only -- array-valued properties are never indexed here, matching the
   executor's own `eq` filter semantics (strict equality, meaningless for arrays by reference).
   */
   readonly nodesWhereEquals: (
     property: string,
     value: PropertyValue,
-    type?: TypeId,
+    shape?: ShapeId | undefined,
   ) => Iterable<NodeId>;
   /**
   Optional whole-pipeline push-down hook. A backend that can execute an entire query pipeline

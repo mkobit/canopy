@@ -4,7 +4,7 @@ import type { IndexedDBEventLog } from './indexeddb-event-log';
 import {
   unwrap,
   asNodeId,
-  asTypeId,
+  asShapeId,
   asEventId,
   asInstant,
   asDeviceId,
@@ -23,13 +23,13 @@ const generateStorageEvents = (count: number): readonly GraphEvent[] => {
 
   // First half: NodeCreated events
   for (let index = 0; index < half; index++) {
-    const hexIndex = index.toString(16).padStart(12, '0');
+    const hexIndex = index.toString(16).padStart(16, '0');
     const eventId = asEventId(`018f0000-${hexIndex.slice(0, 4)}-7000-8000-${hexIndex.slice(4)}`);
     const nodeEvent: NodeCreated = {
       type: 'NodeCreated',
       eventId,
       id: asNodeId(`node-${index}`),
-      nodeType: asTypeId('document'),
+      shapeId: asShapeId('document'),
       properties: new Map([
         ['title', `Document ${index}`],
         ['index', String(index)],
@@ -43,7 +43,7 @@ const generateStorageEvents = (count: number): readonly GraphEvent[] => {
   // Second half: NodePropertiesUpdated events
   for (let index = half; index < count; index++) {
     const targetNodeIndex = index - half;
-    const hexIndex = index.toString(16).padStart(12, '0');
+    const hexIndex = index.toString(16).padStart(16, '0');
     const eventId = asEventId(`018f0000-${hexIndex.slice(0, 4)}-7000-8000-${hexIndex.slice(4)}`);
     const updateEvent: NodePropertiesUpdated = {
       type: 'NodePropertiesUpdated',

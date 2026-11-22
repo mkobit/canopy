@@ -3,7 +3,7 @@ import { resolveNamespace, parseNamespace } from './resolve-namespace';
 import {
   asGraphId,
   asNodeId,
-  asTypeId,
+  asShapeId,
   createGraph,
   createGraphId,
   createInstant,
@@ -30,7 +30,7 @@ describe('resolveNamespace', () => {
       id,
       {
         id,
-        type: SYSTEM_IDS.NAMESPACE,
+        shape: SYSTEM_IDS.NAMESPACE,
         properties: new Map<string, import('@canopy/graph').PropertyValue>([
           ['name', name],
           ['kind', name],
@@ -53,7 +53,7 @@ describe('resolveNamespace', () => {
         asNodeId('my-type'),
         {
           id: asNodeId('my-type'),
-          type: SYSTEM_IDS.NODE_TYPE,
+          shape: SYSTEM_IDS.SHAPE,
           properties: new Map<string, import('@canopy/graph').PropertyValue>([
             ['namespace', 'imported'],
           ]),
@@ -64,7 +64,7 @@ describe('resolveNamespace', () => {
         asNodeId('my-type-no-ns'),
         {
           id: asNodeId('my-type-no-ns'),
-          type: SYSTEM_IDS.NODE_TYPE,
+          shape: SYSTEM_IDS.SHAPE,
           properties: new Map<string, import('@canopy/graph').PropertyValue>(),
           metadata: dummyMetadata,
         },
@@ -76,7 +76,7 @@ describe('resolveNamespace', () => {
   it('resolves to node property override if present', () => {
     const node: Node = {
       id: asNodeId('node-1'),
-      type: asTypeId('my-type'),
+      shape: asShapeId('my-type'),
       properties: new Map([['namespace', 'user-settings']]),
       metadata: dummyMetadata,
     };
@@ -86,7 +86,7 @@ describe('resolveNamespace', () => {
   it('falls back to type definition namespace if no override', () => {
     const node: Node = {
       id: asNodeId('node-2'),
-      type: asTypeId('my-type'),
+      shape: asShapeId('my-type'),
       properties: new Map(),
       metadata: dummyMetadata,
     };
@@ -96,7 +96,7 @@ describe('resolveNamespace', () => {
   it('returns user if type definition has no namespace', () => {
     const node: Node = {
       id: asNodeId('node-3'),
-      type: asTypeId('my-type-no-ns'),
+      shape: asShapeId('my-type-no-ns'),
       properties: new Map(),
       metadata: dummyMetadata,
     };
@@ -106,7 +106,16 @@ describe('resolveNamespace', () => {
   it('returns user if type is unknown', () => {
     const node: Node = {
       id: asNodeId('node-4'),
-      type: asTypeId('unknown-type'),
+      shape: asShapeId('unknown-type'),
+      properties: new Map(),
+      metadata: dummyMetadata,
+    };
+    expect(resolveNamespace(graph, node)).toBe(asNamespace('user'));
+  });
+
+  it('returns user for an open node with no shape', () => {
+    const node: Node = {
+      id: asNodeId('node-open'),
       properties: new Map(),
       metadata: dummyMetadata,
     };
@@ -116,7 +125,7 @@ describe('resolveNamespace', () => {
   it('ignores an override that does not match any Namespace node', () => {
     const node: Node = {
       id: asNodeId('node-5'),
-      type: asTypeId('my-type'),
+      shape: asShapeId('my-type'),
       properties: new Map([['namespace', 'not-a-real-namespace']]),
       metadata: dummyMetadata,
     };
@@ -142,7 +151,7 @@ describe('parseNamespace', () => {
         asNodeId('namespace:user'),
         {
           id: asNodeId('namespace:user'),
-          type: SYSTEM_IDS.NAMESPACE,
+          shape: SYSTEM_IDS.NAMESPACE,
           properties: new Map<string, import('@canopy/graph').PropertyValue>([
             ['name', 'user'],
             ['kind', 'user'],
@@ -189,7 +198,7 @@ describe('parseNamespace', () => {
     const namespaceNodeId = created.graph.nodes
       .values()
       .find(
-        (node) => node.type === SYSTEM_IDS.NAMESPACE && node.properties.get('name') === 'research',
+        (node) => node.shape === SYSTEM_IDS.NAMESPACE && node.properties.get('name') === 'research',
       )?.id;
     if (namespaceNodeId === undefined) throw new Error('expected created Namespace node');
 

@@ -6,7 +6,7 @@ import {
   asGraphId,
   asInstant,
   asNodeId,
-  asTypeId,
+  asShapeId,
   createGraph,
   isErr,
   isOk,
@@ -71,7 +71,7 @@ describe('Query payload types', () => {
   test('constructs valid NodeQueryPayload', () => {
     const payload: NodeQueryPayload = {
       id: asNodeId('node-1'),
-      type: asTypeId('doc'),
+      type: asShapeId('doc'),
       limit: 10,
     };
     expect(payload.id).toBe(asNodeId('node-1'));
@@ -116,11 +116,11 @@ describe('Mutation payload types', () => {
   test('constructs valid NodeCreatePayload', () => {
     const payload: NodeCreatePayload = {
       id: asNodeId('node-1'),
-      type: asTypeId('doc'),
+      type: asShapeId('doc'),
       properties: { title: 'Test Node' },
     };
     expect(payload.id).toBe(asNodeId('node-1'));
-    expect(payload.type).toBe(asTypeId('doc'));
+    expect(payload.type).toBe(asShapeId('doc'));
     expect(payload.properties.title).toBe('Test Node');
   });
 
@@ -143,13 +143,13 @@ describe('Mutation payload types', () => {
   test('constructs valid EdgeCreatePayload', () => {
     const payload: EdgeCreatePayload = {
       id: asEdgeId('edge-1'),
-      type: asTypeId('references'),
+      type: asShapeId('references'),
       source: asNodeId('node-1'),
       target: asNodeId('node-2'),
       properties: { weight: 1 },
     };
     expect(payload.id).toBe(asEdgeId('edge-1'));
-    expect(payload.type).toBe(asTypeId('references'));
+    expect(payload.type).toBe(asShapeId('references'));
     expect(payload.source).toBe(asNodeId('node-1'));
     expect(payload.target).toBe(asNodeId('node-2'));
     expect(payload.properties?.weight).toBe(1);
@@ -182,7 +182,7 @@ describe('Event Streaming Payload Definitions', () => {
         type: 'NodeCreated',
         eventId: asEventId('evt-1'),
         id: asNodeId('node-1'),
-        nodeType: asTypeId('Markdown'),
+        shapeId: asShapeId('Markdown'),
         properties: new Map(),
         timestamp: asInstant('2024-01-01T00:00:00Z'),
         deviceId: asDeviceId('dev-1'),

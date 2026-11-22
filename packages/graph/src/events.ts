@@ -1,4 +1,4 @@
-import type { NodeId, EdgeId, TypeId, EventId, DeviceId } from './identifiers';
+import type { NodeId, EdgeId, ShapeId, BatchId, EventId, DeviceId } from './identifiers';
 import type { PropertyMap } from './properties';
 import type { Instant } from './temporal';
 import type { Graph } from './graph';
@@ -20,7 +20,7 @@ export interface WorkflowStarted {
   readonly triggerId: NodeId;
   readonly timestamp: Instant;
   readonly deviceId: DeviceId;
-  readonly batchId?: string | undefined;
+  readonly batchId?: BatchId | undefined;
 }
 
 export interface WorkflowCompleted {
@@ -29,18 +29,18 @@ export interface WorkflowCompleted {
   readonly executionId: EventId;
   readonly timestamp: Instant;
   readonly deviceId: DeviceId;
-  readonly batchId?: string | undefined;
+  readonly batchId?: BatchId | undefined;
 }
 
 export interface NodeCreated {
   readonly type: 'NodeCreated';
   readonly eventId: EventId;
   readonly id: NodeId;
-  readonly nodeType: TypeId;
+  readonly shapeId?: ShapeId | undefined;
   readonly properties: PropertyMap;
   readonly timestamp: Instant;
   readonly deviceId: DeviceId;
-  readonly batchId?: string | undefined;
+  readonly batchId?: BatchId | undefined;
   readonly migrationId?: string | undefined;
 }
 
@@ -51,7 +51,7 @@ export interface NodePropertiesUpdated {
   readonly changes: PropertyMap; // Contains only the changed properties
   readonly timestamp: Instant;
   readonly deviceId: DeviceId;
-  readonly batchId?: string | undefined;
+  readonly batchId?: BatchId | undefined;
   readonly migrationId?: string | undefined;
 }
 
@@ -61,7 +61,7 @@ export interface NodeDeleted {
   readonly id: NodeId;
   readonly timestamp: Instant;
   readonly deviceId: DeviceId;
-  readonly batchId?: string | undefined;
+  readonly batchId?: BatchId | undefined;
   readonly migrationId?: string | undefined;
 }
 
@@ -69,13 +69,13 @@ export interface EdgeCreated {
   readonly type: 'EdgeCreated';
   readonly eventId: EventId;
   readonly id: EdgeId;
-  readonly edgeType: TypeId;
+  readonly shapeId?: ShapeId | undefined;
   readonly source: NodeId;
   readonly target: NodeId;
   readonly properties: PropertyMap;
   readonly timestamp: Instant;
   readonly deviceId: DeviceId;
-  readonly batchId?: string | undefined;
+  readonly batchId?: BatchId | undefined;
   readonly migrationId?: string | undefined;
 }
 
@@ -86,7 +86,7 @@ export interface EdgePropertiesUpdated {
   readonly changes: PropertyMap; // Contains only the changed properties
   readonly timestamp: Instant;
   readonly deviceId: DeviceId;
-  readonly batchId?: string | undefined;
+  readonly batchId?: BatchId | undefined;
   readonly migrationId?: string | undefined;
 }
 
@@ -96,7 +96,7 @@ export interface EdgeDeleted {
   readonly id: EdgeId;
   readonly timestamp: Instant;
   readonly deviceId: DeviceId;
-  readonly batchId?: string | undefined;
+  readonly batchId?: BatchId | undefined;
   readonly migrationId?: string | undefined;
 }
 

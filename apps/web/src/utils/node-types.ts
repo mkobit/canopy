@@ -1,19 +1,21 @@
 import {
   SYSTEM_IDS,
   RESTRICTED_NAMESPACE_KINDS,
-  asTypeId,
+  asNodeId,
+  asShapeId,
+  extractPropertyTypeDefinition,
   fromThrowable,
-  PropertyDefinitionSchema,
+  ShapePropertyBindingSchema,
   type Graph,
   type Node,
   type PropertyDefinition,
-  type TypeId,
+  type ShapeId,
 } from '@canopy/graph';
 import { z } from 'zod';
 import type { NamespaceOption } from './schema';
 
 export interface NodeTypeOption {
-  readonly id: TypeId;
+  readonly id: ShapeId;
   readonly label: string;
   readonly description: string | undefined;
   readonly properties: readonly PropertyDefinition[];
@@ -35,19 +37,42 @@ const LEGACY_ALLOWED_TYPE_DEF_IDS: ReadonlySet<string> = new Set([
 // tell the two apart, so exclude it explicitly.
 const EXCLUDED_TYPE_DEF_IDS: ReadonlySet<string> = new Set([SYSTEM_IDS.USER_SETTING_DEF]);
 
-const PropertyDefinitionsSchema = z.array(PropertyDefinitionSchema);
+const ShapeBindingsSchema = z.array(ShapePropertyBindingSchema);
 
 export function readString(value: unknown): string | undefined {
   return typeof value === 'string' ? value : undefined;
 }
 
-export function parseProperties(raw: unknown): readonly PropertyDefinition[] {
+export function parseProperties(raw: unknown, graph?: Graph): readonly PropertyDefinition[] {
   const text = readString(raw);
   if (text === undefined) return [];
   const parsedJson = fromThrowable(() => JSON.parse(text) as unknown);
   if (!parsedJson.ok) return [];
-  const parsed = PropertyDefinitionsSchema.safeParse(parsedJson.value);
-  return parsed.success ? parsed.data : [];
+  const parsed = ShapeBindingsSchema.safeParse(parsedJson.value);
+  if (!parsed.success) return [];
+  return parsed.data.map((binding): PropertyDefinition => {
+    if (binding.kind === 'inline') {
+      return binding.definition;
+    }
+    const ptNode = graph?.nodes.get(asNodeId(binding.propertyTypeId));
+    const ptResult = ptNode ? extractPropertyTypeDefinition(ptNode) : undefined;
+    if (ptResult?.ok) {
+      return {
+        ...ptResult.value,
+        name: binding.name,
+        required: binding.required,
+        cardinality: binding.cardinality ?? ptResult.value.cardinality,
+        description: binding.description ?? ptResult.value.description,
+      };
+    }
+    return {
+      name: binding.name,
+      valueKind: 'text',
+      required: binding.required,
+      description: binding.description,
+      cardinality: binding.cardinality,
+    };
+  });
 }
 
 function isInstantiable(node: Node, kindByNamespace: ReadonlyMap<string, string>): boolean {
@@ -64,11 +89,16 @@ export function listAllowedNodeTypes(
 ): readonly NodeTypeOption[] {
   const kindByNamespace = new Map<string, string>(namespaces.map((ns) => [ns.name, ns.kind]));
   return [...graph.nodes.values()]
-    .filter((node) => node.type === SYSTEM_IDS.NODE_TYPE && isInstantiable(node, kindByNamespace))
+    .filter(
+      (node) =>
+        node.shape === SYSTEM_IDS.SHAPE &&
+        node.properties.get('entityKind') === 'node' &&
+        isInstantiable(node, kindByNamespace),
+    )
     .map((node) => ({
-      id: asTypeId(node.id),
+      id: asShapeId(node.id),
       label: readString(node.properties.get('name')) ?? node.id,
       description: readString(node.properties.get('description')),
-      properties: parseProperties(node.properties.get('properties')),
+      properties: parseProperties(node.properties.get('properties'), graph),
     }));
 }

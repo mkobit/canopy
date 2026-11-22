@@ -7,12 +7,29 @@ import type { WasmHostBindings } from '../src/wasm/host-bindings';
 import { executeSandboxedGuestPlugin } from '../src/wasm/sandboxed-executor';
 
 const graphId = asGraphId('wasm-sandbox-graph');
-const deviceId = asDeviceId('wasm-sandbox-device');
+const deviceId = asDeviceId('00000000-0000-4000-8000-000000000001');
 
 const setupTestContext = async () => {
   const eventLogStore = createInMemoryEventStore();
   const session = createGraphSession(eventLogStore, graphId, deviceId);
   await session.load();
+  const { SYSTEM_IDS, createEventId, createInstant } = await import('@canopy/graph');
+  await session.commit([
+    {
+      type: 'NodeCreated',
+      eventId: createEventId(),
+      id: asNodeId('note'),
+      shapeId: SYSTEM_IDS.SHAPE,
+      properties: new Map<string, string | boolean>([
+        ['name', 'Note'],
+        ['namespace', 'user'],
+        ['entityKind', 'node'],
+        ['closed', false],
+      ]),
+      timestamp: createInstant(),
+      deviceId,
+    },
+  ]);
 
   return createGraphAccessContext({
     graph: session.graph(),

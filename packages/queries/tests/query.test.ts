@@ -5,7 +5,7 @@ import {
   Edge,
   PropertyValue,
   createGraphId,
-  asTypeId,
+  asShapeId,
   asInstant,
   asNodeId,
   asEdgeId,
@@ -36,14 +36,18 @@ function createMockGraph(): Graph {
   const nodes = new Map<NodeId, Node>();
   const edges = new Map<EdgeId, Edge>();
 
-  const createNode = (id: string, type: string, properties_: Record<string, ScalarValue> = {}) => {
+  const createNode = (
+    id: string,
+    shape: string | undefined,
+    properties_: Record<string, ScalarValue> = {},
+  ) => {
     // Functional property creation
     const properties = new Map<string, PropertyValue>(Object.entries(properties_));
 
     const nodeId = asNodeId(id);
     nodes.set(nodeId, {
       id: nodeId,
-      type: asTypeId(type),
+      ...(shape !== undefined && { shape: asShapeId(shape) }),
       properties,
       metadata: {
         created: asInstant('2023-01-01T00:00:00Z'),
@@ -55,7 +59,7 @@ function createMockGraph(): Graph {
 
   const createEdge = (
     id: string,
-    type: string,
+    shape: string | undefined,
     source: string,
     target: string,
     properties_: Record<string, ScalarValue> = {},
@@ -65,7 +69,7 @@ function createMockGraph(): Graph {
     const edgeId = asEdgeId(id);
     edges.set(edgeId, {
       id: edgeId,
-      type: asTypeId(type),
+      ...(shape !== undefined && { shape: asShapeId(shape) }),
       source: asNodeId(source),
       target: asNodeId(target),
       properties,
@@ -81,11 +85,13 @@ function createMockGraph(): Graph {
   createNode('2', 'Person', { name: 'Bob', age: 25 });
   createNode('3', 'Person', { name: 'Charlie', age: 35 });
   createNode('4', 'Organization', { name: 'Acme Corp' });
+  createNode('5', undefined, { name: 'Scratch Note', tag: 'open' });
 
   createEdge('e1', 'knows', '1', '2', { since: 2020 }); // Alice knows Bob
   createEdge('e2', 'knows', '2', '1', { since: 2021 }); // Bob knows Alice
   createEdge('e3', 'works_at', '1', '4'); // Alice works at Acme
   createEdge('e4', 'works_at', '2', '4'); // Bob works at Acme
+  createEdge('e5', undefined, '1', '5'); // Alice open link to Scratch Note
 
   return {
     id: createGraphId(),
@@ -174,12 +180,11 @@ describe('Query Engine', () => {
   it('queries edges from a specific node', () => {
     const q = pipe(query(), edges(), from('1')); // Alice
     const result = unwrap(executeQuery(graph, q));
-    expect(result.edges).toHaveLength(2); // knows Bob, works_at Acme
-    const types = sort(
-      map(result.edges, (edge) => edge.type),
-      (a, b) => a.localeCompare(b),
-    );
-    expect(types).toEqual(['knows', 'works_at'].map(asTypeId));
+    expect(result.edges).toHaveLength(3); // knows Bob, works_at Acme, open link to 5
+    const shapes = result.edges
+      .map((edge) => edge.shape ?? '')
+      .toSorted((a, b) => a.localeCompare(b));
+    expect(shapes).toEqual(['', asShapeId('knows'), asShapeId('works_at')]);
   });
 
   it('traverses from a node to connected nodes', () => {
@@ -230,6 +235,30 @@ describe('Query Engine', () => {
       { name: 'Bob', age: 25 },
       { name: 'Alice', age: 30 },
       { name: 'Charlie', age: 35 },
+    ]);
+  });
+
+  it('includes open nodes in unscanned node queries and shape filter excludes them', () => {
+    const allOpenMatches = unwrap(
+      executeQuery(graph, pipe(query(), nodes(), where('tag', 'eq', 'open'))),
+    );
+    expect(allOpenMatches.nodes.map((n) => n.id)).toEqual([asNodeId('5')]);
+
+    const shapeFiltered = unwrap(
+      executeQuery(graph, pipe(query(), nodes(), where('shape', 'eq', 'Person'))),
+    );
+    expect(shapeFiltered.nodes).toHaveLength(3);
+
+    const openTraversal = unwrap(
+      executeQuery(
+        graph,
+        pipe(query(), nodes('Person'), where('name', 'eq', 'Alice'), traverse(undefined, 'out')),
+      ),
+    );
+    expect(openTraversal.nodes.map((n) => n.id).toSorted((a, b) => a.localeCompare(b))).toEqual([
+      asNodeId('2'),
+      asNodeId('4'),
+      asNodeId('5'),
     ]);
   });
 });

@@ -7,7 +7,7 @@ import { SYSTEM_IDS } from '../src/system';
 import {
   createNodeId,
   asNodeId,
-  asTypeId,
+  asShapeId,
   createInstant,
   createGraphId,
   PropertyDefinition,
@@ -24,7 +24,7 @@ import type { Node } from '@canopy/graph';
 function createNode(properties: Record<string, unknown>): Node {
   return {
     id: createNodeId(),
-    type: asTypeId('test'),
+    shape: asShapeId('test'),
     metadata: {
       created: createInstant(),
       modified: createInstant(),
@@ -47,9 +47,10 @@ function createGraphWithTypes() {
   ];
   const personTypeNode = createNode({
     id: asNodeId('type-person'),
-    type: SYSTEM_IDS.NODE_TYPE,
+    shape: SYSTEM_IDS.SHAPE,
     properties: {
       name: 'Person',
+      entityKind: 'node',
       properties: JSON.stringify(personProperties),
     },
   });
@@ -63,7 +64,7 @@ describe('ops with validation', () => {
   it('addNode returns Error if validation fails and validation is enabled', () => {
     const g = createGraphWithTypes();
     const node = createNode({
-      type: asTypeId('type-person'),
+      shape: asShapeId('type-person'),
       properties: {}, // missing age
     });
 
@@ -80,7 +81,7 @@ describe('ops with validation', () => {
   it('addNode succeeds if validation fails but validation is disabled (default)', () => {
     const g = createGraphWithTypes();
     const node = createNode({
-      type: asTypeId('type-person'),
+      shape: asShapeId('type-person'),
       properties: {}, // missing age
     });
 
@@ -93,7 +94,7 @@ describe('ops with validation', () => {
   it('addNode succeeds if validation passes', () => {
     const g = createGraphWithTypes();
     const node = createNode({
-      type: asTypeId('type-person'),
+      shape: asShapeId('type-person'),
       properties: { age: 20 },
     });
 
@@ -108,7 +109,7 @@ describe('ops with validation', () => {
     let g = createGraphWithTypes();
     const node = createNode({
       id: asNodeId('p1'),
-      type: asTypeId('type-person'),
+      shape: asShapeId('type-person'),
       properties: { age: 20 },
     });
     g = unwrap(
@@ -136,7 +137,7 @@ describe('ops with validation', () => {
     const nodeId = createNodeId();
     const node: Node = {
       id: nodeId,
-      type: SYSTEM_IDS.NODE_TYPE,
+      shape: SYSTEM_IDS.SHAPE,
       properties: new Map<string, PropertyValue>([
         ['name', 'Alice'],
         ['age', 30],
@@ -182,7 +183,7 @@ describe('ops with validation', () => {
     const nodeId = createNodeId();
     const node: Node = {
       id: nodeId,
-      type: SYSTEM_IDS.NODE_TYPE,
+      shape: SYSTEM_IDS.SHAPE,
       properties: new Map<string, PropertyValue>([['name', 'Alice']]),
       metadata: {
         created: createInstant(),
@@ -220,13 +221,13 @@ describe('createEdgeAction', () => {
 
     const sourceNode = createNode({
       id: asNodeId('n1'),
-      type: SYSTEM_IDS.NODE_TYPE,
+      shape: SYSTEM_IDS.SHAPE,
       properties: {},
     });
 
     const targetNode = createNode({
       id: asNodeId('n2'),
-      type: SYSTEM_IDS.NODE_TYPE,
+      shape: SYSTEM_IDS.SHAPE,
       properties: {},
     });
 
@@ -240,7 +241,7 @@ describe('createEdgeAction', () => {
     const result = createEdgeAction(graph, {
       source: asNodeId('n1'),
       target: asNodeId('n2'),
-      type: asTypeId('test-edge'),
+      shape: asShapeId('test-edge'),
     });
 
     expect(isOk(result)).toBe(true);
@@ -259,7 +260,7 @@ describe('createEdgeAction', () => {
 
     const targetNode = createNode({
       id: asNodeId('n2'),
-      type: SYSTEM_IDS.NODE_TYPE,
+      shape: SYSTEM_IDS.SHAPE,
       properties: {},
     });
 
@@ -270,7 +271,7 @@ describe('createEdgeAction', () => {
     const result = createEdgeAction(graph, {
       source: asNodeId('n1'), // n1 is not in the graph
       target: asNodeId('n2'),
-      type: asTypeId('test-edge'),
+      shape: asShapeId('test-edge'),
     });
 
     expect(isErr(result)).toBe(true);
@@ -284,7 +285,7 @@ describe('createEdgeAction', () => {
 
     const sourceNode = createNode({
       id: asNodeId('n1'),
-      type: SYSTEM_IDS.NODE_TYPE,
+      shape: SYSTEM_IDS.SHAPE,
       properties: {},
     });
 
@@ -295,7 +296,7 @@ describe('createEdgeAction', () => {
     const result = createEdgeAction(graph, {
       source: asNodeId('n1'),
       target: asNodeId('n2'), // n2 is not in the graph
-      type: asTypeId('test-edge'),
+      shape: asShapeId('test-edge'),
     });
 
     expect(isErr(result)).toBe(true);

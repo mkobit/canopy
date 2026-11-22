@@ -50,7 +50,7 @@ describe('system views — bootstrapped graph', () => {
     const base = bootstrappedGraph();
     const userNode = {
       id: createNodeId(),
-      type: SYSTEM_IDS.TYPE_MARKDOWN,
+      shape: SYSTEM_IDS.TYPE_MARKDOWN,
       properties: new Map([['content', 'hello']]) as ReadonlyMap<string, string>,
       metadata: { created: createInstant(), modified: createInstant(), modifiedBy: DEVICE_ID },
     };

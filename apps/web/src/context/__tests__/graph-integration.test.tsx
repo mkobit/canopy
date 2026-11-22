@@ -3,7 +3,7 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 import React from 'react';
 import { StorageProvider, useStorage } from '../storage-context';
 import { GraphProvider, useGraph } from '../graph-context';
-import { asGraphId, SYSTEM_IDS } from '@canopy/graph';
+import { asGraphId, asPropertyTypeId, asShapeId, SYSTEM_IDS } from '@canopy/graph';
 import { executeStoredQuery, executeView } from '@canopy/queries';
 import type { NodeId, GraphId } from '@canopy/graph';
 import type { ReactNode } from 'react';
@@ -346,7 +346,11 @@ describe('type-authoring bridge — context integration', () => {
         name: 'task',
         namespace: 'user',
         properties: [
-          { kind: 'reference', propertyTypeId: referencedPropertyTypeId, required: true },
+          {
+            kind: 'reference',
+            propertyTypeId: asPropertyTypeId(referencedPropertyTypeId),
+            required: true,
+          },
         ],
       });
       expect(result_.ok).toBe(true);
@@ -359,7 +363,12 @@ describe('type-authoring bridge — context integration', () => {
     if (typeof raw !== 'string') throw new TypeError('expected properties to be a JSON string');
     const parsed: unknown = JSON.parse(raw);
     expect(parsed).toEqual([
-      { name: 'priority', valueKind: 'number', required: true, description: undefined },
+      {
+        kind: 'reference',
+        name: 'priority',
+        required: true,
+        propertyTypeId: referencedPropertyTypeId,
+      },
     ]);
   });
 
@@ -387,8 +396,8 @@ describe('type-authoring bridge — context integration', () => {
         name: 'blocks',
         namespace: 'user',
         properties: [],
-        sourceTypes: [taskType.id],
-        targetTypes: [taskType.id],
+        sourceTypes: [asShapeId(taskType.id)],
+        targetTypes: [asShapeId(taskType.id)],
       });
       expect(result_.ok).toBe(true);
     });

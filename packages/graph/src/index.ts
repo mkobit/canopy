@@ -1,6 +1,9 @@
 export type {
   nodeIdBrand,
   edgeIdBrand,
+  shapeIdBrand,
+  propertyTypeIdBrand,
+  batchIdBrand,
   typeIdBrand,
   graphIdBrand,
   eventIdBrand,
@@ -9,6 +12,9 @@ export type {
   revisionBrand,
   NodeId,
   EdgeId,
+  ShapeId,
+  PropertyTypeId,
+  BatchId,
   TypeId,
   GraphId,
   EventId,
@@ -26,6 +32,7 @@ export type {
 } from './temporal';
 
 export type { ScalarValue, ExternalReferenceValue } from './scalars';
+export { serializeScalarForIndex } from './scalars';
 
 export type {
   PropertyValue,
@@ -42,7 +49,12 @@ export * from './indexes';
 export type { EdgeDirection, ReadModelPort, ReadModelNotCovered } from './read-model';
 export { READ_MODEL_NOT_COVERED } from './read-model';
 
-export type { NodeTypeDefinition, EdgeTypeDefinition } from './definitions';
+export type {
+  ShapeDefinition,
+  NodeShapeExtras,
+  EdgeShapeExtras,
+  ShapePropertyBinding,
+} from './definitions';
 
 export type {
   GraphEvent,
@@ -55,7 +67,12 @@ export type {
   EdgeDeleted,
 } from './events';
 
-export type { ValidationResult, ValidationError } from './validation-types';
+export type {
+  ValidationResult,
+  ValidationError,
+  ValidationSeverity,
+  ValidationCode,
+} from './validation-types';
 
 export type { Result } from './result';
 export { ok, err, isOk, isErr, unwrap, fromThrowable, fromAsyncThrowable } from './result';
@@ -65,6 +82,10 @@ export { RESTRICTED_NAMESPACE_KINDS } from './namespace';
 export {
   createNodeId,
   createEdgeId,
+  asShapeId,
+  asPropertyTypeId,
+  asBatchId,
+  createBatchId,
   asTypeId,
   createGraphId,
   asGraphId,
@@ -85,6 +106,8 @@ export {
 export { asRevision, zeroRevision, maxRevision, accumulateRevision } from './revision';
 
 export * from './schemas';
+export * from './url';
+export * from './event-upcast';
 export * from './guards';
 export * from './property-map';
 
@@ -103,6 +126,7 @@ export * from './history';
 export * from './ops';
 export * from './event-log';
 export * from './incremental-projection';
+export * from './batch-validation';
 export * from './graph-session';
 export * from './draft-session';
 export * from './plugin-validation';

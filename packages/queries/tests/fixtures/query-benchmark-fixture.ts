@@ -3,7 +3,7 @@ import type {
   GraphEvent,
   NodeId,
   EdgeId,
-  TypeId,
+  ShapeId,
   PropertyValue,
   Node,
   Edge,
@@ -13,16 +13,19 @@ import {
   createEdgeId,
   createEventId,
   createInstant,
-  asTypeId,
+  asShapeId,
+  asBatchId,
+  asNodeId,
   createGraphId,
   SYSTEM_DEVICE_ID,
+  SYSTEM_IDS,
   zeroRevision,
 } from '@canopy/graph';
 
-export type NodeTypeId = TypeId;
-export type EdgeTypeId = TypeId;
-export const asNodeTypeId = asTypeId;
-export const asEdgeTypeId = asTypeId;
+export type NodeTypeId = ShapeId;
+export type EdgeTypeId = ShapeId;
+export const asNodeTypeId = asShapeId;
+export const asEdgeTypeId = asShapeId;
 
 export interface QueryBenchmarkFixtureOptions {
   readonly nodeCount: number;
@@ -54,6 +57,44 @@ export function generateQueryBenchmarkFixture(
   const graphInstant = createInstant();
   const graphId = createGraphId();
 
+  const benchmarkShapes: readonly Readonly<{
+    id: NodeId;
+    name: string;
+    entityKind: 'node' | 'edge';
+  }>[] = [
+    { id: asNodeId(nodeTypeId), name: 'BenchmarkNode', entityKind: 'node' },
+    { id: asNodeId(edgeTypeId), name: 'BenchmarkEdge', entityKind: 'edge' },
+  ];
+
+  for (const shapeSpec of benchmarkShapes) {
+    const shapeProperties = new Map<string, PropertyValue>([
+      ['name', shapeSpec.name],
+      ['namespace', 'user'],
+      ['entityKind', shapeSpec.entityKind],
+      ['closed', false],
+    ]);
+    nodesMap.set(shapeSpec.id, {
+      id: shapeSpec.id,
+      shape: SYSTEM_IDS.SHAPE,
+      properties: shapeProperties,
+      metadata: {
+        created: graphInstant,
+        modified: graphInstant,
+        modifiedBy: SYSTEM_DEVICE_ID,
+      },
+    });
+    events.push({
+      type: 'NodeCreated',
+      eventId: createEventId(),
+      id: shapeSpec.id,
+      shapeId: SYSTEM_IDS.SHAPE,
+      properties: shapeProperties,
+      timestamp: graphInstant,
+      deviceId: SYSTEM_DEVICE_ID,
+      batchId: asBatchId('benchmark-batch'),
+    });
+  }
+
   for (let nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++) {
     const nodeId = createNodeId();
     sampleNodeIds.push(nodeId);
@@ -67,7 +108,7 @@ export function generateQueryBenchmarkFixture(
 
     nodesMap.set(nodeId, {
       id: nodeId,
-      type: nodeTypeId,
+      shape: nodeTypeId,
       properties,
       metadata: {
         created: graphInstant,
@@ -80,11 +121,11 @@ export function generateQueryBenchmarkFixture(
       type: 'NodeCreated',
       eventId: createEventId(),
       id: nodeId,
-      nodeType: nodeTypeId,
+      shapeId: nodeTypeId,
       properties,
       timestamp: graphInstant,
       deviceId: SYSTEM_DEVICE_ID,
-      batchId: 'benchmark-batch',
+      batchId: asBatchId('benchmark-batch'),
     });
   }
 
@@ -103,7 +144,7 @@ export function generateQueryBenchmarkFixture(
 
     edgesMap.set(edgeId, {
       id: edgeId,
-      type: edgeTypeId,
+      shape: edgeTypeId,
       source: sourceId,
       target: targetId,
       properties: new Map(),
@@ -118,13 +159,13 @@ export function generateQueryBenchmarkFixture(
       type: 'EdgeCreated',
       eventId: createEventId(),
       id: edgeId,
-      edgeType: edgeTypeId,
+      shapeId: edgeTypeId,
       source: sourceId,
       target: targetId,
       properties: new Map(),
       timestamp: graphInstant,
       deviceId: SYSTEM_DEVICE_ID,
-      batchId: 'benchmark-batch',
+      batchId: asBatchId('benchmark-batch'),
     });
   }
 

@@ -3,7 +3,9 @@ import {
   unwrap,
   createEventId,
   createNodeId,
-  asTypeId,
+  createEdgeId,
+  asEdgeId,
+  asShapeId,
   asDeviceId,
   createInstant,
 } from '@canopy/graph';
@@ -18,7 +20,7 @@ describe('InMemoryEventStore', () => {
     type: 'NodeCreated',
     eventId: createEventId(),
     id: createNodeId(),
-    nodeType: asTypeId('test-node'),
+    shapeId: asShapeId('test-node'),
     properties: new Map(),
     timestamp,
     deviceId,
@@ -113,5 +115,91 @@ describe('InMemoryEventStore', () => {
 
     const result2 = unwrap(await store.getEvents('graph2'));
     expect(result2).toEqual([event2]);
+  });
+
+  it('upcasts legacy nodeType/edgeType and canopy:open sentinel and preserves open entities', async () => {
+    const store = createInMemoryEventStore();
+    const n1 = createNodeId();
+    const n2 = createNodeId();
+    const edge1 = createEdgeId();
+    const openEdgeId = asEdgeId('edge-open-1');
+
+    const legacyTypedNode = {
+      type: 'NodeCreated',
+      eventId: createEventId(),
+      id: n1,
+      nodeType: 'legacy:note',
+      properties: new Map([['title', 'Hello']]),
+      timestamp,
+      deviceId,
+    } as unknown as GraphEvent;
+
+    const legacyOpenSentinelNode = {
+      type: 'NodeCreated',
+      eventId: createEventId(),
+      id: n2,
+      nodeType: 'canopy:open',
+      properties: new Map(),
+      timestamp,
+      deviceId,
+    } as unknown as GraphEvent;
+
+    const legacyEdge = {
+      type: 'EdgeCreated',
+      eventId: createEventId(),
+      id: edge1,
+      edgeType: 'legacy:links',
+      source: n1,
+      target: n2,
+      properties: new Map(),
+      timestamp,
+      deviceId,
+    } as unknown as GraphEvent;
+
+    const openEdge: GraphEvent = {
+      type: 'EdgeCreated',
+      eventId: createEventId(),
+      id: openEdgeId,
+      source: n1,
+      target: n2,
+      properties: new Map(),
+      timestamp,
+      deviceId,
+    };
+
+    await store.appendEvents('legacy-graph', [
+      legacyTypedNode,
+      legacyOpenSentinelNode,
+      legacyEdge,
+      openEdge,
+    ]);
+
+    const events = unwrap(await store.getEvents('legacy-graph'));
+    expect(events).toHaveLength(4);
+    expect(events[0]?.type === 'NodeCreated' && events[0].shapeId).toBe(asShapeId('legacy:note'));
+    expect(events[1]?.type === 'NodeCreated' && events[1].shapeId).toBeUndefined();
+    expect(events[2]?.type === 'EdgeCreated' && events[2].shapeId).toBe(asShapeId('legacy:links'));
+    expect(events[3]?.type === 'EdgeCreated' && events[3].shapeId).toBeUndefined();
+  });
+
+  it('returns error Result when decoding conflicting legacy fields', async () => {
+    const store = createInMemoryEventStore();
+    const badEvent = {
+      type: 'NodeCreated',
+      eventId: createEventId(),
+      id: createNodeId(),
+      shapeId: 'modern:shape',
+      nodeType: 'legacy:shape',
+      properties: new Map(),
+      timestamp,
+      deviceId,
+    } as unknown as GraphEvent;
+
+    await store.appendEvents('bad-graph', [badEvent]);
+    const result = await store.getEvents('bad-graph');
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.message).toContain('Conflicting');
+    }
   });
 });

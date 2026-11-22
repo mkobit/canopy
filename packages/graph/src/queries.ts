@@ -1,130 +1,278 @@
 import type { Graph } from './graph';
 import type { Node } from './node';
 import type { Edge } from './edge';
-import type { TypeId, NodeId } from './identifiers';
+import type { ShapeId, NodeId, Namespace } from './identifiers';
+import type { PropertyValue } from './properties';
+import type { ShapeDefinition, ShapePropertyBinding } from './definitions';
 import type { Result } from './result';
 import { SYSTEM_IDS } from './system';
-import { asNodeId } from './factories';
-import { ok, err as error } from './result';
+import { asNodeId, asShapeId, asNamespace } from './factories';
+import { ok, err as error, fromThrowable } from './result';
+import { ShapePropertyBindingSchema } from './schemas';
+import { parseNamespace } from './resolve-namespace';
+import { canonicalizeUri } from './url';
 import { filter } from 'remeda';
 import { findNode } from './utilities';
 
-/**
-Returns all nodes that define node types.
-*/
-export function getNodeTypes(graph: Readonly<Graph>): readonly Node[] {
-  return filter([...graph.nodes.values()], (node) => node.type === SYSTEM_IDS.NODE_TYPE);
-}
+export type ShapeResolveError = Readonly<{
+  code: 'SHAPE_NOT_FOUND' | 'SHAPE_KIND_MISMATCH' | 'SHAPE_MALFORMED';
+  message: string;
+}>;
 
-/**
-Returns all nodes that define edge types.
-*/
-export function getEdgeTypes(graph: Readonly<Graph>): readonly Node[] {
-  return filter([...graph.nodes.values()], (node) => node.type === SYSTEM_IDS.EDGE_TYPE);
-}
-
-/**
-Returns a specific node type definition node by its name,
-or by its ID if the name is not found (or if name is treated as ID).
-
-Note: Type definitions are Nodes.
-If you have a TypeId "foo", the corresponding definition node should have ID "foo".
-*/
-export function getNodeType(graph: Readonly<Graph>, typeNameOrId: string): Node | undefined {
-  // First try to find by ID (asuming the type name is the ID)
-  const nodeId = asNodeId(typeNameOrId);
-  const node = graph.nodes.get(nodeId);
-  if (node && node.type === SYSTEM_IDS.NODE_TYPE) {
-    return node;
+function extractShapeIdList(value: PropertyValue | undefined): readonly ShapeId[] {
+  if (value === undefined) {
+    return [];
   }
-
-  // Fallback: search by name property
-  // This assumes names are unique, which isn't guaranteed but useful for loose lookup
-  return findNode(graph, (n) => {
-    if (n.type !== SYSTEM_IDS.NODE_TYPE) return false;
-    const nameProperty = n.properties.get('name');
-    return nameProperty === typeNameOrId;
-  });
-}
-
-/**
-Returns a specific edge type definition node by its name,
-or by its ID if the name is not found (or if name is treated as ID).
-
-Note: Type definitions are Nodes.
-*/
-export function getEdgeType(graph: Readonly<Graph>, typeNameOrId: string): Node | undefined {
-  // First try to find by ID (assuming the type name is the ID)
-  const nodeId = asNodeId(typeNameOrId);
-  const node = graph.nodes.get(nodeId);
-  if (node && node.type === SYSTEM_IDS.EDGE_TYPE) {
-    return node;
+  if (Array.isArray(value)) {
+    return value.map((item) => asShapeId(typeof item === 'string' ? item : 'unknown'));
   }
+  if (typeof value === 'string') {
+    const result = fromThrowable(() => JSON.parse(value) as readonly string[]);
+    return result.ok && Array.isArray(result.value) ? result.value.map(asShapeId) : [];
+  }
+  return [];
+}
 
-  // Fallback: search by name property
-  return findNode(graph, (n) => {
-    if (n.type !== SYSTEM_IDS.EDGE_TYPE) return false;
-    const nameProperty = n.properties.get('name');
-    return nameProperty === typeNameOrId;
-  });
+function extractNamespace(graph: Readonly<Graph>, value: PropertyValue | undefined): Namespace {
+  if (typeof value === 'string') {
+    const parsed = parseNamespace(graph, value);
+    if (parsed.ok) {
+      return parsed.value;
+    }
+  }
+  return asNamespace('user');
+}
+
+function parseShapeBindings(
+  rawProperties: PropertyValue | undefined,
+  shapeId: ShapeId,
+): Result<readonly ShapePropertyBinding[], ShapeResolveError> {
+  if (rawProperties === undefined) {
+    return ok([]);
+  }
+  if (typeof rawProperties !== 'string') {
+    return error({
+      code: 'SHAPE_MALFORMED',
+      message: `Shape '${shapeId}' properties must be a JSON string`,
+    });
+  }
+  const parsedJson = fromThrowable(() => JSON.parse(rawProperties));
+  if (!parsedJson.ok || !Array.isArray(parsedJson.value)) {
+    return error({
+      code: 'SHAPE_MALFORMED',
+      message: `Shape '${shapeId}' properties must be a valid JSON array`,
+    });
+  }
+  const parsedBindings = ShapePropertyBindingSchema.array().safeParse(parsedJson.value);
+  if (!parsedBindings.success) {
+    return error({
+      code: 'SHAPE_MALFORMED',
+      message: `Shape '${shapeId}' has malformed property bindings: ${parsedBindings.error.issues.map((issue) => issue.message).join('; ')}`,
+    });
+  }
+  return ok(parsedBindings.data);
 }
 
 /**
-Returns all nodes whose type matches the given typeId.
+Returns all Shape definition nodes, optionally filtered by `entityKind`.
 */
-export function getNodesOfType(graph: Readonly<Graph>, typeId: TypeId): readonly Node[] {
-  return filter([...graph.nodes.values()], (node) => node.type === typeId);
-}
-
-/**
-Returns all edges whose type matches the given typeId.
-*/
-export function getEdgesOfType(graph: Readonly<Graph>, typeId: TypeId): readonly Edge[] {
-  return filter([...graph.edges.values()], (edge) => edge.type === typeId);
-}
-
-/**
-Returns all edges originating from the given nodeId, optionally filtered by edgeTypeId.
-*/
-export function getEdgesFrom(
+export function getShapes(
   graph: Readonly<Graph>,
-  nodeId: NodeId,
-  edgeTypeId?: TypeId,
-): readonly Edge[] {
+  entityKind?: 'node' | 'edge' | undefined,
+): readonly Node[] {
   return filter(
-    [...graph.edges.values()],
-    (edge) => edge.source === nodeId && (edgeTypeId === undefined || edge.type === edgeTypeId),
+    [...graph.nodes.values()],
+    (node) =>
+      node.shape === SYSTEM_IDS.SHAPE &&
+      (entityKind === undefined || node.properties.get('entityKind') === entityKind),
   );
 }
 
 /**
-Finds the inverse edge type for a given edge type.
-Returns ok(Node) if an inverse is found, ok(undefined) if no inverse is defined,
-and err(Error) if the edge type node doesn't exist, isn't an edge type, or has a broken reference.
+Returns a Shape definition node by its exact ShapeId.
 */
-export function findInverseEdgeType(
+export function getShape(graph: Readonly<Graph>, shapeId: ShapeId): Node | undefined {
+  const node = graph.nodes.get(asNodeId(shapeId));
+  return node?.shape === SYSTEM_IDS.SHAPE ? node : undefined;
+}
+
+/**
+Finds a Shape definition node by name and entityKind.
+*/
+export function findShapeByName(
   graph: Readonly<Graph>,
-  edgeTypeId: TypeId,
+  name: string,
+  entityKind: 'node' | 'edge',
+): Node | undefined {
+  return findNode(
+    graph,
+    (node) =>
+      node.shape === SYSTEM_IDS.SHAPE &&
+      node.properties.get('entityKind') === entityKind &&
+      node.properties.get('name') === name,
+  );
+}
+
+/**
+Resolves and decodes a Shape definition node into a structured `ShapeDefinition`.
+*/
+export function resolveShape(
+  graph: Readonly<Graph>,
+  shapeId: ShapeId,
+): Result<ShapeDefinition, ShapeResolveError> {
+  const node = graph.nodes.get(asNodeId(shapeId));
+  if (!node) {
+    return error({
+      code: 'SHAPE_NOT_FOUND',
+      message: `Shape '${shapeId}' not found`,
+    });
+  }
+  if (node.shape !== SYSTEM_IDS.SHAPE) {
+    return error({
+      code: 'SHAPE_KIND_MISMATCH',
+      message: `Node '${shapeId}' is not a Shape definition (shape is '${node.shape ?? 'open'}')`,
+    });
+  }
+
+  const rawEntityKind = node.properties.get('entityKind');
+  if (rawEntityKind !== 'node' && rawEntityKind !== 'edge') {
+    return error({
+      code: 'SHAPE_MALFORMED',
+      message: `Shape '${shapeId}' must have entityKind 'node' or 'edge'`,
+    });
+  }
+  const entityKind: 'node' | 'edge' = rawEntityKind === 'node' ? 'node' : 'edge';
+
+  const rawClosed = node.properties.get('closed');
+  if (rawClosed !== undefined && typeof rawClosed !== 'boolean') {
+    return error({
+      code: 'SHAPE_MALFORMED',
+      message: `Shape '${shapeId}' property 'closed' must be a boolean`,
+    });
+  }
+  const closed = rawClosed === true;
+
+  const bindingsResult = parseShapeBindings(node.properties.get('properties'), shapeId);
+  if (!bindingsResult.ok) {
+    return bindingsResult;
+  }
+
+  const rawSchemaOrgUri = node.properties.get('schemaOrgUri');
+  const schemaOrgUriResult = (() => {
+    if (rawSchemaOrgUri === undefined) return ok(undefined);
+    if (typeof rawSchemaOrgUri !== 'string') {
+      return error({
+        code: 'SHAPE_MALFORMED',
+        message: `Shape '${shapeId}' property 'schemaOrgUri' must be a string`,
+      } satisfies ShapeResolveError);
+    }
+    const uri = canonicalizeUri(rawSchemaOrgUri);
+    return uri.ok
+      ? ok(uri.value)
+      : error({
+          code: 'SHAPE_MALFORMED',
+          message: `Shape '${shapeId}' has invalid schemaOrgUri: ${uri.error.message}`,
+        } satisfies ShapeResolveError);
+  })();
+  if (!schemaOrgUriResult.ok) {
+    return schemaOrgUriResult;
+  }
+
+  const nameProperty = node.properties.get('name');
+  const descriptionProperty = node.properties.get('description');
+  const statusProperty = node.properties.get('status');
+  const inverseProperty = node.properties.get('inverse');
+
+  return ok({
+    id: asShapeId(node.id),
+    name: typeof nameProperty === 'string' ? nameProperty : 'Unknown',
+    namespace: extractNamespace(graph, node.properties.get('namespace')),
+    description: typeof descriptionProperty === 'string' ? descriptionProperty : undefined,
+    entityKind,
+    closed,
+    properties: bindingsResult.value,
+    schemaOrgUri: schemaOrgUriResult.value,
+    status: statusProperty === 'inactive' ? 'inactive' : 'active',
+    ...(entityKind === 'node'
+      ? {
+          node: {
+            validOutgoingEdges: extractShapeIdList(node.properties.get('validOutgoingEdges')),
+            validIncomingEdges: extractShapeIdList(node.properties.get('validIncomingEdges')),
+          },
+        }
+      : {
+          edge: {
+            sourceTypes: extractShapeIdList(node.properties.get('sourceTypes')),
+            targetTypes: extractShapeIdList(node.properties.get('targetTypes')),
+            transitive: node.properties.get('transitive') === true,
+            inverse: typeof inverseProperty === 'string' ? asShapeId(inverseProperty) : undefined,
+          },
+        }),
+  });
+}
+
+/**
+Returns all nodes whose shape matches the given `shapeId`.
+*/
+export function getNodesOfShape(graph: Readonly<Graph>, shapeId: ShapeId): readonly Node[] {
+  return filter([...graph.nodes.values()], (node) => node.shape === shapeId);
+}
+
+/**
+Returns all edges whose shape matches the given `shapeId`.
+*/
+export function getEdgesOfShape(graph: Readonly<Graph>, shapeId: ShapeId): readonly Edge[] {
+  return filter([...graph.edges.values()], (edge) => edge.shape === shapeId);
+}
+
+/**
+Returns all edges originating from the given nodeId, optionally filtered by `edgeShape`.
+*/
+export function getEdgesFrom(
+  graph: Readonly<Graph>,
+  nodeId: NodeId,
+  edgeShape?: ShapeId | null | undefined,
+): readonly Edge[] {
+  return filter([...graph.edges.values()], (edge) => {
+    if (edge.source !== nodeId) return false;
+    if (edgeShape === undefined) return true;
+    return edgeShape === null ? edge.shape === undefined : edge.shape === edgeShape;
+  });
+}
+
+/**
+Finds the inverse edge Shape for a given edge Shape.
+Returns ok(Node) if an inverse is found, ok(undefined) if no inverse is defined,
+and err(Error) if the edge shape node doesn't exist, isn't an edge shape, or has a broken reference.
+*/
+export function findInverseEdgeShape(
+  graph: Readonly<Graph>,
+  edgeShapeId: ShapeId,
 ): Result<Node | undefined, Error> {
-  const edgeTypeNodeId = asNodeId(edgeTypeId);
-  const edgeTypeNode = graph.nodes.get(edgeTypeNodeId);
+  const edgeShapeNodeId = asNodeId(edgeShapeId);
+  const edgeShapeNode = graph.nodes.get(edgeShapeNodeId);
 
-  if (!edgeTypeNode) {
-    return error(new Error(`Edge type node not found for type: ${edgeTypeId}`));
+  if (!edgeShapeNode) {
+    return error(new Error(`Edge shape node not found for shape: ${edgeShapeId}`));
   }
 
-  if (edgeTypeNode.type !== SYSTEM_IDS.EDGE_TYPE) {
-    return error(new Error(`Node ${edgeTypeId} is not an edge type (is ${edgeTypeNode.type})`));
+  if (
+    edgeShapeNode.shape !== SYSTEM_IDS.SHAPE ||
+    edgeShapeNode.properties.get('entityKind') !== 'edge'
+  ) {
+    return error(
+      new Error(`Node ${edgeShapeId} is not an edge shape (is ${edgeShapeNode.shape ?? 'open'})`),
+    );
   }
 
-  const inverseProperty = edgeTypeNode.properties.get('inverse');
+  const inverseProperty = edgeShapeNode.properties.get('inverse');
 
   if (inverseProperty === undefined) {
     return ok(undefined);
   }
 
   if (typeof inverseProperty !== 'string') {
-    return error(new Error(`Inverse property on edge type ${edgeTypeId} must be a string`));
+    return error(new Error(`Inverse property on edge shape ${edgeShapeId} must be a string`));
   }
 
   const inverseNodeId = asNodeId(inverseProperty);
@@ -133,16 +281,17 @@ export function findInverseEdgeType(
   if (!inverseNode) {
     return error(
       new Error(
-        `Broken reference: inverse edge type ${inverseProperty} for ${edgeTypeId} not found`,
+        `Broken reference: inverse edge shape ${inverseProperty} for ${edgeShapeId} not found`,
       ),
     );
   }
 
-  return inverseNode.type === SYSTEM_IDS.EDGE_TYPE
+  return inverseNode.shape === SYSTEM_IDS.SHAPE &&
+    inverseNode.properties.get('entityKind') === 'edge'
     ? ok(inverseNode)
     : error(
         new Error(
-          `Inverse node ${inverseProperty} for ${edgeTypeId} is not an edge type (is ${inverseNode.type})`,
+          `Inverse node ${inverseProperty} for ${edgeShapeId} is not an edge shape (is ${inverseNode.shape ?? 'open'})`,
         ),
       );
 }

@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { z } from 'zod';
 import type { Result, GraphEvent, EventLogStore, EventLogQueryOptions } from '@canopy/graph';
-import { ok, err, fromAsyncThrowable, GraphEventSchema } from '@canopy/graph';
+import { decodeStoredEvent, ok, err, fromAsyncThrowable } from '@canopy/graph';
 
 export interface FileEventLogConfig {
   readonly rootDir: string;
@@ -93,8 +93,38 @@ const serializeEvent = (event: GraphEvent): unknown => {
   }
 };
 
-const deserializeEvent = (storable: unknown): GraphEvent => {
-  return GraphEventSchema.parse(storable);
+const deserializeEvent = (storable: unknown): Result<GraphEvent | null, Error> => {
+  const decoded = decodeStoredEvent(storable);
+  return decoded.ok ? ok(decoded.value) : err(new Error(decoded.error.message));
+};
+
+const RETIRED_META_SHAPE_IDS = new Set(['node:type:node-type', 'node:type:edge-type']);
+
+const isLegacyOrRetiredRawEvent = (raw: unknown): boolean => {
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
+    return false;
+  }
+  const record = raw as Readonly<Record<string, unknown>>;
+  return (
+    'nodeType' in record ||
+    'edgeType' in record ||
+    (typeof record.id === 'string' && RETIRED_META_SHAPE_IDS.has(record.id)) ||
+    (typeof record.shapeId === 'string' && RETIRED_META_SHAPE_IDS.has(record.shapeId)) ||
+    (typeof record.source === 'string' && RETIRED_META_SHAPE_IDS.has(record.source)) ||
+    (typeof record.target === 'string' && RETIRED_META_SHAPE_IDS.has(record.target))
+  );
+};
+
+const decodeRawLines = (rawLines: readonly unknown[]): Result<readonly GraphEvent[], Error> => {
+  const decodedResults = rawLines.map(deserializeEvent);
+  const firstError = decodedResults.find((r) => !r.ok);
+  return firstError && !firstError.ok
+    ? firstError
+    : ok(
+        decodedResults
+          .map((r) => (r as { readonly ok: true; readonly value: GraphEvent | null }).value)
+          .filter((event_): event_ is GraphEvent => event_ !== null),
+      );
 };
 
 interface EventGroup {
@@ -162,7 +192,7 @@ const applyQueryOptions = (
 };
 
 const writeAtomically = async (filePath: string, content: string): Promise<void> => {
-  const temporaryPath = `${filePath}.tmp`;
+  const temporaryPath = `${filePath}.${crypto.randomUUID()}.tmp`;
   await fs.writeFile(temporaryPath, content, 'utf8');
   await fs.rename(temporaryPath, filePath);
 };
@@ -372,14 +402,24 @@ const getActiveSegmentBasename = async (
   return result.ok ? result.value : null;
 };
 
+const readRawSegmentLines = async (
+  directory: string,
+  segmentFilename: string,
+): Promise<Result<readonly unknown[], Error>> => {
+  return fromAsyncThrowable(async () => {
+    const filePath = path.join(directory, segmentFilename);
+    const content = await fs.readFile(filePath, 'utf8');
+    const lines = content.split('\n').filter((line) => line.trim() !== '');
+    return lines.map((line) => JSON.parse(line) as unknown);
+  });
+};
+
 const readSegmentEvents = async (
   deviceDirectory: string,
   segmentFilename: string,
-): Promise<readonly GraphEvent[]> => {
-  const filePath = path.join(deviceDirectory, segmentFilename);
-  const content = await fs.readFile(filePath, 'utf8');
-  const lines = content.split('\n').filter((line) => line.trim() !== '');
-  return lines.map((line) => deserializeEvent(JSON.parse(line)));
+): Promise<Result<readonly GraphEvent[], Error>> => {
+  const rawLinesResult = await readRawSegmentLines(deviceDirectory, segmentFilename);
+  return rawLinesResult.ok ? decodeRawLines(rawLinesResult.value) : rawLinesResult;
 };
 
 const readCanopyConfigGraphId = async (canopyJsonPath: string): Promise<string | null> => {
@@ -404,11 +444,13 @@ const loadCache = async (
   const segmentsToRead =
     activeSegment === null ? manifest.sealed : [...manifest.sealed, activeSegment];
 
-  const segmentEventsLists = await Promise.all(
+  const segmentEventResults = await Promise.all(
     segmentsToRead.map((segment) => readSegmentEvents(deviceDirectory, segment)),
   );
 
-  return segmentEventsLists.flat().map((event_) => event_.eventId);
+  return segmentEventResults.flatMap((result) =>
+    result.ok ? result.value.map((event_) => event_.eventId) : [],
+  );
 };
 
 const initializeStoreDirectory = async (
@@ -436,15 +478,48 @@ const appendEventsToDisk = async (
     ? manifestResult.value
     : { sealed: [], lastEventId: null, watermarks: {} };
   const activeSegment = await getActiveSegmentBasename(config.deviceDirectory, manifest);
-  const activeEvents =
-    activeSegment === null ? [] : await readSegmentEvents(config.deviceDirectory, activeSegment);
+  const activeState = await (async (): Promise<
+    Result<
+      Readonly<{
+        manifest: FileStoreManifest;
+        activeSegment: string | null;
+        activeEvents: readonly GraphEvent[];
+      }>,
+      Error
+    >
+  > => {
+    if (activeSegment === null) {
+      return ok({ manifest, activeSegment: null, activeEvents: [] });
+    }
+    const rawLinesResult = await readRawSegmentLines(config.deviceDirectory, activeSegment);
+    if (!rawLinesResult.ok) {
+      return rawLinesResult;
+    }
+    if (rawLinesResult.value.some(isLegacyOrRetiredRawEvent)) {
+      const sealedManifest: FileStoreManifest = {
+        ...manifest,
+        sealed: manifest.sealed.includes(activeSegment)
+          ? manifest.sealed
+          : [...manifest.sealed, activeSegment],
+      };
+      return ok({ manifest: sealedManifest, activeSegment: null, activeEvents: [] });
+    }
+    const decodedResult = decodeRawLines(rawLinesResult.value);
+    return decodedResult.ok
+      ? ok({ manifest, activeSegment, activeEvents: decodedResult.value })
+      : decodedResult;
+  })();
+
+  if (!activeState.ok) {
+    return activeState;
+  }
 
   const groups = groupEventsByBatch(events);
   const { manifest: updatedManifest, filesToWrite } = buildAppendWrites(
     groups,
-    manifest,
-    activeSegment,
-    activeEvents,
+    activeState.value.manifest,
+    activeState.value.activeSegment,
+    activeState.value.activeEvents,
     {
       maxEventsPerSegment: config.maxEventsPerSegment,
       maxBytesPerSegment: config.maxBytesPerSegment,
@@ -474,13 +549,19 @@ const readAllEventsFromDisk = async (
     : { sealed: [], lastEventId: null, watermarks: {} };
   const activeSegment = await getActiveSegmentBasename(deviceDirectory, manifest);
 
-  const sealedEventsLists = await Promise.all(
+  const sealedEventsResults = await Promise.all(
     manifest.sealed.map((segment) => readSegmentEvents(deviceDirectory, segment)),
   );
-  const sealedEvents = sealedEventsLists.flat();
+  const activeResult: Result<readonly GraphEvent[], Error> =
+    activeSegment === null ? ok([]) : await readSegmentEvents(deviceDirectory, activeSegment);
 
-  const activeEvents =
-    activeSegment === null ? [] : await readSegmentEvents(deviceDirectory, activeSegment);
+  const firstError = [...sealedEventsResults, activeResult].find((result) => !result.ok);
+  if (firstError && !firstError.ok) {
+    return firstError;
+  }
+
+  const sealedEvents = sealedEventsResults.flatMap((result) => (result.ok ? result.value : []));
+  const activeEvents = activeResult.ok ? activeResult.value : [];
   const allEvents = [...sealedEvents, ...activeEvents];
   const sortedEvents = allEvents.toSorted((a, b) => a.eventId.localeCompare(b.eventId));
   const uniqueEvents = sortedEvents.filter(
@@ -526,9 +607,9 @@ const syncRemoteDevice = async (
   }
 
   const allRawEvents = segmentEventsResults.flatMap((r) => (r.ok ? r.value : []));
-  const newEvents = allRawEvents
-    .map((event_) => GraphEventSchema.parse(event_))
-    .filter((event_) => currentWatermark === null || event_.eventId > currentWatermark);
+  const newEvents = allRawEvents.filter(
+    (event_) => currentWatermark === null || event_.eventId > currentWatermark,
+  );
 
   return ok({
     remoteDeviceId,
@@ -732,8 +813,18 @@ const executeInitStore = async (
   });
 };
 
+const createWriteQueue = (): (<T>(operation: () => Promise<T>) => Promise<T>) => {
+  const queueCell = { current: Promise.resolve() as Promise<unknown> };
+  return <T>(operation: () => Promise<T>): Promise<T> => {
+    const next = queueCell.current.catch(() => undefined).then(operation);
+    queueCell.current = next.catch(() => undefined);
+    return next;
+  };
+};
+
 export const createFileEventLog = (config: FileEventLogConfig): FileEventLog => {
   const storageConfig = createStorageConfig(config);
+  const enqueueWrite = createWriteQueue();
 
   let initializedGraphId: string | null = null;
   let isInitialized = false;
@@ -753,6 +844,28 @@ export const createFileEventLog = (config: FileEventLogConfig): FileEventLog => 
     knownEventIds = new Set([...knownEventIds, ...events.map((event_) => event_.eventId)]);
   };
 
+  const appendEventsInternal = async (
+    graphId: string,
+    events: readonly GraphEvent[],
+  ): Promise<Result<void, Error>> => {
+    if (!isInitialized) return err(new Error('Store not initialized'));
+    if (events.length === 0) return ok(undefined);
+
+    return executeAppendEvents(
+      {
+        storageConfig,
+        state: { initializedGraphId, knownEventIds },
+        ensureCacheLoaded,
+        setInitializedGraphId: (id) => {
+          initializedGraphId = id;
+        },
+        updateKnownEventIds,
+      },
+      graphId,
+      events,
+    );
+  };
+
   const store: FileEventLog = {
     init: async (): Promise<Result<void, Error>> =>
       executeInitStore(
@@ -769,27 +882,8 @@ export const createFileEventLog = (config: FileEventLogConfig): FileEventLog => 
 
     close: async (): Promise<Result<void, Error>> => ok(undefined),
 
-    appendEvents: async (
-      graphId: string,
-      events: readonly GraphEvent[],
-    ): Promise<Result<void, Error>> => {
-      if (!isInitialized) return err(new Error('Store not initialized'));
-      if (events.length === 0) return ok(undefined);
-
-      return executeAppendEvents(
-        {
-          storageConfig,
-          state: { initializedGraphId, knownEventIds },
-          ensureCacheLoaded,
-          setInitializedGraphId: (id) => {
-            initializedGraphId = id;
-          },
-          updateKnownEventIds,
-        },
-        graphId,
-        events,
-      );
-    },
+    appendEvents: (graphId: string, events: readonly GraphEvent[]): Promise<Result<void, Error>> =>
+      enqueueWrite(() => appendEventsInternal(graphId, events)),
 
     getEvents: async (
       graphId: string,
@@ -809,16 +903,19 @@ export const createFileEventLog = (config: FileEventLogConfig): FileEventLog => 
       );
     },
 
-    reconcile: async (graphId: string): Promise<Result<void, Error>> => {
-      if (!isInitialized) return err(new Error('Store not initialized'));
+    reconcile: (graphId: string): Promise<Result<void, Error>> =>
+      enqueueWrite(async (): Promise<Result<void, Error>> => {
+        if (!isInitialized) return err(new Error('Store not initialized'));
 
-      if (initializedGraphId !== null && graphId !== initializedGraphId) {
-        return err(new Error(`Graph ID mismatch: expected ${initializedGraphId}, got ${graphId}`));
-      }
+        if (initializedGraphId !== null && graphId !== initializedGraphId) {
+          return err(
+            new Error(`Graph ID mismatch: expected ${initializedGraphId}, got ${graphId}`),
+          );
+        }
 
-      await ensureCacheLoaded();
-      return reconcileRemoteManifests(storageConfig, graphId, store.appendEvents);
-    },
+        await ensureCacheLoaded();
+        return reconcileRemoteManifests(storageConfig, graphId, appendEventsInternal);
+      }),
   };
 
   return store;
@@ -879,10 +976,5 @@ export const readRemoteSegmentEvents = async (
   remoteDeviceDirectory: string,
   segmentFilename: string,
 ): Promise<Result<readonly GraphEvent[], Error>> => {
-  return fromAsyncThrowable(async () => {
-    const filePath = path.join(remoteDeviceDirectory, segmentFilename);
-    const content = await fs.readFile(filePath, 'utf8');
-    const lines = content.split('\n').filter((line) => line.trim() !== '');
-    return lines.map((line) => deserializeEvent(JSON.parse(line)));
-  });
+  return readSegmentEvents(remoteDeviceDirectory, segmentFilename);
 };

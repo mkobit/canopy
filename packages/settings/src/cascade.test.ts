@@ -3,7 +3,7 @@ import {
   createGraph,
   asGraphId,
   asNodeId,
-  asTypeId,
+  asShapeId,
   asNamespace,
   unwrap,
   createInstant,
@@ -31,7 +31,7 @@ describe('Settings Resolver', () => {
   it("resolveSetting returns undefined when schema doesn't exist", () => {
     const graph = unwrap(createGraph(asGraphId('test-graph'), 'Test Graph'));
     const nodeId = asNodeId('test:node');
-    const typeId = asTypeId('test:type');
+    const typeId = asShapeId('test:type');
 
     const value = resolveSetting(graph, 'unknown-setting-key', nodeId, typeId, asNamespace('user'));
     expect(value).toBeUndefined();
@@ -40,7 +40,7 @@ describe('Settings Resolver', () => {
   it('resolveSetting returns system default when no UserSetting exists', () => {
     const graph = unwrap(createGraph(asGraphId('test-graph'), 'Test Graph'));
     const nodeId = asNodeId('test:node');
-    const typeId = asTypeId('test:type');
+    const typeId = asShapeId('test:type');
 
     // Default value for display-density is "comfortable"
     const value = resolveSetting(graph, 'display-density', nodeId, typeId, asNamespace('user'));
@@ -53,7 +53,7 @@ describe('Settings Resolver', () => {
     // Add global UserSetting
     const settingNode = {
       id: asNodeId('user:setting:global'),
-      type: SYSTEM_IDS.USER_SETTING,
+      shape: SYSTEM_IDS.USER_SETTING,
       properties: new Map([
         ['schemaId', SYSTEM_IDS.SETTING_DISPLAY_DENSITY],
         ['scopeType', 'global'],
@@ -69,7 +69,7 @@ describe('Settings Resolver', () => {
     graph = unwrap(result).graph;
 
     const nodeId = asNodeId('test:node');
-    const typeId = asTypeId('test:type');
+    const typeId = asShapeId('test:type');
 
     const value = resolveSetting(graph, 'display-density', nodeId, typeId, asNamespace('user'));
     expect(value).toBe('compact');
@@ -81,7 +81,7 @@ describe('Settings Resolver', () => {
     // Global UserSetting
     const globalSetting = {
       id: asNodeId('user:setting:global'),
-      type: SYSTEM_IDS.USER_SETTING,
+      shape: SYSTEM_IDS.USER_SETTING,
       properties: new Map([
         ['schemaId', SYSTEM_IDS.SETTING_DEFAULT_VIEW],
         ['scopeType', 'global'],
@@ -98,7 +98,7 @@ describe('Settings Resolver', () => {
     // Namespace UserSetting
     const namespaceSetting = {
       id: asNodeId('user:setting:namespace'),
-      type: SYSTEM_IDS.USER_SETTING,
+      shape: SYSTEM_IDS.USER_SETTING,
       properties: new Map([
         ['schemaId', SYSTEM_IDS.SETTING_DEFAULT_VIEW],
         ['scopeType', 'namespace'],
@@ -114,7 +114,7 @@ describe('Settings Resolver', () => {
     graph = unwrap(addNode(graph, namespaceSetting, { deviceId: SYSTEM_DEVICE_ID })).graph;
 
     const nodeId = asNodeId('test:node');
-    const typeId = asTypeId('test:type');
+    const typeId = asShapeId('test:type');
 
     // user namespace should hit namespace setting
     let value = resolveSetting(graph, 'default-view', nodeId, typeId, asNamespace('user'));
@@ -130,7 +130,7 @@ describe('Settings Resolver', () => {
 
     const namespaceSetting = {
       id: asNodeId('user:setting:namespace'),
-      type: SYSTEM_IDS.USER_SETTING,
+      shape: SYSTEM_IDS.USER_SETTING,
       properties: new Map([
         ['schemaId', SYSTEM_IDS.SETTING_DEFAULT_VIEW],
         ['scopeType', 'namespace'],
@@ -145,10 +145,10 @@ describe('Settings Resolver', () => {
     };
     graph = unwrap(addNode(graph, namespaceSetting, { deviceId: SYSTEM_DEVICE_ID })).graph;
 
-    const typeId = asTypeId('test:type');
+    const typeId = asShapeId('test:type');
     const typeSetting = {
       id: asNodeId('user:setting:type'),
-      type: SYSTEM_IDS.USER_SETTING,
+      shape: SYSTEM_IDS.USER_SETTING,
       properties: new Map([
         ['schemaId', SYSTEM_IDS.SETTING_DEFAULT_VIEW],
         ['scopeType', 'type'],
@@ -170,7 +170,7 @@ describe('Settings Resolver', () => {
     expect(value).toBe('type-view');
 
     // Other type should fallback to namespace setting
-    const otherTypeId = asTypeId('test:other-type');
+    const otherTypeId = asShapeId('test:other-type');
     value = resolveSetting(graph, 'default-view', nodeId, otherTypeId, asNamespace('user'));
     expect(value).toBe('namespace-view');
   });
@@ -178,10 +178,10 @@ describe('Settings Resolver', () => {
   it('resolveSetting returns per-node UserSetting over per-type', () => {
     let graph = unwrap(createGraph(asGraphId('test-graph'), 'Test Graph'));
 
-    const typeId = asTypeId('test:type');
+    const typeId = asShapeId('test:type');
     const typeSetting = {
       id: asNodeId('user:setting:type'),
-      type: SYSTEM_IDS.USER_SETTING,
+      shape: SYSTEM_IDS.USER_SETTING,
       properties: new Map([
         ['schemaId', SYSTEM_IDS.SETTING_DEFAULT_VIEW],
         ['scopeType', 'type'],
@@ -199,7 +199,7 @@ describe('Settings Resolver', () => {
     const nodeId = asNodeId('test:node');
     const nodeSetting = {
       id: asNodeId('user:setting:node'),
-      type: SYSTEM_IDS.USER_SETTING,
+      shape: SYSTEM_IDS.USER_SETTING,
       properties: new Map([
         ['schemaId', SYSTEM_IDS.SETTING_DEFAULT_VIEW],
         ['scopeType', 'node'],
@@ -222,5 +222,34 @@ describe('Settings Resolver', () => {
     const otherNodeId = asNodeId('test:other-node');
     value = resolveSetting(graph, 'default-view', otherNodeId, typeId, asNamespace('user'));
     expect(value).toBe('type-view');
+  });
+
+  it('resolveSetting skips per-type scope cleanly when nodeType is undefined (open node)', () => {
+    let graph = unwrap(createGraph(asGraphId('test-graph'), 'Test Graph'));
+    const typeSetting = {
+      id: asNodeId('user:setting:type'),
+      shape: SYSTEM_IDS.USER_SETTING,
+      properties: new Map([
+        ['schemaId', SYSTEM_IDS.SETTING_DISPLAY_DENSITY],
+        ['scopeType', 'type'],
+        ['scopeTarget', 'test:type'],
+        ['value', '"type-density"'],
+      ]),
+      metadata: {
+        created: createInstant(),
+        modified: createInstant(),
+        modifiedBy: SYSTEM_DEVICE_ID,
+      },
+    };
+    graph = unwrap(addNode(graph, typeSetting, { deviceId: SYSTEM_DEVICE_ID })).graph;
+
+    const value = resolveSetting(
+      graph,
+      'display-density',
+      asNodeId('open:node'),
+      undefined,
+      asNamespace('user'),
+    );
+    expect(value).toBe('comfortable');
   });
 });

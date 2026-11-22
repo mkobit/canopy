@@ -20,10 +20,15 @@ export interface Traversal {
 
 // A step in the query pipeline
 export type QueryStep =
-  | Readonly<{ kind: 'node-scan'; type?: string | undefined }> // Start with nodes
-  | Readonly<{ kind: 'edge-scan'; type?: string | undefined }> // Start with edges
+  | Readonly<{ kind: 'node-scan'; shape?: string | undefined; type?: string | undefined }> // Start with nodes
+  | Readonly<{ kind: 'edge-scan'; shape?: string | undefined; type?: string | undefined }> // Start with edges
   | Readonly<{ kind: 'filter'; predicate: Filter }> // Filter current set
-  | Readonly<{ kind: 'traversal'; edgeType?: string | undefined; direction: 'out' | 'in' | 'both' }> // Map nodes to connected nodes
+  | Readonly<{
+      kind: 'traversal';
+      shape?: string | undefined;
+      edgeType?: string | undefined;
+      direction: 'out' | 'in' | 'both';
+    }> // Map nodes to connected nodes
   | Readonly<{ kind: 'sort'; sort: Sort }>
   | Readonly<{ kind: 'limit'; limit: number }>
   | Readonly<{ kind: 'project'; properties: readonly string[] }>;

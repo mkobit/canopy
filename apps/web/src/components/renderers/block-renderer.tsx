@@ -3,7 +3,7 @@ import { z } from 'zod';
 import type { Graph, Node, NodeId, SystemRendererEntryPoint } from '@canopy/graph';
 import {
   SYSTEM_IDS,
-  SYSTEM_EDGE_TYPES,
+  SYSTEM_EDGE_SHAPES,
   getEdgesFrom,
   resolveNamespace,
   asNodeId,
@@ -70,7 +70,10 @@ function isSystemRendererEntryPoint(value: string): value is SystemRendererEntry
 // Native, type-based renderer used both when dynamic resolution fails and as the
 // pending/failure fallback for a WASM renderer.
 function renderNativeFallback(node: Node): React.ReactNode {
-  switch (node.type) {
+  if (node.shape === undefined) {
+    return <GenericPropertyTableInspector node={node} />;
+  }
+  switch (node.shape) {
     case SYSTEM_IDS.TYPE_TEXT_BLOCK: {
       return <TextBlockRenderer node={node} />;
     }
@@ -96,7 +99,7 @@ export function renderUnavailableInteractiveRenderer(): React.ReactNode {
 
 function resolveRenderer(node: Node, graph: Graph): ResolvedRenderer {
   const namespace = resolveNamespace(graph, node);
-  const viewResult = resolveViewDefinition(graph, node.id, node.type, namespace);
+  const viewResult = resolveViewDefinition(graph, node.id, node.shape, namespace);
   if (!viewResult.ok) {
     return null;
   }
@@ -104,7 +107,7 @@ function resolveRenderer(node: Node, graph: Graph): ResolvedRenderer {
   const usesRendererEdges = getEdgesFrom(
     graph,
     viewDefinitionNode.id,
-    SYSTEM_EDGE_TYPES.USES_RENDERER,
+    SYSTEM_EDGE_SHAPES.USES_RENDERER,
   );
   const usesEdge = usesRendererEdges[0];
   if (!usesEdge) {
@@ -249,7 +252,7 @@ export const BlockRenderer: React.FC<BlockRendererProperties> = ({
   // Find and sort children (unconditional)
   const children = useMemo(() => {
     const childEdges = [...graph.edges.values()].filter(
-      (edge) => edge.target === node.id && edge.type === SYSTEM_EDGE_TYPES.CHILD_OF,
+      (edge) => edge.target === node.id && edge.shape === SYSTEM_EDGE_SHAPES.CHILD_OF,
     );
 
     // Sort by fractional index position

@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'bun:test';
-import { asDeviceId, asGraphId, asNodeId, asTypeId, createGraphSession } from '@canopy/graph';
+import {
+  SYSTEM_IDS,
+  asDeviceId,
+  asGraphId,
+  asNodeId,
+  asShapeId,
+  createEventId,
+  createGraphSession,
+  createInstant,
+} from '@canopy/graph';
 import { createInMemoryEventStore } from '@canopy/storage';
 import {
   createGraphAccessContext,
@@ -11,12 +20,28 @@ import {
 import type { EventStreamMessage } from '../src/graph-access-payloads';
 
 const graphId = asGraphId('g1');
-const deviceId = asDeviceId('device-1');
+const deviceId = asDeviceId('00000000-0000-4000-8000-000000000001');
 
 const setupSessionContext = async () => {
   const eventLogStore = createInMemoryEventStore();
   const session = createGraphSession(eventLogStore, graphId, deviceId);
   await session.load();
+  await session.commit([
+    {
+      type: 'NodeCreated',
+      eventId: createEventId(),
+      id: asNodeId('doc'),
+      shapeId: SYSTEM_IDS.SHAPE,
+      properties: new Map<string, string | boolean>([
+        ['name', 'Doc'],
+        ['namespace', 'user'],
+        ['entityKind', 'node'],
+        ['closed', false],
+      ]),
+      timestamp: createInstant(),
+      deviceId,
+    },
+  ]);
   const context = createGraphAccessContext({
     graph: session.graph(),
     session,
@@ -37,7 +62,7 @@ describe('Real-Time Event Stream Subscriber', () => {
 
     const request = createGraphAccessRequest('req-1', context, {
       id: asNodeId('n1'),
-      type: asTypeId('doc'),
+      type: asShapeId('doc'),
       properties: { title: 'Live Streaming Node' },
     });
     const result = await executeCreateNode(request);
@@ -70,7 +95,7 @@ describe('Real-Time Event Stream Subscriber', () => {
     for (let index = 1; index <= 5; index++) {
       const request = createGraphAccessRequest(`req-overflow-${index}`, context, {
         id: asNodeId(`n-overflow-${index}`),
-        type: asTypeId('doc'),
+        type: asShapeId('doc'),
         properties: { count: index },
       });
       await executeCreateNode(request);
@@ -92,7 +117,7 @@ describe('Event Catch-Up Replay Handler', () => {
     for (let index = 1; index <= 3; index++) {
       const request = createGraphAccessRequest(`req-replay-${index}`, context, {
         id: asNodeId(`n-replay-${index}`),
-        type: asTypeId('doc'),
+        type: asShapeId('doc'),
         properties: { count: index },
       });
       const result = await executeCreateNode(request);
@@ -102,7 +127,9 @@ describe('Event Catch-Up Replay Handler', () => {
     const allEventsResult = await eventLogStore.getEvents(graphId);
     expect(allEventsResult.ok).toBe(true);
     const allEvents = allEventsResult.ok ? allEventsResult.value : [];
-    const firstEventId = allEvents[0]?.eventId ?? '';
+    const firstEventId =
+      allEvents.find((event) => event.type === 'NodeCreated' && event.id === asNodeId('n-replay-1'))
+        ?.eventId ?? '';
 
     const replayResult = await executeReplayEventStream(context, {
       graphId: 'g1',
@@ -125,7 +152,7 @@ describe('Event Catch-Up Replay Handler', () => {
     for (let index = 1; index <= 15; index++) {
       const request = createGraphAccessRequest(`req-limit-${index}`, context, {
         id: asNodeId(`n-limit-${index}`),
-        type: asTypeId('doc'),
+        type: asShapeId('doc'),
         properties: { count: index },
       });
       await executeCreateNode(request);

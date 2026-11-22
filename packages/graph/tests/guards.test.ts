@@ -74,18 +74,42 @@ describe('Type Guards', () => {
   it('should identify Node', () => {
     const node: unknown = {
       id: '123',
-      type: 'T',
+      shape: 'T',
       properties: new Map(),
       metadata: {},
     };
     expect(isNode(node)).toBe(true);
     expect(isEdge(node)).toBe(false);
+
+    const openNode: unknown = {
+      id: '124',
+      properties: new Map(),
+      metadata: {},
+    };
+    expect(isNode(openNode)).toBe(true);
+    expect(isEdge(openNode)).toBe(false);
+
+    const explicitUndefinedShapeNode: unknown = {
+      id: '125',
+      shape: undefined,
+      properties: new Map(),
+      metadata: {},
+    };
+    expect(isNode(explicitUndefinedShapeNode)).toBe(true);
+
+    const invalidShapeNode: unknown = {
+      id: '126',
+      shape: 42,
+      properties: new Map(),
+      metadata: {},
+    };
+    expect(isNode(invalidShapeNode)).toBe(false);
   });
 
   it('should identify Edge', () => {
     const edge: unknown = {
       id: 'e1',
-      type: 'E',
+      shape: 'E',
       source: 'n1',
       target: 'n2',
       properties: new Map(),
@@ -93,5 +117,35 @@ describe('Type Guards', () => {
     };
     expect(isEdge(edge)).toBe(true);
     expect(isNode(edge)).toBe(false);
+
+    const openEdge: unknown = {
+      id: 'e2',
+      source: 'n1',
+      target: 'n2',
+      properties: new Map(),
+      metadata: {},
+    };
+    expect(isEdge(openEdge)).toBe(true);
+    expect(isNode(openEdge)).toBe(false);
+
+    const explicitUndefinedShapeEdge: unknown = {
+      id: 'e3',
+      shape: undefined,
+      source: 'n1',
+      target: 'n2',
+      properties: new Map(),
+      metadata: {},
+    };
+    expect(isEdge(explicitUndefinedShapeEdge)).toBe(true);
+
+    const invalidShapeEdge: unknown = {
+      id: 'e4',
+      shape: 42,
+      source: 'n1',
+      target: 'n2',
+      properties: new Map(),
+      metadata: {},
+    };
+    expect(isEdge(invalidShapeEdge)).toBe(false);
   });
 });

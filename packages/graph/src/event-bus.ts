@@ -8,13 +8,13 @@ interface EventSubscription {
 }
 
 export const onNodeCreated = (
-  typeId: TypeId,
+  shapeId: TypeId,
   callback: (event: NodeCreated) => unknown,
 ): EventHandler => {
   return (events: readonly GraphEvent[]) =>
     events
       .filter(
-        (event): event is NodeCreated => event.type === 'NodeCreated' && event.nodeType === typeId,
+        (event): event is NodeCreated => event.type === 'NodeCreated' && event.shapeId === shapeId,
       )
       .map((event, _index) => callback(event));
 };

@@ -1,5 +1,16 @@
 import { v7 as uuidv7 } from 'uuid';
-import type { NodeId, EdgeId, TypeId, GraphId, EventId, DeviceId, Namespace } from './identifiers';
+import type {
+  NodeId,
+  EdgeId,
+  ShapeId,
+  PropertyTypeId,
+  BatchId,
+  TypeId,
+  GraphId,
+  EventId,
+  DeviceId,
+  Namespace,
+} from './identifiers';
 import type { Instant, PlainDate } from './temporal';
 import type { Result } from './result';
 import { err as error, fromThrowable } from './result';
@@ -14,10 +25,26 @@ export function createEdgeId(): EdgeId {
   return uuidv7() as EdgeId;
 }
 
-// For TypeId, we generally don't generate random UUIDs, but often user supplied strings.
-// This function acts as a "validator" that casts.
+export function asShapeId(id: string): ShapeId {
+  return id as ShapeId;
+}
+
+export function asPropertyTypeId(id: string): PropertyTypeId {
+  return id as PropertyTypeId;
+}
+
+export function asBatchId(id: string): BatchId {
+  return id as BatchId;
+}
+
+export function createBatchId(): BatchId {
+  return `batch:${uuidv7()}` as BatchId;
+}
+
+/**
+@deprecated Removed in bead d.
+*/
 export function asTypeId(id: string): TypeId {
-  // In a real system, we might check if the type ID is valid (no spaces, etc.)
   return id as TypeId;
 }
 

@@ -9,14 +9,14 @@ import {
   removeEdge,
   getNode,
   getEdge,
-  getNodesOfType,
+  getNodesOfShape,
   getEdgesFrom,
   getEdgesTo,
 } from '../index';
 import {
   createNodeId,
   createEdgeId,
-  asTypeId,
+  asShapeId,
   createGraphId,
   createInstant,
   unwrap,
@@ -34,14 +34,14 @@ describe('Core Graph Engine', () => {
     expect(emptyGraph.name).toBe('Test Graph');
     // Bootstrap adds system nodes (NodeTypes, EdgeTypes, Queries, Views, Settings, Workflow)
     // 41 nodes total
-    expect(emptyGraph.nodes.size).toBe(42);
+    expect(emptyGraph.nodes.size).toBe(48);
     expect(emptyGraph.edges.size).toBe(6);
   });
 
   const nodeId1 = createNodeId();
   const node1: Node = {
     id: nodeId1,
-    type: asTypeId('person'),
+    shape: asShapeId('person'),
     properties: new Map(),
     metadata: {
       created: createInstant(),
@@ -53,7 +53,7 @@ describe('Core Graph Engine', () => {
   const nodeId2 = createNodeId();
   const node2: Node = {
     id: nodeId2,
-    type: asTypeId('person'),
+    shape: asShapeId('person'),
     properties: new Map(),
     metadata: {
       created: createInstant(),
@@ -67,16 +67,16 @@ describe('Core Graph Engine', () => {
       addNode(emptyGraph, node1, { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') }),
     );
     const g1 = r1.graph;
-    expect(g1.nodes.size).toBe(43); // 42 bootstrap + 1 new
+    expect(g1.nodes.size).toBe(49); // 48 bootstrap + 1 new
     expect(g1.nodes.get(nodeId1)).toBe(node1);
-    expect(emptyGraph.nodes.size).toBe(42); // Original unmodified (bootstrap nodes)
+    expect(emptyGraph.nodes.size).toBe(48); // Original unmodified (bootstrap nodes)
 
     expect(r1.events).toHaveLength(1);
     expect(r1.events[0]).toMatchObject({
       type: 'NodeCreated',
       eventId: expect.any(String),
       id: node1.id,
-      nodeType: node1.type,
+      shapeId: node1.shape,
       properties: node1.properties,
     });
 
@@ -84,16 +84,16 @@ describe('Core Graph Engine', () => {
       addNode(g1, node2, { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') }),
     );
     const g2 = r2.graph;
-    expect(g2.nodes.size).toBe(44); // 42 bootstrap + 2 new
+    expect(g2.nodes.size).toBe(50); // 48 bootstrap + 2 new
     expect(g2.nodes.get(nodeId2)).toBe(node2);
-    expect(g1.nodes.size).toBe(43); // Previous version unmodified
+    expect(g1.nodes.size).toBe(49); // Previous version unmodified
 
     expect(r2.events).toHaveLength(1);
     expect(r2.events[0]).toMatchObject({
       type: 'NodeCreated',
       eventId: expect.any(String),
       id: node2.id,
-      nodeType: node2.type,
+      shapeId: node2.shape,
       properties: node2.properties,
     });
   });
@@ -155,7 +155,7 @@ describe('Core Graph Engine', () => {
       id: edgeId,
       source: nodeId1,
       target: nodeId2,
-      type: asTypeId('knows'),
+      shape: asShapeId('knows'),
       properties: new Map(),
       metadata: {
         created: createInstant(),
@@ -174,11 +174,11 @@ describe('Core Graph Engine', () => {
       removeNode(g, nodeId1, { deviceId: asDeviceId('00000000-0000-0000-0000-000000000000') }),
     );
     const gRemoved = rRemoved.graph;
-    expect(gRemoved.nodes.size).toBe(43); // 42 bootstrap + 1 remaining node
+    expect(gRemoved.nodes.size).toBe(49); // 48 bootstrap + 1 remaining node
     expect(gRemoved.nodes.has(nodeId1)).toBe(false);
     expect(gRemoved.edges.size).toBe(6); // Edge should be removed (back to 6 bootstrap edges)
 
-    expect(g.nodes.size).toBe(44); // 42 bootstrap + 2 nodes
+    expect(g.nodes.size).toBe(50); // 48 bootstrap + 2 nodes
     expect(g.edges.size).toBe(7);
 
     // Verify events: 1 node deleted, 1 edge deleted
@@ -221,7 +221,7 @@ describe('Core Graph Engine', () => {
       id: edgeId,
       source: nodeId1,
       target: nodeId2,
-      type: asTypeId('knows'),
+      shape: asShapeId('knows'),
       properties: new Map(),
       metadata: {
         created: createInstant(),
@@ -237,9 +237,9 @@ describe('Core Graph Engine', () => {
     expect(getNode(g, nodeId1)).toBe(node1);
     expect(getEdge(g, edgeId)).toBe(edge);
 
-    // getNodesOfType should find the 2 people we added.
+    // getNodesOfShape should find the 2 people we added.
     // It should NOT find bootstrap nodes unless they have type 'person' (which they don't).
-    const people = getNodesOfType(g, asTypeId('person'));
+    const people = getNodesOfShape(g, asShapeId('person'));
     expect(people).toHaveLength(2);
     expect(people.map((p) => p.id)).toContain(nodeId1);
     expect(people.map((p) => p.id)).toContain(nodeId2);
@@ -262,7 +262,7 @@ describe('Core Graph Engine', () => {
       id: edgeId,
       source: nodeId1,
       target: nodeId2,
-      type: asTypeId('knows'),
+      shape: asShapeId('knows'),
       properties: new Map(),
       metadata: {
         created: createInstant(),
@@ -319,7 +319,7 @@ describe('Core Graph Engine', () => {
       id: edgeId,
       source: nodeId1,
       target: nodeId2,
-      type: asTypeId('knows'),
+      shape: asShapeId('knows'),
       properties: new Map(),
       metadata: {
         created: createInstant(),

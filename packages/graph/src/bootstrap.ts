@@ -2,22 +2,22 @@ import type { Graph } from './graph';
 import type { Node } from './node';
 import type { Edge } from './edge';
 import type { PropertyValue } from './properties';
-import type { TypeId, NodeId } from './identifiers';
+import type { ShapeId, NodeId } from './identifiers';
 import type { Result } from './result';
 import { createInstant, asNodeId, asEdgeId } from './factories';
 import { ok } from './result';
 import { addNode, addEdge } from './ops';
-import { SYSTEM_IDS, SYSTEM_EDGE_TYPES } from './system';
+import { SYSTEM_IDS, SYSTEM_EDGE_SHAPES } from './system';
 export { SYSTEM_DEVICE_ID } from './bootstrap-definitions';
 import {
   SYSTEM_DEVICE_ID,
   createBootstrapNode,
   text,
   reference,
-  nodeTypeProperties,
-  edgeTypeProperties,
+  shapeProperties,
   namespaceProperties,
   propertyTypeProperties,
+  systemPropertyTypes,
   namespaceMigrations,
   coreNodeTypes,
   coreEdgeTypes,
@@ -44,13 +44,13 @@ function addNodeGraph(graph: Graph, node: Node, migrationId?: string): Result<Gr
 function addEdgeGraph(
   graph: Graph,
   id: string,
-  type: TypeId,
+  shape: ShapeId,
   source: NodeId,
   target: NodeId,
 ): Result<Graph, Error> {
   const edge: Edge = {
     id: asEdgeId(id),
-    type,
+    shape,
     source,
     target,
     properties: new Map(),
@@ -92,20 +92,22 @@ This is idempotent - it only adds nodes if they are missing.
 // eslint-disable-next-line max-lines-per-function
 export function bootstrap(graph: Graph): Result<Graph, Error> {
   const steps: readonly ((g: Graph) => Result<Graph, Error>)[] = [
-    // 1. Ensure NodeType definition exists
+    // 1. Ensure Shape meta-definition exists
     (g) =>
-      g.nodes.has(SYSTEM_IDS.NODE_TYPE_DEF)
+      g.nodes.has(SYSTEM_IDS.SHAPE_DEF)
         ? ok(g)
         : addNodeGraph(
             g,
             createBootstrapNode(
-              SYSTEM_IDS.NODE_TYPE_DEF,
-              SYSTEM_IDS.NODE_TYPE,
-              'Node Type',
-              'Defines a type of node in the graph.',
+              SYSTEM_IDS.SHAPE_DEF,
+              SYSTEM_IDS.SHAPE,
+              'Shape',
+              'Defines a node or edge shape in the graph.',
               {
                 namespace: text('system'),
-                properties: text(JSON.stringify(nodeTypeProperties)),
+                entityKind: text('node'),
+                closed: false,
+                properties: text(JSON.stringify(shapeProperties)),
               },
             ),
           ),
@@ -117,30 +119,14 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
             g,
             createBootstrapNode(
               SYSTEM_IDS.RENDERER_DEF,
-              SYSTEM_IDS.NODE_TYPE,
+              SYSTEM_IDS.SHAPE,
               'Renderer',
-              'Defines how to render nodes of a type',
+              'Defines how to render nodes of a shape.',
               {
                 namespace: text('system'),
+                entityKind: text('node'),
+                closed: false,
                 properties: text(JSON.stringify(rendererProperties)),
-              },
-            ),
-          ),
-
-    // 2. Ensure EdgeType definition exists
-    (g) =>
-      g.nodes.has(SYSTEM_IDS.EDGE_TYPE_DEF)
-        ? ok(g)
-        : addNodeGraph(
-            g,
-            createBootstrapNode(
-              SYSTEM_IDS.EDGE_TYPE_DEF,
-              SYSTEM_IDS.NODE_TYPE,
-              'Edge Type',
-              'Defines a type of edge in the graph.',
-              {
-                namespace: text('system'),
-                properties: text(JSON.stringify(edgeTypeProperties)),
               },
             ),
           ),
@@ -153,11 +139,13 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
             g,
             createBootstrapNode(
               SYSTEM_IDS.NAMESPACE_DEF,
-              SYSTEM_IDS.NODE_TYPE,
+              SYSTEM_IDS.SHAPE,
               'Namespace',
               "Defines a logical partition within the graph's identity space.",
               {
                 namespace: text('system'),
+                entityKind: text('node'),
+                closed: false,
                 properties: text(JSON.stringify(namespaceProperties)),
               },
             ),
@@ -171,11 +159,13 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
             g,
             createBootstrapNode(
               SYSTEM_IDS.PROPERTY_TYPE_DEF,
-              SYSTEM_IDS.NODE_TYPE,
+              SYSTEM_IDS.SHAPE,
               'Property Type',
-              'Defines a reusable property shape that a NodeType or EdgeType can reference.',
+              'Defines a reusable property type that a Shape can reference.',
               {
                 namespace: text('system'),
+                entityKind: text('node'),
+                closed: false,
                 properties: text(JSON.stringify(propertyTypeProperties)),
               },
             ),
@@ -188,11 +178,13 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
             g,
             createBootstrapNode(
               SYSTEM_IDS.QUERY_DEFINITION_DEF,
-              SYSTEM_IDS.NODE_TYPE,
+              SYSTEM_IDS.SHAPE,
               'Query Definition',
               'Defines a stored query in the graph.',
               {
                 namespace: text('system'),
+                entityKind: text('node'),
+                closed: false,
                 properties: text(JSON.stringify(queryDefinitionProperties)),
               },
             ),
@@ -205,11 +197,13 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
             g,
             createBootstrapNode(
               SYSTEM_IDS.VIEW_DEFINITION_DEF,
-              SYSTEM_IDS.NODE_TYPE,
+              SYSTEM_IDS.SHAPE,
               'View Definition',
               'Defines a view of data in the graph.',
               {
                 namespace: text('system'),
+                entityKind: text('node'),
+                closed: false,
                 properties: text(JSON.stringify(viewDefinitionProperties)),
               },
             ),
@@ -222,11 +216,13 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
             g,
             createBootstrapNode(
               SYSTEM_IDS.TEMPLATE_DEF,
-              SYSTEM_IDS.NODE_TYPE,
+              SYSTEM_IDS.SHAPE,
               'Template',
               'Defines a UI template.',
               {
                 namespace: text('system'),
+                entityKind: text('node'),
+                closed: false,
                 properties: text(JSON.stringify(templateProperties)),
               },
             ),
@@ -261,6 +257,28 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
       ),
     (g) =>
       reduceResult(
+        systemPropertyTypes,
+        (cg, definition) =>
+          cg.nodes.has(definition.id)
+            ? ok(cg)
+            : addNodeGraph(
+                cg,
+                createBootstrapNode(
+                  definition.id,
+                  SYSTEM_IDS.PROPERTY_TYPE,
+                  definition.name,
+                  definition.description,
+                  {
+                    namespace: text(definition.namespace),
+                    valueKind: text(definition.valueKind),
+                    cardinality: text(definition.cardinality),
+                  },
+                ),
+              ),
+        g,
+      ),
+    (g) =>
+      reduceResult(
         coreNodeTypes,
         (cg, definition) =>
           cg.nodes.has(definition.id)
@@ -269,11 +287,13 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
                 cg,
                 createBootstrapNode(
                   definition.id,
-                  SYSTEM_IDS.NODE_TYPE,
+                  SYSTEM_IDS.SHAPE,
                   definition.name,
                   definition.description,
                   {
                     namespace: text('namespace' in definition ? definition.namespace : 'system'),
+                    entityKind: text('node'),
+                    closed: false,
                     properties: text(JSON.stringify(definition.properties)),
                   },
                 ),
@@ -291,16 +311,20 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
           const extraProperties: Readonly<Record<string, PropertyValue>> = properties
             ? {
                 namespace: text('system'),
+                entityKind: text('edge'),
+                closed: false,
                 properties: text(JSON.stringify(properties)),
               }
             : {
                 namespace: text('system'),
+                entityKind: text('edge'),
+                closed: false,
               };
           return addNodeGraph(
             cg,
             createBootstrapNode(
               definition.id,
-              SYSTEM_IDS.EDGE_TYPE,
+              SYSTEM_IDS.SHAPE,
               definition.name,
               definition.description,
               extraProperties,
@@ -370,7 +394,7 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
                     valueKind: text(definition.valueKind),
                     defaultValue: text(definition.defaultValue),
                     description: text(definition.description),
-                    scopes: text(definition.scopes),
+                    scopes: definition.scopes,
                     namespace: text(definition.namespace),
                   },
                 ),
@@ -447,19 +471,19 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
       const usesEdges = [
         {
           id: 'system:edge:uses-renderer:text-block',
-          type: SYSTEM_EDGE_TYPES.USES_RENDERER,
+          type: SYSTEM_EDGE_SHAPES.USES_RENDERER,
           source: asNodeId('system:view:text-block'),
           target: asNodeId('system:renderer:text'),
         },
         {
           id: 'system:edge:uses-renderer:code-block',
-          type: SYSTEM_EDGE_TYPES.USES_RENDERER,
+          type: SYSTEM_EDGE_SHAPES.USES_RENDERER,
           source: asNodeId('system:view:code-block'),
           target: asNodeId('system:renderer:code'),
         },
         {
           id: 'system:edge:uses-renderer:markdown',
-          type: SYSTEM_EDGE_TYPES.USES_RENDERER,
+          type: SYSTEM_EDGE_SHAPES.USES_RENDERER,
           source: asNodeId('system:view:markdown'),
           target: asNodeId('system:renderer:markdown'),
         },
@@ -484,19 +508,19 @@ export function bootstrap(graph: Graph): Result<Graph, Error> {
       const defaultViewEdges = [
         {
           id: 'system:edge:default-view:text-block',
-          type: SYSTEM_EDGE_TYPES.DEFAULT_VIEW,
+          type: SYSTEM_EDGE_SHAPES.DEFAULT_VIEW,
           source: SYSTEM_IDS.NODE_TYPE_TEXT_BLOCK,
           target: asNodeId('system:view:text-block'),
         },
         {
           id: 'system:edge:default-view:code-block',
-          type: SYSTEM_EDGE_TYPES.DEFAULT_VIEW,
+          type: SYSTEM_EDGE_SHAPES.DEFAULT_VIEW,
           source: SYSTEM_IDS.NODE_TYPE_CODE_BLOCK,
           target: asNodeId('system:view:code-block'),
         },
         {
           id: 'system:edge:default-view:markdown',
-          type: SYSTEM_EDGE_TYPES.DEFAULT_VIEW,
+          type: SYSTEM_EDGE_SHAPES.DEFAULT_VIEW,
           source: SYSTEM_IDS.NODE_TYPE_MARKDOWN,
           target: asNodeId('system:view:markdown'),
         },

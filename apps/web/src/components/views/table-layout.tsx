@@ -55,7 +55,7 @@ export const TableLayout: React.FC<TableLayoutProperties> = ({
             >
               <td className="px-4 py-3">
                 <span className="font-mono text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
-                  {node.type}
+                  {node.shape ?? 'Open'}
                 </span>
               </td>
               {columns.map((col) => (

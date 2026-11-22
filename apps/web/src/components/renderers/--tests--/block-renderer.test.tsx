@@ -9,10 +9,10 @@ import {
   createGraph,
   asGraphId,
   asNodeId,
-  asTypeId,
+  asShapeId,
   asEdgeId,
   SYSTEM_IDS,
-  SYSTEM_EDGE_TYPES,
+  SYSTEM_EDGE_SHAPES,
   SYSTEM_DEVICE_ID,
   createInstant,
   addNode,
@@ -46,7 +46,7 @@ describe('BlockRenderer', () => {
     const graph = unwrap(createGraph(asGraphId('test-graph'), 'Test Graph'));
     const textNode: Node = {
       id: asNodeId('user:node:text-1'),
-      type: SYSTEM_IDS.TYPE_TEXT_BLOCK,
+      shape: SYSTEM_IDS.TYPE_TEXT_BLOCK,
       properties: new Map([['content', 'Hello Type Fallback']]),
       metadata: {
         created: createInstant(),
@@ -63,7 +63,7 @@ describe('BlockRenderer', () => {
     const graph = unwrap(createGraph(asGraphId('test-graph'), 'Test Graph'));
     const textNode: Node = {
       id: asNodeId('user:node:text-1'),
-      type: SYSTEM_IDS.TYPE_TEXT_BLOCK,
+      shape: SYSTEM_IDS.TYPE_TEXT_BLOCK,
       properties: new Map([['content', 'Hello Cycle']]),
       metadata: {
         created: createInstant(),
@@ -81,14 +81,14 @@ describe('BlockRenderer', () => {
     let graph = unwrap(createGraph(asGraphId('test-graph'), 'Test Graph'));
 
     const nodeId = asNodeId('user:node:text-dynamic');
-    const typeId = asTypeId('user:nodetype:custom');
+    const typeId = asShapeId('user:nodetype:custom');
     const viewNodeId = asNodeId('user:view:custom');
     const rendererNodeId = asNodeId('system:renderer:code');
 
     // 1. Target node
     const targetNode: Node = {
       id: nodeId,
-      type: typeId,
+      shape: typeId,
       properties: new Map([
         ['content', 'Dynamic Content'],
         ['language', 'typescript'],
@@ -104,7 +104,7 @@ describe('BlockRenderer', () => {
     // 2. View definition node
     const viewNode: Node = {
       id: viewNodeId,
-      type: SYSTEM_IDS.VIEW_DEFINITION,
+      shape: SYSTEM_IDS.VIEW_DEFINITION,
       properties: new Map([['name', 'Custom View']]),
       metadata: {
         created: createInstant(),
@@ -117,7 +117,7 @@ describe('BlockRenderer', () => {
     // 3. VIEW_OVERRIDE edge from targetNode to viewNode
     const overrideEdge: Edge = {
       id: asEdgeId('user:edge:override'),
-      type: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
+      shape: SYSTEM_EDGE_SHAPES.VIEW_OVERRIDE,
       source: nodeId,
       target: viewNodeId,
       properties: new Map(),
@@ -132,7 +132,7 @@ describe('BlockRenderer', () => {
     // 5. USES_RENDERER edge from viewNode to rendererNode
     const usesEdge: Edge = {
       id: asEdgeId('user:edge:uses-renderer'),
-      type: SYSTEM_EDGE_TYPES.USES_RENDERER,
+      shape: SYSTEM_EDGE_SHAPES.USES_RENDERER,
       source: viewNodeId,
       target: rendererNodeId,
       properties: new Map(),
@@ -155,7 +155,7 @@ describe('BlockRenderer', () => {
   it('fails closed through production dispatch when an authorized guest is missing', () => {
     let graph = unwrap(createGraph(asGraphId('test-unavailable-graph'), 'Test unavailable graph'));
     const nodeId = asNodeId('user:node:interactive-unavailable');
-    const typeId = asTypeId('user:nodetype:interactive-unavailable');
+    const typeId = asShapeId('user:nodetype:interactive-unavailable');
     const viewNodeId = asNodeId('user:view:interactive-unavailable');
     const rendererNodeId = asNodeId('user:renderer:interactive-unavailable');
     const pluginNodeId = asNodeId('plugin:missing-guest');
@@ -170,20 +170,20 @@ describe('BlockRenderer', () => {
 
     const targetNode: Node = {
       id: nodeId,
-      type: typeId,
+      shape: typeId,
       properties: new Map([['content', 'must not be shown as fallback']]),
       metadata,
     };
     graph = add(graph, targetNode);
     graph = add(graph, {
       id: viewNodeId,
-      type: SYSTEM_IDS.VIEW_DEFINITION,
+      shape: SYSTEM_IDS.VIEW_DEFINITION,
       properties: new Map([['name', 'Unavailable interactive view']]),
       metadata,
     });
     graph = add(graph, {
       id: rendererNodeId,
-      type: SYSTEM_IDS.RENDERER,
+      shape: SYSTEM_IDS.RENDERER,
       properties: new Map([
         ['rendererKind', 'wasm'],
         ['entryPoint', pluginNodeId],
@@ -192,7 +192,7 @@ describe('BlockRenderer', () => {
     });
     graph = add(graph, {
       id: pluginNodeId,
-      type: asTypeId('canopy:system/plugin'),
+      shape: asShapeId('canopy:system/plugin'),
       properties: new Map([['manifest', JSON.stringify({ capabilities: ['render:interactive'] })]]),
       metadata,
     });
@@ -201,7 +201,7 @@ describe('BlockRenderer', () => {
         graph,
         {
           id: asEdgeId('user:edge:unavailable-override'),
-          type: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
+          shape: SYSTEM_EDGE_SHAPES.VIEW_OVERRIDE,
           source: nodeId,
           target: viewNodeId,
           properties: new Map(),
@@ -215,7 +215,7 @@ describe('BlockRenderer', () => {
         graph,
         {
           id: asEdgeId('user:edge:unavailable-renderer'),
-          type: SYSTEM_EDGE_TYPES.USES_RENDERER,
+          shape: SYSTEM_EDGE_SHAPES.USES_RENDERER,
           source: viewNodeId,
           target: rendererNodeId,
           properties: new Map(),
@@ -237,7 +237,7 @@ describe('BlockRenderer', () => {
       createGraph(asGraphId('test-dynamic-tier1-graph'), 'Test dynamic tier1 graph'),
     );
     const nodeId = asNodeId('user:node:tier1-target');
-    const typeId = asTypeId('user:nodetype:tier1-target');
+    const typeId = asShapeId('user:nodetype:tier1-target');
     const viewNodeId = asNodeId('user:view:tier1-custom');
     const rendererNodeId = asNodeId('user:renderer:tier1-custom');
     const pluginNodeId = asNodeId('plugin:custom-tier1');
@@ -252,20 +252,20 @@ describe('BlockRenderer', () => {
 
     const targetNode: Node = {
       id: nodeId,
-      type: typeId,
+      shape: typeId,
       properties: new Map([['content', 'Tier-1 dynamic content']]),
       metadata,
     };
     graph = add(graph, targetNode);
     graph = add(graph, {
       id: viewNodeId,
-      type: SYSTEM_IDS.VIEW_DEFINITION,
+      shape: SYSTEM_IDS.VIEW_DEFINITION,
       properties: new Map([['name', 'Custom Tier-1 View']]),
       metadata,
     });
     graph = add(graph, {
       id: rendererNodeId,
-      type: SYSTEM_IDS.RENDERER,
+      shape: SYSTEM_IDS.RENDERER,
       properties: new Map([
         ['rendererKind', 'wasm'],
         ['entryPoint', pluginNodeId],
@@ -274,7 +274,7 @@ describe('BlockRenderer', () => {
     });
     graph = add(graph, {
       id: pluginNodeId,
-      type: asTypeId('canopy:system/plugin'),
+      shape: asShapeId('canopy:system/plugin'),
       properties: new Map([
         [
           'manifest',
@@ -291,7 +291,7 @@ describe('BlockRenderer', () => {
         graph,
         {
           id: asEdgeId('user:edge:tier1-override'),
-          type: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
+          shape: SYSTEM_EDGE_SHAPES.VIEW_OVERRIDE,
           source: nodeId,
           target: viewNodeId,
           properties: new Map(),
@@ -305,7 +305,7 @@ describe('BlockRenderer', () => {
         graph,
         {
           id: asEdgeId('user:edge:tier1-renderer'),
-          type: SYSTEM_EDGE_TYPES.USES_RENDERER,
+          shape: SYSTEM_EDGE_SHAPES.USES_RENDERER,
           source: viewNodeId,
           target: rendererNodeId,
           properties: new Map(),
@@ -348,20 +348,20 @@ describe('BlockRenderer', () => {
 
     const targetNode: Node = {
       id: nodeId,
-      type: typeId,
+      shape: typeId,
       properties: new Map([['content', 'Native Fallback Expected']]),
       metadata,
     };
     graph = add(graph, targetNode);
     graph = add(graph, {
       id: viewNodeId,
-      type: SYSTEM_IDS.VIEW_DEFINITION,
+      shape: SYSTEM_IDS.VIEW_DEFINITION,
       properties: new Map([['name', 'Unavailable Tier-1 View']]),
       metadata,
     });
     graph = add(graph, {
       id: rendererNodeId,
-      type: SYSTEM_IDS.RENDERER,
+      shape: SYSTEM_IDS.RENDERER,
       properties: new Map([
         ['rendererKind', 'wasm'],
         ['entryPoint', pluginNodeId],
@@ -370,7 +370,7 @@ describe('BlockRenderer', () => {
     });
     graph = add(graph, {
       id: pluginNodeId,
-      type: asTypeId('canopy:system/plugin'),
+      shape: asShapeId('canopy:system/plugin'),
       properties: new Map([
         [
           'manifest',
@@ -387,7 +387,7 @@ describe('BlockRenderer', () => {
         graph,
         {
           id: asEdgeId('user:edge:tier1-unavail-override'),
-          type: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
+          shape: SYSTEM_EDGE_SHAPES.VIEW_OVERRIDE,
           source: nodeId,
           target: viewNodeId,
           properties: new Map(),
@@ -401,7 +401,7 @@ describe('BlockRenderer', () => {
         graph,
         {
           id: asEdgeId('user:edge:tier1-unavail-renderer'),
-          type: SYSTEM_EDGE_TYPES.USES_RENDERER,
+          shape: SYSTEM_EDGE_SHAPES.USES_RENDERER,
           source: viewNodeId,
           target: rendererNodeId,
           properties: new Map(),
@@ -426,7 +426,7 @@ describe('BlockRenderer', () => {
     );
     const customNode: Node = {
       id: asNodeId('user:node:book-1'),
-      type: asTypeId('user:nodetype:book'),
+      shape: asShapeId('user:nodetype:book'),
       properties: new Map([
         ['title', 'The Hobbit'],
         ['author', 'J.R.R. Tolkien'],
@@ -464,14 +464,14 @@ describe('BlockRenderer', () => {
 
     const targetNode: Node = {
       id: nodeId,
-      type: asTypeId('user:nodetype:custom-block'),
+      shape: asShapeId('user:nodetype:custom-block'),
       properties: new Map([['content', 'Cascade to inspector expected']]),
       metadata,
     };
     graph = add(graph, targetNode);
     graph = add(graph, {
       id: viewNodeId,
-      type: SYSTEM_IDS.VIEW_DEFINITION,
+      shape: SYSTEM_IDS.VIEW_DEFINITION,
       properties: new Map([['name', 'View with missing renderer']]),
       metadata,
     });
@@ -480,7 +480,7 @@ describe('BlockRenderer', () => {
         graph,
         {
           id: asEdgeId('user:edge:missing-rend-override'),
-          type: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
+          shape: SYSTEM_EDGE_SHAPES.VIEW_OVERRIDE,
           source: nodeId,
           target: viewNodeId,
           properties: new Map(),
@@ -499,7 +499,7 @@ describe('BlockRenderer', () => {
           asEdgeId('user:edge:missing-rend-uses'),
           {
             id: asEdgeId('user:edge:missing-rend-uses'),
-            type: SYSTEM_EDGE_TYPES.USES_RENDERER,
+            shape: SYSTEM_EDGE_SHAPES.USES_RENDERER,
             source: viewNodeId,
             target: missingRendererId,
             properties: new Map(),
@@ -533,20 +533,20 @@ describe('BlockRenderer', () => {
 
     const targetNode: Node = {
       id: nodeId,
-      type: asTypeId('user:nodetype:custom-item'),
+      shape: asShapeId('user:nodetype:custom-item'),
       properties: new Map([['description', 'Inactive renderer cascade item']]),
       metadata,
     };
     graph = add(graph, targetNode);
     graph = add(graph, {
       id: viewNodeId,
-      type: SYSTEM_IDS.VIEW_DEFINITION,
+      shape: SYSTEM_IDS.VIEW_DEFINITION,
       properties: new Map([['name', 'View with inactive renderer']]),
       metadata,
     });
     graph = add(graph, {
       id: rendererNodeId,
-      type: SYSTEM_IDS.RENDERER,
+      shape: SYSTEM_IDS.RENDERER,
       properties: new Map([
         ['status', 'inactive'],
         ['entryPoint', 'custom:inactive:entrypoint'],
@@ -558,7 +558,7 @@ describe('BlockRenderer', () => {
         graph,
         {
           id: asEdgeId('user:edge:inactive-rend-override'),
-          type: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
+          shape: SYSTEM_EDGE_SHAPES.VIEW_OVERRIDE,
           source: nodeId,
           target: viewNodeId,
           properties: new Map(),
@@ -572,7 +572,7 @@ describe('BlockRenderer', () => {
         graph,
         {
           id: asEdgeId('user:edge:inactive-rend-uses'),
-          type: SYSTEM_EDGE_TYPES.USES_RENDERER,
+          shape: SYSTEM_EDGE_SHAPES.USES_RENDERER,
           source: viewNodeId,
           target: rendererNodeId,
           properties: new Map(),
@@ -607,20 +607,20 @@ describe('BlockRenderer', () => {
 
     const targetNode: Node = {
       id: nodeId,
-      type: asTypeId('user:nodetype:inactive-plugin-type'),
+      shape: asShapeId('user:nodetype:inactive-plugin-type'),
       properties: new Map([['summary', 'Inactive plugin item']]),
       metadata,
     };
     graph = add(graph, targetNode);
     graph = add(graph, {
       id: viewNodeId,
-      type: SYSTEM_IDS.VIEW_DEFINITION,
+      shape: SYSTEM_IDS.VIEW_DEFINITION,
       properties: new Map([['name', 'View with inactive plugin']]),
       metadata,
     });
     graph = add(graph, {
       id: rendererNodeId,
-      type: SYSTEM_IDS.RENDERER,
+      shape: SYSTEM_IDS.RENDERER,
       properties: new Map([
         ['rendererKind', 'wasm'],
         ['entryPoint', pluginNodeId],
@@ -629,7 +629,7 @@ describe('BlockRenderer', () => {
     });
     graph = add(graph, {
       id: pluginNodeId,
-      type: asTypeId('canopy:system/plugin'),
+      shape: asShapeId('canopy:system/plugin'),
       properties: new Map([
         ['status', 'inactive'],
         ['manifest', JSON.stringify({ capabilities: ['render:raw-html'] })],
@@ -641,7 +641,7 @@ describe('BlockRenderer', () => {
         graph,
         {
           id: asEdgeId('user:edge:inactive-plug-override'),
-          type: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
+          shape: SYSTEM_EDGE_SHAPES.VIEW_OVERRIDE,
           source: nodeId,
           target: viewNodeId,
           properties: new Map(),
@@ -655,7 +655,7 @@ describe('BlockRenderer', () => {
         graph,
         {
           id: asEdgeId('user:edge:inactive-plug-uses'),
-          type: SYSTEM_EDGE_TYPES.USES_RENDERER,
+          shape: SYSTEM_EDGE_SHAPES.USES_RENDERER,
           source: viewNodeId,
           target: rendererNodeId,
           properties: new Map(),
@@ -688,20 +688,20 @@ describe('BlockRenderer', () => {
 
     const targetNode: Node = {
       id: nodeId,
-      type: asTypeId('user:nodetype:tier2-type'),
+      shape: asShapeId('user:nodetype:tier2-type'),
       properties: new Map([['content', 'Tier 2 secret content']]),
       metadata,
     };
     graph = add(graph, targetNode);
     graph = add(graph, {
       id: viewNodeId,
-      type: SYSTEM_IDS.VIEW_DEFINITION,
+      shape: SYSTEM_IDS.VIEW_DEFINITION,
       properties: new Map([['name', 'Inactive Tier 2 View']]),
       metadata,
     });
     graph = add(graph, {
       id: rendererNodeId,
-      type: SYSTEM_IDS.RENDERER,
+      shape: SYSTEM_IDS.RENDERER,
       properties: new Map([
         ['rendererKind', 'wasm'],
         ['entryPoint', pluginNodeId],
@@ -710,7 +710,7 @@ describe('BlockRenderer', () => {
     });
     graph = add(graph, {
       id: pluginNodeId,
-      type: asTypeId('canopy:system/plugin'),
+      shape: asShapeId('canopy:system/plugin'),
       properties: new Map([
         ['status', 'inactive'],
         ['manifest', JSON.stringify({ capabilities: ['render:interactive'] })],
@@ -722,7 +722,7 @@ describe('BlockRenderer', () => {
         graph,
         {
           id: asEdgeId('user:edge:inactive-tier2-override'),
-          type: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
+          shape: SYSTEM_EDGE_SHAPES.VIEW_OVERRIDE,
           source: nodeId,
           target: viewNodeId,
           properties: new Map(),
@@ -736,7 +736,7 @@ describe('BlockRenderer', () => {
         graph,
         {
           id: asEdgeId('user:edge:inactive-tier2-uses'),
-          type: SYSTEM_EDGE_TYPES.USES_RENDERER,
+          shape: SYSTEM_EDGE_SHAPES.USES_RENDERER,
           source: viewNodeId,
           target: rendererNodeId,
           properties: new Map(),
@@ -771,7 +771,7 @@ describe('BlockRenderer', () => {
 
     const targetNode: Node = {
       id: nodeId,
-      type: asTypeId('user:nodetype:panicking'),
+      shape: asShapeId('user:nodetype:panicking'),
       properties: new Map([
         ['fieldA', 'valA'],
         ['fieldB', 'valB'],
@@ -781,13 +781,13 @@ describe('BlockRenderer', () => {
     graph = add(graph, targetNode);
     graph = add(graph, {
       id: viewNodeId,
-      type: SYSTEM_IDS.VIEW_DEFINITION,
+      shape: SYSTEM_IDS.VIEW_DEFINITION,
       properties: new Map([['name', 'Panicking View']]),
       metadata,
     });
     graph = add(graph, {
       id: rendererNodeId,
-      type: SYSTEM_IDS.RENDERER,
+      shape: SYSTEM_IDS.RENDERER,
       properties: new Map([
         ['rendererKind', 'wasm'],
         ['entryPoint', pluginNodeId],
@@ -796,7 +796,7 @@ describe('BlockRenderer', () => {
     });
     graph = add(graph, {
       id: pluginNodeId,
-      type: asTypeId('canopy:system/plugin'),
+      shape: asShapeId('canopy:system/plugin'),
       properties: new Map([
         [
           'manifest',
@@ -813,7 +813,7 @@ describe('BlockRenderer', () => {
         graph,
         {
           id: asEdgeId('user:edge:panic-override'),
-          type: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
+          shape: SYSTEM_EDGE_SHAPES.VIEW_OVERRIDE,
           source: nodeId,
           target: viewNodeId,
           properties: new Map(),
@@ -827,7 +827,7 @@ describe('BlockRenderer', () => {
         graph,
         {
           id: asEdgeId('user:edge:panic-uses'),
-          type: SYSTEM_EDGE_TYPES.USES_RENDERER,
+          shape: SYSTEM_EDGE_SHAPES.USES_RENDERER,
           source: viewNodeId,
           target: rendererNodeId,
           properties: new Map(),
@@ -864,5 +864,27 @@ describe('BlockRenderer', () => {
     // Click again to toggle hide
     fireEvent.click(inspectButton);
     expect(screen.queryByTestId('generic-property-table-inspector')).toBeNull();
+  });
+
+  it('cascades to generic property table inspector when an open node has no shape', () => {
+    const graph = unwrap(createGraph(asGraphId('test-open-node-graph'), 'Test open node graph'));
+    const openNode: Node = {
+      id: asNodeId('user:node:open-1'),
+      properties: new Map([
+        ['title', 'Loose capture'],
+        ['note', 'No shape attached'],
+      ]),
+      metadata: {
+        created: createInstant(),
+        modified: createInstant(),
+        modifiedBy: SYSTEM_DEVICE_ID,
+      },
+    };
+
+    render(<BlockRenderer node={openNode} graph={graph} />);
+
+    expect(screen.getByTestId('generic-property-table-inspector')).not.toBeNull();
+    expect(screen.queryByText('Open')).not.toBeNull();
+    expect(screen.queryByText('Loose capture')).not.toBeNull();
   });
 });

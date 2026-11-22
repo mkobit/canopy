@@ -5,7 +5,7 @@ import { AriaLiveRegion, useAriaLiveAnnouncer } from '../aria-live-region';
 import { NodeView } from '../node-view';
 import { GraphCanvas } from '../graph-canvas';
 import type { Node } from '@canopy/graph';
-import { asNodeId, asTypeId, asDeviceId, createInstant } from '@canopy/graph';
+import { asNodeId, asShapeId, asDeviceId, createInstant } from '@canopy/graph';
 import { ReactFlowProvider } from '@xyflow/react';
 
 // @testing-library/react's auto-cleanup only self-registers under Jest/Vitest globals, which Bun's
@@ -57,7 +57,7 @@ import { InteractiveGraphView } from '../interactive-graph-view';
 
 const mockNode: Node = {
   id: asNodeId('n12345'),
-  type: asTypeId('Note'),
+  shape: asShapeId('Note'),
   properties: new Map([['name', 'Project Alpha']]),
   metadata: {
     created: createInstant(),

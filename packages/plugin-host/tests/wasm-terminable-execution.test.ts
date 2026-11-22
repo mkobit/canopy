@@ -18,7 +18,7 @@ const setupContext = async () => {
   const session = createGraphSession(
     eventLogStore,
     asGraphId('terminable-graph'),
-    asDeviceId('terminable-device'),
+    asDeviceId('00000000-0000-4000-8000-000000000001'),
   );
   await session.load();
   return createGraphAccessContext({ graph: session.graph(), session, eventLogStore });

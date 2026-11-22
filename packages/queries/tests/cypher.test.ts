@@ -5,7 +5,7 @@ import {
   Edge,
   PropertyValue,
   createGraphId,
-  asTypeId,
+  asShapeId,
   asInstant,
   asNodeId,
   asEdgeId,
@@ -31,7 +31,7 @@ function createMockGraph(): Graph {
     const nodeId = asNodeId(id);
     nodes.set(nodeId, {
       id: nodeId,
-      type: asTypeId(type),
+      shape: asShapeId(type),
       properties,
       metadata: {
         created: asInstant('2023-01-01T00:00:00Z'),
@@ -53,7 +53,7 @@ function createMockGraph(): Graph {
     const edgeId = asEdgeId(id);
     edges.set(edgeId, {
       id: edgeId,
-      type: asTypeId(type),
+      shape: asShapeId(type),
       source: asNodeId(source),
       target: asNodeId(target),
       properties,
