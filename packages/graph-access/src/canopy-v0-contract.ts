@@ -63,6 +63,22 @@ export type CanopyV0SettingScope = (typeof CANOPY_V0_SETTING_SCOPE_VALUES)[numbe
 export const CANOPY_V0_PROPERTY_CARDINALITY_VALUES = ['one', 'many'] as const;
 export type CanopyV0PropertyCardinality = (typeof CANOPY_V0_PROPERTY_CARDINALITY_VALUES)[number];
 
+export const CANOPY_V0_PROPERTY_VALUE_KIND_VALUES = [
+  'text',
+  'integer',
+  'number',
+  'boolean',
+  'instant',
+  'plain-date',
+  'url',
+  'reference',
+  'external-reference',
+] as const;
+export type CanopyV0PropertyValueKind = (typeof CANOPY_V0_PROPERTY_VALUE_KIND_VALUES)[number];
+
+export const CANOPY_V0_VALIDATION_SEVERITY_VALUES = ['error', 'warning'] as const;
+export type CanopyV0ValidationSeverity = (typeof CANOPY_V0_VALIDATION_SEVERITY_VALUES)[number];
+
 export const CANOPY_V0_ENTITY_KIND_VALUES = ['node', 'edge'] as const;
 export type CanopyV0EntityKind = (typeof CANOPY_V0_ENTITY_KIND_VALUES)[number];
 
@@ -84,6 +100,17 @@ export const CANOPY_V0_STREAM_MESSAGE_KIND_VALUES = [
   'end',
 ] as const;
 export type CanopyV0StreamMessageKind = (typeof CANOPY_V0_STREAM_MESSAGE_KIND_VALUES)[number];
+
+export interface CanopyV0ValidationIssue {
+  readonly code: string;
+  readonly severity: CanopyV0ValidationSeverity;
+  readonly entityKind?: CanopyV0EntityKind | undefined;
+  readonly entityId?: string | undefined;
+  readonly path: readonly string[];
+  readonly message: string;
+  readonly expected?: string | undefined;
+  readonly actual?: string | undefined;
+}
 
 export interface CanopyV0PropertyEntry {
   readonly key: string;
@@ -162,7 +189,6 @@ export interface CanopyV0BatchOperation {
   readonly shapeId?: CanopyV0ShapeId | undefined;
   readonly sourceNodeId?: CanopyV0NodeId | undefined;
   readonly targetNodeId?: CanopyV0NodeId | undefined;
-  readonly edgeTypeId?: CanopyV0ShapeId | undefined;
   readonly properties?: readonly CanopyV0PropertyEntry[] | undefined;
   readonly migrationId?: CanopyV0MigrationId | undefined;
   readonly fromShapeId?: CanopyV0ShapeId | undefined;
@@ -186,6 +212,7 @@ export interface CanopyV0CommitTransactionResponse {
   readonly revision: string;
   readonly committedEventIds: readonly CanopyV0EventId[];
   readonly affectedEntitySeqs: readonly CanopyV0EntityCasPrecondition[];
+  readonly warnings: readonly CanopyV0ValidationIssue[];
 }
 
 export interface CanopyV0DraftRecord {
@@ -239,7 +266,7 @@ export interface CanopyV0NodeRecord {
 
 export interface CanopyV0EdgeRecord {
   readonly edgeId: CanopyV0EdgeId;
-  readonly shapeId: CanopyV0ShapeId;
+  readonly shapeId?: CanopyV0ShapeId | undefined;
   readonly sourceNodeId: CanopyV0NodeId;
   readonly targetNodeId: CanopyV0NodeId;
   readonly entitySeq: CanopyV0CommitSeq;
@@ -405,11 +432,28 @@ export interface CanopyV0ResolveSettingResponse {
   readonly found: boolean;
 }
 
+export interface CanopyV0PropertyConstraints {
+  readonly min?: number | undefined;
+  readonly max?: number | undefined;
+  readonly regex?: string | undefined;
+  readonly choices?: readonly string[] | undefined;
+  readonly unique?: boolean | undefined;
+  readonly targetShapeId?: CanopyV0ShapeId | undefined;
+  readonly nullable?: boolean | undefined;
+}
+
+export interface CanopyV0InlinePropertySpec {
+  readonly valueKind: CanopyV0PropertyValueKind;
+  readonly constraints?: CanopyV0PropertyConstraints | undefined;
+  readonly schemaOrgUri?: string | undefined;
+}
+
 export interface CanopyV0PropertyTypeRecord {
   readonly propertyTypeId: CanopyV0PropertyTypeId;
   readonly name: string;
-  readonly scalarKind: string;
+  readonly valueKind: CanopyV0PropertyValueKind;
   readonly cardinality: CanopyV0PropertyCardinality;
+  readonly constraints?: CanopyV0PropertyConstraints | undefined;
   readonly schemaOrgUri?: string | undefined;
 }
 
@@ -417,7 +461,8 @@ export interface CanopyV0ShapePropertyBinding {
   readonly key: string;
   readonly propertyTypeId?: CanopyV0PropertyTypeId | undefined;
   readonly required: boolean;
-  readonly cardinality: CanopyV0PropertyCardinality;
+  readonly cardinality?: CanopyV0PropertyCardinality | undefined;
+  readonly inline?: CanopyV0InlinePropertySpec | undefined;
 }
 
 export interface CanopyV0ShapeRecord {

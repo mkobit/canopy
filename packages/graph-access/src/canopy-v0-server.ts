@@ -10,11 +10,15 @@ import type {
   GraphSession,
   Node,
   NodeId,
+  PropertyDefinition,
   PropertyValue,
+  PropertyValueKind,
   Result,
+  ValidationError,
 } from '@canopy/graph';
 import {
   SYSTEM_IDS,
+  ShapePropertyBindingSchema,
   asBatchId,
   asDeviceId,
   asEdgeId,
@@ -22,6 +26,7 @@ import {
   asGraphId,
   asNodeId,
   asShapeId,
+  canonicalizeUri,
   createBatchId,
   createDeviceId,
   createDraftSession,
@@ -30,10 +35,12 @@ import {
   createGraph,
   createGraphId,
   createGraphSession,
+  createIndexedReadModel,
   createInstant,
   createNodeId,
   decodeStoredEvent,
   err,
+  extractPropertyTypeDefinition,
   fromThrowable,
   getGraphAt,
   ok,
@@ -71,8 +78,10 @@ import type {
   CanopyV0LookupPropertiesRequest,
   CanopyV0NodeRecord,
   CanopyV0PropertyCardinality,
+  CanopyV0PropertyConstraints,
   CanopyV0PropertyEntry,
   CanopyV0PropertyTypeRecord,
+  CanopyV0PropertyValueKind,
   CanopyV0QueryEdgesRequest,
   CanopyV0QueryNodesRequest,
   CanopyV0ReadConsistency,
@@ -90,6 +99,7 @@ import type {
   CanopyV0StreamReplayRequest,
   CanopyV0StreamSubscribeRequest,
   CanopyV0TraverseGraphRequest,
+  CanopyV0ValidationIssue,
   CanopyV0ViewBindingKind,
   CanopyV0ViewDefinitionRecord,
   CanopyV0WritePrecondition,
@@ -263,7 +273,7 @@ const toNodeRecord = (node: Node, entitySeqs: ReadonlyMap<string, number>): Cano
 
 const toEdgeRecord = (edge: Edge, entitySeqs: ReadonlyMap<string, number>): CanopyV0EdgeRecord => ({
   edgeId: edge.id,
-  shapeId: edge.shape ?? asShapeId(''),
+  ...(edge.shape !== undefined && { shapeId: edge.shape }),
   sourceNodeId: edge.source,
   targetNodeId: edge.target,
   entitySeq: entitySeqs.get(edge.id) ?? 0,
@@ -449,11 +459,11 @@ const buildCreateEdgeEvent = (
   provenance: CanopyV0ActorProvenance,
   batchId: BatchId,
 ): GraphAccessResponse<BuiltOperationStep> => {
-  if (!operation.sourceNodeId || !operation.targetNodeId || !operation.edgeTypeId) {
+  if (!operation.sourceNodeId || !operation.targetNodeId) {
     return err(
       createGraphAccessError(
         'VALIDATION_ERROR',
-        'sourceNodeId, targetNodeId, and edgeTypeId are required for create-edge',
+        'sourceNodeId and targetNodeId are required for create-edge',
       ),
     );
   }
@@ -464,7 +474,7 @@ const buildCreateEdgeEvent = (
         type: 'EdgeCreated',
         eventId: createEventId(),
         id: edgeId,
-        shapeId: asShapeId(operation.edgeTypeId),
+        ...(operation.shapeId !== undefined && { shapeId: asShapeId(operation.shapeId) }),
         source: asNodeId(operation.sourceNodeId),
         target: asNodeId(operation.targetNodeId),
         properties: toPropertyMap(operation.properties),
@@ -612,6 +622,24 @@ const updateEntitySequences = (
   return new Map([...current, ...entries]);
 };
 
+const toValidationIssue = (issue: ValidationError): CanopyV0ValidationIssue => ({
+  code: issue.code,
+  severity: issue.severity,
+  ...(issue.entityKind !== undefined && { entityKind: issue.entityKind }),
+  ...(issue.entityId !== undefined && { entityId: issue.entityId }),
+  path: issue.path,
+  message: issue.message,
+  ...(issue.expected !== undefined && { expected: issue.expected }),
+  ...(issue.actual !== undefined && { actual: issue.actual }),
+});
+
+const mapCommitErrorDetails = (
+  commitError: CommitError,
+): Readonly<{ batchId?: BatchId | undefined; errors: readonly CanopyV0ValidationIssue[] }> => ({
+  ...('batchId' in commitError && { batchId: commitError.batchId }),
+  errors: commitError.kind === 'validation' ? commitError.errors.map(toValidationIssue) : [],
+});
+
 const mapCommitErrorToCategory = (commitError: CommitError): GraphAccessErrorCategory => {
   switch (commitError.kind) {
     case 'validation':
@@ -670,6 +698,7 @@ const commitOperationsToGraphState = async (
       createGraphAccessError(
         mapCommitErrorToCategory(commitResult.error),
         commitResult.error.message,
+        mapCommitErrorDetails(commitResult.error),
       ),
     );
   }
@@ -717,6 +746,7 @@ const commitOperationsToGraphState = async (
       revision: nextGraph.revision,
       committedEventIds: eventIds,
       affectedEntitySeqs,
+      warnings: commitResult.value.warnings.map(toValidationIssue),
     },
   });
 };
@@ -937,6 +967,48 @@ const resolveSettingFromGraph = (
     : { scope: 'default', valueJson: formatSettingValueJson(defaultValue), found: true };
 };
 
+const toWireValueKindAndCardinality = (
+  valueKind: PropertyValueKind,
+  cardinality?: 'one' | 'many' | undefined,
+): Readonly<{ valueKind: CanopyV0PropertyValueKind; cardinality: CanopyV0PropertyCardinality }> => {
+  if (valueKind === 'list') {
+    return { valueKind: 'text', cardinality: 'many' };
+  }
+  return {
+    valueKind,
+    cardinality: cardinality === 'many' ? 'many' : 'one',
+  };
+};
+
+const extractPropertyConstraints = (
+  definition: PropertyDefinition,
+): CanopyV0PropertyConstraints | undefined => {
+  const targetShapeId = definition.targetShapeId ?? definition.targetTypeId;
+  const constraints: CanopyV0PropertyConstraints = {
+    ...(definition.min !== undefined && { min: definition.min }),
+    ...(definition.max !== undefined && { max: definition.max }),
+    ...(definition.regex !== undefined && { regex: definition.regex }),
+    ...(definition.choices !== undefined && { choices: definition.choices }),
+    ...(definition.unique !== undefined && { unique: definition.unique }),
+    ...(targetShapeId !== undefined && { targetShapeId }),
+    ...(definition.nullable !== undefined && { nullable: definition.nullable }),
+  };
+  return Object.keys(constraints).length > 0 ? constraints : undefined;
+};
+
+const resolveReferenceCardinality = (
+  graph: Graph,
+  propertyTypeId: string,
+  override?: 'one' | 'many' | undefined,
+): CanopyV0PropertyCardinality | undefined => {
+  if (override !== undefined) return override;
+  const ptNode = graph.nodes.get(asNodeId(propertyTypeId));
+  if (!ptNode) return undefined;
+  const extracted = extractPropertyTypeDefinition(ptNode);
+  if (!extracted.ok) return undefined;
+  return extracted.value.valueKind === 'list' ? 'many' : (extracted.value.cardinality ?? 'one');
+};
+
 const extractShapeRecordsFromGraph = (graph: Graph): readonly CanopyV0ShapeRecord[] =>
   [...graph.nodes.values()]
     .filter((node) => node.shape === SYSTEM_IDS.SHAPE)
@@ -949,31 +1021,41 @@ const extractShapeRecordsFromGraph = (graph: Graph): readonly CanopyV0ShapeRecor
         const parsed = fromThrowable(() => JSON.parse(rawProperties) as unknown);
         if (!parsed.ok || !Array.isArray(parsed.value)) return [];
         return parsed.value.flatMap((entry): readonly CanopyV0ShapePropertyBinding[] => {
-          if (!isRecordObject(entry)) return [];
-          if (entry.kind === 'reference' && typeof entry.name === 'string') {
-            const cardinality: CanopyV0PropertyCardinality =
-              entry.cardinality === 'many' ? 'many' : 'one';
+          const decoded = ShapePropertyBindingSchema.safeParse(entry);
+          if (!decoded.success) return [];
+          const binding = decoded.data;
+          if (binding.kind === 'reference') {
+            const cardinality = resolveReferenceCardinality(
+              graph,
+              binding.propertyTypeId,
+              binding.cardinality,
+            );
             return [
               {
-                key: entry.name,
-                ...(typeof entry.propertyTypeId === 'string' && {
-                  propertyTypeId: entry.propertyTypeId,
-                }),
-                required: entry.required === true,
-                cardinality,
+                key: binding.name,
+                propertyTypeId: binding.propertyTypeId,
+                required: binding.required,
+                ...(cardinality !== undefined && { cardinality }),
               },
             ];
           }
-          const definition =
-            entry.kind === 'inline' && isRecordObject(entry.definition) ? entry.definition : entry;
-          if (typeof definition.name !== 'string') return [];
-          const cardinality: CanopyV0PropertyCardinality =
-            definition.cardinality === 'many' || definition.valueKind === 'list' ? 'many' : 'one';
+          const { valueKind, cardinality } = toWireValueKindAndCardinality(
+            binding.definition.valueKind,
+            binding.definition.cardinality,
+          );
+          const constraints = extractPropertyConstraints(binding.definition);
           return [
             {
-              key: definition.name,
-              required: definition.required === true,
+              key: binding.definition.name,
+              required: binding.definition.required,
               cardinality,
+              inline: {
+                valueKind,
+                ...(constraints !== undefined && { constraints }),
+                ...(binding.definition.schemaOrgUri !== undefined && {
+                  schemaOrgUri: binding.definition.schemaOrgUri,
+                }),
+              },
             },
           ];
         });
@@ -992,17 +1074,25 @@ const extractShapeRecordsFromGraph = (graph: Graph): readonly CanopyV0ShapeRecor
 const extractPropertyTypesFromGraph = (graph: Graph): readonly CanopyV0PropertyTypeRecord[] =>
   [...graph.nodes.values()]
     .filter((node) => node.shape === SYSTEM_IDS.PROPERTY_TYPE)
-    .map((node) => {
-      const nameValue = node.properties.get('name');
-      const valueKindValue = node.properties.get('valueKind') ?? node.properties.get('scalarKind');
-      const schemaOrgValue = node.properties.get('schemaOrgUri');
-      return {
-        propertyTypeId: node.id,
-        name: typeof nameValue === 'string' ? nameValue : node.id,
-        scalarKind: typeof valueKindValue === 'string' ? valueKindValue : 'text',
-        cardinality: node.properties.get('cardinality') === 'many' ? 'many' : 'one',
-        ...(typeof schemaOrgValue === 'string' && { schemaOrgUri: schemaOrgValue }),
-      };
+    .flatMap((node): readonly CanopyV0PropertyTypeRecord[] => {
+      const extracted = extractPropertyTypeDefinition(node);
+      if (!extracted.ok) return [];
+      const definition = extracted.value;
+      const { valueKind, cardinality } = toWireValueKindAndCardinality(
+        definition.valueKind,
+        definition.cardinality,
+      );
+      const constraints = extractPropertyConstraints(definition);
+      return [
+        {
+          propertyTypeId: node.id,
+          name: definition.name,
+          valueKind,
+          cardinality,
+          ...(constraints !== undefined && { constraints }),
+          ...(definition.schemaOrgUri !== undefined && { schemaOrgUri: definition.schemaOrgUri }),
+        },
+      ];
     });
 
 const formatGraphEventJson = (event: GraphEvent): string =>
@@ -1392,12 +1482,18 @@ const handleQueryNodes = async (
   }
 
   if (request.canonicalUri !== undefined) {
-    const matches = [...graph.nodes.values()].filter(
-      (node) =>
-        node.properties.get('canonicalUri') === request.canonicalUri ||
-        node.properties.get('uri') === request.canonicalUri ||
-        node.properties.get('url') === request.canonicalUri,
+    const canonical = canonicalizeUri(request.canonicalUri);
+    if (!canonical.ok) {
+      return err(createGraphAccessError('VALIDATION_ERROR', canonical.error.message));
+    }
+    const matchingIds = createIndexedReadModel(graph).nodesWhereEquals(
+      'uri',
+      canonical.value,
+      SYSTEM_IDS.PROXY,
     );
+    const matches = [...matchingIds]
+      .map((id) => graph.nodes.get(id))
+      .filter((node): node is Node => node !== undefined);
     const limited =
       request.limit !== undefined && request.limit > 0 ? matches.slice(0, request.limit) : matches;
     return ok({

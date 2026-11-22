@@ -215,6 +215,62 @@
       ]
     },
     {
+      "name": "CanopyV0PropertyValueKind",
+      "extensible": false,
+      "members": [
+        {
+          "name": "text",
+          "value": "text"
+        },
+        {
+          "name": "integer",
+          "value": "integer"
+        },
+        {
+          "name": "number",
+          "value": "number"
+        },
+        {
+          "name": "boolean",
+          "value": "boolean"
+        },
+        {
+          "name": "instant",
+          "value": "instant"
+        },
+        {
+          "name": "plainDate",
+          "value": "plain-date"
+        },
+        {
+          "name": "url",
+          "value": "url"
+        },
+        {
+          "name": "reference",
+          "value": "reference"
+        },
+        {
+          "name": "externalReference",
+          "value": "external-reference"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0ValidationSeverity",
+      "extensible": false,
+      "members": [
+        {
+          "name": "error",
+          "value": "error"
+        },
+        {
+          "name": "warning",
+          "value": "warning"
+        }
+      ]
+    },
+    {
       "name": "CanopyV0EntityKind",
       "extensible": false,
       "members": [
@@ -292,6 +348,60 @@
     }
   ],
   "models": [
+    {
+      "name": "CanopyV0ValidationIssue",
+      "namespaceName": "V0",
+      "fields": [
+        {
+          "name": "code",
+          "typeName": "string",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "severity",
+          "typeName": "CanopyV0ValidationSeverity",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "entityKind",
+          "typeName": "CanopyV0EntityKind",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "entityId",
+          "typeName": "string",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "path",
+          "typeName": "string[]",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "message",
+          "typeName": "string",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "expected",
+          "typeName": "string",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "actual",
+          "typeName": "string",
+          "optional": true,
+          "location": "body"
+        }
+      ]
+    },
     {
       "name": "CanopyV0PropertyEntry",
       "namespaceName": "V0",
@@ -609,12 +719,6 @@
           "location": "body"
         },
         {
-          "name": "edgeTypeId",
-          "typeName": "ShapeId",
-          "optional": true,
-          "location": "body"
-        },
-        {
           "name": "properties",
           "typeName": "CanopyV0PropertyEntry[]",
           "optional": true,
@@ -725,6 +829,12 @@
         {
           "name": "affectedEntitySeqs",
           "typeName": "CanopyV0EntityCasPrecondition[]",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "warnings",
+          "typeName": "CanopyV0ValidationIssue[]",
           "optional": false,
           "location": "body"
         }
@@ -953,7 +1063,7 @@
         {
           "name": "shapeId",
           "typeName": "ShapeId",
-          "optional": false,
+          "optional": true,
           "location": "body"
         },
         {
@@ -1709,6 +1819,78 @@
       ]
     },
     {
+      "name": "CanopyV0PropertyConstraints",
+      "namespaceName": "Bundles",
+      "fields": [
+        {
+          "name": "min",
+          "typeName": "float64",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "max",
+          "typeName": "float64",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "regex",
+          "typeName": "string",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "choices",
+          "typeName": "string[]",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "unique",
+          "typeName": "boolean",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "targetShapeId",
+          "typeName": "ShapeId",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "nullable",
+          "typeName": "boolean",
+          "optional": true,
+          "location": "body"
+        }
+      ]
+    },
+    {
+      "name": "CanopyV0InlinePropertySpec",
+      "namespaceName": "Bundles",
+      "fields": [
+        {
+          "name": "valueKind",
+          "typeName": "CanopyV0PropertyValueKind",
+          "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "constraints",
+          "typeName": "CanopyV0PropertyConstraints",
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "schemaOrgUri",
+          "typeName": "string",
+          "optional": true,
+          "location": "body"
+        }
+      ]
+    },
+    {
       "name": "CanopyV0PropertyTypeRecord",
       "namespaceName": "Bundles",
       "fields": [
@@ -1725,8 +1907,8 @@
           "location": "body"
         },
         {
-          "name": "scalarKind",
-          "typeName": "string",
+          "name": "valueKind",
+          "typeName": "CanopyV0PropertyValueKind",
           "optional": false,
           "location": "body"
         },
@@ -1734,6 +1916,12 @@
           "name": "cardinality",
           "typeName": "CanopyV0PropertyCardinality",
           "optional": false,
+          "location": "body"
+        },
+        {
+          "name": "constraints",
+          "typeName": "CanopyV0PropertyConstraints",
+          "optional": true,
           "location": "body"
         },
         {
@@ -1769,7 +1957,13 @@
         {
           "name": "cardinality",
           "typeName": "CanopyV0PropertyCardinality",
-          "optional": false,
+          "optional": true,
+          "location": "body"
+        },
+        {
+          "name": "inline",
+          "typeName": "CanopyV0InlinePropertySpec",
+          "optional": true,
           "location": "body"
         }
       ]
@@ -2562,7 +2756,7 @@
   "witInterfaces": [
     {
       "name": "graph-types",
-      "body": "type node-id = string;\ntype edge-id = string;\ntype type-id = string;\ntype capability-token = string;\n\nenum error-code {\n  validation-error,\n  not-found,\n  concurrency-conflict,\n  permission-denied,\n  resource-exhausted,\n  internal-error,\n}\n\nrecord adapter-error {\n  code: error-code,\n  message: string,\n  details: option<string>,\n}"
+      "body": "type node-id = string;\ntype edge-id = string;\ntype shape-id = string;\ntype capability-token = string;\n\nenum error-code {\n  validation-error,\n  not-found,\n  concurrency-conflict,\n  permission-denied,\n  resource-exhausted,\n  internal-error,\n}\n\nrecord adapter-error {\n  code: error-code,\n  message: string,\n  details: option<string>,\n}"
     },
     {
       "name": "host-queries",
@@ -2594,7 +2788,7 @@
     },
     {
       "name": "draft-session",
-      "body": "type node-id = string;\ntype event-id = string;\ntype type-id = string;\n\nrecord property-entry {\n  name: string,\n  value: property-value,\n}\n\nvariant property-value {\n  text(string),\n  integer(s64),\n  decimal(f64),\n  boolean(bool),\n  date-time(string),\n  node-id(string),\n  list-of-text(list<string>),\n  none,\n}\n\nrecord node-created-event {\n  event-id: event-id,\n  id: node-id,\n  node-type: type-id,\n  properties: list<property-entry>,\n  timestamp: string,\n  device-id: string,\n  batch-id: option<string>,\n}\n\nrecord node-properties-updated-event {\n  event-id: event-id,\n  id: node-id,\n  changes: list<property-entry>,\n  timestamp: string,\n  device-id: string,\n  batch-id: option<string>,\n}\n\nvariant draft-event {\n  node-created(node-created-event),\n  node-properties-updated(node-properties-updated-event),\n}\n\nrecord graph-node {\n  id: node-id,\n  node-type: type-id,\n  properties: list<property-entry>,\n}\n\nenum draft-error {\n  parent-not-found,\n  unauthorized,\n  invalid-event-format,\n  validation-failure,\n  concurrent-modification,\n  storage-error,\n}\n\nenum query-error {\n  invalid-query,\n  node-not-found,\n  access-denied,\n}\n\nresource draft-session-handle {\n  apply-events: func(events: list<draft-event>) -> result<_, draft-error>;\n  get-parent-revision: func() -> result<string, draft-error>;\n  get-node: func(id: node-id) -> result<graph-node, query-error>;\n  query-nodes: func(query-string: string) -> result<list<graph-node>, query-error>;\n}"
+      "body": "type node-id = string;\ntype event-id = string;\ntype shape-id = string;\n\nrecord property-entry {\n  name: string,\n  value: property-value,\n}\n\nvariant property-value {\n  text(string),\n  integer(s64),\n  decimal(f64),\n  boolean(bool),\n  date-time(string),\n  node-id(string),\n  list-of-text(list<string>),\n  none,\n}\n\nrecord node-created-event {\n  event-id: event-id,\n  id: node-id,\n  shape-id: option<shape-id>,\n  properties: list<property-entry>,\n  timestamp: string,\n  device-id: string,\n  batch-id: option<string>,\n}\n\nrecord node-properties-updated-event {\n  event-id: event-id,\n  id: node-id,\n  changes: list<property-entry>,\n  timestamp: string,\n  device-id: string,\n  batch-id: option<string>,\n}\n\nvariant draft-event {\n  node-created(node-created-event),\n  node-properties-updated(node-properties-updated-event),\n}\n\nrecord graph-node {\n  id: node-id,\n  shape-id: option<shape-id>,\n  properties: list<property-entry>,\n}\n\nenum draft-error {\n  parent-not-found,\n  unauthorized,\n  invalid-event-format,\n  validation-failure,\n  concurrent-modification,\n  storage-error,\n}\n\nenum query-error {\n  invalid-query,\n  node-not-found,\n  access-denied,\n}\n\nresource draft-session-handle {\n  apply-events: func(events: list<draft-event>) -> result<_, draft-error>;\n  get-parent-revision: func() -> result<string, draft-error>;\n  get-node: func(id: node-id) -> result<graph-node, query-error>;\n  query-nodes: func(query-string: string) -> result<list<graph-node>, query-error>;\n}"
     },
     {
       "name": "plugin-manifest",
