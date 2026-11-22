@@ -209,7 +209,7 @@ export function updateEdge(
   }
 
   if (options.validate) {
-    const result = validateEdge(graph, updatedEdge);
+    const result = validateEdge(graph, updatedEdge, 'update');
     if (!result.valid) {
       const msgs = result.errors
         .map((error_) => `${error_.path.join('.')}: ${error_.message}`)

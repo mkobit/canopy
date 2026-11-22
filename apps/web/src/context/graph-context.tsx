@@ -12,8 +12,7 @@ import type {
   GraphSession,
   ValidationError,
   CreateNamespaceInput,
-  CreateNodeTypeInput,
-  CreateEdgeTypeInput,
+  CreateShapeInput,
   CreatePropertyTypeInput,
 } from '@canopy/graph';
 import {
@@ -29,8 +28,7 @@ import {
   updateNode,
   removeNode,
   createNamespace as createNamespaceOp,
-  createNodeType as createNodeTypeOp,
-  createEdgeType as createEdgeTypeOp,
+  createShape as createShapeOp,
   createPropertyType as createPropertyTypeOp,
 } from '@canopy/graph';
 import { useStorage } from './storage-context';
@@ -86,8 +84,12 @@ interface GraphContextActions {
   ) => Promise<Result<void, Error>>;
   readonly deleteNode: (nodeId: NodeId) => Promise<Result<void, Error>>;
   readonly createNamespace: (input: CreateNamespaceInput) => Promise<Result<NodeId, Error>>;
-  readonly createNodeType: (input: CreateNodeTypeInput) => Promise<Result<NodeId, Error>>;
-  readonly createEdgeType: (input: CreateEdgeTypeInput) => Promise<Result<NodeId, Error>>;
+  readonly createNodeType: (
+    input: Omit<CreateShapeInput, 'entityKind'>,
+  ) => Promise<Result<NodeId, Error>>;
+  readonly createEdgeType: (
+    input: Omit<CreateShapeInput, 'entityKind'>,
+  ) => Promise<Result<NodeId, Error>>;
   readonly createPropertyType: (input: CreatePropertyTypeInput) => Promise<Result<NodeId, Error>>;
   readonly session: GraphSession | null;
 }
@@ -303,20 +305,26 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
   );
 
   const createNodeType = useCallback(
-    (input: CreateNodeTypeInput): Promise<Result<NodeId, Error>> => {
+    (input: Omit<CreateShapeInput, 'entityKind'>): Promise<Result<NodeId, Error>> => {
       const session = sessionReference.current;
       return session
-        ? commitCreatedNode(session, createNodeTypeOp(session.graph(), input, { deviceId }))
+        ? commitCreatedNode(
+            session,
+            createShapeOp(session.graph(), { ...input, entityKind: 'node' }, { deviceId }),
+          )
         : Promise.resolve(err(new Error('No graph loaded')));
     },
     [deviceId],
   );
 
   const createEdgeType = useCallback(
-    (input: CreateEdgeTypeInput): Promise<Result<NodeId, Error>> => {
+    (input: Omit<CreateShapeInput, 'entityKind'>): Promise<Result<NodeId, Error>> => {
       const session = sessionReference.current;
       return session
-        ? commitCreatedNode(session, createEdgeTypeOp(session.graph(), input, { deviceId }))
+        ? commitCreatedNode(
+            session,
+            createShapeOp(session.graph(), { ...input, entityKind: 'edge' }, { deviceId }),
+          )
         : Promise.resolve(err(new Error('No graph loaded')));
     },
     [deviceId],

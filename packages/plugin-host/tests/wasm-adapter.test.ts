@@ -13,6 +13,23 @@ const setupTestContext = async () => {
   const eventLogStore = createInMemoryEventStore();
   const session = createGraphSession(eventLogStore, graphId, deviceId);
   await session.load();
+  const { SYSTEM_IDS, asNodeId, createEventId, createInstant } = await import('@canopy/graph');
+  await session.commit([
+    {
+      type: 'NodeCreated',
+      eventId: createEventId(),
+      id: asNodeId('msg'),
+      shapeId: SYSTEM_IDS.SHAPE,
+      properties: new Map<string, string | boolean>([
+        ['name', 'Msg'],
+        ['namespace', 'user'],
+        ['entityKind', 'node'],
+        ['closed', false],
+      ]),
+      timestamp: createInstant(),
+      deviceId,
+    },
+  ]);
 
   return createGraphAccessContext({
     graph: session.graph(),

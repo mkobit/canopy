@@ -3,13 +3,14 @@ import { Plus, Trash2 } from 'lucide-react';
 import {
   PROPERTY_VALUE_KINDS,
   PropertyValueKindSchema,
-  type TypePropertyInput,
+  asPropertyTypeId,
+  type ShapePropertyInput,
 } from '@canopy/graph';
 import type { PropertyTypeOption } from '../../utils/schema';
 
 export interface PropertyListEditorProperties {
-  readonly value: readonly TypePropertyInput[];
-  readonly onChange: (next: readonly TypePropertyInput[]) => unknown;
+  readonly value: readonly ShapePropertyInput[];
+  readonly onChange: (next: readonly ShapePropertyInput[]) => unknown;
   readonly propertyTypeOptions: readonly PropertyTypeOption[];
 }
 
@@ -23,8 +24,8 @@ function removeAt<T>(list: readonly T[], index: number): readonly T[] {
 
 const InlinePropertyRow: React.FC<
   Readonly<{
-    row: Extract<TypePropertyInput, { kind: 'inline' }>;
-    onChange: (next: TypePropertyInput) => unknown;
+    row: Extract<ShapePropertyInput, { kind: 'inline' }>;
+    onChange: (next: ShapePropertyInput) => unknown;
     onRemove: () => unknown;
   }>
 > = ({ row, onChange, onRemove }) => (
@@ -88,9 +89,9 @@ const InlinePropertyRow: React.FC<
 
 const ReferencePropertyRow: React.FC<
   Readonly<{
-    row: Extract<TypePropertyInput, { kind: 'reference' }>;
+    row: Extract<ShapePropertyInput, { kind: 'reference' }>;
     propertyTypeOptions: readonly PropertyTypeOption[];
-    onChange: (next: TypePropertyInput) => unknown;
+    onChange: (next: ShapePropertyInput) => unknown;
     onRemove: () => unknown;
   }>
 > = ({ row, propertyTypeOptions, onChange, onRemove }) => (
@@ -100,7 +101,7 @@ const ReferencePropertyRow: React.FC<
         value={row.propertyTypeId}
         onChange={(event_) => {
           const selected = propertyTypeOptions.find((opt) => opt.id === event_.target.value);
-          if (selected) onChange({ ...row, propertyTypeId: selected.id });
+          if (selected) onChange({ ...row, propertyTypeId: asPropertyTypeId(selected.id) });
           return undefined;
         }}
         className="w-full border rounded px-2 py-1 text-sm"
@@ -143,7 +144,10 @@ export const PropertyListEditor: React.FC<PropertyListEditorProperties> = ({
   const addReference = () => {
     const first = propertyTypeOptions[0];
     if (!first) return undefined;
-    onChange([...value, { kind: 'reference', propertyTypeId: first.id, required: false }]);
+    onChange([
+      ...value,
+      { kind: 'reference', propertyTypeId: asPropertyTypeId(first.id), required: false },
+    ]);
     return undefined;
   };
 

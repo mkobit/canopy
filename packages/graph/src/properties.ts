@@ -1,5 +1,5 @@
 import type { ScalarValue } from './scalars';
-import type { TypeId } from './identifiers';
+import type { ShapeId } from './identifiers';
 
 /**
 A property value is either a scalar or a flat list of scalars.
@@ -8,7 +8,7 @@ No nesting—lists cannot contain other lists.
 export type PropertyValue = ScalarValue | readonly ScalarValue[];
 
 /**
-Schema definition for a property on a node or edge type.
+Schema definition for a property on a node or edge shape.
 */
 export interface PropertyDefinition {
   readonly name: string;
@@ -21,7 +21,13 @@ export interface PropertyDefinition {
   readonly choices?: readonly string[] | undefined;
   readonly nullable?: boolean | undefined;
   readonly cardinality?: 'one' | 'many' | undefined;
-  readonly targetTypeId?: TypeId | undefined;
+  readonly unique?: boolean | undefined;
+  readonly targetShapeId?: ShapeId | undefined;
+  /**
+  @deprecated Legacy read alias for `targetShapeId`.
+  */
+  readonly targetTypeId?: ShapeId | undefined;
+  readonly schemaOrgUri?: string | undefined;
 }
 
 /**
@@ -29,10 +35,12 @@ All valid property value kinds, single source of truth for `PropertyValueKind`.
 */
 export const PROPERTY_VALUE_KINDS = [
   'text',
+  'integer',
   'number',
   'boolean',
   'instant',
   'plain-date',
+  'url',
   'reference',
   'external-reference',
   'list',

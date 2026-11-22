@@ -10,7 +10,7 @@ export type EventDecodeError = Readonly<{
 }>;
 
 export interface UpcastOptions {
-  readonly remapRetiredMetaShapes?: boolean | undefined; // false in bead a; true from bead b onward
+  readonly remapRetiredMetaShapes?: boolean | undefined; // defaults to true from bead b onward
 }
 
 const RETIRED_NODE_TYPE = 'node:type:node-type';
@@ -109,7 +109,7 @@ export function upcastStoredEvent(raw: unknown, options?: UpcastOptions | undefi
   if (!isRecord(raw)) {
     return raw;
   }
-  const remapRetiredMetaShapes = options?.remapRetiredMetaShapes ?? false;
+  const remapRetiredMetaShapes = options?.remapRetiredMetaShapes ?? true;
 
   if (raw.type === 'NodeCreated') {
     return upcastNodeCreated(raw, remapRetiredMetaShapes);
@@ -176,7 +176,7 @@ export function decodeStoredEvent(
       return error(conflict);
     }
 
-    const remapRetiredMetaShapes = options?.remapRetiredMetaShapes ?? false;
+    const remapRetiredMetaShapes = options?.remapRetiredMetaShapes ?? true;
     if (remapRetiredMetaShapes && isRetiredMetaLifecycleEvent(raw)) {
       return ok(null);
     }

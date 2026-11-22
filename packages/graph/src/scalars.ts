@@ -16,3 +16,10 @@ export interface ExternalReferenceValue {
   readonly graph: GraphId;
   readonly target: NodeId;
 }
+
+export function serializeScalarForIndex(value: ScalarValue): string {
+  if (value === null) return 'null:';
+  return typeof value === 'object'
+    ? `ref:${value.graph}:${value.target}`
+    : `${typeof value}:${String(value)}`;
+}

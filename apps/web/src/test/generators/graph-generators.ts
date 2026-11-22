@@ -10,7 +10,7 @@ import {
   createGraphSession,
   unwrap,
   SYSTEM_IDS,
-  SYSTEM_EDGE_TYPES,
+  SYSTEM_EDGE_SHAPES,
   type DeviceId,
   type Edge,
   type Graph,
@@ -48,10 +48,12 @@ function buildSchemaNodes(seed?: number): readonly Readonly<[NodeId, Node]>[] {
     nodeType.id,
     {
       id: nodeType.id,
-      shape: SYSTEM_IDS.NODE_TYPE,
+      shape: SYSTEM_IDS.SHAPE,
       properties: new Map<string, PropertyValue>([
         ['name', nodeType.name],
         ['namespace', nodeType.namespace],
+        ['entityKind', 'node'],
+        ['closed', false],
         ['description', nodeType.description],
         ['properties', JSON.stringify(nodeType.properties)],
       ]),
@@ -67,10 +69,12 @@ function buildSchemaNodes(seed?: number): readonly Readonly<[NodeId, Node]>[] {
     edgeType.id,
     {
       id: edgeType.id,
-      shape: SYSTEM_IDS.EDGE_TYPE,
+      shape: SYSTEM_IDS.SHAPE,
       properties: new Map<string, PropertyValue>([
         ['name', edgeType.name],
         ['namespace', edgeType.namespace],
+        ['entityKind', 'edge'],
+        ['closed', false],
         ['description', edgeType.description],
       ]),
       metadata: {
@@ -128,7 +132,7 @@ function buildViewAndRendererNodes(): Readonly<{
   const usesRendererEdgeId = asEdgeId('user:edge:uses-renderer:project-card');
   const usesRendererEdge: Edge = {
     id: usesRendererEdgeId,
-    shape: SYSTEM_EDGE_TYPES.USES_RENDERER,
+    shape: SYSTEM_EDGE_SHAPES.USES_RENDERER,
     source: viewNodeId,
     target: rendererNodeId,
     properties: new Map(),
@@ -142,7 +146,7 @@ function buildViewAndRendererNodes(): Readonly<{
   const defaultViewEdgeId = asEdgeId('user:edge:default-view:project');
   const defaultViewEdge: Edge = {
     id: defaultViewEdgeId,
-    shape: SYSTEM_EDGE_TYPES.DEFAULT_VIEW,
+    shape: SYSTEM_EDGE_SHAPES.DEFAULT_VIEW,
     source: asNodeId('user:node-type:project'),
     target: viewNodeId,
     properties: new Map(),

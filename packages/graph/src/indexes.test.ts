@@ -21,7 +21,7 @@ import {
   createInstant,
   unwrap,
   SYSTEM_IDS,
-  SYSTEM_EDGE_TYPES,
+  SYSTEM_EDGE_SHAPES,
   type Node,
   type Edge,
   type Graph,
@@ -182,7 +182,7 @@ describe('GraphIndexes', () => {
     // Edge 1: older
     const edge1: Edge = {
       id: asEdgeId('edge-1'),
-      shape: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
+      shape: SYSTEM_EDGE_SHAPES.VIEW_OVERRIDE,
       source: sourceNodeId,
       target: viewDefinition1.id,
       properties: new Map(),
@@ -196,7 +196,7 @@ describe('GraphIndexes', () => {
     // Edge 2: newer
     const edge2: Edge = {
       id: asEdgeId('edge-2'),
-      shape: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
+      shape: SYSTEM_EDGE_SHAPES.VIEW_OVERRIDE,
       source: sourceNodeId,
       target: viewDefinition2.id,
       properties: new Map(),
@@ -928,7 +928,7 @@ describe('index maintenance cost regression (delta, not graph size)', () => {
         withView,
         {
           id: asEdgeId('ops-override-1'),
-          shape: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
+          shape: SYSTEM_EDGE_SHAPES.VIEW_OVERRIDE,
           source: nodeId,
           target: viewId,
           properties: new Map(),

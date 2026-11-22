@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import type { CreateNodeTypeInput, NodeId, Result, TypePropertyInput } from '@canopy/graph';
+import type { CreateShapeInput, NodeId, Result, ShapePropertyInput } from '@canopy/graph';
 import { PropertyListEditor } from './property-list-editor';
 import type { PropertyTypeOption } from '../../utils/schema';
 
 export interface NodeTypeCreateFormProperties {
   readonly namespace: string;
   readonly propertyTypeOptions: readonly PropertyTypeOption[];
-  readonly onSubmit: (input: CreateNodeTypeInput) => Promise<Result<NodeId, Error>>;
+  readonly onSubmit: (
+    input: Omit<CreateShapeInput, 'entityKind'>,
+  ) => Promise<Result<NodeId, Error>>;
 }
 
 export const NodeTypeCreateForm: React.FC<NodeTypeCreateFormProperties> = ({
@@ -16,7 +18,7 @@ export const NodeTypeCreateForm: React.FC<NodeTypeCreateFormProperties> = ({
 }) => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [properties, setProperties] = useState<readonly TypePropertyInput[]>([]);
+  const [properties, setProperties] = useState<readonly ShapePropertyInput[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setSubmitting] = useState(false);
 

@@ -1,8 +1,9 @@
 import type { Node } from './node';
 import type { PropertyMap, PropertyValue, PropertyDefinition } from './properties';
-import type { TypeId, NodeId } from './identifiers';
+import type { ShapePropertyBinding } from './definitions';
+import type { ShapeId, NodeId } from './identifiers';
 import { createInstant, asDeviceId, asNodeId } from './factories';
-import { SYSTEM_IDS, SYSTEM_EDGE_TYPES } from './system';
+import { SYSTEM_IDS, SYSTEM_EDGE_SHAPES } from './system';
 
 export const SYSTEM_DEVICE_ID = asDeviceId('00000000-0000-0000-0000-000000000000');
 
@@ -23,7 +24,7 @@ export function reference(target: NodeId): PropertyValue {
 
 export function createBootstrapNode(
   id: NodeId,
-  shape: TypeId,
+  shape: ShapeId,
   name: string,
   description: string,
   extraProperties: Record<string, PropertyValue> = {},
@@ -44,93 +45,92 @@ export function createBootstrapNode(
   };
 }
 
-export const nodeTypeProperties: readonly PropertyDefinition[] = [
+export const shapeProperties: readonly PropertyDefinition[] = [
   {
     name: 'name',
     valueKind: 'text',
     required: true,
-    description: 'The name of the node type.',
+    description: 'The name of the shape.',
   },
   {
     name: 'namespace',
     valueKind: 'text',
     required: true,
-    description: 'The namespace this type belongs to (system, user, imported, user-settings).',
+    description: 'The namespace this shape belongs to.',
   },
   {
     name: 'description',
     valueKind: 'text',
     required: false,
-    description: 'A description of the node type.',
+    description: 'A description of the shape.',
+  },
+  {
+    name: 'status',
+    valueKind: 'text',
+    required: false,
+    choices: ['active', 'inactive'],
+    description: 'Lifecycle status of the shape (active or inactive).',
+  },
+  {
+    name: 'entityKind',
+    valueKind: 'text',
+    required: true,
+    choices: ['node', 'edge'],
+    description: 'Whether this shape applies to nodes or edges.',
+  },
+  {
+    name: 'closed',
+    valueKind: 'boolean',
+    required: false,
+    description: 'Whether undeclared properties are rejected.',
   },
   {
     name: 'properties',
     valueKind: 'text',
     required: false,
-    description: 'JSON definition of properties for this node type.',
+    description: 'JSON array of ShapePropertyBinding entries for this shape.',
+  },
+  {
+    name: 'schemaOrgUri',
+    valueKind: 'url',
+    required: false,
+    description: 'Optional schema.org URI for this shape.',
   },
   {
     name: 'validOutgoingEdges',
     valueKind: 'list',
     required: false,
-    description: 'List of valid outgoing edge types.',
+    description: 'List of valid outgoing edge shapes (node shapes only).',
   },
   {
     name: 'validIncomingEdges',
     valueKind: 'list',
     required: false,
-    description: 'List of valid incoming edge types.',
-  },
-];
-
-export const edgeTypeProperties: readonly PropertyDefinition[] = [
-  {
-    name: 'name',
-    valueKind: 'text',
-    required: true,
-    description: 'The name of the edge type.',
-  },
-  {
-    name: 'namespace',
-    valueKind: 'text',
-    required: true,
-    description: 'The namespace this type belongs to (system, user, imported, user-settings).',
-  },
-  {
-    name: 'description',
-    valueKind: 'text',
-    required: false,
-    description: 'A description of the edge type.',
+    description: 'List of valid incoming edge shapes (node shapes only).',
   },
   {
     name: 'sourceTypes',
     valueKind: 'list',
     required: false,
-    description: 'List of valid source node types.',
+    description: 'List of valid source node shapes (edge shapes only).',
   },
   {
     name: 'targetTypes',
     valueKind: 'list',
     required: false,
-    description: 'List of valid target node types.',
-  },
-  {
-    name: 'properties',
-    valueKind: 'text',
-    required: false,
-    description: 'JSON definition of properties for this edge type.',
+    description: 'List of valid target node shapes (edge shapes only).',
   },
   {
     name: 'transitive',
     valueKind: 'boolean',
     required: false,
-    description: 'Whether this edge type supports transitive closure queries.',
+    description: 'Whether this edge shape supports transitive closure queries.',
   },
   {
     name: 'inverse',
     valueKind: 'reference',
     required: false,
-    description: 'Reference to the inverse EdgeType (e.g., parent_of is inverse of child_of).',
+    description: 'Reference to the inverse edge Shape.',
   },
 ];
 
@@ -163,6 +163,12 @@ export const propertyTypeProperties: readonly PropertyDefinition[] = [
     description: 'The name of the property.',
   },
   {
+    name: 'namespace',
+    valueKind: 'text',
+    required: false,
+    description: 'The namespace this property type belongs to.',
+  },
+  {
     name: 'valueKind',
     valueKind: 'text',
     required: true,
@@ -181,16 +187,28 @@ export const propertyTypeProperties: readonly PropertyDefinition[] = [
     description: 'Property cardinality constraint (one vs many).',
   },
   {
+    name: 'unique',
+    valueKind: 'boolean',
+    required: false,
+    description: 'Whether multi-valued items must be unique.',
+  },
+  {
+    name: 'nullable',
+    valueKind: 'boolean',
+    required: false,
+    description: 'Whether null is allowed for this property.',
+  },
+  {
     name: 'choices',
     valueKind: 'text',
     required: false,
     description: 'Allowed values restriction for enums (JSON array string).',
   },
   {
-    name: 'targetTypeId',
+    name: 'targetShapeId',
     valueKind: 'reference',
     required: false,
-    description: 'Target node type requirement for typed references.',
+    description: 'Target node shape requirement for typed references.',
   },
   {
     name: 'regex',
@@ -210,7 +228,24 @@ export const propertyTypeProperties: readonly PropertyDefinition[] = [
     required: false,
     description: 'Maximum numeric value or maximum string length constraint.',
   },
+  {
+    name: 'schemaOrgUri',
+    valueKind: 'url',
+    required: false,
+    description: 'Optional schema.org URI for this property type.',
+  },
 ];
+
+export const systemPropertyTypes = [
+  {
+    id: asNodeId(SYSTEM_IDS.PROPERTY_TYPE_URL),
+    name: 'URL',
+    namespace: 'system',
+    valueKind: 'url',
+    cardinality: 'one',
+    description: 'A canonicalized safe URL.',
+  },
+] as const;
 
 // Migration: the 4 previously-hardcoded namespace strings become real Namespace nodes.
 export const namespaceMigrations = [
@@ -418,15 +453,52 @@ export const coreNodeTypes = [
     id: SYSTEM_IDS.WORKFLOW_DEFINITION,
     name: 'WorkflowDefinition',
     description: 'A definition of a workflow.',
-    properties: [] satisfies readonly PropertyDefinition[],
+    properties: [] satisfies readonly ShapePropertyBinding[],
+  },
+  {
+    id: asNodeId(SYSTEM_IDS.PROXY),
+    name: 'Proxy',
+    description: 'External URI proxy entity.',
+    namespace: 'system',
+    properties: [
+      {
+        kind: 'reference',
+        name: 'uri',
+        required: true,
+        propertyTypeId: SYSTEM_IDS.PROPERTY_TYPE_URL,
+      },
+      {
+        kind: 'inline',
+        definition: {
+          name: 'title',
+          valueKind: 'text',
+          required: false,
+          description: 'Optional display title for the proxy.',
+        },
+      },
+    ] satisfies readonly ShapePropertyBinding[],
+  },
+  {
+    id: asNodeId(SYSTEM_IDS.SHAPE_MIGRATION),
+    name: 'ShapeMigration',
+    description: 'Records a shape migration.',
+    namespace: 'system',
+    properties: [] satisfies readonly ShapePropertyBinding[],
+  },
+  {
+    id: asNodeId(SYSTEM_IDS.BUNDLE),
+    name: 'Bundle',
+    description: 'An installed schema or renderer bundle.',
+    namespace: 'system',
+    properties: [] satisfies readonly ShapePropertyBinding[],
   },
 ] as const;
 
-// Core Edge Types
+// Core Edge Shapes
 export const coreEdgeTypes = [
   {
     id: SYSTEM_IDS.EDGE_CHILD_OF,
-    typeId: SYSTEM_EDGE_TYPES.CHILD_OF,
+    typeId: SYSTEM_EDGE_SHAPES.CHILD_OF,
     name: 'Child Of',
     description: 'Indicates a hierarchical parent-child relationship.',
     properties: [
@@ -440,39 +512,79 @@ export const coreEdgeTypes = [
   },
   {
     id: SYSTEM_IDS.EDGE_DEFINES,
-    typeId: SYSTEM_EDGE_TYPES.DEFINES,
+    typeId: SYSTEM_EDGE_SHAPES.DEFINES,
     name: 'Defines',
     description: 'Indicates that the source node defines the target node.',
   },
   {
     id: SYSTEM_IDS.EDGE_REFERENCES,
-    typeId: SYSTEM_EDGE_TYPES.REFERENCES,
+    typeId: SYSTEM_EDGE_SHAPES.REFERENCES,
     name: 'References',
     description: 'Indicates a general reference or link.',
   },
   {
     id: SYSTEM_IDS.EDGE_PREREQUISITE,
-    typeId: SYSTEM_EDGE_TYPES.PREREQUISITE,
+    typeId: SYSTEM_EDGE_SHAPES.PREREQUISITE,
     name: 'Prerequisite',
     description: 'Indicates that the target is a prerequisite for the source.',
   },
   {
     id: SYSTEM_IDS.EDGE_USES_RENDERER,
-    typeId: SYSTEM_EDGE_TYPES.USES_RENDERER,
+    typeId: SYSTEM_EDGE_SHAPES.USES_RENDERER,
     name: 'uses_renderer',
     description: 'Links a ViewDefinition to a Renderer.',
   },
   {
     id: SYSTEM_IDS.EDGE_VIEW_OVERRIDE,
-    typeId: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
+    typeId: SYSTEM_EDGE_SHAPES.VIEW_OVERRIDE,
     name: 'view_override',
     description: 'Links a node to a ViewDefinition that overrides its default view.',
   },
   {
     id: SYSTEM_IDS.EDGE_DEFAULT_VIEW,
-    typeId: SYSTEM_EDGE_TYPES.DEFAULT_VIEW,
+    typeId: SYSTEM_EDGE_SHAPES.DEFAULT_VIEW,
     name: 'default_view',
-    description: 'Links a NodeType to a ViewDefinition that defines its default view.',
+    description: 'Links a Shape to a ViewDefinition that defines its default view.',
+  },
+  {
+    id: SYSTEM_IDS.EDGE_DERIVED_FROM,
+    typeId: SYSTEM_EDGE_SHAPES.DERIVED_FROM,
+    name: 'derived_from',
+    description: 'Indicates derivation lineage from a source node.',
+    properties: [
+      {
+        name: 'reason',
+        valueKind: 'text',
+        required: false,
+        description: 'Reason for derivation.',
+      },
+      {
+        name: 'actor',
+        valueKind: 'text',
+        required: false,
+        description: 'Actor that created the derived node.',
+      },
+    ] satisfies readonly PropertyDefinition[],
+  },
+  {
+    id: SYSTEM_IDS.EDGE_SUPERSEDES,
+    typeId: SYSTEM_EDGE_SHAPES.SUPERSEDES,
+    name: 'supersedes',
+    description: 'Indicates that the source node supersedes the target node.',
+    properties: [
+      {
+        name: 'reason',
+        valueKind: 'text',
+        required: false,
+        description: 'Reason for superseding.',
+      },
+    ] satisfies readonly PropertyDefinition[],
+  },
+  {
+    id: SYSTEM_IDS.EDGE_RENDER_SELECTOR,
+    typeId: SYSTEM_EDGE_SHAPES.RENDER_SELECTOR,
+    name: 'render_selector',
+    description: 'Selects a renderer for a node or shape.',
   },
 ] as const;
 
@@ -542,7 +654,7 @@ export const systemSettings = [
     valueKind: 'reference',
     defaultValue: 'null',
     description: 'The default view definition node to use for a given scope.',
-    scopes: '["node","type","namespace","global"]',
+    scopes: ['node', 'type', 'namespace', 'global'] as readonly string[],
     namespace: 'system',
   },
   {
@@ -551,7 +663,7 @@ export const systemSettings = [
     valueKind: 'text',
     defaultValue: '"comfortable"',
     description: 'UI display density: comfortable, compact, or spacious.',
-    scopes: '["global"]',
+    scopes: ['global'] as readonly string[],
     namespace: 'system',
   },
 ] as const;

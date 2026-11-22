@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
-import type { CreateEdgeTypeInput, NodeId, Result, TypePropertyInput } from '@canopy/graph';
+import {
+  asShapeId,
+  type CreateShapeInput,
+  type NodeId,
+  type Result,
+  type ShapePropertyInput,
+} from '@canopy/graph';
 import { PropertyListEditor } from './property-list-editor';
 import type { PropertyTypeOption, TypeDefinitionOption } from '../../utils/schema';
 
@@ -7,7 +13,9 @@ export interface EdgeTypeCreateFormProperties {
   readonly namespace: string;
   readonly propertyTypeOptions: readonly PropertyTypeOption[];
   readonly nodeTypeOptions: readonly TypeDefinitionOption[];
-  readonly onSubmit: (input: CreateEdgeTypeInput) => Promise<Result<NodeId, Error>>;
+  readonly onSubmit: (
+    input: Omit<CreateShapeInput, 'entityKind'>,
+  ) => Promise<Result<NodeId, Error>>;
 }
 
 const NodeTypeCheckboxList: React.FC<
@@ -53,7 +61,7 @@ export const EdgeTypeCreateForm: React.FC<EdgeTypeCreateFormProperties> = ({
 }) => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [properties, setProperties] = useState<readonly TypePropertyInput[]>([]);
+  const [properties, setProperties] = useState<readonly ShapePropertyInput[]>([]);
   const [sourceTypes, setSourceTypes] = useState<readonly NodeId[]>([]);
   const [targetTypes, setTargetTypes] = useState<readonly NodeId[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -69,8 +77,8 @@ export const EdgeTypeCreateForm: React.FC<EdgeTypeCreateFormProperties> = ({
       namespace,
       properties,
       ...(description && { description }),
-      ...(sourceTypes.length > 0 && { sourceTypes }),
-      ...(targetTypes.length > 0 && { targetTypes }),
+      ...(sourceTypes.length > 0 && { sourceTypes: sourceTypes.map(asShapeId) }),
+      ...(targetTypes.length > 0 && { targetTypes: targetTypes.map(asShapeId) }),
     });
 
     setSubmitting(false);

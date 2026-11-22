@@ -1,6 +1,7 @@
 export declare const nodeIdBrand: unique symbol;
 export declare const edgeIdBrand: unique symbol;
 export declare const shapeIdBrand: unique symbol;
+export declare const propertyTypeIdBrand: unique symbol;
 export declare const batchIdBrand: unique symbol;
 export declare const graphIdBrand: unique symbol;
 export declare const eventIdBrand: unique symbol;
@@ -22,6 +23,11 @@ export type EdgeId = string & Readonly<{ [edgeIdBrand]: never }>;
 Unique identifier for a node or edge shape definition.
 */
 export type ShapeId = string & Readonly<{ [shapeIdBrand]: never }>;
+
+/**
+Unique identifier for a reusable property type definition.
+*/
+export type PropertyTypeId = string & Readonly<{ [propertyTypeIdBrand]: never }>;
 
 /**
 Unique identifier for an atomic batch of events.

@@ -71,6 +71,8 @@ export function validateWasmBinaryProperty(
   if (typeof value !== 'string') {
     return [
       {
+        code: 'PLUGIN' as const,
+        severity: 'error' as const,
         path: [propertyName],
         message: `Property '${propertyName}' must be a string`,
         expected: 'string',
@@ -84,6 +86,8 @@ export function validateWasmBinaryProperty(
   if (!base64Regex.test(cleaned)) {
     return [
       {
+        code: 'PLUGIN' as const,
+        severity: 'error' as const,
         path: [propertyName],
         message: `Property '${propertyName}' is not a valid base64-encoded string`,
         expected: 'base64 string',
@@ -116,6 +120,8 @@ export function validateWasmBinaryProperty(
       if (!isDecompressedWasmMagic) {
         return [
           {
+            code: 'PLUGIN' as const,
+            severity: 'error' as const,
             path: [propertyName],
             message: `Property '${propertyName}' is missing the WebAssembly magic binary header`,
             expected: 'WebAssembly magic header (0x00 0x61 0x73 0x6d)',
@@ -130,6 +136,8 @@ export function validateWasmBinaryProperty(
   if (!validationResult.ok) {
     return [
       {
+        code: 'PLUGIN' as const,
+        severity: 'error' as const,
         path: [propertyName],
         message: `Property '${propertyName}' failed WebAssembly magic binary header validation or Brotli decompression`,
         expected: 'valid WebAssembly binary (raw or Brotli-compressed)',
@@ -149,6 +157,8 @@ export function validatePluginManifestProperty(
   if (typeof value !== 'string') {
     return [
       {
+        code: 'PLUGIN' as const,
+        severity: 'error' as const,
         path: [propertyName],
         message: `Property '${propertyName}' must be a string`,
         expected: 'string',
@@ -161,6 +171,8 @@ export function validatePluginManifestProperty(
   if (!parsedResult.ok) {
     return [
       {
+        code: 'PLUGIN' as const,
+        severity: 'error' as const,
         path: [propertyName],
         message: `Property '${propertyName}' must be a valid JSON string`,
         expected: 'valid JSON',
@@ -173,6 +185,8 @@ export function validatePluginManifestProperty(
   if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
     return [
       {
+        code: 'PLUGIN' as const,
+        severity: 'error' as const,
         path: [propertyName],
         message: `Property '${propertyName}' must parse to a JSON object`,
         expected: 'JSON object',
@@ -187,6 +201,8 @@ export function validatePluginManifestProperty(
     typeof manifest.name !== 'string' || manifest.name.trim() === ''
       ? [
           {
+            code: 'PLUGIN' as const,
+            severity: 'error' as const,
             path: [propertyName, 'name'],
             message: "Manifest property 'name' must be a non-empty string",
             expected: 'non-empty string',
@@ -199,6 +215,8 @@ export function validatePluginManifestProperty(
     typeof manifest.version !== 'string' || manifest.version.trim() === ''
       ? [
           {
+            code: 'PLUGIN' as const,
+            severity: 'error' as const,
             path: [propertyName, 'version'],
             message: "Manifest property 'version' must be a non-empty string",
             expected: 'non-empty string',
@@ -213,6 +231,8 @@ export function validatePluginManifestProperty(
         .map((cap: unknown, index): ValidationError | null => {
           if (typeof cap !== 'string' || cap.trim() === '') {
             return {
+              code: 'PLUGIN' as const,
+              severity: 'error' as const,
               path: [propertyName, 'capabilities', String(index)],
               message: `Manifest property 'capabilities' element at index ${index} must be a non-empty string`,
               expected: 'non-empty string',
@@ -221,6 +241,8 @@ export function validatePluginManifestProperty(
           }
           if (!RECOGNIZED_WASM_CAPABILITIES.has(cap)) {
             return {
+              code: 'PLUGIN' as const,
+              severity: 'error' as const,
               path: [propertyName, 'capabilities', String(index)],
               message: `Manifest property 'capabilities' element at index ${index} ('${cap}') is not a recognized capability`,
               expected: 'recognized WasmCapability string',
@@ -232,6 +254,8 @@ export function validatePluginManifestProperty(
         .filter((error): error is ValidationError => error !== null)
     : [
         {
+          code: 'PLUGIN' as const,
+          severity: 'error' as const,
           path: [propertyName, 'capabilities'],
           message: "Manifest property 'capabilities' must be an array of strings",
           expected: 'array of strings',
@@ -247,6 +271,8 @@ export function validatePluginManifestProperty(
             if (typeof item !== 'object' || item === null || Array.isArray(item)) {
               return [
                 {
+                  code: 'PLUGIN' as const,
+                  severity: 'error' as const,
                   path: [propertyName, 'menuItems', String(index)],
                   message: `Manifest property 'menuItems' element at index ${index} must be an object`,
                   expected: 'object',
@@ -259,6 +285,8 @@ export function validatePluginManifestProperty(
               typeof itemRec.label !== 'string' || itemRec.label.trim() === ''
                 ? [
                     {
+                      code: 'PLUGIN' as const,
+                      severity: 'error' as const,
                       path: [propertyName, 'menuItems', String(index), 'label'],
                       message: "Menu item 'label' must be a non-empty string",
                       expected: 'non-empty string',
@@ -270,6 +298,8 @@ export function validatePluginManifestProperty(
               typeof itemRec.command !== 'string' || itemRec.command.trim() === ''
                 ? [
                     {
+                      code: 'PLUGIN' as const,
+                      severity: 'error' as const,
                       path: [propertyName, 'menuItems', String(index), 'command'],
                       message: "Menu item 'command' must be a non-empty string",
                       expected: 'non-empty string',
@@ -282,6 +312,8 @@ export function validatePluginManifestProperty(
                 ? []
                 : [
                     {
+                      code: 'PLUGIN' as const,
+                      severity: 'error' as const,
                       path: [propertyName, 'menuItems', String(index), 'shortcut'],
                       message: "Menu item 'shortcut' must be a string if defined",
                       expected: 'string',
@@ -292,6 +324,8 @@ export function validatePluginManifestProperty(
           })
         : [
             {
+              code: 'PLUGIN' as const,
+              severity: 'error' as const,
               path: [propertyName, 'menuItems'],
               message: "Manifest property 'menuItems' must be an array of objects",
               expected: 'array of objects',
@@ -307,6 +341,8 @@ export function validatePluginManifestProperty(
             if (typeof command !== 'object' || command === null || Array.isArray(command)) {
               return [
                 {
+                  code: 'PLUGIN' as const,
+                  severity: 'error' as const,
                   path: [propertyName, 'commands', String(index)],
                   message: `Manifest property 'commands' element at index ${index} must be an object`,
                   expected: 'object',
@@ -319,6 +355,8 @@ export function validatePluginManifestProperty(
               typeof commandRec.id !== 'string' || commandRec.id.trim() === ''
                 ? [
                     {
+                      code: 'PLUGIN' as const,
+                      severity: 'error' as const,
                       path: [propertyName, 'commands', String(index), 'id'],
                       message: "Command 'id' must be a non-empty string",
                       expected: 'non-empty string',
@@ -330,6 +368,8 @@ export function validatePluginManifestProperty(
               typeof commandRec.title !== 'string' || commandRec.title.trim() === ''
                 ? [
                     {
+                      code: 'PLUGIN' as const,
+                      severity: 'error' as const,
                       path: [propertyName, 'commands', String(index), 'title'],
                       message: "Command 'title' must be a non-empty string",
                       expected: 'non-empty string',
@@ -342,6 +382,8 @@ export function validatePluginManifestProperty(
                 ? []
                 : [
                     {
+                      code: 'PLUGIN' as const,
+                      severity: 'error' as const,
                       path: [propertyName, 'commands', String(index), 'category'],
                       message: "Command 'category' must be a string if defined",
                       expected: 'string',
@@ -352,6 +394,8 @@ export function validatePluginManifestProperty(
           })
         : [
             {
+              code: 'PLUGIN' as const,
+              severity: 'error' as const,
               path: [propertyName, 'commands'],
               message: "Manifest property 'commands' must be an array of objects",
               expected: 'array of objects',

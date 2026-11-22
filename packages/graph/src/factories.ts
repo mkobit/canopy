@@ -3,6 +3,7 @@ import type {
   NodeId,
   EdgeId,
   ShapeId,
+  PropertyTypeId,
   BatchId,
   TypeId,
   GraphId,
@@ -26,6 +27,10 @@ export function createEdgeId(): EdgeId {
 
 export function asShapeId(id: string): ShapeId {
   return id as ShapeId;
+}
+
+export function asPropertyTypeId(id: string): PropertyTypeId {
+  return id as PropertyTypeId;
 }
 
 export function asBatchId(id: string): BatchId {

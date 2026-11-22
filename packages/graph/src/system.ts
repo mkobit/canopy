@@ -1,26 +1,27 @@
 import type { NodeId } from './identifiers';
-import { asNodeId, asTypeId } from './factories';
+import { asNodeId, asPropertyTypeId, asShapeId } from './factories';
 
 export const SYSTEM_IDS = {
-  // Types
-  NODE_TYPE: asTypeId('node:type:node-type'),
-  EDGE_TYPE: asTypeId('node:type:edge-type'),
-  NAMESPACE: asTypeId('node:type:namespace'),
-  PROPERTY_TYPE: asTypeId('node:type:property-type'),
-  QUERY_DEFINITION: asTypeId('node:type:query-definition'),
-  VIEW_DEFINITION: asTypeId('node:type:view-definition'),
-  TEMPLATE: asTypeId('node:type:template'),
-  RENDERER: asTypeId('meta:renderer'),
+  // Meta-shapes and system shapes
+  SHAPE: asShapeId('node:type:shape'),
+  NAMESPACE: asShapeId('node:type:namespace'),
+  PROPERTY_TYPE: asShapeId('node:type:property-type'),
+  QUERY_DEFINITION: asShapeId('node:type:query-definition'),
+  VIEW_DEFINITION: asShapeId('node:type:view-definition'),
+  TEMPLATE: asShapeId('node:type:template'),
+  RENDERER: asShapeId('meta:renderer'),
 
-  // Node Type Definitions (these nodes define the types above)
-  NODE_TYPE_DEF: asNodeId('node:type:node-type'),
-  EDGE_TYPE_DEF: asNodeId('node:type:edge-type'),
+  // Shape Definition Nodes (these nodes define the shapes above)
+  SHAPE_DEF: asNodeId('node:type:shape'),
   NAMESPACE_DEF: asNodeId('node:type:namespace'),
   PROPERTY_TYPE_DEF: asNodeId('node:type:property-type'),
   QUERY_DEFINITION_DEF: asNodeId('node:type:query-definition'),
   VIEW_DEFINITION_DEF: asNodeId('node:type:view-definition'),
   TEMPLATE_DEF: asNodeId('node:type:template'),
   RENDERER_DEF: asNodeId('meta:renderer'),
+
+  // System PropertyTypes
+  PROPERTY_TYPE_URL: asPropertyTypeId('system:propertytype:url'),
 
   // System Queries
   QUERY_ALL_NODES: asNodeId('query:system:all-nodes'),
@@ -44,25 +45,28 @@ export const SYSTEM_IDS = {
 
   // Plugin type definitions
   NODE_TYPE_PLUGIN: asNodeId('system:nodetype:plugin'),
-  TYPE_PLUGIN: asTypeId('system:nodetype:plugin'),
+  TYPE_PLUGIN: asShapeId('system:nodetype:plugin'),
 
   // System settings schemas
   SETTING_DEFAULT_VIEW: asNodeId('system:setting:default-view'),
   SETTING_DISPLAY_DENSITY: asNodeId('system:setting:display-density'),
 
-  // Node Type Definitions for Block Content
+  // Node Shape Definitions for Block Content & Lineage
   NODE_TYPE_TEXT_BLOCK: asNodeId('system:nodetype:text-block'),
   NODE_TYPE_CODE_BLOCK: asNodeId('system:nodetype:code-block'),
   NODE_TYPE_MARKDOWN: asNodeId('system:nodetype:markdown'),
-  TYPE_TEXT_BLOCK: asTypeId('system:nodetype:text-block'),
-  TYPE_CODE_BLOCK: asTypeId('system:nodetype:code-block'),
-  TYPE_MARKDOWN: asTypeId('system:nodetype:markdown'),
+  TYPE_TEXT_BLOCK: asShapeId('system:nodetype:text-block'),
+  TYPE_CODE_BLOCK: asShapeId('system:nodetype:code-block'),
+  TYPE_MARKDOWN: asShapeId('system:nodetype:markdown'),
+  PROXY: asShapeId('system:nodetype:proxy'),
+  SHAPE_MIGRATION: asShapeId('system:nodetype:shape-migration'),
+  BUNDLE: asShapeId('system:nodetype:bundle'),
 
   // Workflow definitions
   WORKFLOW_TRIGGER: asNodeId('system:nodetype:workflow-trigger'),
   WORKFLOW_DEFINITION: asNodeId('system:nodetype:workflow-definition'),
 
-  // Edge Type Definitions (nodes that define edge types)
+  // Edge Shape Definitions (nodes that define edge shapes)
   EDGE_CHILD_OF: asNodeId('system:edgetype:child-of'),
   EDGE_DEFINES: asNodeId('edge:type:defines'),
   EDGE_REFERENCES: asNodeId('edge:type:references'),
@@ -70,20 +74,26 @@ export const SYSTEM_IDS = {
   EDGE_USES_RENDERER: asNodeId('system:edgetype:uses-renderer'),
   EDGE_VIEW_OVERRIDE: asNodeId('system:edgetype:view-override'),
   EDGE_DEFAULT_VIEW: asNodeId('system:edgetype:default-view'),
+  EDGE_DERIVED_FROM: asNodeId('system:edgetype:derived-from'),
+  EDGE_SUPERSEDES: asNodeId('system:edgetype:supersedes'),
+  EDGE_RENDER_SELECTOR: asNodeId('system:edgetype:render-selector'),
 
-  SETTINGS_SCHEMA: asTypeId('system:nodetype:settings-schema'),
-  USER_SETTING: asTypeId('system:nodetype:user-setting'),
+  SETTINGS_SCHEMA: asShapeId('system:nodetype:settings-schema'),
+  USER_SETTING: asShapeId('system:nodetype:user-setting'),
 };
 
-// Corresponding TypeIds for the Edge Types
-export const SYSTEM_EDGE_TYPES = {
-  CHILD_OF: asTypeId('system:edgetype:child-of'),
-  DEFINES: asTypeId('edge:type:defines'),
-  REFERENCES: asTypeId('edge:type:references'),
-  PREREQUISITE: asTypeId('edge:type:prerequisite'),
-  USES_RENDERER: asTypeId('system:edgetype:uses-renderer'),
-  VIEW_OVERRIDE: asTypeId('system:edgetype:view-override'),
-  DEFAULT_VIEW: asTypeId('system:edgetype:default-view'),
+// Corresponding ShapeIds for the Edge Shapes
+export const SYSTEM_EDGE_SHAPES = {
+  CHILD_OF: asShapeId('system:edgetype:child-of'),
+  DEFINES: asShapeId('edge:type:defines'),
+  REFERENCES: asShapeId('edge:type:references'),
+  PREREQUISITE: asShapeId('edge:type:prerequisite'),
+  USES_RENDERER: asShapeId('system:edgetype:uses-renderer'),
+  VIEW_OVERRIDE: asShapeId('system:edgetype:view-override'),
+  DEFAULT_VIEW: asShapeId('system:edgetype:default-view'),
+  DERIVED_FROM: asShapeId('system:edgetype:derived-from'),
+  SUPERSEDES: asShapeId('system:edgetype:supersedes'),
+  RENDER_SELECTOR: asShapeId('system:edgetype:render-selector'),
 };
 
 export type SystemRendererEntryPoint = 'system:text' | 'system:code' | 'system:markdown';

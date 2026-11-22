@@ -146,8 +146,8 @@ describe('time-travel', () => {
       const result = await getGraphAt(store, graphId, { eventId: createEventId() });
       const graph = unwrap(result);
 
-      // An empty graph has 42 bootstrap nodes, so it is not completely empty.
-      expect(graph.nodes.size).toBe(42);
+      // An empty graph has 48 bootstrap nodes, so it is not completely empty.
+      expect(graph.nodes.size).toBe(48);
     });
 
     it('returns a graph with nodes created up to a specific eventId', async () => {
@@ -166,8 +166,8 @@ describe('time-travel', () => {
       expect(graph.nodes.has(event2.id)).toBe(true);
       expect(graph.nodes.has(event3.id)).toBe(false);
 
-      // 42 bootstrap + 2 new
-      expect(graph.nodes.size).toBe(44);
+      // 48 bootstrap + 2 new
+      expect(graph.nodes.size).toBe(50);
     });
 
     it('returns a graph with nodes created up to a specific timestamp', async () => {
@@ -186,8 +186,8 @@ describe('time-travel', () => {
       expect(graph.nodes.has(event2.id)).toBe(true);
       expect(graph.nodes.has(event3.id)).toBe(false);
 
-      // 42 bootstrap + 2 new
-      expect(graph.nodes.size).toBe(44);
+      // 48 bootstrap + 2 new
+      expect(graph.nodes.size).toBe(50);
     });
 
     it('returns a graph with all nodes when given the last eventId', async () => {
@@ -206,8 +206,8 @@ describe('time-travel', () => {
       expect(graph.nodes.has(event2.id)).toBe(true);
       expect(graph.nodes.has(event3.id)).toBe(true);
 
-      // 42 bootstrap + 3 new
-      expect(graph.nodes.size).toBe(45);
+      // 48 bootstrap + 3 new
+      expect(graph.nodes.size).toBe(51);
     });
   });
 });

@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'bun:test';
-import { asDeviceId, asGraphId, asNodeId, asShapeId, createGraphSession } from '@canopy/graph';
+import {
+  SYSTEM_IDS,
+  asDeviceId,
+  asGraphId,
+  asNodeId,
+  asShapeId,
+  createEventId,
+  createGraphSession,
+  createInstant,
+} from '@canopy/graph';
 import { createInMemoryEventStore } from '@canopy/storage';
 import {
   createGraphAccessContext,
@@ -17,6 +26,22 @@ const setupSessionContext = async () => {
   const eventLogStore = createInMemoryEventStore();
   const session = createGraphSession(eventLogStore, graphId, deviceId);
   await session.load();
+  await session.commit([
+    {
+      type: 'NodeCreated',
+      eventId: createEventId(),
+      id: asNodeId('doc'),
+      shapeId: SYSTEM_IDS.SHAPE,
+      properties: new Map<string, string | boolean>([
+        ['name', 'Doc'],
+        ['namespace', 'user'],
+        ['entityKind', 'node'],
+        ['closed', false],
+      ]),
+      timestamp: createInstant(),
+      deviceId,
+    },
+  ]);
   const context = createGraphAccessContext({
     graph: session.graph(),
     session,
@@ -102,7 +127,9 @@ describe('Event Catch-Up Replay Handler', () => {
     const allEventsResult = await eventLogStore.getEvents(graphId);
     expect(allEventsResult.ok).toBe(true);
     const allEvents = allEventsResult.ok ? allEventsResult.value : [];
-    const firstEventId = allEvents[0]?.eventId ?? '';
+    const firstEventId =
+      allEvents.find((event) => event.type === 'NodeCreated' && event.id === asNodeId('n-replay-1'))
+        ?.eventId ?? '';
 
     const replayResult = await executeReplayEventStream(context, {
       graphId: 'g1',

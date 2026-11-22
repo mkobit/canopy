@@ -49,10 +49,12 @@ const ScalarDisplay: React.FC<Readonly<{ value: ScalarValue; kind?: PropertyValu
   const inferredKind = kind || inferKind(value);
 
   switch (inferredKind) {
-    case 'text': {
+    case 'text':
+    case 'url': {
       return <span className="text-gray-900">{String(value)}</span>;
     }
-    case 'number': {
+    case 'number':
+    case 'integer': {
       return <span className="font-mono text-blue-600">{String(value)}</span>;
     }
     case 'boolean': {

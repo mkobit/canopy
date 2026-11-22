@@ -15,8 +15,10 @@ import {
   createInstant,
   asShapeId,
   asBatchId,
+  asNodeId,
   createGraphId,
   SYSTEM_DEVICE_ID,
+  SYSTEM_IDS,
   zeroRevision,
 } from '@canopy/graph';
 
@@ -54,6 +56,44 @@ export function generateQueryBenchmarkFixture(
 
   const graphInstant = createInstant();
   const graphId = createGraphId();
+
+  const benchmarkShapes: readonly Readonly<{
+    id: NodeId;
+    name: string;
+    entityKind: 'node' | 'edge';
+  }>[] = [
+    { id: asNodeId(nodeTypeId), name: 'BenchmarkNode', entityKind: 'node' },
+    { id: asNodeId(edgeTypeId), name: 'BenchmarkEdge', entityKind: 'edge' },
+  ];
+
+  for (const shapeSpec of benchmarkShapes) {
+    const shapeProperties = new Map<string, PropertyValue>([
+      ['name', shapeSpec.name],
+      ['namespace', 'user'],
+      ['entityKind', shapeSpec.entityKind],
+      ['closed', false],
+    ]);
+    nodesMap.set(shapeSpec.id, {
+      id: shapeSpec.id,
+      shape: SYSTEM_IDS.SHAPE,
+      properties: shapeProperties,
+      metadata: {
+        created: graphInstant,
+        modified: graphInstant,
+        modifiedBy: SYSTEM_DEVICE_ID,
+      },
+    });
+    events.push({
+      type: 'NodeCreated',
+      eventId: createEventId(),
+      id: shapeSpec.id,
+      shapeId: SYSTEM_IDS.SHAPE,
+      properties: shapeProperties,
+      timestamp: graphInstant,
+      deviceId: SYSTEM_DEVICE_ID,
+      batchId: asBatchId('benchmark-batch'),
+    });
+  }
 
   for (let nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++) {
     const nodeId = createNodeId();

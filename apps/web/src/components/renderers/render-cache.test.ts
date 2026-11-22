@@ -14,7 +14,7 @@ import {
   createInstant,
   removeEdge,
   SYSTEM_DEVICE_ID,
-  SYSTEM_EDGE_TYPES,
+  SYSTEM_EDGE_SHAPES,
   SYSTEM_IDS,
   unwrap,
   type Edge,
@@ -640,7 +640,7 @@ describe.serial(
       // Both View A and View B initially reference Renderer 1.
       graph = addEdgeUnwrapped(graph, {
         id: asEdgeId('user:edge:view-a-uses-1'),
-        shape: SYSTEM_EDGE_TYPES.USES_RENDERER,
+        shape: SYSTEM_EDGE_SHAPES.USES_RENDERER,
         source: viewAId,
         target: renderer1Id,
         properties: new Map(),
@@ -648,7 +648,7 @@ describe.serial(
       });
       graph = addEdgeUnwrapped(graph, {
         id: usesRenderer1EdgeId,
-        shape: SYSTEM_EDGE_TYPES.USES_RENDERER,
+        shape: SYSTEM_EDGE_SHAPES.USES_RENDERER,
         source: viewBId,
         target: renderer1Id,
         properties: new Map(),
@@ -656,7 +656,7 @@ describe.serial(
       });
       graph = addEdgeUnwrapped(graph, {
         id: overrideEdgeAId,
-        shape: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
+        shape: SYSTEM_EDGE_SHAPES.VIEW_OVERRIDE,
         source: nodeId,
         target: viewAId,
         properties: new Map(),
@@ -675,7 +675,7 @@ describe.serial(
       // 1. Switch ViewDefinition (View A -> View B) on identical node content & same Renderer 1.
       const graphWithViewB = addEdgeUnwrapped(removeEdgeUnwrapped(graph, overrideEdgeAId), {
         id: overrideEdgeBId,
-        shape: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
+        shape: SYSTEM_EDGE_SHAPES.VIEW_OVERRIDE,
         source: nodeId,
         target: viewBId,
         properties: new Map(),
@@ -700,7 +700,7 @@ describe.serial(
         removeEdgeUnwrapped(graphWithViewB, usesRenderer1EdgeId),
         {
           id: usesRenderer2EdgeId,
-          shape: SYSTEM_EDGE_TYPES.USES_RENDERER,
+          shape: SYSTEM_EDGE_SHAPES.USES_RENDERER,
           source: viewBId,
           target: renderer2Id,
           properties: new Map(),
@@ -775,7 +775,7 @@ describe.serial(
       });
       graph = addEdgeUnwrapped(graph, {
         id: asEdgeId('user:edge:tier-switch-uses'),
-        shape: SYSTEM_EDGE_TYPES.USES_RENDERER,
+        shape: SYSTEM_EDGE_SHAPES.USES_RENDERER,
         source: viewId,
         target: rendererId,
         properties: new Map(),
@@ -783,7 +783,7 @@ describe.serial(
       });
       graph = addEdgeUnwrapped(graph, {
         id: asEdgeId('user:edge:tier-switch-override'),
-        shape: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
+        shape: SYSTEM_EDGE_SHAPES.VIEW_OVERRIDE,
         source: nodeId,
         target: viewId,
         properties: new Map(),

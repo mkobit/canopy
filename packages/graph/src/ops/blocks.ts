@@ -8,7 +8,7 @@ import { createInstant, createEdgeId } from '../factories';
 import { ok, err as error } from '../result';
 import { addNode } from './node';
 import { addEdge } from './edge';
-import { SYSTEM_EDGE_TYPES } from '../system';
+import { SYSTEM_EDGE_SHAPES } from '../system';
 import { generateKeyBetween } from './fractional-index';
 
 export type InsertBlockOptions = Readonly<{
@@ -40,7 +40,7 @@ export function insertBlock(
   // 2. Find siblings to determine position
   // Filter edges: target == parentId AND shape == CHILD_OF
   const siblings = [...graphWithNode.edges.values()]
-    .filter((edge) => edge.target === parentId && edge.shape === SYSTEM_EDGE_TYPES.CHILD_OF)
+    .filter((edge) => edge.target === parentId && edge.shape === SYSTEM_EDGE_SHAPES.CHILD_OF)
     .toSorted((a, b) => {
       const posA = (a.properties.get('position') as string) || '';
       const posB = (b.properties.get('position') as string) || '';
@@ -86,7 +86,7 @@ export function insertBlock(
 
   const edge: Edge = {
     id: edgeId,
-    shape: SYSTEM_EDGE_TYPES.CHILD_OF,
+    shape: SYSTEM_EDGE_SHAPES.CHILD_OF,
     source: block.id,
     target: parentId,
     properties: new Map([['position', newPos]]),

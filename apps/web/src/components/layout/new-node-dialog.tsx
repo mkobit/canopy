@@ -25,10 +25,12 @@ export interface NewNodeDialogProperties {
 
 function getInitialValue(kind: PropertyValueKind): PropertyValue {
   switch (kind) {
-    case 'text': {
+    case 'text':
+    case 'url': {
       return '';
     }
-    case 'number': {
+    case 'number':
+    case 'integer': {
       return 0;
     }
     case 'boolean': {

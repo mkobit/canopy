@@ -2,13 +2,14 @@ import type { NodeId, ShapeId } from './identifiers';
 import type { Node } from './node';
 import type { Edge } from './edge';
 import type { PropertyValue } from './properties';
+import { serializeScalarForIndex } from './scalars';
 import type { ScalarValue } from './scalars';
 import type { Graph } from './graph';
 import type { GraphEvent } from './events';
 import type { ReadModelPort } from './read-model';
 import type { Result } from './result';
 import { fromThrowable, ok, err as error } from './result';
-import { SYSTEM_IDS, SYSTEM_EDGE_TYPES } from './system';
+import { SYSTEM_IDS, SYSTEM_EDGE_SHAPES } from './system';
 import { asShapeId } from './factories';
 
 /**
@@ -53,13 +54,6 @@ Array-valued properties are never passed here -- see `nodesWhereEquals`.
 */
 function isScalarValue(value: PropertyValue): value is ScalarValue {
   return !Array.isArray(value);
-}
-
-function serializeScalarForIndex(value: ScalarValue): string {
-  if (value === null) return 'null:';
-  return typeof value === 'object'
-    ? `ref:${value.graph}:${value.target}`
-    : `${typeof value}:${String(value)}`;
 }
 
 /**
@@ -354,9 +348,9 @@ export function buildGraphIndexes(graph: Graph): GraphIndexes {
   const adjacencyIn = new Map<NodeId, Map<ShapeId | null, Map<NodeId, number>>>();
 
   for (const edge of graph.edges.values()) {
-    if (edge.shape === SYSTEM_EDGE_TYPES.VIEW_OVERRIDE) {
+    if (edge.shape === SYSTEM_EDGE_SHAPES.VIEW_OVERRIDE) {
       overrideEdges.push(edge);
-    } else if (edge.shape === SYSTEM_EDGE_TYPES.DEFAULT_VIEW) {
+    } else if (edge.shape === SYSTEM_EDGE_SHAPES.DEFAULT_VIEW) {
       defaultEdges.push(edge);
     }
 
@@ -451,8 +445,8 @@ Checks if an event modifies settings schema, user settings, or view overrides.
 function isConfigEvent(event: GraphEvent, graph: Graph): boolean {
   if (
     event.type === 'EdgeCreated' &&
-    (event.shapeId === SYSTEM_EDGE_TYPES.VIEW_OVERRIDE ||
-      event.shapeId === SYSTEM_EDGE_TYPES.DEFAULT_VIEW)
+    (event.shapeId === SYSTEM_EDGE_SHAPES.VIEW_OVERRIDE ||
+      event.shapeId === SYSTEM_EDGE_SHAPES.DEFAULT_VIEW)
   ) {
     return true;
   }
@@ -460,8 +454,8 @@ function isConfigEvent(event: GraphEvent, graph: Graph): boolean {
     const edge = graph.edges.get(event.id);
     if (
       edge &&
-      (edge.shape === SYSTEM_EDGE_TYPES.VIEW_OVERRIDE ||
-        edge.shape === SYSTEM_EDGE_TYPES.DEFAULT_VIEW)
+      (edge.shape === SYSTEM_EDGE_SHAPES.VIEW_OVERRIDE ||
+        edge.shape === SYSTEM_EDGE_SHAPES.DEFAULT_VIEW)
     ) {
       return true;
     }

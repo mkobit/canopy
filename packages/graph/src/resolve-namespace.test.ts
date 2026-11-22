@@ -53,7 +53,7 @@ describe('resolveNamespace', () => {
         asNodeId('my-type'),
         {
           id: asNodeId('my-type'),
-          shape: SYSTEM_IDS.NODE_TYPE,
+          shape: SYSTEM_IDS.SHAPE,
           properties: new Map<string, import('@canopy/graph').PropertyValue>([
             ['namespace', 'imported'],
           ]),
@@ -64,7 +64,7 @@ describe('resolveNamespace', () => {
         asNodeId('my-type-no-ns'),
         {
           id: asNodeId('my-type-no-ns'),
-          shape: SYSTEM_IDS.NODE_TYPE,
+          shape: SYSTEM_IDS.SHAPE,
           properties: new Map<string, import('@canopy/graph').PropertyValue>(),
           metadata: dummyMetadata,
         },

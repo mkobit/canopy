@@ -6,7 +6,7 @@ import { ok, err as error } from './result';
 import { SYSTEM_IDS } from './system';
 import { asNamespace } from './factories';
 import { NamespaceSchema } from './schemas';
-import { getNodeType } from './queries';
+import { getShape } from './queries';
 
 /**
 Validates a namespace name (format via `NamespaceSchema`, existence via a non-deleted
@@ -45,9 +45,9 @@ export function resolveNamespace(graph: Readonly<Graph>, node: Node): Namespace 
     }
   }
   if (node.shape !== undefined) {
-    const typeDefinition = getNodeType(graph, node.shape);
-    if (typeDefinition) {
-      const ns = typeDefinition.properties.get('namespace');
+    const shapeDefinition = getShape(graph, node.shape);
+    if (shapeDefinition) {
+      const ns = shapeDefinition.properties.get('namespace');
       if (typeof ns === 'string') {
         const parsed = parseNamespace(graph, ns);
         if (parsed.ok) {

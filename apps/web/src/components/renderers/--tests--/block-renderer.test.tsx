@@ -12,7 +12,7 @@ import {
   asShapeId,
   asEdgeId,
   SYSTEM_IDS,
-  SYSTEM_EDGE_TYPES,
+  SYSTEM_EDGE_SHAPES,
   SYSTEM_DEVICE_ID,
   createInstant,
   addNode,
@@ -117,7 +117,7 @@ describe('BlockRenderer', () => {
     // 3. VIEW_OVERRIDE edge from targetNode to viewNode
     const overrideEdge: Edge = {
       id: asEdgeId('user:edge:override'),
-      shape: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
+      shape: SYSTEM_EDGE_SHAPES.VIEW_OVERRIDE,
       source: nodeId,
       target: viewNodeId,
       properties: new Map(),
@@ -132,7 +132,7 @@ describe('BlockRenderer', () => {
     // 5. USES_RENDERER edge from viewNode to rendererNode
     const usesEdge: Edge = {
       id: asEdgeId('user:edge:uses-renderer'),
-      shape: SYSTEM_EDGE_TYPES.USES_RENDERER,
+      shape: SYSTEM_EDGE_SHAPES.USES_RENDERER,
       source: viewNodeId,
       target: rendererNodeId,
       properties: new Map(),
@@ -201,7 +201,7 @@ describe('BlockRenderer', () => {
         graph,
         {
           id: asEdgeId('user:edge:unavailable-override'),
-          shape: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
+          shape: SYSTEM_EDGE_SHAPES.VIEW_OVERRIDE,
           source: nodeId,
           target: viewNodeId,
           properties: new Map(),
@@ -215,7 +215,7 @@ describe('BlockRenderer', () => {
         graph,
         {
           id: asEdgeId('user:edge:unavailable-renderer'),
-          shape: SYSTEM_EDGE_TYPES.USES_RENDERER,
+          shape: SYSTEM_EDGE_SHAPES.USES_RENDERER,
           source: viewNodeId,
           target: rendererNodeId,
           properties: new Map(),
@@ -291,7 +291,7 @@ describe('BlockRenderer', () => {
         graph,
         {
           id: asEdgeId('user:edge:tier1-override'),
-          shape: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
+          shape: SYSTEM_EDGE_SHAPES.VIEW_OVERRIDE,
           source: nodeId,
           target: viewNodeId,
           properties: new Map(),
@@ -305,7 +305,7 @@ describe('BlockRenderer', () => {
         graph,
         {
           id: asEdgeId('user:edge:tier1-renderer'),
-          shape: SYSTEM_EDGE_TYPES.USES_RENDERER,
+          shape: SYSTEM_EDGE_SHAPES.USES_RENDERER,
           source: viewNodeId,
           target: rendererNodeId,
           properties: new Map(),
@@ -387,7 +387,7 @@ describe('BlockRenderer', () => {
         graph,
         {
           id: asEdgeId('user:edge:tier1-unavail-override'),
-          shape: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
+          shape: SYSTEM_EDGE_SHAPES.VIEW_OVERRIDE,
           source: nodeId,
           target: viewNodeId,
           properties: new Map(),
@@ -401,7 +401,7 @@ describe('BlockRenderer', () => {
         graph,
         {
           id: asEdgeId('user:edge:tier1-unavail-renderer'),
-          shape: SYSTEM_EDGE_TYPES.USES_RENDERER,
+          shape: SYSTEM_EDGE_SHAPES.USES_RENDERER,
           source: viewNodeId,
           target: rendererNodeId,
           properties: new Map(),
@@ -480,7 +480,7 @@ describe('BlockRenderer', () => {
         graph,
         {
           id: asEdgeId('user:edge:missing-rend-override'),
-          shape: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
+          shape: SYSTEM_EDGE_SHAPES.VIEW_OVERRIDE,
           source: nodeId,
           target: viewNodeId,
           properties: new Map(),
@@ -499,7 +499,7 @@ describe('BlockRenderer', () => {
           asEdgeId('user:edge:missing-rend-uses'),
           {
             id: asEdgeId('user:edge:missing-rend-uses'),
-            shape: SYSTEM_EDGE_TYPES.USES_RENDERER,
+            shape: SYSTEM_EDGE_SHAPES.USES_RENDERER,
             source: viewNodeId,
             target: missingRendererId,
             properties: new Map(),
@@ -558,7 +558,7 @@ describe('BlockRenderer', () => {
         graph,
         {
           id: asEdgeId('user:edge:inactive-rend-override'),
-          shape: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
+          shape: SYSTEM_EDGE_SHAPES.VIEW_OVERRIDE,
           source: nodeId,
           target: viewNodeId,
           properties: new Map(),
@@ -572,7 +572,7 @@ describe('BlockRenderer', () => {
         graph,
         {
           id: asEdgeId('user:edge:inactive-rend-uses'),
-          shape: SYSTEM_EDGE_TYPES.USES_RENDERER,
+          shape: SYSTEM_EDGE_SHAPES.USES_RENDERER,
           source: viewNodeId,
           target: rendererNodeId,
           properties: new Map(),
@@ -641,7 +641,7 @@ describe('BlockRenderer', () => {
         graph,
         {
           id: asEdgeId('user:edge:inactive-plug-override'),
-          shape: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
+          shape: SYSTEM_EDGE_SHAPES.VIEW_OVERRIDE,
           source: nodeId,
           target: viewNodeId,
           properties: new Map(),
@@ -655,7 +655,7 @@ describe('BlockRenderer', () => {
         graph,
         {
           id: asEdgeId('user:edge:inactive-plug-uses'),
-          shape: SYSTEM_EDGE_TYPES.USES_RENDERER,
+          shape: SYSTEM_EDGE_SHAPES.USES_RENDERER,
           source: viewNodeId,
           target: rendererNodeId,
           properties: new Map(),
@@ -722,7 +722,7 @@ describe('BlockRenderer', () => {
         graph,
         {
           id: asEdgeId('user:edge:inactive-tier2-override'),
-          shape: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
+          shape: SYSTEM_EDGE_SHAPES.VIEW_OVERRIDE,
           source: nodeId,
           target: viewNodeId,
           properties: new Map(),
@@ -736,7 +736,7 @@ describe('BlockRenderer', () => {
         graph,
         {
           id: asEdgeId('user:edge:inactive-tier2-uses'),
-          shape: SYSTEM_EDGE_TYPES.USES_RENDERER,
+          shape: SYSTEM_EDGE_SHAPES.USES_RENDERER,
           source: viewNodeId,
           target: rendererNodeId,
           properties: new Map(),
@@ -813,7 +813,7 @@ describe('BlockRenderer', () => {
         graph,
         {
           id: asEdgeId('user:edge:panic-override'),
-          shape: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
+          shape: SYSTEM_EDGE_SHAPES.VIEW_OVERRIDE,
           source: nodeId,
           target: viewNodeId,
           properties: new Map(),
@@ -827,7 +827,7 @@ describe('BlockRenderer', () => {
         graph,
         {
           id: asEdgeId('user:edge:panic-uses'),
-          shape: SYSTEM_EDGE_TYPES.USES_RENDERER,
+          shape: SYSTEM_EDGE_SHAPES.USES_RENDERER,
           source: viewNodeId,
           target: rendererNodeId,
           properties: new Map(),

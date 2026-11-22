@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import {
+  SYSTEM_IDS,
   addEdge,
   addNode,
   asDeviceId,
@@ -9,6 +10,7 @@ import {
   asNodeId,
   asShapeId,
   createDeviceId,
+  createEventId,
   createGraph,
   createGraphSession,
   unwrap,
@@ -115,6 +117,22 @@ describe('Query execution handlers', () => {
       asDeviceId('00000000-0000-4000-8000-000000000001'),
     );
     await session.load();
+    await session.commit([
+      {
+        type: 'NodeCreated',
+        eventId: createEventId(),
+        id: asNodeId('doc'),
+        shapeId: SYSTEM_IDS.SHAPE,
+        properties: new Map<string, string | boolean>([
+          ['name', 'Doc'],
+          ['namespace', 'user'],
+          ['entityKind', 'node'],
+          ['closed', false],
+        ]),
+        timestamp: asInstant('2026-01-01T00:00:00.000Z'),
+        deviceId,
+      },
+    ]);
     const context = createGraphAccessContext({ graph: session.graph(), session });
 
     const createResult = await executeCreateNode(

@@ -909,7 +909,7 @@ const resolveSettingFromGraph = (
 
 const extractShapeRecordsFromGraph = (graph: Graph): readonly CanopyV0ShapeRecord[] =>
   [...graph.nodes.values()]
-    .filter((node) => node.shape === SYSTEM_IDS.NODE_TYPE || node.shape === SYSTEM_IDS.EDGE_TYPE)
+    .filter((node) => node.shape === SYSTEM_IDS.SHAPE)
     .map((node) => {
       const nameValue = node.properties.get('name');
       const schemaOrgValue = node.properties.get('schemaOrgUri');
@@ -919,16 +919,30 @@ const extractShapeRecordsFromGraph = (graph: Graph): readonly CanopyV0ShapeRecor
         const parsed = fromThrowable(() => JSON.parse(rawProperties) as unknown);
         if (!parsed.ok || !Array.isArray(parsed.value)) return [];
         return parsed.value.flatMap((entry): readonly CanopyV0ShapePropertyBinding[] => {
-          if (!isRecordObject(entry) || typeof entry.name !== 'string') return [];
+          if (!isRecordObject(entry)) return [];
+          if (entry.kind === 'reference' && typeof entry.name === 'string') {
+            const cardinality: CanopyV0PropertyCardinality =
+              entry.cardinality === 'many' ? 'many' : 'one';
+            return [
+              {
+                key: entry.name,
+                ...(typeof entry.propertyTypeId === 'string' && {
+                  propertyTypeId: entry.propertyTypeId,
+                }),
+                required: entry.required === true,
+                cardinality,
+              },
+            ];
+          }
+          const definition =
+            entry.kind === 'inline' && isRecordObject(entry.definition) ? entry.definition : entry;
+          if (typeof definition.name !== 'string') return [];
           const cardinality: CanopyV0PropertyCardinality =
-            entry.cardinality === 'many' ? 'many' : 'one';
+            definition.cardinality === 'many' || definition.valueKind === 'list' ? 'many' : 'one';
           return [
             {
-              key: entry.name,
-              ...(typeof entry.propertyTypeId === 'string' && {
-                propertyTypeId: entry.propertyTypeId,
-              }),
-              required: entry.required === true,
+              key: definition.name,
+              required: definition.required === true,
               cardinality,
             },
           ];
@@ -938,7 +952,7 @@ const extractShapeRecordsFromGraph = (graph: Graph): readonly CanopyV0ShapeRecor
       return {
         shapeId: node.id,
         name: typeof nameValue === 'string' ? nameValue : node.id,
-        entityKind: node.shape === SYSTEM_IDS.EDGE_TYPE ? 'edge' : 'node',
+        entityKind: node.properties.get('entityKind') === 'edge' ? 'edge' : 'node',
         closed: node.properties.get('closed') === true,
         properties: parsedBindings,
         ...(typeof schemaOrgValue === 'string' && { schemaOrgUri: schemaOrgValue }),
@@ -950,12 +964,12 @@ const extractPropertyTypesFromGraph = (graph: Graph): readonly CanopyV0PropertyT
     .filter((node) => node.shape === SYSTEM_IDS.PROPERTY_TYPE)
     .map((node) => {
       const nameValue = node.properties.get('name');
-      const scalarValue = node.properties.get('scalarKind');
+      const valueKindValue = node.properties.get('valueKind') ?? node.properties.get('scalarKind');
       const schemaOrgValue = node.properties.get('schemaOrgUri');
       return {
         propertyTypeId: node.id,
         name: typeof nameValue === 'string' ? nameValue : node.id,
-        scalarKind: typeof scalarValue === 'string' ? scalarValue : 'text',
+        scalarKind: typeof valueKindValue === 'string' ? valueKindValue : 'text',
         cardinality: node.properties.get('cardinality') === 'many' ? 'many' : 'one',
         ...(typeof schemaOrgValue === 'string' && { schemaOrgUri: schemaOrgValue }),
       };

@@ -47,9 +47,10 @@ function createGraphWithTypes() {
   ];
   const personTypeNode = createNode({
     id: asNodeId('type-person'),
-    shape: SYSTEM_IDS.NODE_TYPE,
+    shape: SYSTEM_IDS.SHAPE,
     properties: {
       name: 'Person',
+      entityKind: 'node',
       properties: JSON.stringify(personProperties),
     },
   });
@@ -136,7 +137,7 @@ describe('ops with validation', () => {
     const nodeId = createNodeId();
     const node: Node = {
       id: nodeId,
-      shape: SYSTEM_IDS.NODE_TYPE,
+      shape: SYSTEM_IDS.SHAPE,
       properties: new Map<string, PropertyValue>([
         ['name', 'Alice'],
         ['age', 30],
@@ -182,7 +183,7 @@ describe('ops with validation', () => {
     const nodeId = createNodeId();
     const node: Node = {
       id: nodeId,
-      shape: SYSTEM_IDS.NODE_TYPE,
+      shape: SYSTEM_IDS.SHAPE,
       properties: new Map<string, PropertyValue>([['name', 'Alice']]),
       metadata: {
         created: createInstant(),
@@ -220,13 +221,13 @@ describe('createEdgeAction', () => {
 
     const sourceNode = createNode({
       id: asNodeId('n1'),
-      shape: SYSTEM_IDS.NODE_TYPE,
+      shape: SYSTEM_IDS.SHAPE,
       properties: {},
     });
 
     const targetNode = createNode({
       id: asNodeId('n2'),
-      shape: SYSTEM_IDS.NODE_TYPE,
+      shape: SYSTEM_IDS.SHAPE,
       properties: {},
     });
 
@@ -259,7 +260,7 @@ describe('createEdgeAction', () => {
 
     const targetNode = createNode({
       id: asNodeId('n2'),
-      shape: SYSTEM_IDS.NODE_TYPE,
+      shape: SYSTEM_IDS.SHAPE,
       properties: {},
     });
 
@@ -284,7 +285,7 @@ describe('createEdgeAction', () => {
 
     const sourceNode = createNode({
       id: asNodeId('n1'),
-      shape: SYSTEM_IDS.NODE_TYPE,
+      shape: SYSTEM_IDS.SHAPE,
       properties: {},
     });
 

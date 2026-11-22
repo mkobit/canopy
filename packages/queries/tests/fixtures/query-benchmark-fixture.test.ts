@@ -9,7 +9,7 @@ describe('generateQueryBenchmarkFixture', () => {
       propertyCount: 4,
     });
 
-    expect(fixture.graph.nodes.size).toBe(100);
+    expect(fixture.graph.nodes.size).toBe(102);
     expect(fixture.events.length).toBeGreaterThanOrEqual(100);
     expect(fixture.sampleNodeIds.length).toBeGreaterThan(0);
   });

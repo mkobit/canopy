@@ -5,7 +5,7 @@ import {
   asDeviceId,
   createGraph,
   createNamespace,
-  createNodeType,
+  createShape,
   unwrap,
 } from '@canopy/graph';
 import { listNamespaces } from '../schema';
@@ -32,8 +32,7 @@ describe('listAllowedNodeTypes', () => {
   it('excludes meta-types', () => {
     const graph = bootstrappedGraph();
     const ids = listAllowedNodeTypes(graph, listNamespaces(graph)).map((t) => t.id);
-    expect(ids).not.toContain(SYSTEM_IDS.NODE_TYPE);
-    expect(ids).not.toContain(SYSTEM_IDS.EDGE_TYPE);
+    expect(ids).not.toContain(SYSTEM_IDS.SHAPE);
     expect(ids).not.toContain(SYSTEM_IDS.VIEW_DEFINITION);
     expect(ids).not.toContain(SYSTEM_IDS.TEMPLATE);
     expect(ids).not.toContain(SYSTEM_IDS.RENDERER);
@@ -74,11 +73,12 @@ describe('listAllowedNodeTypes', () => {
       createNamespace(bootstrappedGraph(), { name: 'content', kind: 'user' }, OPTIONS),
     ).value;
     const afterNodeType = unwrap(
-      createNodeType(
+      createShape(
         afterNamespace,
         {
           name: 'Task',
           namespace: 'content',
+          entityKind: 'node',
           properties: [{ kind: 'inline', name: 'title', valueKind: 'text', required: true }],
         },
         OPTIONS,

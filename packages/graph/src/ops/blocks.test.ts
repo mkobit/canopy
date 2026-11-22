@@ -8,7 +8,7 @@ import {
   asDeviceId,
   zeroRevision,
 } from '@canopy/graph';
-import { SYSTEM_IDS, SYSTEM_EDGE_TYPES } from '../system';
+import { SYSTEM_IDS, SYSTEM_EDGE_SHAPES } from '../system';
 import { insertBlock } from './blocks';
 import { addNode } from './node';
 
@@ -30,7 +30,7 @@ function createTestGraph(): Graph {
 function createBlockNode(): Node {
   return {
     id: createNodeId(),
-    shape: SYSTEM_IDS.NODE_TYPE,
+    shape: SYSTEM_IDS.SHAPE,
     properties: new Map([['content', 'test']]),
     metadata: {
       created: createInstant(),
@@ -46,7 +46,7 @@ describe('ops/blocks', () => {
     const parentId = createNodeId();
     const parentNode: Node = {
       id: parentId,
-      shape: SYSTEM_IDS.NODE_TYPE,
+      shape: SYSTEM_IDS.SHAPE,
       properties: new Map(),
       metadata: {
         created: createInstant(),
@@ -72,7 +72,7 @@ describe('ops/blocks', () => {
 
     const edges = [...newGraph.edges.values()];
     expect(edges.length).toBe(1);
-    expect(edges[0]?.shape).toBe(SYSTEM_EDGE_TYPES.CHILD_OF);
+    expect(edges[0]?.shape).toBe(SYSTEM_EDGE_SHAPES.CHILD_OF);
     expect(edges[0]?.properties.get('position')).toBe('a0');
   });
 
@@ -83,7 +83,7 @@ describe('ops/blocks', () => {
       graph,
       {
         id: parentId,
-        shape: SYSTEM_IDS.NODE_TYPE,
+        shape: SYSTEM_IDS.SHAPE,
         properties: new Map(),
         metadata: {
           created: createInstant(),
@@ -112,7 +112,7 @@ describe('ops/blocks', () => {
     const newGraph = result.value.value;
 
     const edges = [...newGraph.edges.values()].filter(
-      (edge) => edge.shape === SYSTEM_EDGE_TYPES.CHILD_OF,
+      (edge) => edge.shape === SYSTEM_EDGE_SHAPES.CHILD_OF,
     );
     const edge1 = edges.find((edge) => edge.source === block1.id);
     const edge2 = edges.find((edge) => edge.source === block2.id);
@@ -129,7 +129,7 @@ describe('ops/blocks', () => {
       graph,
       {
         id: parentId,
-        shape: SYSTEM_IDS.NODE_TYPE,
+        shape: SYSTEM_IDS.SHAPE,
         properties: new Map(),
         metadata: {
           created: createInstant(),
@@ -166,7 +166,7 @@ describe('ops/blocks', () => {
     const newGraph = result2.value.value;
 
     const edges = [...newGraph.edges.values()].filter(
-      (edge) => edge.shape === SYSTEM_EDGE_TYPES.CHILD_OF,
+      (edge) => edge.shape === SYSTEM_EDGE_SHAPES.CHILD_OF,
     );
     const pos1 = edges
       .find((edge) => edge.source === block1.id)
@@ -189,7 +189,7 @@ describe('ops/blocks', () => {
       graph,
       {
         id: parentId,
-        shape: SYSTEM_IDS.NODE_TYPE,
+        shape: SYSTEM_IDS.SHAPE,
         properties: new Map(),
         metadata: {
           created: createInstant(),
@@ -218,7 +218,7 @@ describe('ops/blocks', () => {
     const newGraph = result.value.value;
 
     const edges = [...newGraph.edges.values()].filter(
-      (edge) => edge.shape === SYSTEM_EDGE_TYPES.CHILD_OF,
+      (edge) => edge.shape === SYSTEM_EDGE_SHAPES.CHILD_OF,
     );
     const pos0 = edges
       .find((edge) => edge.source === block0.id)

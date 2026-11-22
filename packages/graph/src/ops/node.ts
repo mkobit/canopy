@@ -6,7 +6,8 @@ import type { GraphEvent, GraphResult } from '../events';
 import type { PropertyValue } from '../properties';
 import { createInstant, createEventId } from '../factories';
 import { ok, err as error } from '../result';
-import { validateNode, getNodeTypeDefinition, extractNodeTypeDefinition } from '../validation';
+import { validateNode } from '../validation';
+import { resolveShape } from '../queries';
 import { isSystemNodeId } from '../system';
 
 export type NodeOperationOptions = Readonly<{
@@ -31,16 +32,13 @@ export function addNode(
   }
 
   if (node.shape !== undefined) {
-    const definitionNode = getNodeTypeDefinition(graph, node.shape);
-    if (definitionNode) {
-      const definition = extractNodeTypeDefinition(graph, definitionNode);
-      if (definition.status === 'inactive') {
-        return error(
-          new Error(
-            `Node validation failed: type: Node type '${node.shape}' is inactive (TYPE_INACTIVE)`,
-          ),
-        );
-      }
+    const shapeResult = resolveShape(graph, node.shape);
+    if (shapeResult.ok && shapeResult.value.status === 'inactive') {
+      return error(
+        new Error(
+          `Node validation failed: shape: Shape '${node.shape}' is inactive (SHAPE_INACTIVE)`,
+        ),
+      );
     }
   }
 
@@ -186,7 +184,7 @@ export function updateNode(
   }
 
   if (options.validate) {
-    const result = validateNode(graph, updatedNode);
+    const result = validateNode(graph, updatedNode, 'update', existingNode);
     if (!result.valid) {
       const msgs = result.errors
         .map((error_) => `${error_.path.join('.')}: ${error_.message}`)

@@ -20,7 +20,7 @@ import {
   type NodePropertiesUpdated,
   type EdgeCreated,
   SYSTEM_IDS,
-  SYSTEM_EDGE_TYPES,
+  SYSTEM_EDGE_SHAPES,
 } from '@canopy/graph';
 
 /**
@@ -71,7 +71,6 @@ function nodeCreatedEvent(overrides: Partial<NodeCreated> = {}): NodeCreated {
     type: 'NodeCreated',
     eventId: createEventId(),
     id: createNodeId(),
-    shapeId: asShapeId('test-type'),
     properties: new Map([['name', 'a']]),
     timestamp: createInstant(),
     deviceId: otherDeviceId,
@@ -239,7 +238,7 @@ describe('GraphSession', () => {
       type: 'EdgeCreated',
       eventId: createEventId(),
       id: createEdgeId(),
-      shapeId: SYSTEM_EDGE_TYPES.REFERENCES,
+      shapeId: SYSTEM_EDGE_SHAPES.REFERENCES,
       source: userNode.id,
       target: SYSTEM_IDS.NAMESPACE_SYSTEM,
       properties: new Map(),

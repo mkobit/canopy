@@ -10,7 +10,7 @@ import {
   createGraph,
   createInstant,
   SYSTEM_DEVICE_ID,
-  SYSTEM_EDGE_TYPES,
+  SYSTEM_EDGE_SHAPES,
   SYSTEM_IDS,
   unwrap,
   type Edge,
@@ -134,7 +134,7 @@ const buildFixture = (
   const graph = addFixtureEdge(
     addFixtureEdge(graphWithNodes, {
       id: asEdgeId(`fixture:edge:override:${nodeSuffix}`),
-      shape: SYSTEM_EDGE_TYPES.VIEW_OVERRIDE,
+      shape: SYSTEM_EDGE_SHAPES.VIEW_OVERRIDE,
       source: contentNode.id,
       target: viewNode.id,
       properties: new Map(),
@@ -142,7 +142,7 @@ const buildFixture = (
     }),
     {
       id: asEdgeId(`fixture:edge:renderer:${nodeSuffix}`),
-      shape: SYSTEM_EDGE_TYPES.USES_RENDERER,
+      shape: SYSTEM_EDGE_SHAPES.USES_RENDERER,
       source: viewNode.id,
       target: rendererNode.id,
       properties: new Map(),

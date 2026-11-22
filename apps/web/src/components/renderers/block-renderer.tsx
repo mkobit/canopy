@@ -3,7 +3,7 @@ import { z } from 'zod';
 import type { Graph, Node, NodeId, SystemRendererEntryPoint } from '@canopy/graph';
 import {
   SYSTEM_IDS,
-  SYSTEM_EDGE_TYPES,
+  SYSTEM_EDGE_SHAPES,
   getEdgesFrom,
   resolveNamespace,
   asNodeId,
@@ -107,7 +107,7 @@ function resolveRenderer(node: Node, graph: Graph): ResolvedRenderer {
   const usesRendererEdges = getEdgesFrom(
     graph,
     viewDefinitionNode.id,
-    SYSTEM_EDGE_TYPES.USES_RENDERER,
+    SYSTEM_EDGE_SHAPES.USES_RENDERER,
   );
   const usesEdge = usesRendererEdges[0];
   if (!usesEdge) {
@@ -252,7 +252,7 @@ export const BlockRenderer: React.FC<BlockRendererProperties> = ({
   // Find and sort children (unconditional)
   const children = useMemo(() => {
     const childEdges = [...graph.edges.values()].filter(
-      (edge) => edge.target === node.id && edge.shape === SYSTEM_EDGE_TYPES.CHILD_OF,
+      (edge) => edge.target === node.id && edge.shape === SYSTEM_EDGE_SHAPES.CHILD_OF,
     );
 
     // Sort by fractional index position

@@ -40,9 +40,11 @@ function createGraphWithCustomType(
 
   const typeNode = createNode({
     id: asNodeId('type-test'),
-    shape: SYSTEM_IDS.NODE_TYPE,
+    shape: SYSTEM_IDS.SHAPE,
     properties: {
       name: 'TestType',
+      entityKind: 'node',
+      closed: false,
       properties: JSON.stringify([propertyDefinition]),
     },
   });
@@ -229,7 +231,7 @@ describe('validation constraints', () => {
       expect(result.errors).toHaveLength(1);
       const [firstError] = result.errors;
       if (firstError === undefined) throw new Error('Expected error');
-      expect(firstError.message).toContain('invalid regular expression constraint');
+      expect(firstError.message).toContain('Invalid regular expression');
     });
   });
 
@@ -760,7 +762,9 @@ describe('validation constraints', () => {
       expect(result.errors).toHaveLength(1);
       const [firstError] = result.errors;
       if (firstError === undefined) throw new Error('Expected error');
-      expect(firstError.message).toContain("has type 'node:type:movie', expected 'node:type:book'");
+      expect(firstError.message).toContain(
+        "has shape 'node:type:movie', expected 'node:type:book'",
+      );
     });
 
     it('rejects reference targeting a non-existent node', () => {

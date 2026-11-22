@@ -48,7 +48,7 @@ describe('namespace utilities', () => {
     // Create a type with 'imported' namespace
     const importedType = createNode({
       id: asNodeId('type-imported'),
-      shape: SYSTEM_IDS.NODE_TYPE,
+      shape: SYSTEM_IDS.SHAPE,
       properties: {
         name: 'ImportedType',
         namespace: 'imported',
@@ -58,7 +58,7 @@ describe('namespace utilities', () => {
     // Create a type with no namespace (defaults to user)
     const normalType = createNode({
       id: asNodeId('type-normal'),
-      shape: SYSTEM_IDS.NODE_TYPE,
+      shape: SYSTEM_IDS.SHAPE,
       properties: {
         name: 'NormalType',
       },

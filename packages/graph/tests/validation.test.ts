@@ -7,13 +7,10 @@ import {
   matchesCondition,
   isEdgeCompatible,
   validatePropertyByType,
-  extractNodeTypeDefinition,
-  extractEdgeTypeDefinition,
 } from '../src/validation';
-import { NodeTypeDefinitionSchema, EdgeTypeDefinitionSchema } from '../src/schemas';
 import { projectGraph } from '../src/projection';
-import { getNodesOfType, getNodeType } from '../src/queries';
-import type { EdgeTypeDefinition, Node, Edge, GraphEvent } from '@canopy/graph';
+import { getNodesOfShape, getShape, resolveShape } from '../src/queries';
+import type { ShapeDefinition, Node, Edge, GraphEvent } from '@canopy/graph';
 import { SYSTEM_IDS } from '../src/system';
 import {
   asNodeId,
@@ -82,9 +79,10 @@ function createGraphWithTypes() {
 
   const personTypeNode = createNode({
     id: asNodeId('type-person'),
-    shape: SYSTEM_IDS.NODE_TYPE,
+    shape: SYSTEM_IDS.SHAPE,
     properties: {
       name: 'Person',
+      entityKind: 'node',
       properties: JSON.stringify(personProperties),
     },
   });
@@ -96,9 +94,10 @@ function createGraphWithTypes() {
   // Define a "Task" node type
   const taskTypeNode = createNode({
     id: asNodeId('type-task'),
-    shape: SYSTEM_IDS.NODE_TYPE,
+    shape: SYSTEM_IDS.SHAPE,
     properties: {
       name: 'Task',
+      entityKind: 'node',
     },
   });
   g = unwrap(
@@ -111,9 +110,10 @@ function createGraphWithTypes() {
   ];
   const assignedToTypeNode = createNode({
     id: asNodeId('edge-assigned-to'),
-    shape: SYSTEM_IDS.EDGE_TYPE,
+    shape: SYSTEM_IDS.SHAPE,
     properties: {
       name: 'Assigned To',
+      entityKind: 'edge',
       properties: JSON.stringify(assignedToProperties),
       sourceTypes: ['type-task'],
       targetTypes: ['type-person'],
@@ -179,7 +179,7 @@ describe('validation', () => {
     expect(firstError.actual).toBe('string');
   });
 
-  it('passes validation if type definition is missing', () => {
+  it('rejects validation if shape definition is missing (Rule 2: SHAPE_NOT_FOUND)', () => {
     const g = createGraphWithTypes();
     const node = createNode({
       shape: asShapeId('unknown-type'),
@@ -187,7 +187,8 @@ describe('validation', () => {
     });
 
     const result = validateNode(g, node);
-    expect(result.valid).toBe(true);
+    expect(result.valid).toBe(false);
+    expect(result.errors[0]?.code).toBe('SHAPE_NOT_FOUND');
   });
 
   it('validates a valid edge', () => {
@@ -214,7 +215,7 @@ describe('validation', () => {
     expect(result.valid).toBe(true);
   });
 
-  it('validates edge with invalid source type', () => {
+  it('emits warning for edge with mismatched source shape (Rule 14)', () => {
     let g = createGraphWithTypes();
     const person1 = createNode({ id: asNodeId('person1'), shape: asShapeId('type-person') });
     const person2 = createNode({ id: asNodeId('person2'), shape: asShapeId('type-person') });
@@ -236,10 +237,10 @@ describe('validation', () => {
     });
 
     const result = validateEdge(g, edge);
-    expect(result.valid).toBe(false);
-    const [firstError] = result.errors;
-    if (firstError === undefined) throw new Error('Expected error');
-    expect(firstError.message).toContain('Source node type');
+    expect(result.valid).toBe(true);
+    expect(result.warnings).toHaveLength(1);
+    expect(result.warnings[0]?.code).toBe('EDGE_ENDPOINT_SHAPE');
+    expect(result.warnings[0]?.message).toContain('Source node shape');
   });
 
   it('validates edge with missing required property', () => {
@@ -272,7 +273,7 @@ describe('validation', () => {
     // Graph is already bootstrapped with system types.
 
     const malformedNode = createNode({
-      shape: SYSTEM_IDS.NODE_TYPE,
+      shape: SYSTEM_IDS.SHAPE,
       properties: {}, // Missing 'name', etc.
     });
 
@@ -288,10 +289,11 @@ describe('validation', () => {
     const g = unwrap(createGraph(createGraphId(), 'System Graph'));
 
     const validNode = createNode({
-      shape: SYSTEM_IDS.NODE_TYPE,
+      shape: SYSTEM_IDS.SHAPE,
       properties: {
         name: 'New Type',
         namespace: 'user',
+        entityKind: 'node',
         description: 'Description',
         // 'properties' is optional
       },
@@ -305,7 +307,7 @@ describe('validation', () => {
     const g = unwrap(createGraph(createGraphId(), 'System Graph'));
 
     const invalidNode = createNode({
-      shape: SYSTEM_IDS.NODE_TYPE,
+      shape: SYSTEM_IDS.SHAPE,
       properties: {
         name: 123, // Should be text
         namespace: 'user',
@@ -323,7 +325,7 @@ describe('validation', () => {
     const g = unwrap(createGraph(createGraphId(), 'System Graph'));
 
     const malformedNode = createNode({
-      shape: SYSTEM_IDS.EDGE_TYPE,
+      shape: SYSTEM_IDS.SHAPE,
       properties: {}, // Missing 'name'
     });
 
@@ -341,10 +343,11 @@ describe('validOutgoingEdges / validIncomingEdges', () => {
     // Define an edge type "manages"
     const managesEdgeType = createNode({
       id: asNodeId('edge-manages'),
-      shape: SYSTEM_IDS.EDGE_TYPE,
+      shape: SYSTEM_IDS.SHAPE,
       properties: {
         name: 'Manages',
         namespace: 'user',
+        entityKind: 'edge',
       },
     });
     g = unwrap(addNode(g, managesEdgeType, { deviceId: DEVICE })).graph;
@@ -352,10 +355,11 @@ describe('validOutgoingEdges / validIncomingEdges', () => {
     // Define an edge type "reports-to"
     const reportsToEdgeType = createNode({
       id: asNodeId('edge-reports-to'),
-      shape: SYSTEM_IDS.EDGE_TYPE,
+      shape: SYSTEM_IDS.SHAPE,
       properties: {
         name: 'Reports To',
         namespace: 'user',
+        entityKind: 'edge',
       },
     });
     g = unwrap(addNode(g, reportsToEdgeType, { deviceId: DEVICE })).graph;
@@ -363,10 +367,11 @@ describe('validOutgoingEdges / validIncomingEdges', () => {
     // Define "Manager" node type — can only have "manages" as outgoing edges
     const managerType = createNode({
       id: asNodeId('type-manager'),
-      shape: SYSTEM_IDS.NODE_TYPE,
+      shape: SYSTEM_IDS.SHAPE,
       properties: {
         name: 'Manager',
         namespace: 'user',
+        entityKind: 'node',
         validOutgoingEdges: ['edge-manages'],
       },
     });
@@ -375,10 +380,11 @@ describe('validOutgoingEdges / validIncomingEdges', () => {
     // Define "Employee" node type — can only have "reports-to" as incoming edges
     const employeeType = createNode({
       id: asNodeId('type-employee'),
-      shape: SYSTEM_IDS.NODE_TYPE,
+      shape: SYSTEM_IDS.SHAPE,
       properties: {
         name: 'Employee',
         namespace: 'user',
+        entityKind: 'node',
         validIncomingEdges: ['edge-reports-to'],
       },
     });
@@ -387,10 +393,11 @@ describe('validOutgoingEdges / validIncomingEdges', () => {
     // Define "Generic" node type — no edge constraints
     const genericType = createNode({
       id: asNodeId('type-generic'),
-      shape: SYSTEM_IDS.NODE_TYPE,
+      shape: SYSTEM_IDS.SHAPE,
       properties: {
         name: 'Generic',
         namespace: 'user',
+        entityKind: 'node',
       },
     });
     g = unwrap(addNode(g, genericType, { deviceId: DEVICE })).graph;
@@ -430,8 +437,9 @@ describe('validOutgoingEdges / validIncomingEdges', () => {
     });
 
     const result = validateEdge(g, edge);
-    expect(result.valid).toBe(false);
-    expect(result.errors[0]?.message).toContain('does not allow outgoing edge type');
+    expect(result.valid).toBe(true);
+    expect(result.warnings[0]?.code).toBe('EDGE_NOT_ALLOWED');
+    expect(result.warnings[0]?.message).toContain('does not allow outgoing edge shape');
   });
 
   it('allows edge when target type permits incoming edge type', () => {
@@ -451,7 +459,7 @@ describe('validOutgoingEdges / validIncomingEdges', () => {
     expect(result.valid).toBe(true);
   });
 
-  it('rejects edge when target type does not permit incoming edge type', () => {
+  it('warns when target type does not permit incoming edge type', () => {
     let g = createGraphWithEdgeConstraints();
     const generic = createNode({ id: asNodeId('gen1'), shape: asShapeId('type-generic') });
     const employee = createNode({ id: asNodeId('emp1'), shape: asShapeId('type-employee') });
@@ -466,8 +474,9 @@ describe('validOutgoingEdges / validIncomingEdges', () => {
     });
 
     const result = validateEdge(g, edge);
-    expect(result.valid).toBe(false);
-    expect(result.errors[0]?.message).toContain('does not allow incoming edge type');
+    expect(result.valid).toBe(true);
+    expect(result.warnings[0]?.code).toBe('EDGE_NOT_ALLOWED');
+    expect(result.warnings[0]?.message).toContain('does not allow incoming edge shape');
   });
 
   it('skips node-type edge constraints when type has no restrictions', () => {
@@ -542,7 +551,7 @@ describe('validatePropertyByType', () => {
     // Add a PropertyType node
     const propertyType = createNode({
       id: asNodeId('prop-age'),
-      shape: asShapeId('system:nodetype:property-type'),
+      shape: SYSTEM_IDS.PROPERTY_TYPE,
       properties: {
         name: 'age',
         valueKind: 'number',
@@ -589,7 +598,7 @@ describe('validatePropertyByType', () => {
 
     const invalidPropertyType = createNode({
       id: asNodeId('prop-invalid'),
-      shape: asShapeId('system:nodetype:property-type'),
+      shape: SYSTEM_IDS.PROPERTY_TYPE,
       properties: {
         name: 'invalidProp',
         namespace: 'user',
@@ -600,14 +609,14 @@ describe('validatePropertyByType', () => {
     const result = validatePropertyByType(g, invalidPropertyType.id, 'some string');
 
     expect(result.valid).toBe(false);
-    expect(result.errors[0]?.message).toContain(`missing 'valueKind' property`);
+    expect(result.errors[0]?.code).toBe('PROPERTY_TYPE_MALFORMED');
   });
 
   it('handles array values correctly', () => {
     let g = unwrap(createGraph(createGraphId(), 'Test Graph'));
     const listPropertyType = createNode({
       id: asNodeId('prop-list'),
-      shape: asShapeId('system:nodetype:property-type'),
+      shape: SYSTEM_IDS.PROPERTY_TYPE,
       properties: { name: 'items', valueKind: 'list' },
     });
     g = unwrap(addNode(g, listPropertyType, { deviceId: DEVICE })).graph;
@@ -625,7 +634,7 @@ describe('transitive and inverse edge type extraction', () => {
 
     const transitiveEdgeType = createNode({
       id: asNodeId('edge-descendant-of'),
-      shape: SYSTEM_IDS.EDGE_TYPE,
+      shape: SYSTEM_IDS.SHAPE,
       properties: {
         name: 'Descendant Of',
         namespace: 'user',
@@ -645,7 +654,7 @@ describe('transitive and inverse edge type extraction', () => {
 
     const parentOfEdge = createNode({
       id: asNodeId('edge-parent-of'),
-      shape: SYSTEM_IDS.EDGE_TYPE,
+      shape: SYSTEM_IDS.SHAPE,
       properties: {
         name: 'Parent Of',
         namespace: 'user',
@@ -663,12 +672,13 @@ describe('transitive and inverse edge type extraction', () => {
     const g = unwrap(createGraph(createGraphId(), 'System'));
 
     const edgeTypeNode = createNode({
-      shape: SYSTEM_IDS.EDGE_TYPE,
+      shape: SYSTEM_IDS.SHAPE,
       properties: {
         name: 'Test Edge',
         namespace: 'user',
+        entityKind: 'edge',
         transitive: true,
-        inverse: 'some-edge-type',
+        inverse: SYSTEM_IDS.EDGE_CHILD_OF,
       },
     });
 
@@ -679,16 +689,21 @@ describe('transitive and inverse edge type extraction', () => {
 });
 
 describe('isEdgeCompatible', () => {
-  const mockDefinition = (sourceTypes: string[], targetTypes: string[]): EdgeTypeDefinition => ({
+  const mockDefinition = (sourceTypes: string[], targetTypes: string[]): ShapeDefinition => ({
     id: asShapeId('test-edge-type'),
     name: 'Test Edge Type',
     namespace: asNamespace('user'),
     description: undefined,
+    entityKind: 'edge',
+    closed: false,
     properties: [],
-    sourceTypes: sourceTypes.map(asShapeId),
-    targetTypes: targetTypes.map(asShapeId),
-    transitive: false,
-    inverse: undefined,
+    status: 'active',
+    edge: {
+      sourceTypes: sourceTypes.map(asShapeId),
+      targetTypes: targetTypes.map(asShapeId),
+      transitive: false,
+      inverse: undefined,
+    },
   });
 
   const t1 = asShapeId('type-1');
@@ -738,134 +753,79 @@ describe('isEdgeCompatible', () => {
 describe('durable schema retention and type lifecycle', () => {
   const deviceId = asDeviceId('00000000-0000-0000-0000-000000000000');
 
-  describe('schema validation with status', () => {
-    it('validates node type definition with active status', () => {
-      const parsed = NodeTypeDefinitionSchema.parse({
-        id: asShapeId('test:node-type'),
-        name: 'TestNode',
-        namespace: asNamespace('user'),
-        properties: [],
-        validOutgoingEdges: [],
-        validIncomingEdges: [],
-        status: 'active',
+  describe('ShapePropertyBindingSchema', () => {
+    it('decodes legacy flat PropertyDefinition into an inline binding', async () => {
+      const { ShapePropertyBindingSchema } = await import('../src/schemas');
+      const parsed = ShapePropertyBindingSchema.parse({
+        name: 'title',
+        valueKind: 'text',
+        required: true,
       });
-      expect(parsed.status).toBe('active');
-    });
+      expect(parsed.kind).toBe('inline');
+      if (parsed.kind !== 'inline') {
+        return;
+      }
 
-    it('validates node type definition with inactive status', () => {
-      const parsed = NodeTypeDefinitionSchema.parse({
-        id: asShapeId('test:node-type'),
-        name: 'TestNode',
-        namespace: asNamespace('user'),
-        properties: [],
-        validOutgoingEdges: [],
-        validIncomingEdges: [],
-        status: 'inactive',
-      });
-      expect(parsed.status).toBe('inactive');
-    });
-
-    it('validates node type definition with omitted status', () => {
-      const parsed = NodeTypeDefinitionSchema.parse({
-        id: asShapeId('test:node-type'),
-        name: 'TestNode',
-        namespace: asNamespace('user'),
-        properties: [],
-        validOutgoingEdges: [],
-        validIncomingEdges: [],
-      });
-      expect(parsed.status).toBeUndefined();
-    });
-
-    it('validates edge type definition with active status', () => {
-      const parsed = EdgeTypeDefinitionSchema.parse({
-        id: asShapeId('test:edge-type'),
-        name: 'TestEdge',
-        namespace: asNamespace('user'),
-        sourceTypes: [],
-        targetTypes: [],
-        properties: [],
-        transitive: false,
-        status: 'active',
-      });
-      expect(parsed.status).toBe('active');
-    });
-
-    it('validates edge type definition with inactive status', () => {
-      const parsed = EdgeTypeDefinitionSchema.parse({
-        id: asShapeId('test:edge-type'),
-        name: 'TestEdge',
-        namespace: asNamespace('user'),
-        sourceTypes: [],
-        targetTypes: [],
-        properties: [],
-        transitive: false,
-        status: 'inactive',
-      });
-      expect(parsed.status).toBe('inactive');
-    });
-
-    it('validates edge type definition with omitted status', () => {
-      const parsed = EdgeTypeDefinitionSchema.parse({
-        id: asShapeId('test:edge-type'),
-        name: 'TestEdge',
-        namespace: asNamespace('user'),
-        sourceTypes: [],
-        targetTypes: [],
-        properties: [],
-        transitive: false,
-      });
-      expect(parsed.status).toBeUndefined();
+      expect(parsed.definition.name).toBe('title');
+      expect(parsed.definition.valueKind).toBe('text');
     });
   });
 
   describe('extraction helpers with status', () => {
     it('extracts status defaulting to active when omitted', () => {
-      const g = unwrap(createGraph(createGraphId(), 'Test Graph'));
-      const nodeTypeNode = createNode({
+      let g = unwrap(createGraph(createGraphId(), 'Test Graph'));
+      const nodeShapeNode = createNode({
         id: asNodeId('test-active-type'),
-        shape: SYSTEM_IDS.NODE_TYPE,
+        shape: SYSTEM_IDS.SHAPE,
         properties: {
           name: 'ActiveType',
+          entityKind: 'node',
         },
       });
-      const nodeType = extractNodeTypeDefinition(g, nodeTypeNode);
-      expect(nodeType.status).toBe('active');
+      g = unwrap(addNode(g, nodeShapeNode, { deviceId: createNodeId() as never })).graph;
+      const nodeShape = unwrap(resolveShape(g, asShapeId('test-active-type')));
+      expect(nodeShape.status).toBe('active');
 
-      const edgeTypeNode = createNode({
+      const edgeShapeNode = createNode({
         id: asNodeId('test-active-edge-type'),
-        shape: SYSTEM_IDS.EDGE_TYPE,
+        shape: SYSTEM_IDS.SHAPE,
         properties: {
           name: 'ActiveEdgeType',
+          entityKind: 'edge',
         },
       });
-      const edgeType = extractEdgeTypeDefinition(g, edgeTypeNode);
-      expect(edgeType?.status).toBe('active');
+      g = unwrap(addNode(g, edgeShapeNode, { deviceId: createNodeId() as never })).graph;
+      const edgeShape = unwrap(resolveShape(g, asShapeId('test-active-edge-type')));
+      expect(edgeShape.status).toBe('active');
     });
 
     it('extracts status as inactive when property is inactive', () => {
-      const g = unwrap(createGraph(createGraphId(), 'Test Graph'));
-      const nodeTypeNode = createNode({
+      let g = unwrap(createGraph(createGraphId(), 'Test Graph'));
+      const nodeShapeNode = createNode({
         id: asNodeId('test-inactive-type'),
-        shape: SYSTEM_IDS.NODE_TYPE,
+        shape: SYSTEM_IDS.SHAPE,
         properties: {
           name: 'InactiveType',
+          entityKind: 'node',
           status: 'inactive',
         },
       });
-      const nodeType = extractNodeTypeDefinition(g, nodeTypeNode);
-      expect(nodeType.status).toBe('inactive');
+      g = unwrap(addNode(g, nodeShapeNode, { deviceId: createNodeId() as never })).graph;
+      const nodeShape = unwrap(resolveShape(g, asShapeId('test-inactive-type')));
+      expect(nodeShape.status).toBe('inactive');
 
-      const edgeTypeNode = createNode({
+      const edgeShapeNode = createNode({
         id: asNodeId('test-inactive-edge-type'),
-        shape: SYSTEM_IDS.EDGE_TYPE,
+        shape: SYSTEM_IDS.SHAPE,
         properties: {
           name: 'InactiveEdgeType',
+          entityKind: 'edge',
           status: 'inactive',
         },
       });
-      const edgeType = extractEdgeTypeDefinition(g, edgeTypeNode);
-      expect(edgeType?.status).toBe('inactive');
+      g = unwrap(addNode(g, edgeShapeNode, { deviceId: createNodeId() as never })).graph;
+      const edgeShape = unwrap(resolveShape(g, asShapeId('test-inactive-edge-type')));
+      expect(edgeShape.status).toBe('inactive');
     });
   });
 
@@ -874,9 +834,10 @@ describe('durable schema retention and type lifecycle', () => {
       let g = unwrap(createGraph(createGraphId(), 'Test Graph'));
       const inactiveTypeNode = createNode({
         id: asNodeId('type-retired-plugin'),
-        shape: SYSTEM_IDS.NODE_TYPE,
+        shape: SYSTEM_IDS.SHAPE,
         properties: {
           name: 'RetiredPluginNode',
+          entityKind: 'node',
           status: 'inactive',
         },
       });
@@ -890,21 +851,20 @@ describe('durable schema retention and type lifecycle', () => {
 
       const validation = validateNode(g, candidateNode);
       expect(validation.valid).toBe(false);
-      expect(validation.errors.some((error_) => error_.message.includes('TYPE_INACTIVE'))).toBe(
-        true,
-      );
-      expect(validation.errors[0]?.path).toEqual(['type']);
+      expect(validation.errors.some((error_) => error_.code === 'SHAPE_INACTIVE')).toBe(true);
+      expect(validation.errors[0]?.path).toEqual(['shape']);
       expect(validation.errors[0]?.expected).toBe('active');
       expect(validation.errors[0]?.actual).toBe('inactive');
     });
 
-    it('rejects addNode for inactive type with TYPE_INACTIVE error', () => {
+    it('rejects addNode for inactive type with SHAPE_INACTIVE error', () => {
       let g = unwrap(createGraph(createGraphId(), 'Test Graph'));
       const inactiveTypeNode = createNode({
         id: asNodeId('type-retired-plugin'),
-        shape: SYSTEM_IDS.NODE_TYPE,
+        shape: SYSTEM_IDS.SHAPE,
         properties: {
           name: 'RetiredPluginNode',
+          entityKind: 'node',
           status: 'inactive',
         },
       });
@@ -919,14 +879,14 @@ describe('durable schema retention and type lifecycle', () => {
       const result = addNode(g, candidateNode, { deviceId });
       expect(isErr(result)).toBe(true);
       if (!isErr(result)) return;
-      expect(result.error.message).toMatch(/TYPE_INACTIVE/);
+      expect(result.error.message).toMatch(/SHAPE_INACTIVE/);
     });
 
     it('permits query retrieval and deletion of existing nodes with inactive types', () => {
       let g = unwrap(createGraph(createGraphId(), 'Test Graph'));
       const typeNode = createNode({
         id: asNodeId('type-lifecycle-node'),
-        shape: SYSTEM_IDS.NODE_TYPE,
+        shape: SYSTEM_IDS.SHAPE,
         properties: {
           name: 'LifecycleNode',
           status: 'active',
@@ -957,11 +917,11 @@ describe('durable schema retention and type lifecycle', () => {
       expect(retrieved?.id).toBe(asNodeId('lifecycle-node-1'));
       expect(retrieved?.properties.get('title')).toBe('Existing Data');
 
-      const byType = getNodesOfType(g, asShapeId('type-lifecycle-node'));
+      const byType = getNodesOfShape(g, asShapeId('type-lifecycle-node'));
       expect(byType.length).toBe(1);
       expect(byType[0]?.id).toBe(asNodeId('lifecycle-node-1'));
 
-      const retrievedType = getNodeType(g, 'type-lifecycle-node');
+      const retrievedType = getShape(g, asShapeId('type-lifecycle-node'));
       expect(retrievedType).toBeDefined();
 
       const removeResult = removeNode(g, asNodeId('lifecycle-node-1'), { deviceId });
@@ -984,7 +944,7 @@ describe('durable schema retention and type lifecycle', () => {
           type: 'NodeCreated',
           eventId: createEventId(),
           id: typeNodeId,
-          shapeId: SYSTEM_IDS.NODE_TYPE,
+          shapeId: SYSTEM_IDS.SHAPE,
           properties: new Map([
             ['name', 'HistoricalPluginType'],
             ['status', 'inactive'],
@@ -1052,7 +1012,7 @@ describe('durable schema retention and type lifecycle', () => {
       g = unwrap(addNode(g, openSource, { deviceId })).graph;
       g = unwrap(addNode(g, openTarget, { deviceId })).graph;
 
-      expect(validateNode(g, openSource)).toEqual({ valid: true, errors: [] });
+      expect(validateNode(g, openSource)).toEqual({ valid: true, errors: [], warnings: [] });
 
       const openEdge: Edge = {
         id: createEdgeId(),
@@ -1065,7 +1025,7 @@ describe('durable schema retention and type lifecycle', () => {
           modifiedBy: deviceId,
         },
       };
-      expect(validateEdge(g, openEdge)).toEqual({ valid: true, errors: [] });
+      expect(validateEdge(g, openEdge)).toEqual({ valid: true, errors: [], warnings: [] });
     });
   });
 });

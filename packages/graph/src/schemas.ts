@@ -5,7 +5,7 @@ import type { PropertyValue, PropertyDefinition, PropertyValueKind } from './pro
 import type { ScalarValue } from './scalars';
 import type { Node } from './node';
 import type { Edge } from './edge';
-import type { NodeTypeDefinition, EdgeTypeDefinition } from './definitions';
+import type { ShapePropertyBinding } from './definitions';
 import type { Graph } from './graph';
 import type { NodeId, EdgeId, Namespace } from './identifiers';
 
@@ -13,6 +13,7 @@ import {
   asNodeId,
   asEdgeId,
   asShapeId,
+  asPropertyTypeId,
   asBatchId,
   asTypeId,
   asGraphId,
@@ -31,6 +32,7 @@ import { asRevision } from './revision';
 export const NodeIdSchema = z.string().min(1).transform(asNodeId);
 export const EdgeIdSchema = z.string().min(1).transform(asEdgeId);
 export const ShapeIdSchema = z.string().min(1).transform(asShapeId);
+export const PropertyTypeIdSchema = z.string().min(1).transform(asPropertyTypeId);
 export const BatchIdSchema = z.string().min(1).transform(asBatchId);
 /**
 @deprecated Removed in bead d.
@@ -97,8 +99,24 @@ export const PropertyDefinitionSchema: z.ZodType<PropertyDefinition, unknown> = 
     choices: z.array(z.string()).optional(),
     nullable: z.boolean().nullish(),
     cardinality: z.enum(['one', 'many']).optional(),
+    unique: z.boolean().optional(),
+    targetShapeId: ShapeIdSchema.optional(),
     targetTypeId: TypeIdSchema.optional(),
+    schemaOrgUri: z.string().optional(),
   })
+  .refine((value) => value.unique !== true || value.cardinality === 'many', {
+    path: ['unique'],
+    message: "PropertyDefinition 'unique: true' requires cardinality 'many'",
+  })
+  .refine(
+    (value) =>
+      (value.targetShapeId === undefined && value.targetTypeId === undefined) ||
+      value.valueKind === 'reference',
+    {
+      path: ['targetShapeId'],
+      message: "PropertyDefinition 'targetShapeId' is only valid when valueKind is 'reference'",
+    },
+  )
   .transform((value) => ({
     ...value,
     description: value.description ?? undefined,
@@ -108,7 +126,10 @@ export const PropertyDefinitionSchema: z.ZodType<PropertyDefinition, unknown> = 
     choices: value.choices ?? undefined,
     nullable: value.nullable ?? undefined,
     cardinality: value.cardinality ?? undefined,
+    unique: value.unique ?? undefined,
+    targetShapeId: value.targetShapeId ?? value.targetTypeId ?? undefined,
     targetTypeId: value.targetTypeId ?? undefined,
+    schemaOrgUri: value.schemaOrgUri ?? undefined,
   }));
 
 export const TemporalMetadataSchema: z.ZodType<TemporalMetadata, unknown> = z.object({
@@ -163,42 +184,30 @@ export const GraphSchema: z.ZodType<Graph, unknown> = z.object({
   ]),
 });
 
-export const NodeTypeDefinitionSchema: z.ZodType<NodeTypeDefinition, unknown> = z
-  .object({
-    id: TypeIdSchema,
-    name: z.string(),
-    namespace: NamespaceSchema,
-    description: z.string().optional(),
-    properties: z.array(PropertyDefinitionSchema),
-    validOutgoingEdges: z.array(TypeIdSchema),
-    validIncomingEdges: z.array(TypeIdSchema),
-    status: z.enum(['active', 'inactive']).optional(),
-  })
-  .transform((value) => ({
-    ...value,
-    description: value.description ?? undefined,
-    status: value.status ?? undefined,
-  }));
-
-export const EdgeTypeDefinitionSchema: z.ZodType<EdgeTypeDefinition, unknown> = z
-  .object({
-    id: TypeIdSchema,
-    name: z.string(),
-    namespace: NamespaceSchema,
-    description: z.string().optional(),
-    sourceTypes: z.array(TypeIdSchema),
-    targetTypes: z.array(TypeIdSchema),
-    properties: z.array(PropertyDefinitionSchema),
-    transitive: z.boolean(),
-    inverse: TypeIdSchema.optional(),
-    status: z.enum(['active', 'inactive']).optional(),
-  })
-  .transform((value) => ({
-    ...value,
-    description: value.description ?? undefined,
-    inverse: value.inverse ?? undefined,
-    status: value.status ?? undefined,
-  }));
+export const ShapePropertyBindingSchema: z.ZodType<ShapePropertyBinding, unknown> = z.union([
+  z
+    .object({
+      kind: z.literal('reference'),
+      name: z.string().min(1),
+      required: z.boolean(),
+      propertyTypeId: PropertyTypeIdSchema,
+      cardinality: z.enum(['one', 'many']).optional(),
+      description: z.string().optional(),
+    })
+    .transform((value) => ({
+      ...value,
+      cardinality: value.cardinality ?? undefined,
+      description: value.description ?? undefined,
+    })),
+  z.object({
+    kind: z.literal('inline'),
+    definition: PropertyDefinitionSchema,
+  }),
+  PropertyDefinitionSchema.transform((definition) => ({
+    kind: 'inline' as const,
+    definition,
+  })),
+]);
 
 export const EventIdSchema = z.string().uuid().transform(asEventId);
 

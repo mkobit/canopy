@@ -168,7 +168,7 @@ describe('event-upcast', () => {
         target: 'node:type:edge-type',
       });
 
-      const d1 = decodeStoredEvent(metaNodeCreated);
+      const d1 = decodeStoredEvent(metaNodeCreated, { remapRetiredMetaShapes: false });
       expect(d1.ok).toBe(true);
       if (d1.ok) {
         expect(d1.value).not.toBeNull();
@@ -184,13 +184,13 @@ describe('event-upcast', () => {
         expect(d2.value.properties.has('entityKind')).toBe(false);
       }
 
-      const d3 = decodeStoredEvent(metaDeleted);
+      const d3 = decodeStoredEvent(metaDeleted, { remapRetiredMetaShapes: false });
       expect(d3.ok).toBe(true);
       if (d3.ok) {
         expect(d3.value).not.toBeNull();
       }
 
-      const d4 = decodeStoredEvent(metaEdge);
+      const d4 = decodeStoredEvent(metaEdge, { remapRetiredMetaShapes: false });
       expect(d4.ok).toBe(true);
       if (!(d4.ok && d4.value?.type === 'EdgeCreated')) {
         return;

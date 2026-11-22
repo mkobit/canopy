@@ -1,12 +1,14 @@
 import { describe, it, expect, beforeEach } from 'bun:test';
-import { createGraph, createGraphId, asDeviceId, type Graph } from '@canopy/graph';
-import { SYSTEM_IDS, SYSTEM_EDGE_TYPES } from '../system';
 import {
-  createNamespace,
-  createNodeType,
-  createEdgeType,
-  createPropertyType,
-} from './type-authoring';
+  createGraph,
+  createGraphId,
+  asDeviceId,
+  asPropertyTypeId,
+  type Graph,
+  type PropertyValueKind,
+} from '@canopy/graph';
+import { SYSTEM_IDS, SYSTEM_EDGE_SHAPES } from '../system';
+import { createNamespace, createShape, createPropertyType } from './type-authoring';
 
 const DEVICE_ID = asDeviceId('00000000-0000-0000-0000-000000000000');
 const OPTIONS = { deviceId: DEVICE_ID };
@@ -137,14 +139,14 @@ describe('createPropertyType', () => {
   });
 });
 
-describe('createNodeType', () => {
+describe('createShape (node)', () => {
   let graph: Graph;
 
   beforeEach(() => {
     graph = bootstrappedGraph();
   });
 
-  it('creates a NodeType with both inline and referenced properties', () => {
+  it('creates a node Shape with durable inline and referenced property bindings', () => {
     const propertyTypeResult = createPropertyType(
       graph,
       { name: 'priority', namespace: 'user', valueKind: 'number' },
@@ -161,14 +163,15 @@ describe('createNodeType', () => {
       )?.id;
     if (!propertyTypeId) throw new Error('expected propertyTypeId');
 
-    const result = createNodeType(
+    const result = createShape(
       graph,
       {
         name: 'Task',
         namespace: 'user',
+        entityKind: 'node',
         properties: [
           { kind: 'inline', name: 'title', valueKind: 'text', required: true },
-          { kind: 'reference', propertyTypeId, required: false },
+          { kind: 'reference', propertyTypeId: asPropertyTypeId(propertyTypeId), required: false },
         ],
       },
       OPTIONS,
@@ -179,26 +182,28 @@ describe('createNodeType', () => {
 
     const created = result.value.value.nodes
       .values()
-      .find(
-        (node) => node.shape === SYSTEM_IDS.NODE_TYPE && node.properties.get('name') === 'Task',
-      );
+      .find((node) => node.shape === SYSTEM_IDS.SHAPE && node.properties.get('name') === 'Task');
     const storedProperties = created?.properties.get('properties');
     expect(typeof storedProperties).toBe('string');
-    const parsed = JSON.parse(storedProperties as string) as readonly {
-      name: string;
-      valueKind: string;
-      required: boolean;
-    }[];
+    const parsed = JSON.parse(storedProperties as string) as readonly unknown[];
     expect(parsed).toEqual([
-      { name: 'title', valueKind: 'text', required: true },
-      { name: 'priority', valueKind: 'number', required: false },
+      {
+        kind: 'inline',
+        definition: { name: 'title', valueKind: 'text', required: true },
+      },
+      {
+        kind: 'reference',
+        name: 'priority',
+        required: false,
+        propertyTypeId,
+      },
     ]);
   });
 
   it('rejects a duplicate name', () => {
-    const result = createNodeType(
+    const result = createShape(
       graph,
-      { name: 'Node Type', namespace: 'user', properties: [] },
+      { name: 'Shape', namespace: 'user', entityKind: 'node', properties: [] },
       OPTIONS,
     );
     expect(result.ok).toBe(false);
@@ -207,9 +212,9 @@ describe('createNodeType', () => {
   });
 
   it('rejects a restricted target namespace', () => {
-    const result = createNodeType(
+    const result = createShape(
       graph,
-      { name: 'Task', namespace: 'system', properties: [] },
+      { name: 'Task', namespace: 'system', entityKind: 'node', properties: [] },
       OPTIONS,
     );
     expect(result.ok).toBe(false);
@@ -218,12 +223,20 @@ describe('createNodeType', () => {
   });
 
   it('rejects a malformed property list (invalid inline valueKind)', () => {
-    const result = createNodeType(
+    const result = createShape(
       graph,
       {
         name: 'Task',
         namespace: 'user',
-        properties: [{ kind: 'inline', name: 'title', valueKind: 'not-a-kind', required: true }],
+        entityKind: 'node',
+        properties: [
+          {
+            kind: 'inline',
+            name: 'title',
+            valueKind: 'not-a-kind' as PropertyValueKind,
+            required: true,
+          },
+        ],
       },
       OPTIONS,
     );
@@ -233,15 +246,16 @@ describe('createNodeType', () => {
   });
 
   it('rejects a malformed property list (unresolvable reference)', () => {
-    const result = createNodeType(
+    const result = createShape(
       graph,
       {
         name: 'Task',
         namespace: 'user',
+        entityKind: 'node',
         properties: [
           {
             kind: 'reference',
-            propertyTypeId: SYSTEM_IDS.NAMESPACE_USER,
+            propertyTypeId: asPropertyTypeId(SYSTEM_IDS.NAMESPACE_USER),
             required: true,
           },
         ],
@@ -262,11 +276,12 @@ describe('createNodeType default view generation', () => {
   });
 
   function authorTask() {
-    return createNodeType(
+    return createShape(
       graph,
       {
         name: 'Task',
         namespace: 'user',
+        entityKind: 'node',
         properties: [
           { kind: 'inline', name: 'title', valueKind: 'text', required: true },
           { kind: 'inline', name: 'status', valueKind: 'text', required: false },
@@ -276,7 +291,7 @@ describe('createNodeType default view generation', () => {
     );
   }
 
-  it('emits NodeType, QueryDefinition, ViewDefinition, and a default_view edge (NodeType first)', () => {
+  it('emits Shape, QueryDefinition, ViewDefinition, and a default_view edge (Shape first)', () => {
     const result = authorTask();
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error('expected success');
@@ -286,11 +301,11 @@ describe('createNodeType default view generation', () => {
     expect(nodeCreated).toHaveLength(3);
     expect(edgeCreated).toHaveLength(1);
 
-    // NodeType event must be first so first-NodeCreated callers still get the type id.
+    // Shape event must be first so first-NodeCreated callers still get the shape id.
     const first = result.value.events[0];
     expect(first?.type).toBe('NodeCreated');
     if (first?.type !== 'NodeCreated') throw new Error('expected NodeCreated');
-    expect(first.shapeId).toBe(SYSTEM_IDS.NODE_TYPE);
+    expect(first.shapeId).toBe(SYSTEM_IDS.SHAPE);
   });
 
   it('generates a table view with one displayProperty per declared property', () => {
@@ -317,9 +332,7 @@ describe('createNodeType default view generation', () => {
 
     const nodeType = finalGraph.nodes
       .values()
-      .find(
-        (node) => node.shape === SYSTEM_IDS.NODE_TYPE && node.properties.get('name') === 'Task',
-      );
+      .find((node) => node.shape === SYSTEM_IDS.SHAPE && node.properties.get('name') === 'Task');
     const query = finalGraph.nodes
       .values()
       .find(
@@ -336,30 +349,30 @@ describe('createNodeType default view generation', () => {
       );
     if (!nodeType || !query || !view) throw new Error('expected generated definitions');
 
-    // Query scans the new type by its NodeType node id.
+    // Query scans the new shape by its Shape node id.
     const definition = JSON.parse(query.properties.get('definition') as string) as {
-      steps: readonly { kind: string; type?: string }[];
+      steps: readonly { kind: string; shape?: string }[];
     };
-    expect(definition.steps[0]).toEqual({ kind: 'node-scan', type: nodeType.id });
+    expect(definition.steps[0]).toEqual({ kind: 'node-scan', shape: nodeType.id });
 
     // View references the generated query.
     expect(view.properties.get('queryRef')).toBe(query.id);
 
-    // default_view edge: NodeType -> ViewDefinition.
+    // default_view edge: Shape -> ViewDefinition.
     const edge = finalGraph.edges
       .values()
       .find(
         (candidate) =>
-          candidate.shape === SYSTEM_EDGE_TYPES.DEFAULT_VIEW && candidate.source === nodeType.id,
+          candidate.shape === SYSTEM_EDGE_SHAPES.DEFAULT_VIEW && candidate.source === nodeType.id,
       );
     expect(edge).toBeDefined();
     expect(edge?.target).toBe(view.id);
   });
 
   it('still generates a resolvable view for a type with no declared properties', () => {
-    const result = createNodeType(
+    const result = createShape(
       graph,
-      { name: 'Marker', namespace: 'user', properties: [] },
+      { name: 'Marker', namespace: 'user', entityKind: 'node', properties: [] },
       OPTIONS,
     );
     if (!result.ok) throw new Error('expected success');
@@ -376,32 +389,33 @@ describe('createNodeType default view generation', () => {
   });
 
   it('emits no view, query, or edge events when type authoring fails', () => {
-    // 'Node Type' already exists in the bootstrapped graph -> duplicate name.
-    const result = createNodeType(
+    // 'Shape' already exists in the bootstrapped graph -> duplicate name.
+    const result = createShape(
       graph,
-      { name: 'Node Type', namespace: 'user', properties: [] },
+      { name: 'Shape', namespace: 'user', entityKind: 'node', properties: [] },
       OPTIONS,
     );
     expect(result.ok).toBe(false);
   });
 });
 
-describe('createEdgeType', () => {
+describe('createShape (edge)', () => {
   let graph: Graph;
 
   beforeEach(() => {
     graph = bootstrappedGraph();
   });
 
-  it('creates an EdgeType, storing sourceTypes/targetTypes as best-effort metadata', () => {
-    const result = createEdgeType(
+  it('creates an edge Shape, storing sourceTypes/targetTypes as best-effort metadata', () => {
+    const result = createShape(
       graph,
       {
         name: 'RelatesTo',
         namespace: 'user',
+        entityKind: 'edge',
         properties: [],
-        sourceTypes: [SYSTEM_IDS.NODE_TYPE],
-        targetTypes: [SYSTEM_IDS.NODE_TYPE],
+        sourceTypes: [SYSTEM_IDS.SHAPE],
+        targetTypes: [SYSTEM_IDS.SHAPE],
       },
       OPTIONS,
     );
@@ -412,21 +426,20 @@ describe('createEdgeType', () => {
     const created = result.value.value.nodes
       .values()
       .find(
-        (node) =>
-          node.shape === SYSTEM_IDS.EDGE_TYPE && node.properties.get('name') === 'RelatesTo',
+        (node) => node.shape === SYSTEM_IDS.SHAPE && node.properties.get('name') === 'RelatesTo',
       );
-    expect(created?.properties.get('sourceTypes')).toEqual([SYSTEM_IDS.NODE_TYPE]);
-    expect(created?.properties.get('targetTypes')).toEqual([SYSTEM_IDS.NODE_TYPE]);
+    expect(created?.properties.get('sourceTypes')).toEqual([SYSTEM_IDS.SHAPE]);
+    expect(created?.properties.get('targetTypes')).toEqual([SYSTEM_IDS.SHAPE]);
 
-    // EdgeType authoring does not generate default-view artifacts (unlike NodeType).
+    // Edge Shape authoring does not generate default-view artifacts (unlike node Shape).
     expect(result.value.events).toHaveLength(1);
     expect(result.value.events[0]?.type).toBe('NodeCreated');
   });
 
   it('rejects a duplicate name', () => {
-    const result = createEdgeType(
+    const result = createShape(
       graph,
-      { name: 'Child Of', namespace: 'user', properties: [] },
+      { name: 'Child Of', namespace: 'user', entityKind: 'edge', properties: [] },
       OPTIONS,
     );
     expect(result.ok).toBe(false);
@@ -435,9 +448,9 @@ describe('createEdgeType', () => {
   });
 
   it('rejects a restricted target namespace', () => {
-    const result = createEdgeType(
+    const result = createShape(
       graph,
-      { name: 'RelatesTo', namespace: 'system', properties: [] },
+      { name: 'RelatesTo', namespace: 'system', entityKind: 'edge', properties: [] },
       OPTIONS,
     );
     expect(result.ok).toBe(false);
@@ -446,12 +459,20 @@ describe('createEdgeType', () => {
   });
 
   it('rejects a malformed property list', () => {
-    const result = createEdgeType(
+    const result = createShape(
       graph,
       {
         name: 'RelatesTo',
         namespace: 'user',
-        properties: [{ kind: 'inline', name: 'weight', valueKind: 'not-a-kind', required: false }],
+        entityKind: 'edge',
+        properties: [
+          {
+            kind: 'inline',
+            name: 'weight',
+            valueKind: 'not-a-kind' as PropertyValueKind,
+            required: false,
+          },
+        ],
       },
       OPTIONS,
     );

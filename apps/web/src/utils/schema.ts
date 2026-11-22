@@ -1,7 +1,8 @@
 import {
   SYSTEM_IDS,
   RESTRICTED_NAMESPACE_KINDS,
-  getNodesOfType,
+  getNodesOfShape,
+  getShapes,
   PropertyValueKindSchema,
   asNamespace,
   type Graph,
@@ -59,7 +60,7 @@ function toNamespaceOption(node: Node): NamespaceOption | undefined {
   };
 }
 
-function toTypeDefinitionOption(node: Node): TypeDefinitionOption | undefined {
+function toTypeDefinitionOption(node: Node, graph: Graph): TypeDefinitionOption | undefined {
   const name = readString(node.properties.get('name'));
   const namespace = readString(node.properties.get('namespace'));
   if (name === undefined || namespace === undefined) return undefined;
@@ -68,12 +69,12 @@ function toTypeDefinitionOption(node: Node): TypeDefinitionOption | undefined {
     name,
     namespace,
     description: readString(node.properties.get('description')),
-    properties: parseProperties(node.properties.get('properties')),
+    properties: parseProperties(node.properties.get('properties'), graph),
   };
 }
 
-function toEdgeTypeOption(node: Node): EdgeTypeOption | undefined {
-  const base = toTypeDefinitionOption(node);
+function toEdgeTypeOption(node: Node, graph: Graph): EdgeTypeOption | undefined {
+  const base = toTypeDefinitionOption(node, graph);
   if (!base) return undefined;
   return {
     ...base,
@@ -97,7 +98,7 @@ function toPropertyTypeOption(node: Node): PropertyTypeOption | undefined {
 }
 
 export function listNamespaces(graph: Graph): readonly NamespaceOption[] {
-  return getNodesOfType(graph, SYSTEM_IDS.NAMESPACE)
+  return getNodesOfShape(graph, SYSTEM_IDS.NAMESPACE)
     .map(toNamespaceOption)
     .filter((option): option is NamespaceOption => option !== undefined);
 }
@@ -115,8 +116,8 @@ export function listCreatableNamespaceKinds(
 }
 
 export function listAllNodeTypes(graph: Graph): readonly TypeDefinitionOption[] {
-  return getNodesOfType(graph, SYSTEM_IDS.NODE_TYPE)
-    .map(toTypeDefinitionOption)
+  return getShapes(graph, 'node')
+    .map((node) => toTypeDefinitionOption(node, graph))
     .filter((option): option is TypeDefinitionOption => option !== undefined);
 }
 
@@ -125,8 +126,8 @@ export function listNodeTypesIn(graph: Graph, namespace: string): readonly TypeD
 }
 
 export function listEdgeTypesIn(graph: Graph, namespace: string): readonly EdgeTypeOption[] {
-  return getNodesOfType(graph, SYSTEM_IDS.EDGE_TYPE)
-    .map(toEdgeTypeOption)
+  return getShapes(graph, 'edge')
+    .map((node) => toEdgeTypeOption(node, graph))
     .filter((option): option is EdgeTypeOption => option !== undefined)
     .filter((option) => option.namespace === namespace);
 }
@@ -142,7 +143,7 @@ export function listPropertyTypesIn(
 All PropertyType nodes across every namespace, for the reference-existing-PropertyType picker.
 */
 export function listAllPropertyTypes(graph: Graph): readonly PropertyTypeOption[] {
-  return getNodesOfType(graph, SYSTEM_IDS.PROPERTY_TYPE)
+  return getNodesOfShape(graph, SYSTEM_IDS.PROPERTY_TYPE)
     .map(toPropertyTypeOption)
     .filter((option): option is PropertyTypeOption => option !== undefined);
 }

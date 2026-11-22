@@ -3,7 +3,7 @@ import { createGraph } from './create-graph';
 import { asGraphId, asNodeId, unwrap } from '@canopy/graph';
 import type { NodeId } from '@canopy/graph';
 import { SYSTEM_IDS } from './system';
-import { getNodeTypes, getEdgeTypes, getNodeType } from './queries';
+import { getShapes, getShape, findShapeByName } from './queries';
 import { parseNamespace } from './resolve-namespace';
 import { RESTRICTED_NAMESPACE_KINDS } from './namespace';
 import { bootstrap } from './bootstrap';
@@ -12,31 +12,26 @@ describe('Meta-circular bootstrap', () => {
   it('creates a graph with system nodes', () => {
     const graph = unwrap(createGraph(asGraphId('test-graph'), 'Test Graph'));
 
-    // Check NodeType definition
-    const nodeTypeDefinition = graph.nodes.get(SYSTEM_IDS.NODE_TYPE_DEF);
-    expect(nodeTypeDefinition).toBeDefined();
-    expect(nodeTypeDefinition?.shape).toBe(SYSTEM_IDS.NODE_TYPE);
-    expect(nodeTypeDefinition?.properties.get('name')).toEqual('Node Type');
-    expect(nodeTypeDefinition?.properties.get('namespace')).toEqual('system');
-
-    // Check EdgeType definition
-    const edgeTypeDefinition = graph.nodes.get(SYSTEM_IDS.EDGE_TYPE_DEF);
-    expect(edgeTypeDefinition).toBeDefined();
-    expect(edgeTypeDefinition?.shape).toBe(SYSTEM_IDS.NODE_TYPE); // EdgeType definition is a NodeType
-    expect(edgeTypeDefinition?.properties.get('name')).toEqual('Edge Type');
-    expect(edgeTypeDefinition?.properties.get('namespace')).toEqual('system');
+    // Check unified Shape definition
+    const shapeDefinition = graph.nodes.get(SYSTEM_IDS.SHAPE_DEF);
+    expect(shapeDefinition).toBeDefined();
+    expect(shapeDefinition?.shape).toBe(SYSTEM_IDS.SHAPE);
+    expect(shapeDefinition?.properties.get('name')).toEqual('Shape');
+    expect(shapeDefinition?.properties.get('namespace')).toEqual('system');
+    expect(shapeDefinition?.properties.get('entityKind')).toEqual('node');
+    expect(shapeDefinition?.properties.get('closed')).toEqual(false);
 
     // Check Renderer definition
     const rendererDefinition = graph.nodes.get(SYSTEM_IDS.RENDERER_DEF);
     expect(rendererDefinition).toBeDefined();
-    expect(rendererDefinition?.shape).toBe(SYSTEM_IDS.NODE_TYPE);
+    expect(rendererDefinition?.shape).toBe(SYSTEM_IDS.SHAPE);
     expect(rendererDefinition?.properties.get('name')).toEqual('Renderer');
     expect(rendererDefinition?.properties.get('namespace')).toEqual('system');
 
     // Check Namespace definition (self-describing metatype for the Namespace node shape)
     const namespaceDefinition = graph.nodes.get(SYSTEM_IDS.NAMESPACE_DEF);
     expect(namespaceDefinition).toBeDefined();
-    expect(namespaceDefinition?.shape).toBe(SYSTEM_IDS.NODE_TYPE);
+    expect(namespaceDefinition?.shape).toBe(SYSTEM_IDS.SHAPE);
     expect(namespaceDefinition?.properties.get('name')).toEqual('Namespace');
     expect(namespaceDefinition?.properties.get('namespace')).toEqual('system');
     expect(
@@ -70,7 +65,7 @@ describe('Meta-circular bootstrap', () => {
     // Check PropertyType definition
     const propertyTypeDefinition = graph.nodes.get(SYSTEM_IDS.PROPERTY_TYPE_DEF);
     expect(propertyTypeDefinition).toBeDefined();
-    expect(propertyTypeDefinition?.shape).toBe(SYSTEM_IDS.NODE_TYPE);
+    expect(propertyTypeDefinition?.shape).toBe(SYSTEM_IDS.SHAPE);
     expect(propertyTypeDefinition?.properties.get('name')).toEqual('Property Type');
     expect(propertyTypeDefinition?.properties.get('namespace')).toEqual('system');
     expect(
@@ -79,59 +74,84 @@ describe('Meta-circular bootstrap', () => {
       ),
     ).toEqual([
       'name',
+      'namespace',
       'valueKind',
       'description',
       'cardinality',
+      'unique',
+      'nullable',
       'choices',
-      'targetTypeId',
+      'targetShapeId',
       'regex',
       'min',
       'max',
+      'schemaOrgUri',
     ]);
 
-    // Check Core Edge Types
+    // Check Core Edge Shapes
     const childOf = graph.nodes.get(SYSTEM_IDS.EDGE_CHILD_OF);
     expect(childOf).toBeDefined();
-    expect(childOf?.shape).toBe(SYSTEM_IDS.EDGE_TYPE);
+    expect(childOf?.shape).toBe(SYSTEM_IDS.SHAPE);
+    expect(childOf?.properties.get('entityKind')).toEqual('edge');
     expect(childOf?.properties.get('name')).toEqual('Child Of');
     expect(childOf?.properties.get('namespace')).toEqual('system');
 
     // Check Settings schemas
     const settingsSchemaDefinition = graph.nodes.get(SYSTEM_IDS.SETTINGS_SCHEMA_DEF);
     expect(settingsSchemaDefinition).toBeDefined();
-    expect(settingsSchemaDefinition?.shape).toBe(SYSTEM_IDS.NODE_TYPE);
+    expect(settingsSchemaDefinition?.shape).toBe(SYSTEM_IDS.SHAPE);
 
     const userSettingDefinition = graph.nodes.get(SYSTEM_IDS.USER_SETTING_DEF);
     expect(userSettingDefinition).toBeDefined();
-    expect(userSettingDefinition?.shape).toBe(SYSTEM_IDS.NODE_TYPE);
+    expect(userSettingDefinition?.shape).toBe(SYSTEM_IDS.SHAPE);
 
     const defaultView = graph.nodes.get(SYSTEM_IDS.SETTING_DEFAULT_VIEW);
     expect(defaultView).toBeDefined();
     expect(defaultView?.shape).toBe(SYSTEM_IDS.SETTINGS_SCHEMA);
     expect(defaultView?.properties.get('key')).toBe('default-view');
+    expect(defaultView?.properties.get('scopes')).toEqual(['node', 'type', 'namespace', 'global']);
 
     const displayDensity = graph.nodes.get(SYSTEM_IDS.SETTING_DISPLAY_DENSITY);
     expect(displayDensity).toBeDefined();
     expect(displayDensity?.shape).toBe(SYSTEM_IDS.SETTINGS_SCHEMA);
+    expect(displayDensity?.properties.get('scopes')).toEqual(['global']);
+
+    // Check new lineage / proxy / migration / bundle / render-selector definitions
+    expect(graph.nodes.get(asNodeId(SYSTEM_IDS.PROPERTY_TYPE_URL))?.shape).toBe(
+      SYSTEM_IDS.PROPERTY_TYPE,
+    );
+    expect(graph.nodes.get(asNodeId(SYSTEM_IDS.PROXY))?.shape).toBe(SYSTEM_IDS.SHAPE);
+    expect(graph.nodes.get(asNodeId(SYSTEM_IDS.SHAPE_MIGRATION))?.shape).toBe(SYSTEM_IDS.SHAPE);
+    expect(graph.nodes.get(asNodeId(SYSTEM_IDS.BUNDLE))?.shape).toBe(SYSTEM_IDS.SHAPE);
+    expect(graph.nodes.get(SYSTEM_IDS.EDGE_DERIVED_FROM)?.properties.get('entityKind')).toBe(
+      'edge',
+    );
+    expect(graph.nodes.get(SYSTEM_IDS.EDGE_SUPERSEDES)?.properties.get('entityKind')).toBe('edge');
+    expect(graph.nodes.get(SYSTEM_IDS.EDGE_RENDER_SELECTOR)?.properties.get('entityKind')).toBe(
+      'edge',
+    );
   });
 
   it('seeds renderers, view definitions, and default view mappings', () => {
     const graph = unwrap(createGraph(asGraphId('test-graph'), 'Test Graph'));
 
-    // Check system edge types definitions
+    // Check system edge shape definitions
     const usesRendererDefinition = graph.nodes.get(SYSTEM_IDS.EDGE_USES_RENDERER);
     expect(usesRendererDefinition).toBeDefined();
-    expect(usesRendererDefinition?.shape).toBe(SYSTEM_IDS.EDGE_TYPE);
+    expect(usesRendererDefinition?.shape).toBe(SYSTEM_IDS.SHAPE);
+    expect(usesRendererDefinition?.properties.get('entityKind')).toBe('edge');
     expect(usesRendererDefinition?.properties.get('name')).toBe('uses_renderer');
 
     const viewOverrideDefinition = graph.nodes.get(SYSTEM_IDS.EDGE_VIEW_OVERRIDE);
     expect(viewOverrideDefinition).toBeDefined();
-    expect(viewOverrideDefinition?.shape).toBe(SYSTEM_IDS.EDGE_TYPE);
+    expect(viewOverrideDefinition?.shape).toBe(SYSTEM_IDS.SHAPE);
+    expect(viewOverrideDefinition?.properties.get('entityKind')).toBe('edge');
     expect(viewOverrideDefinition?.properties.get('name')).toBe('view_override');
 
     const defaultViewEdgeDefinition = graph.nodes.get(SYSTEM_IDS.EDGE_DEFAULT_VIEW);
     expect(defaultViewEdgeDefinition).toBeDefined();
-    expect(defaultViewEdgeDefinition?.shape).toBe(SYSTEM_IDS.EDGE_TYPE);
+    expect(defaultViewEdgeDefinition?.shape).toBe(SYSTEM_IDS.SHAPE);
+    expect(defaultViewEdgeDefinition?.properties.get('entityKind')).toBe('edge');
     expect(defaultViewEdgeDefinition?.properties.get('name')).toBe('default_view');
 
     // Check system Renderers
@@ -274,41 +294,19 @@ describe('Meta-circular bootstrap', () => {
   it('provides query helpers', () => {
     const graph = unwrap(createGraph(asGraphId('test-graph'), 'Test Graph'));
 
-    const nodeTypes = getNodeTypes(graph);
-    // Should contain NodeType definition and EdgeType definition (as EdgeType definition node has type NodeType... wait)
-    // SYSTEM_IDS.EDGE_TYPE_DEF (node) has type SYSTEM_IDS.NODE_TYPE (type)
-    // So yes, EdgeType definition node is returned by getNodeTypes?
+    const nodeShapes = getShapes(graph, 'node');
+    expect(nodeShapes.find((n) => n.id === SYSTEM_IDS.SHAPE_DEF)).toBeDefined();
+    expect(nodeShapes.find((n) => n.id === SYSTEM_IDS.NAMESPACE_DEF)).toBeDefined();
+    expect(nodeShapes.find((n) => n.id === SYSTEM_IDS.PROPERTY_TYPE_DEF)).toBeDefined();
+    expect(nodeShapes.length).toBeGreaterThanOrEqual(2);
 
-    // getNodeTypes returns nodes where type === SYSTEM_IDS.NODE_TYPE
-    // These are nodes that define a node type.
-    // "Node Type" definition (defines "Node Type") -> type "Node Type"
-    // "Edge Type" definition (defines "Edge Type") -> type "Node Type" ??
+    const edgeShapes = getShapes(graph, 'edge');
+    expect(edgeShapes.find((n) => n.id === SYSTEM_IDS.EDGE_CHILD_OF)).toBeDefined();
+    expect(edgeShapes.length).toBeGreaterThanOrEqual(4);
 
-    // In my logic:
-    // NODE_TYPE_DEF: id=node:type:node-type, type=node:type:node-type.
-    // EDGE_TYPE_DEF: id=node:type:edge-type, type=node:type:node-type.
-
-    // So both are Node Types.
-    // One defines the concept of "Node Type".
-    // One defines the concept of "Edge Type" (as a node, because edge types are nodes in the graph).
-
-    // Wait, EDGE_TYPE (asTypeId) is node:type:edge-type.
-    // EDGE_CHILD_OF (node) has type EDGE_TYPE.
-
-    // So getNodeTypes returns [NODE_TYPE_DEF, EDGE_TYPE_DEF].
-    expect(nodeTypes.find((n) => n.id === SYSTEM_IDS.NODE_TYPE_DEF)).toBeDefined();
-    expect(nodeTypes.find((n) => n.id === SYSTEM_IDS.EDGE_TYPE_DEF)).toBeDefined();
-    expect(nodeTypes.find((n) => n.id === SYSTEM_IDS.NAMESPACE_DEF)).toBeDefined();
-    expect(nodeTypes.find((n) => n.id === SYSTEM_IDS.PROPERTY_TYPE_DEF)).toBeDefined();
-    expect(nodeTypes.length).toBeGreaterThanOrEqual(2);
-
-    const edgeTypes = getEdgeTypes(graph);
-    // Should contain ChildOf, Defines, References, Prerequisite
-    expect(edgeTypes.find((n) => n.id === SYSTEM_IDS.EDGE_CHILD_OF)).toBeDefined();
-    expect(edgeTypes.length).toBeGreaterThanOrEqual(4);
-
-    const specificType = getNodeType(graph, 'Node Type');
-    expect(specificType).toBeDefined();
-    expect(specificType?.id).toBe(SYSTEM_IDS.NODE_TYPE_DEF);
+    const specificShape = getShape(graph, SYSTEM_IDS.SHAPE);
+    expect(specificShape).toBeDefined();
+    expect(specificShape?.id).toBe(SYSTEM_IDS.SHAPE_DEF);
+    expect(findShapeByName(graph, 'Shape', 'node')?.id).toBe(SYSTEM_IDS.SHAPE_DEF);
   });
 });
