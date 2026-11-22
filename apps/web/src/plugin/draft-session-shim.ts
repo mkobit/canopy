@@ -61,7 +61,7 @@ export function mapTsNodeToWit(node: Node): any {
   }));
   return {
     id: node.id,
-    nodeType: node.shape ?? '',
+    ...(node.shape !== undefined && { shapeId: node.shape }),
     properties,
   };
 }
@@ -80,10 +80,8 @@ export function mapWitEventToTs(witEvent: any, defaultDeviceId: string): GraphEv
       }
     }
     const shapeId =
-      typeof witEvent.val.nodeType === 'string' &&
-      witEvent.val.nodeType.length > 0 &&
-      witEvent.val.nodeType !== 'canopy:open'
-        ? asShapeId(witEvent.val.nodeType)
+      typeof witEvent.val.shapeId === 'string' && witEvent.val.shapeId.length > 0
+        ? asShapeId(witEvent.val.shapeId)
         : undefined;
     return {
       type: 'NodeCreated',

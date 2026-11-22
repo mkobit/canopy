@@ -100,7 +100,6 @@ export class WizardSession implements WizardSessionClass {
         val: {
           eventId: '123e4567-e89b-42d3-a456-426614174010',
           id: 'node_mock_plugin_output',
-          nodeType: 'canopy:open',
           properties: [
             {
               name: 'age',
