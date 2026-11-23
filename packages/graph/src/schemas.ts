@@ -8,6 +8,7 @@ import type { Edge } from './edge';
 import type { ShapePropertyBinding } from './definitions';
 import type { Graph } from './graph';
 import type { NodeId, EdgeId, Namespace } from './identifiers';
+import type { HlcTimestamp } from './hlc';
 
 import {
   asNodeId,
@@ -21,7 +22,11 @@ import {
   asDeviceId,
   asNamespace,
   asEventId,
+  asCommitSeq,
+  asPrincipalId,
+  asActorId,
 } from './factories';
+import { asHlcTimestamp, isValidHlcTimestamp } from './hlc';
 import { asRevision } from './revision';
 
 // Helpers to transform strings to branded types using the "as" casters from types.
@@ -36,6 +41,17 @@ export const BatchIdSchema = z.string().min(1).transform(asBatchId);
 export const GraphIdSchema = z.string().uuid().transform(asGraphId);
 export const DeviceIdSchema = z.string().uuid().transform(asDeviceId);
 export const RevisionSchema = z.string().uuid().transform(asRevision);
+export const CommitSeqSchema = z.number().int().nonnegative().safe().transform(asCommitSeq);
+export const PrincipalIdSchema = z.string().min(1).transform(asPrincipalId);
+export const ActorIdSchema = z.string().min(1).transform(asActorId);
+export const ActorKindSchema = z.enum(['user', 'agent', 'plugin', 'workflow']);
+export const HlcTimestampSchema: z.ZodType<HlcTimestamp, unknown> = z
+  .string()
+  .refine(isValidHlcTimestamp, 'Invalid HLC timestamp format')
+  .transform((value) => {
+    const parsed = asHlcTimestamp(value);
+    return parsed.ok ? parsed.value : (value as HlcTimestamp);
+  });
 
 export const NamespaceSchema: z.ZodType<Namespace, unknown> = z
   .string()
@@ -131,6 +147,7 @@ export const TemporalMetadataSchema: z.ZodType<TemporalMetadata, unknown> = z.ob
   created: InstantSchema,
   modified: InstantSchema,
   modifiedBy: DeviceIdSchema,
+  hlcTimestamp: HlcTimestampSchema.optional(),
 });
 
 // Property Map: Map<string, PropertyValue>
@@ -206,23 +223,30 @@ export const ShapePropertyBindingSchema: z.ZodType<ShapePropertyBinding, unknown
 
 export const EventIdSchema = z.string().uuid().transform(asEventId);
 
+const eventProvenanceShape = {
+  timestamp: InstantSchema,
+  deviceId: DeviceIdSchema,
+  batchId: BatchIdSchema.optional(),
+  hlcTimestamp: HlcTimestampSchema.optional(),
+  commitSeq: CommitSeqSchema.optional(),
+  principalId: PrincipalIdSchema.optional(),
+  actorId: ActorIdSchema.optional(),
+  actorKind: ActorKindSchema.optional(),
+};
+
 export const WorkflowStartedSchema = z.object({
   type: z.literal('WorkflowStarted'),
   eventId: EventIdSchema,
   workflowId: NodeIdSchema,
   triggerId: NodeIdSchema,
-  timestamp: InstantSchema,
-  deviceId: DeviceIdSchema,
-  batchId: BatchIdSchema.optional(),
+  ...eventProvenanceShape,
 });
 
 export const WorkflowCompletedSchema = z.object({
   type: z.literal('WorkflowCompleted'),
   eventId: EventIdSchema,
   executionId: EventIdSchema,
-  timestamp: InstantSchema,
-  deviceId: DeviceIdSchema,
-  batchId: BatchIdSchema.optional(),
+  ...eventProvenanceShape,
 });
 
 export const NodeCreatedSchema = z.object({
@@ -231,9 +255,7 @@ export const NodeCreatedSchema = z.object({
   id: NodeIdSchema,
   shapeId: ShapeIdSchema.optional(),
   properties: PropertyMapSchema,
-  timestamp: InstantSchema,
-  deviceId: DeviceIdSchema,
-  batchId: BatchIdSchema.optional(),
+  ...eventProvenanceShape,
   migrationId: z.string().optional(),
 });
 
@@ -242,9 +264,7 @@ export const NodePropertiesUpdatedSchema = z.object({
   eventId: EventIdSchema,
   id: NodeIdSchema,
   changes: PropertyMapSchema,
-  timestamp: InstantSchema,
-  deviceId: DeviceIdSchema,
-  batchId: BatchIdSchema.optional(),
+  ...eventProvenanceShape,
   migrationId: z.string().optional(),
 });
 
@@ -252,9 +272,7 @@ export const NodeDeletedSchema = z.object({
   type: z.literal('NodeDeleted'),
   eventId: EventIdSchema,
   id: NodeIdSchema,
-  timestamp: InstantSchema,
-  deviceId: DeviceIdSchema,
-  batchId: BatchIdSchema.optional(),
+  ...eventProvenanceShape,
   migrationId: z.string().optional(),
 });
 
@@ -266,9 +284,7 @@ export const EdgeCreatedSchema = z.object({
   source: NodeIdSchema,
   target: NodeIdSchema,
   properties: PropertyMapSchema,
-  timestamp: InstantSchema,
-  deviceId: DeviceIdSchema,
-  batchId: BatchIdSchema.optional(),
+  ...eventProvenanceShape,
   migrationId: z.string().optional(),
 });
 
@@ -277,9 +293,7 @@ export const EdgePropertiesUpdatedSchema = z.object({
   eventId: EventIdSchema,
   id: EdgeIdSchema,
   changes: PropertyMapSchema,
-  timestamp: InstantSchema,
-  deviceId: DeviceIdSchema,
-  batchId: BatchIdSchema.optional(),
+  ...eventProvenanceShape,
   migrationId: z.string().optional(),
 });
 
@@ -287,9 +301,7 @@ export const EdgeDeletedSchema = z.object({
   type: z.literal('EdgeDeleted'),
   eventId: EventIdSchema,
   id: EdgeIdSchema,
-  timestamp: InstantSchema,
-  deviceId: DeviceIdSchema,
-  batchId: BatchIdSchema.optional(),
+  ...eventProvenanceShape,
   migrationId: z.string().optional(),
 });
 

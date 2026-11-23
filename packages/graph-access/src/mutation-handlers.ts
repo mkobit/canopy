@@ -32,6 +32,9 @@ const mapCommitErrorToCategory = (commitError: CommitError): GraphAccessErrorCat
     case 'system-node': {
       return 'FORBIDDEN';
     }
+    case 'concurrency-conflict': {
+      return 'CONCURRENCY_CONFLICT';
+    }
     case 'storage': {
       return 'INTERNAL_ERROR';
     }

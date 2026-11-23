@@ -9,6 +9,9 @@ import type {
   EventId,
   DeviceId,
   Namespace,
+  CommitSeq,
+  PrincipalId,
+  ActorId,
 } from './identifiers';
 import type { Instant, PlainDate } from './temporal';
 import type { Result } from './result';
@@ -62,6 +65,20 @@ export function createDeviceId(): DeviceId {
 
 export function asDeviceId(id: string): DeviceId {
   return id as DeviceId;
+}
+
+export const ZERO_COMMIT_SEQ = 0 as CommitSeq;
+
+export function asCommitSeq(seq: number): CommitSeq {
+  return seq as CommitSeq;
+}
+
+export function asPrincipalId(id: string): PrincipalId {
+  return id as PrincipalId;
+}
+
+export function asActorId(id: string): ActorId {
+  return id as ActorId;
 }
 
 export function createInstant(instant: Temporal.Instant = Temporal.Now.instant()): Instant {

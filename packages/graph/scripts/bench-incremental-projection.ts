@@ -75,9 +75,15 @@ function buildSeededGraphAndState(
 
   for (let index = 0; index < nodeCount; index += 1) {
     const id = asNodeId(`bench-node-${index}`);
-    const propWriters = new Map<string, ReturnType<typeof createEventId>>();
-    propWriters.set('status', createEventId());
-    propWriters.set('priority', createEventId());
+    const writerStamp = {
+      eventId: createEventId(),
+      timestamp: asInstant('2026-01-01T00:00:00Z'),
+      deviceId: DEVICE_ID,
+    };
+    const propWriters = new Map([
+      ['status', writerStamp],
+      ['priority', writerStamp],
+    ]);
     const isOpen = mixedOpen && index % 2 === 0;
 
     nodes.set(id, {
@@ -154,6 +160,8 @@ function buildSeededGraphAndState(
     pendingGroups: new Map(),
     pendingByDependency: new Map(),
     nextPendingId: 0,
+    headCommitSeq: 0 as MergeState['headCommitSeq'],
+    entitySeqs: new Map(),
   };
 
   return { graph, state };

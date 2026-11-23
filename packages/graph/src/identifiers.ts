@@ -8,6 +8,9 @@ export declare const eventIdBrand: unique symbol;
 export declare const deviceIdBrand: unique symbol;
 export declare const namespaceBrand: unique symbol;
 export declare const revisionBrand: unique symbol;
+export declare const commitSeqBrand: unique symbol;
+export declare const principalIdBrand: unique symbol;
+export declare const actorIdBrand: unique symbol;
 
 /**
 Unique identifier for a node within a graph.
@@ -64,3 +67,18 @@ and rejecting stale draft commits.
 See DraftSession.commit / getParentRevision.
 */
 export type Revision = string & Readonly<{ [revisionBrand]: never }>;
+
+/**
+Monotonic per-graph commit sequence number (0 = initial/empty graph, 1+ = commits).
+*/
+export type CommitSeq = number & Readonly<{ [commitSeqBrand]: never }>;
+
+/**
+Unique identifier for an authenticated security principal (user, service, or system).
+*/
+export type PrincipalId = string & Readonly<{ [principalIdBrand]: never }>;
+
+/**
+Unique identifier for the acting identity within a principal (user, agent, plugin, or workflow).
+*/
+export type ActorId = string & Readonly<{ [actorIdBrand]: never }>;
