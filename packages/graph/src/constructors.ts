@@ -1,9 +1,9 @@
 import type { Result } from './result';
-import type { NodeId, TypeId } from './identifiers';
+import type { NodeId, ShapeId } from './identifiers';
 import type { Instant, PlainDate } from './temporal';
 import {
   asNodeId,
-  asTypeId,
+  asShapeId,
   asInstant,
   asPlainDate,
   createNodeId as generateNodeId,
@@ -32,17 +32,17 @@ export function createNodeId(id?: string): Result<NodeId, Error> {
 }
 
 /**
-Creates a branded TypeId from a string.
-TypeIds are user-defined strings, but we validate they are non-empty and alphanumeric (with dashes/underscores).
+Creates a branded ShapeId from a string.
+ShapeIds are user-defined strings, but we validate they are non-empty and alphanumeric (with dashes/underscores).
 */
-export function createTypeId(id: string): Result<TypeId, Error> {
+export function createShapeId(id: string): Result<ShapeId, Error> {
   if (!id || typeof id !== 'string') {
-    return error(new Error(`Invalid TypeId: must be a non-empty string.`));
+    return error(new Error(`Invalid ShapeId: must be a non-empty string.`));
   }
   // Allow alphanumeric, dashes, underscores, dots, colons.
   return /^[\w.:-]+$/.test(id)
-    ? ok(asTypeId(id))
-    : error(new Error(`Invalid TypeId: '${id}' contains invalid characters.`));
+    ? ok(asShapeId(id))
+    : error(new Error(`Invalid ShapeId: '${id}' contains invalid characters.`));
 }
 
 /**

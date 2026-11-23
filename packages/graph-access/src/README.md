@@ -20,7 +20,7 @@ This directory implements the generated `canopy.v0` TypeSpec contracts, server r
 ## Invariants
 
 - `[canopy-v0-contract.ts]` Must match deterministic output from `bun tools/typespec-codegen.ts` (`packages/graph-access/typespec/main.tsp`).
-- `[canopy-v0-server.ts:createCanopyV0InProcessHandlers]` Enforces `entity-cas` / `graph-cas` write preconditions (`CONCURRENCY_CONFLICT`), `minCommitSeq` read-your-writes, `RenderSelector` cycle/depth guards on `resolveView`, 5-level `resolveSetting` cascade, and `activationKeyRequired` bundle gating (`FORBIDDEN`).
+- `[canopy-v0-server.ts:createCanopyV0InProcessHandlers]` Enforces `entity-cas` / `graph-cas` write preconditions (`CONCURRENCY_CONFLICT`), `minCommitSeq` read-your-writes, `RenderSelector` cycle/depth guards on `resolveView`, 5-level `resolveSetting` cascade, `activationKeyRequired` bundle gating (`FORBIDDEN`), optional `shapeId` on open edges, `canonicalizeUri` validation + indexed `SYSTEM_IDS.PROXY` lookup on `queryNodes.canonicalUri`, `warnings` + `GraphAccessError.details` on `commitTransaction`/`commitDraft`, and `valueKind`/`constraints`/`inline` schema projection (mapping legacy `'list'` to `'text'` + `'many'`).
 - `[graph-access-context.ts:defaultGraphAccessLimits]` Defaults to `maxQueryDepth=10`, `maxQueryCost=1000`, `maxStreamBuffer=1000`.
 - `[event-stream-handlers.ts:createEventStreamSubscriber]` Defaults `bufferCapacity` to `100`, emits `'overflow_disconnect'` and closes on overflow, and emits `'end'` once on `close()`.
 - `[event-stream-handlers.ts:executeReplayEventStream]` Requires `eventLogStore` (`'VALIDATION_ERROR'`), defaults `maxReplayCount` to `1000`, and emits `'gap'` when unacknowledged events exceed `maxReplay`.

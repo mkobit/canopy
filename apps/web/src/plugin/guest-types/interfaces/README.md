@@ -8,7 +8,7 @@ This directory contains TypeScript ambient module declarations (`.d.ts`) that de
 
 - `[canopy-graph-content-rendering.d.ts:render]` `declare module 'canopy:graph/content-rendering'` exports `render(propertiesJson: string): RenderOutput`
 - `[canopy-graph-content-rendering.d.ts:RenderOutput]` Exports `RenderOutput { html: string }`
-- `[canopy-graph-draft-session.d.ts:NodeId]` `declare module 'canopy:graph/draft-session'` exports `NodeId = string`, `EventId = string`, `TypeId = string`
+- `[canopy-graph-draft-session.d.ts:NodeId]` `declare module 'canopy:graph/draft-session'` exports `NodeId = string`, `EventId = string`, `ShapeId = string`
 - `[canopy-graph-draft-session.d.ts:PropertyValue]` Exports discriminated union `PropertyValue` (`PropertyValueText | PropertyValueInteger | PropertyValueDecimal | PropertyValueBoolean | PropertyValueDateTime | PropertyValueNodeId | PropertyValueListOfText | PropertyValueNone`) and `PropertyEntry`
 - `[canopy-graph-draft-session.d.ts:DraftEvent]` Exports `NodeCreatedEvent`, `NodePropertiesUpdatedEvent`, and `DraftEvent` (`DraftEventNodeCreated | DraftEventNodePropertiesUpdated`)
 - `[canopy-graph-draft-session.d.ts:GraphNode]` Exports `GraphNode`, `DraftError`, `QueryError`, and `DraftSessionHandle`

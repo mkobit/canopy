@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import {
   SYSTEM_IDS,
   asDeviceId,
+  asEdgeId,
   asGraphId,
   asNodeId,
   asShapeId,
@@ -136,9 +137,10 @@ describe('TypeSpec canopy.v0 server router and client SDK', () => {
         {
           kind: 'create-node',
           entityId: 'node-proxy-wiki',
+          shapeId: SYSTEM_IDS.PROXY,
           properties: [
             {
-              key: 'canonicalUri',
+              key: 'uri',
               valueJson: JSON.stringify('https://en.wikipedia.org/wiki/Graph'),
             },
           ],
@@ -146,7 +148,7 @@ describe('TypeSpec canopy.v0 server router and client SDK', () => {
         {
           kind: 'create-edge',
           entityId: 'edge-ref-1',
-          edgeTypeId: SYSTEM_IDS.EDGE_REFERENCES,
+          shapeId: SYSTEM_IDS.EDGE_REFERENCES,
           sourceNodeId: 'node-raw-1',
           targetNodeId: 'node-proxy-wiki',
         },
@@ -165,7 +167,7 @@ describe('TypeSpec canopy.v0 server router and client SDK', () => {
     expect(proxyLookup.ok).toBe(true);
     if (proxyLookup.ok) {
       expect(proxyLookup.value.nodes.map((n) => n.nodeId)).toEqual(['node-proxy-wiki']);
-      expect(proxyLookup.value.nodes[0]?.shapeId).toBeUndefined();
+      expect(proxyLookup.value.nodes[0]?.shapeId).toBe(SYSTEM_IDS.PROXY);
     }
 
     const allNodes = await client.queries.queryNodes({
@@ -569,5 +571,167 @@ describe('TypeSpec canopy.v0 server router and client SDK', () => {
     if (!afterDelete.ok) {
       expect(afterDelete.error.category).toBe('NOT_FOUND');
     }
+  });
+
+  test('supports open edges, commit warnings/error details, canonicalUri validation, and schema constraints', async () => {
+    const { client } = await setupSdk();
+    const created = await client.graphs.createGraph({
+      graphId: asGraphId('22222222-2222-4222-8222-222222222222'),
+      name: 'Bead D Test Graph',
+    });
+    expect(created.ok).toBe(true);
+    if (!created.ok) return;
+    const graphId = created.value.graphId;
+
+    // 1. Open edge creation and query (shapeId omitted)
+    const openCommit = await client.transactions.commitTransaction({
+      graphId,
+      provenance,
+      precondition: { mode: 'unconditional' },
+      operations: [
+        {
+          kind: 'create-node',
+          entityId: 'node:open-a',
+          properties: [{ key: 'title', valueJson: JSON.stringify('A') }],
+        },
+        {
+          kind: 'create-node',
+          entityId: 'node:open-b',
+          properties: [{ key: 'title', valueJson: JSON.stringify('B') }],
+        },
+        {
+          kind: 'create-edge',
+          entityId: 'edge:open-1',
+          sourceNodeId: 'node:open-a',
+          targetNodeId: 'node:open-b',
+          properties: [{ key: 'note', valueJson: JSON.stringify('open edge') }],
+        },
+      ],
+    });
+    expect(openCommit.ok).toBe(true);
+    if (!openCommit.ok) return;
+    expect(openCommit.value.warnings).toEqual([]);
+
+    const queriedEdges = await client.queries.queryEdges({
+      graphId,
+      edgeId: asEdgeId('edge:open-1'),
+    });
+    expect(queriedEdges.ok).toBe(true);
+    if (queriedEdges.ok) {
+      expect(queriedEdges.value.edges).toHaveLength(1);
+      expect(queriedEdges.value.edges[0]?.shapeId).toBeUndefined();
+    }
+
+    // 2. Validation error returns GraphAccessError.details with batchId + errors
+    const invalidCommit = await client.transactions.commitTransaction({
+      graphId,
+      batchId: 'batch:invalid-1',
+      provenance,
+      precondition: { mode: 'unconditional' },
+      operations: [
+        {
+          kind: 'create-node',
+          entityId: 'node:missing-shape',
+          shapeId: asShapeId('shape:does-not-exist'),
+          properties: [],
+        },
+      ],
+    });
+    expect(invalidCommit.ok).toBe(false);
+    if (!invalidCommit.ok) {
+      expect(invalidCommit.error.category).toBe('VALIDATION_ERROR');
+      expect(invalidCommit.error.details).toEqual({
+        batchId: 'batch:invalid-1',
+        errors: [
+          expect.objectContaining({
+            code: 'SHAPE_NOT_FOUND',
+            severity: 'error',
+            entityKind: 'node',
+            entityId: 'node:missing-shape',
+          }),
+        ],
+      });
+    }
+
+    // 3. Invalid canonicalUri returns VALIDATION_ERROR
+    const invalidUriQuery = await client.queries.queryNodes({
+      graphId,
+      canonicalUri: 'javascript:alert(1)',
+    });
+    expect(invalidUriQuery.ok).toBe(false);
+    if (!invalidUriQuery.ok) {
+      expect(invalidUriQuery.error.category).toBe('VALIDATION_ERROR');
+    }
+
+    // 4. Schema includes valueKind, constraints, inline specs, and maps legacy 'list' to text/many
+    const legacyPtCommit = await client.transactions.commitTransaction({
+      graphId,
+      provenance,
+      precondition: { mode: 'unconditional' },
+      operations: [
+        {
+          kind: 'create-node',
+          entityId: 'pt:legacy-list',
+          shapeId: SYSTEM_IDS.PROPERTY_TYPE,
+          properties: [
+            { key: 'name', valueJson: JSON.stringify('tags') },
+            { key: 'namespace', valueJson: JSON.stringify('user') },
+            { key: 'valueKind', valueJson: JSON.stringify('list') },
+          ],
+        },
+        {
+          kind: 'create-node',
+          entityId: 'shape:inline-legacy',
+          shapeId: SYSTEM_IDS.SHAPE,
+          properties: [
+            { key: 'name', valueJson: JSON.stringify('LegacyShape') },
+            { key: 'namespace', valueJson: JSON.stringify('user') },
+            { key: 'entityKind', valueJson: JSON.stringify('node') },
+            { key: 'closed', valueJson: JSON.stringify(false) },
+            {
+              key: 'properties',
+              valueJson: JSON.stringify([
+                {
+                  kind: 'inline',
+                  definition: {
+                    name: 'items',
+                    valueKind: 'list',
+                    required: false,
+                    min: 1,
+                  },
+                },
+              ]),
+            },
+          ],
+        },
+      ],
+    });
+    expect(legacyPtCommit.ok).toBe(true);
+
+    const schema = await client.bundles.getSchema({ graphId });
+    expect(schema.ok).toBe(true);
+    if (!schema.ok) return;
+    const legacyPt = schema.value.propertyTypes.find(
+      (pt) => pt.propertyTypeId === 'pt:legacy-list',
+    );
+    expect(legacyPt).toEqual({
+      propertyTypeId: 'pt:legacy-list',
+      name: 'tags',
+      valueKind: 'text',
+      cardinality: 'many',
+    });
+
+    const inlineShape = schema.value.shapes.find(
+      (shape) => shape.shapeId === 'shape:inline-legacy',
+    );
+    expect(inlineShape?.properties[0]).toEqual({
+      key: 'items',
+      required: false,
+      cardinality: 'many',
+      inline: {
+        valueKind: 'text',
+        constraints: { min: 1 },
+      },
+    });
   });
 });

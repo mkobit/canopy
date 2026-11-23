@@ -69,11 +69,11 @@ interface GraphContextActions {
   readonly loadGraph: (graphId: GraphId) => Promise<Result<void, Error>>;
   readonly closeGraph: () => Result<void, Error>;
   readonly createNode: (
-    type: string,
+    type: string | undefined,
     properties?: Readonly<Record<string, unknown>>,
   ) => Promise<Result<NodeId, Error>>;
   readonly createEdge: (
-    type: string,
+    type: string | undefined,
     source: NodeId,
     target: NodeId,
     properties?: Readonly<Record<string, unknown>>,
@@ -97,12 +97,12 @@ interface GraphContextActions {
 type GraphContextType = GraphContextState & GraphContextActions;
 
 const CreateNodeInputSchema = z.object({
-  type: ShapeIdSchema,
+  type: ShapeIdSchema.optional(),
   properties: z.record(z.string(), PropertyValueSchema).optional(),
 });
 
 const CreateEdgeInputSchema = z.object({
-  type: ShapeIdSchema,
+  type: ShapeIdSchema.optional(),
   properties: z.record(z.string(), PropertyValueSchema).optional(),
 });
 
@@ -188,20 +188,21 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
 
   const createNode = useCallback(
     async (
-      type: string,
+      type: string | undefined,
       properties: Readonly<Record<string, unknown>> = {},
     ): Promise<Result<NodeId, Error>> => {
       const session = sessionReference.current;
       if (!session) return err(new Error('No graph loaded'));
 
       return fromAsyncThrowable(async () => {
-        const input = CreateNodeInputSchema.parse({ type, properties });
+        const normalizedType = type === '' ? undefined : type;
+        const input = CreateNodeInputSchema.parse({ type: normalizedType, properties });
         const propertiesMap = new Map<string, PropertyValue>(
           input.properties ? Object.entries(input.properties) : [],
         );
         const node: Node = {
           id: createNodeId(),
-          shape: input.type,
+          ...(input.type !== undefined && { shape: input.type }),
           properties: propertiesMap,
           metadata: { created: createInstant(), modified: createInstant(), modifiedBy: deviceId },
         };
@@ -222,7 +223,7 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
 
   const createEdge = useCallback(
     async (
-      type: string,
+      type: string | undefined,
       source: NodeId,
       target: NodeId,
       properties: Readonly<Record<string, unknown>> = {},
@@ -231,13 +232,14 @@ export const GraphProvider: React.FC<Readonly<{ children: React.ReactNode }>> = 
       if (!session) return err(new Error('No graph loaded'));
 
       return fromAsyncThrowable(async () => {
-        const input = CreateEdgeInputSchema.parse({ type, properties });
+        const normalizedType = type === '' ? undefined : type;
+        const input = CreateEdgeInputSchema.parse({ type: normalizedType, properties });
         const propertiesMap = new Map<string, PropertyValue>(
           input.properties ? Object.entries(input.properties) : [],
         );
         const edge: Edge = {
           id: createEdgeId(),
-          shape: input.type,
+          ...(input.type !== undefined && { shape: input.type }),
           source,
           target,
           properties: propertiesMap,

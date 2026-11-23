@@ -5,7 +5,7 @@ export const CANOPY_WIT_SPECIFICATION = `package canopy:graph;
 interface graph-types {
   type node-id = string;
   type edge-id = string;
-  type type-id = string;
+  type shape-id = string;
   type capability-token = string;
 
   enum error-code {
@@ -81,7 +81,7 @@ interface host-clock {
 interface draft-session {
   type node-id = string;
   type event-id = string;
-  type type-id = string;
+  type shape-id = string;
 
   record property-entry {
     name: string,
@@ -102,7 +102,7 @@ interface draft-session {
   record node-created-event {
     event-id: event-id,
     id: node-id,
-    node-type: type-id,
+    shape-id: option<shape-id>,
     properties: list<property-entry>,
     timestamp: string,
     device-id: string,
@@ -125,7 +125,7 @@ interface draft-session {
 
   record graph-node {
     id: node-id,
-    node-type: type-id,
+    shape-id: option<shape-id>,
     properties: list<property-entry>,
   }
 

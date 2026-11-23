@@ -250,10 +250,8 @@ export const PluginProvider: React.FC<{ readonly children: React.ReactNode }> = 
               }
             }
             const shapeId =
-              typeof event_.val.nodeType === 'string' &&
-              event_.val.nodeType.length > 0 &&
-              event_.val.nodeType !== 'canopy:open'
-                ? asShapeId(event_.val.nodeType)
+              typeof event_.val.shapeId === 'string' && event_.val.shapeId.length > 0
+                ? asShapeId(event_.val.shapeId)
                 : undefined;
             return {
               type: 'NodeCreated',

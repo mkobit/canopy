@@ -17,7 +17,7 @@ This directory implements the `@canopy/graph` core domain kernel: branded identi
 
 ## Invariants
 
-- Domain IDs (`NodeId`, `EdgeId`, `ShapeId`, deprecated `TypeId` alias, `BatchId`, `GraphId`, `EventId`, `DeviceId`, `Namespace`, `Revision`) and temporal primitives (`Instant`, `PlainDate`) are branded with unique symbols; `Node.shape`, `Edge.shape`, `NodeCreated.shapeId`, and `EdgeCreated.shapeId` are optional `ShapeId` (`undefined` for open entities); core entities and collections use `Readonly`/`ReadonlyMap`/`readonly`.
+- Domain IDs (`NodeId`, `EdgeId`, `ShapeId`, `BatchId`, `GraphId`, `EventId`, `DeviceId`, `Namespace`, `Revision`) and temporal primitives (`Instant`, `PlainDate`) are branded with unique symbols; `Node.shape`, `Edge.shape`, `NodeCreated.shapeId`, and `EdgeCreated.shapeId` are optional `ShapeId` (`undefined` for open entities); core entities and collections use `Readonly`/`ReadonlyMap`/`readonly`.
 - `[event-upcast.ts:decodeStoredEvent]` Pure, stateless read-side upcaster normalizes legacy `nodeType`/`edgeType` and strips retired `canopy:open` sentinel before validating with `GraphEventSchema`, rejecting dual-field conflicts without throwing.
 - `[bootstrap.ts:bootstrap]` Is idempotent across node and edge steps, attributes authorship to `SYSTEM_DEVICE_ID` (`00000000-0000-0000-0000-000000000000`), and short-circuits on the first `Err`.
 - `[projection.ts:lwwWins]` Orders writes by `(timestamp, deviceId)`; `[incremental-projection.ts:mergeEvents]` converges to `projectGraph(sort(E), initialGraph)` regardless of arrival order, parking unmet dependencies atomically by `batchId` and permanently tombstoning deleted entities.

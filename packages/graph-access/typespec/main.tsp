@@ -68,6 +68,34 @@ namespace Canopy.V0 {
     many: "many",
   }
 
+  enum CanopyV0PropertyValueKind {
+    text: "text",
+    integer: "integer",
+    number: "number",
+    boolean: "boolean",
+    instant: "instant",
+    plainDate: "plain-date",
+    url: "url",
+    reference: "reference",
+    externalReference: "external-reference",
+  }
+
+  enum CanopyV0ValidationSeverity {
+    error: "error",
+    warning: "warning",
+  }
+
+  model CanopyV0ValidationIssue {
+    code: string;
+    severity: CanopyV0ValidationSeverity;
+    entityKind?: CanopyV0EntityKind;
+    entityId?: string;
+    path: string[];
+    message: string;
+    expected?: string;
+    actual?: string;
+  }
+
   enum CanopyV0EntityKind {
     node: "node",
     edge: "edge",
@@ -189,7 +217,6 @@ namespace Canopy.V0 {
       shapeId?: ShapeId;
       sourceNodeId?: NodeId;
       targetNodeId?: NodeId;
-      edgeTypeId?: ShapeId;
       properties?: CanopyV0PropertyEntry[];
       migrationId?: MigrationId;
       fromShapeId?: ShapeId;
@@ -213,6 +240,7 @@ namespace Canopy.V0 {
       revision: string;
       committedEventIds: EventId[];
       affectedEntitySeqs: CanopyV0EntityCasPrecondition[];
+      warnings: CanopyV0ValidationIssue[];
     }
 
     model CanopyV0DraftRecord {
@@ -292,7 +320,7 @@ namespace Canopy.V0 {
 
     model CanopyV0EdgeRecord {
       edgeId: EdgeId;
-      shapeId: ShapeId;
+      shapeId?: ShapeId;
       sourceNodeId: NodeId;
       targetNodeId: NodeId;
       entitySeq: CommitSeq;
@@ -500,11 +528,28 @@ namespace Canopy.V0 {
 
   @route("/v0/graphs/{graphId}/bundles")
   namespace Bundles {
+    model CanopyV0PropertyConstraints {
+      min?: float64;
+      max?: float64;
+      regex?: string;
+      choices?: string[];
+      unique?: boolean;
+      targetShapeId?: ShapeId;
+      nullable?: boolean;
+    }
+
+    model CanopyV0InlinePropertySpec {
+      valueKind: CanopyV0PropertyValueKind;
+      constraints?: CanopyV0PropertyConstraints;
+      schemaOrgUri?: string;
+    }
+
     model CanopyV0PropertyTypeRecord {
       propertyTypeId: PropertyTypeId;
       name: string;
-      scalarKind: string;
+      valueKind: CanopyV0PropertyValueKind;
       cardinality: CanopyV0PropertyCardinality;
+      constraints?: CanopyV0PropertyConstraints;
       schemaOrgUri?: string;
     }
 
@@ -512,7 +557,8 @@ namespace Canopy.V0 {
       key: string;
       propertyTypeId?: PropertyTypeId;
       required: boolean;
-      cardinality: CanopyV0PropertyCardinality;
+      cardinality?: CanopyV0PropertyCardinality;
+      inline?: CanopyV0InlinePropertySpec;
     }
 
     model CanopyV0ShapeRecord {
@@ -653,7 +699,7 @@ namespace Canopy.V0 {
     @witBody("""
     type node-id = string;
     type edge-id = string;
-    type type-id = string;
+    type shape-id = string;
     type capability-token = string;
 
     enum error-code {
@@ -745,7 +791,7 @@ namespace Canopy.V0 {
     @witBody("""
     type node-id = string;
     type event-id = string;
-    type type-id = string;
+    type shape-id = string;
 
     record property-entry {
       name: string,
@@ -766,7 +812,7 @@ namespace Canopy.V0 {
     record node-created-event {
       event-id: event-id,
       id: node-id,
-      node-type: type-id,
+      shape-id: option<shape-id>,
       properties: list<property-entry>,
       timestamp: string,
       device-id: string,
@@ -789,7 +835,7 @@ namespace Canopy.V0 {
 
     record graph-node {
       id: node-id,
-      node-type: type-id,
+      shape-id: option<shape-id>,
       properties: list<property-entry>,
     }
 

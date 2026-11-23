@@ -1,7 +1,7 @@
 declare module 'canopy:graph/draft-session' {
   export type NodeId = string;
   export type EventId = string;
-  export type TypeId = string;
+  export type ShapeId = string;
   export type PropertyValue =
     | PropertyValueText
     | PropertyValueInteger
@@ -49,7 +49,7 @@ declare module 'canopy:graph/draft-session' {
   export interface NodeCreatedEvent {
     eventId: EventId;
     id: NodeId;
-    nodeType: TypeId;
+    shapeId?: ShapeId;
     properties: Array<PropertyEntry>;
     timestamp: string;
     deviceId: string;
@@ -74,7 +74,7 @@ declare module 'canopy:graph/draft-session' {
   }
   export interface GraphNode {
     id: NodeId;
-    nodeType: TypeId;
+    shapeId?: ShapeId;
     properties: Array<PropertyEntry>;
   }
   /**
