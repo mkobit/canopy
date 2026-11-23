@@ -1,6 +1,7 @@
 import type { Graph } from './graph';
 import type { GraphEvent } from './events';
-import type { BatchId, EdgeId, NodeId } from './identifiers';
+import type { BatchId, CommitSeq, EdgeId, NodeId } from './identifiers';
+import type { HlcTimestamp } from './hlc';
 import type { Result } from './result';
 import { err as error, ok } from './result';
 import { projectGraph } from './projection';
@@ -18,11 +19,20 @@ export type CommitError =
   | Readonly<{ kind: 'projection'; message: string; batchId: BatchId }>
   | Readonly<{ kind: 'batch'; message: string }>
   | Readonly<{ kind: 'system-node'; message: string; nodeId: NodeId }>
+  | Readonly<{
+      kind: 'concurrency-conflict';
+      message: string;
+      entityId?: NodeId | EdgeId | undefined;
+      expectedSeq?: CommitSeq | undefined;
+      actualSeq?: CommitSeq | undefined;
+    }>
   | Readonly<{ kind: 'storage'; message: string; cause: Error }>;
 
 export interface CommitSuccess {
   readonly graph: Graph;
   readonly batchId: BatchId;
+  readonly commitSeq: CommitSeq;
+  readonly hlcTimestamp: HlcTimestamp;
   readonly events: readonly GraphEvent[];
   readonly warnings: readonly ValidationError[];
 }

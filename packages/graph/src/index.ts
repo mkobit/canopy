@@ -9,6 +9,9 @@ export type {
   deviceIdBrand,
   namespaceBrand,
   revisionBrand,
+  commitSeqBrand,
+  principalIdBrand,
+  actorIdBrand,
   NodeId,
   EdgeId,
   ShapeId,
@@ -19,6 +22,9 @@ export type {
   DeviceId,
   Namespace,
   Revision,
+  CommitSeq,
+  PrincipalId,
+  ActorId,
 } from './identifiers';
 
 export type {
@@ -56,6 +62,7 @@ export type {
 
 export type {
   GraphEvent,
+  GraphEventMetadata,
   GraphResult,
   NodeCreated,
   NodePropertiesUpdated,
@@ -98,7 +105,22 @@ export {
   createDeviceId,
   asDeviceId,
   asNamespace,
+  ZERO_COMMIT_SEQ,
+  asCommitSeq,
+  asPrincipalId,
+  asActorId,
 } from './factories';
+
+export {
+  DEFAULT_HLC_MAX_DRIFT_MS,
+  isValidHlcTimestamp,
+  formatHlcTimestamp,
+  asHlcTimestamp,
+  synthesizeLegacyHlc,
+  compareHlcTimestamp,
+  createHlcClock,
+} from './hlc';
+export type { hlcTimestampBrand, HlcTimestamp, ActorKind, HlcClockOptions, HlcClock } from './hlc';
 
 export { asRevision, zeroRevision, maxRevision, accumulateRevision } from './revision';
 

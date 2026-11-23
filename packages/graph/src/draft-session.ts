@@ -82,6 +82,9 @@ export function createDraftSession(parentSession: GraphSession): DraftSession {
 
     const commitResult = await parentSession.commit(stagedEventsCell.current);
     if (!commitResult.ok) {
+      if (commitResult.error.kind === 'concurrency-conflict') {
+        return error({ type: 'concurrent-modification' });
+      }
       return error({
         type: commitResult.error.kind === 'storage' ? 'storage-error' : 'validation-failure',
         message: commitResult.error.message,

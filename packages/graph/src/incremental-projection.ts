@@ -2,27 +2,64 @@ import type { Graph } from './graph';
 import type { GraphEvent } from './events';
 import type { Node } from './node';
 import type { Edge } from './edge';
-import type { NodeId, EdgeId, EventId } from './identifiers';
+import type { NodeId, EdgeId, EventId, DeviceId, CommitSeq } from './identifiers';
 import type { Instant } from './temporal';
+import type { HlcTimestamp } from './hlc';
+import { compareHlcTimestamp, synthesizeLegacyHlc } from './hlc';
 import { lwwWins, projectGraph, sortEventsCausally } from './projection';
 import type { Result } from './result';
 import { ok } from './result';
 import { validateBatch, type CommitError } from './batch-validation';
-import { createBatchId } from './factories';
+import { asCommitSeq, createBatchId, ZERO_COMMIT_SEQ } from './factories';
 import { incrementalUpdateIndexes } from './indexes';
 import { accumulateRevision } from './revision';
+
+interface PropertyWriterStamp {
+  readonly eventId: EventId;
+  readonly timestamp: Instant;
+  readonly deviceId: DeviceId;
+  readonly hlcTimestamp?: HlcTimestamp | undefined;
+}
+
+function writerStampFromEvent(event: GraphEvent): PropertyWriterStamp {
+  return {
+    eventId: event.eventId,
+    timestamp: event.timestamp,
+    deviceId: event.deviceId,
+    hlcTimestamp: event.hlcTimestamp,
+  };
+}
+
+function propertyWriterWins(event: GraphEvent, writer: PropertyWriterStamp | undefined): boolean {
+  if (writer === undefined) return true;
+  if (event.hlcTimestamp === undefined && writer.hlcTimestamp === undefined) {
+    if (event.timestamp !== writer.timestamp) {
+      return event.timestamp > writer.timestamp;
+    }
+    return event.deviceId === writer.deviceId
+      ? event.eventId > writer.eventId
+      : event.deviceId > writer.deviceId;
+  }
+  const incomingHlc = event.hlcTimestamp ?? synthesizeLegacyHlc(event.timestamp, event.deviceId);
+  const currentHlc = writer.hlcTimestamp ?? synthesizeLegacyHlc(writer.timestamp, writer.deviceId);
+  const cmp = compareHlcTimestamp(incomingHlc, currentHlc);
+  if (cmp !== 0) return cmp > 0;
+  return event.deviceId === writer.deviceId
+    ? event.eventId > writer.eventId
+    : event.deviceId > writer.deviceId;
+}
 
 /**
 Per-entity merge bookkeeping: which event last wrote each property
 (removals count as writes), and whether the entity is permanently
-tombstoned. Display metadata (modified/modifiedBy) lives on the Node/Edge
+tombstoned. Display metadata (modified/modifiedBy/hlcTimestamp) lives on the Node/Edge
 itself in the graph and is kept in sync via the same lwwWins comparator
 canonical projection uses, so it converges to the identical value.
 */
 interface EntityMergeMeta {
   readonly exists: boolean;
   readonly tombstoned: boolean;
-  readonly propertyWriters: ReadonlyMap<string, EventId>;
+  readonly propertyWriters: ReadonlyMap<string, PropertyWriterStamp>;
 }
 
 function emptyMeta(): EntityMergeMeta {
@@ -44,6 +81,8 @@ export interface MergeState {
   readonly pendingGroups: ReadonlyMap<number, PendingGroup>;
   readonly pendingByDependency: ReadonlyMap<string, ReadonlySet<number>>;
   readonly nextPendingId: number;
+  readonly headCommitSeq: CommitSeq;
+  readonly entitySeqs: ReadonlyMap<NodeId | EdgeId, CommitSeq>;
 }
 
 export function createMergeState(): MergeState {
@@ -53,7 +92,55 @@ export function createMergeState(): MergeState {
     pendingGroups: new Map(),
     pendingByDependency: new Map(),
     nextPendingId: 0,
+    headCommitSeq: ZERO_COMMIT_SEQ,
+    entitySeqs: new Map(),
   };
+}
+
+export interface ResolvedEventCommitSeq {
+  readonly event: GraphEvent;
+  readonly commitSeq: CommitSeq;
+}
+
+export interface ResolvedCommitSeqBatch {
+  readonly entries: readonly ResolvedEventCommitSeq[];
+  readonly headCommitSeq: CommitSeq;
+}
+
+/**
+Deterministically assigns effective `commitSeq` values to a sequence of events
+starting from `startingSeq`. Stamped events preserve `event.commitSeq`; consecutive
+legacy events lacking `commitSeq` that share a non-undefined `batchId` share one
+incremented sequence, and legacy events without `batchId` increment by 1 each.
+*/
+export function resolveEventCommitSeqs(
+  events: readonly GraphEvent[],
+  startingSeq: CommitSeq = ZERO_COMMIT_SEQ,
+): ResolvedCommitSeqBatch {
+  const cursorCell = {
+    current: {
+      head: startingSeq as number,
+      lastLegacyBatchId: undefined as string | undefined,
+    },
+  };
+  const entries = events.map((event): ResolvedEventCommitSeq => {
+    const previous = cursorCell.current;
+    if (event.commitSeq !== undefined) {
+      cursorCell.current = {
+        head: Math.max(previous.head, event.commitSeq),
+        lastLegacyBatchId: undefined,
+      };
+      return { event, commitSeq: event.commitSeq };
+    }
+    if (event.batchId !== undefined && event.batchId === previous.lastLegacyBatchId) {
+      return { event, commitSeq: asCommitSeq(previous.head) };
+    }
+    const nextHead = previous.head + 1;
+    cursorCell.current = { head: nextHead, lastLegacyBatchId: event.batchId };
+    return { event, commitSeq: asCommitSeq(nextHead) };
+  });
+
+  return { entries, headCommitSeq: asCommitSeq(cursorCell.current.head) };
 }
 
 export interface StalePendingWarning {
@@ -112,6 +199,7 @@ interface ApplyOutcome {
   readonly graph: Graph;
   readonly nodeMeta: ReadonlyMap<NodeId, EntityMergeMeta>;
   readonly edgeMeta: ReadonlyMap<EdgeId, EntityMergeMeta>;
+  readonly touchedEntityIds: readonly (NodeId | EdgeId)[];
 }
 
 /**
@@ -137,10 +225,12 @@ function touchGraphMetadata(
   edges: ReadonlyMap<EdgeId, Edge>,
 ): Graph {
   const isWins = lwwWins(
-    event.timestamp,
-    event.deviceId,
-    graph.metadata.modified,
-    graph.metadata.modifiedBy,
+    { timestamp: event.timestamp, deviceId: event.deviceId, hlcTimestamp: event.hlcTimestamp },
+    {
+      timestamp: graph.metadata.modified,
+      deviceId: graph.metadata.modifiedBy,
+      hlcTimestamp: graph.metadata.hlcTimestamp,
+    },
   );
   return {
     ...graph,
@@ -148,7 +238,12 @@ function touchGraphMetadata(
     edges,
     revision: accumulateRevision(graph.revision, event.eventId),
     metadata: isWins
-      ? { ...graph.metadata, modified: event.timestamp, modifiedBy: event.deviceId }
+      ? {
+          ...graph.metadata,
+          modified: event.timestamp,
+          modifiedBy: event.deviceId,
+          ...(event.hlcTimestamp !== undefined && { hlcTimestamp: event.hlcTimestamp }),
+        }
       : graph.metadata,
   };
 }
@@ -197,13 +292,15 @@ function applyOneEventInternal(
           graph: touchGraphMetadata(graph, event, graph.nodes, graph.edges),
           nodeMeta,
           edgeMeta,
+          touchedEntityIds: [],
         };
       }
 
-      const propertyWriters = new Map<string, EventId>();
+      const propertyWriters = new Map<string, PropertyWriterStamp>();
+      const writerStamp = writerStampFromEvent(event);
 
       for (const key of event.properties.keys()) {
-        propertyWriters.set(key, event.eventId);
+        propertyWriters.set(key, writerStamp);
       }
 
       const node: Node = {
@@ -214,6 +311,7 @@ function applyOneEventInternal(
           created: event.timestamp,
           modified: event.timestamp,
           modifiedBy: event.deviceId,
+          ...(event.hlcTimestamp !== undefined && { hlcTimestamp: event.hlcTimestamp }),
         },
       };
 
@@ -228,6 +326,7 @@ function applyOneEventInternal(
         graph: touchGraphMetadata(graph, event, newNodes, graph.edges),
         nodeMeta: newNodeMeta,
         edgeMeta,
+        touchedEntityIds: [event.id],
       };
     }
 
@@ -243,35 +342,44 @@ function applyOneEventInternal(
           graph: touchGraphMetadata(graph, event, graph.nodes, graph.edges),
           nodeMeta,
           edgeMeta,
+          touchedEntityIds: [],
         };
       }
 
       const propertyWriters = new Map(meta.propertyWriters);
       const properties = new Map(node.properties);
+      const writerStamp = writerStampFromEvent(event);
 
       for (const [key, value] of event.changes) {
         const writer = propertyWriters.get(key);
-        if (!(writer === undefined || event.eventId > writer)) {
+        if (!propertyWriterWins(event, writer)) {
           continue;
         }
 
         properties.set(key, value);
 
-        propertyWriters.set(key, event.eventId);
+        propertyWriters.set(key, writerStamp);
       }
 
       const isTouchWins = lwwWins(
-        event.timestamp,
-        event.deviceId,
-        node.metadata.modified,
-        node.metadata.modifiedBy,
+        { timestamp: event.timestamp, deviceId: event.deviceId, hlcTimestamp: event.hlcTimestamp },
+        {
+          timestamp: node.metadata.modified,
+          deviceId: node.metadata.modifiedBy,
+          hlcTimestamp: node.metadata.hlcTimestamp,
+        },
       );
 
       const updatedNode: Node = {
         ...node,
         properties,
         metadata: isTouchWins
-          ? { ...node.metadata, modified: event.timestamp, modifiedBy: event.deviceId }
+          ? {
+              ...node.metadata,
+              modified: event.timestamp,
+              modifiedBy: event.deviceId,
+              ...(event.hlcTimestamp !== undefined && { hlcTimestamp: event.hlcTimestamp }),
+            }
           : node.metadata,
       };
 
@@ -286,6 +394,7 @@ function applyOneEventInternal(
         graph: touchGraphMetadata(graph, event, newNodes, graph.edges),
         nodeMeta: newNodeMeta,
         edgeMeta,
+        touchedEntityIds: [event.id],
       };
     }
 
@@ -300,6 +409,7 @@ function applyOneEventInternal(
           graph: touchGraphMetadata(graph, event, graph.nodes, graph.edges),
           nodeMeta,
           edgeMeta,
+          touchedEntityIds: [],
         };
       }
 
@@ -328,6 +438,7 @@ function applyOneEventInternal(
         graph: touchGraphMetadata(graph, event, newNodes, newEdges),
         nodeMeta: newNodeMeta,
         edgeMeta: newEdgeMeta,
+        touchedEntityIds: [event.id, ...touchingEdges.map((edge) => edge.id)],
       };
     }
 
@@ -342,6 +453,7 @@ function applyOneEventInternal(
           graph: touchGraphMetadata(graph, event, graph.nodes, graph.edges),
           nodeMeta,
           edgeMeta,
+          touchedEntityIds: [],
         };
       }
       // Defensive: dependency tracking only proves the endpoints were ever
@@ -354,13 +466,15 @@ function applyOneEventInternal(
           graph: touchGraphMetadata(graph, event, graph.nodes, graph.edges),
           nodeMeta,
           edgeMeta: newEdgeMeta,
+          touchedEntityIds: [],
         };
       }
 
-      const propertyWriters = new Map<string, EventId>();
+      const propertyWriters = new Map<string, PropertyWriterStamp>();
+      const writerStamp = writerStampFromEvent(event);
 
       for (const key of event.properties.keys()) {
-        propertyWriters.set(key, event.eventId);
+        propertyWriters.set(key, writerStamp);
       }
 
       const edge: Edge = {
@@ -373,6 +487,7 @@ function applyOneEventInternal(
           created: event.timestamp,
           modified: event.timestamp,
           modifiedBy: event.deviceId,
+          ...(event.hlcTimestamp !== undefined && { hlcTimestamp: event.hlcTimestamp }),
         },
       };
 
@@ -387,6 +502,7 @@ function applyOneEventInternal(
         graph: touchGraphMetadata(graph, event, graph.nodes, newEdges),
         nodeMeta,
         edgeMeta: newEdgeMeta,
+        touchedEntityIds: [event.id],
       };
     }
 
@@ -402,35 +518,44 @@ function applyOneEventInternal(
           graph: touchGraphMetadata(graph, event, graph.nodes, graph.edges),
           nodeMeta,
           edgeMeta,
+          touchedEntityIds: [],
         };
       }
 
       const propertyWriters = new Map(meta.propertyWriters);
       const properties = new Map(edge.properties);
+      const writerStamp = writerStampFromEvent(event);
 
       for (const [key, value] of event.changes) {
         const writer = propertyWriters.get(key);
-        if (!(writer === undefined || event.eventId > writer)) {
+        if (!propertyWriterWins(event, writer)) {
           continue;
         }
 
         properties.set(key, value);
 
-        propertyWriters.set(key, event.eventId);
+        propertyWriters.set(key, writerStamp);
       }
 
       const isTouchWins = lwwWins(
-        event.timestamp,
-        event.deviceId,
-        edge.metadata.modified,
-        edge.metadata.modifiedBy,
+        { timestamp: event.timestamp, deviceId: event.deviceId, hlcTimestamp: event.hlcTimestamp },
+        {
+          timestamp: edge.metadata.modified,
+          deviceId: edge.metadata.modifiedBy,
+          hlcTimestamp: edge.metadata.hlcTimestamp,
+        },
       );
 
       const updatedEdge: Edge = {
         ...edge,
         properties,
         metadata: isTouchWins
-          ? { ...edge.metadata, modified: event.timestamp, modifiedBy: event.deviceId }
+          ? {
+              ...edge.metadata,
+              modified: event.timestamp,
+              modifiedBy: event.deviceId,
+              ...(event.hlcTimestamp !== undefined && { hlcTimestamp: event.hlcTimestamp }),
+            }
           : edge.metadata,
       };
 
@@ -445,6 +570,7 @@ function applyOneEventInternal(
         graph: touchGraphMetadata(graph, event, graph.nodes, newEdges),
         nodeMeta,
         edgeMeta: newEdgeMeta,
+        touchedEntityIds: [event.id],
       };
     }
 
@@ -459,6 +585,7 @@ function applyOneEventInternal(
           graph: touchGraphMetadata(graph, event, graph.nodes, graph.edges),
           nodeMeta,
           edgeMeta,
+          touchedEntityIds: [],
         };
       }
 
@@ -473,15 +600,16 @@ function applyOneEventInternal(
         graph: touchGraphMetadata(graph, event, graph.nodes, newEdges),
         nodeMeta,
         edgeMeta: newEdgeMeta,
+        touchedEntityIds: [event.id],
       };
     }
 
     case 'WorkflowStarted':
     case 'WorkflowCompleted': {
-      return { graph, nodeMeta, edgeMeta };
+      return { graph, nodeMeta, edgeMeta, touchedEntityIds: [] };
     }
     default: {
-      return { graph, nodeMeta, edgeMeta };
+      return { graph, nodeMeta, edgeMeta, touchedEntityIds: [] };
     }
   }
 }
@@ -563,6 +691,7 @@ interface GroupAttempt {
   readonly nodeMeta: ReadonlyMap<NodeId, EntityMergeMeta>;
   readonly edgeMeta: ReadonlyMap<EdgeId, EntityMergeMeta>;
   readonly unmet: readonly string[];
+  readonly touchedByEvent: ReadonlyMap<EventId, readonly (NodeId | EdgeId)[]>;
 }
 
 /**
@@ -591,7 +720,7 @@ function attemptGroup(
 
   const unmet = dependenciesSatisfied(sorted, graph, nodeMeta, edgeMeta, createdInGroup);
   if (unmet.length > 0) {
-    return { applied: false, graph, nodeMeta, edgeMeta, unmet };
+    return { applied: false, graph, nodeMeta, edgeMeta, unmet, touchedByEvent: new Map() };
   }
 
   let workingGraph = graph;
@@ -599,12 +728,16 @@ function attemptGroup(
   let workingNodeMeta = nodeMeta;
 
   let workingEdgeMeta = edgeMeta;
+  const touchedByEvent = new Map<EventId, readonly (NodeId | EdgeId)[]>();
 
   for (const event of sorted) {
     const result = applyOneEvent(workingGraph, workingNodeMeta, workingEdgeMeta, event);
     workingGraph = result.graph;
     workingNodeMeta = result.nodeMeta;
     workingEdgeMeta = result.edgeMeta;
+    if (result.touchedEntityIds.length > 0) {
+      touchedByEvent.set(event.eventId, result.touchedEntityIds);
+    }
   }
 
   return {
@@ -613,6 +746,7 @@ function attemptGroup(
     nodeMeta: workingNodeMeta,
     edgeMeta: workingEdgeMeta,
     unmet: [],
+    touchedByEvent,
   };
 }
 
@@ -672,6 +806,10 @@ export function mergeEvents(
   events: readonly GraphEvent[],
   now: Instant = Temporal.Now.instant().toString() as Instant,
 ): MergeResult {
+  const resolved = resolveEventCommitSeqs(events, state.headCommitSeq);
+  const eventSeqMap = new Map(
+    resolved.entries.map((entry) => [entry.event.eventId, entry.commitSeq]),
+  );
   const groups = groupEvents(events);
 
   let workingState = state;
@@ -692,10 +830,27 @@ export function mergeEvents(
     );
     if (attempt.applied) {
       workingGraph = attempt.graph;
+      const nextEntitySeqs = new Map(workingState.entitySeqs);
+      let nextHeadCommitSeq: number = workingState.headCommitSeq;
+
+      for (const event of candidateEvents) {
+        const eventSeq = eventSeqMap.get(event.eventId);
+        if (eventSeq === undefined) continue;
+        nextHeadCommitSeq = Math.max(nextHeadCommitSeq, eventSeq);
+        const touched = attempt.touchedByEvent.get(event.eventId);
+        if (touched) {
+          for (const entityId of touched) {
+            nextEntitySeqs.set(entityId, eventSeq);
+          }
+        }
+      }
+
       workingState = {
         ...workingState,
         nodeMeta: attempt.nodeMeta,
         edgeMeta: attempt.edgeMeta,
+        headCommitSeq: asCommitSeq(nextHeadCommitSeq),
+        entitySeqs: nextEntitySeqs,
       };
       if (pendingGroupId !== undefined) {
         workingState = removePendingGroup(workingState, pendingGroupId);

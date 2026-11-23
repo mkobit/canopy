@@ -3,26 +3,65 @@ import type { GraphEvent } from './events';
 import type { Node } from './node';
 import type { Edge } from './edge';
 import type { Result } from './result';
-import type { Instant } from './temporal';
+import type { Instant, TemporalMetadata } from './temporal';
 import type { DeviceId } from './identifiers';
+import type { HlcTimestamp } from './hlc';
+import { compareHlcTimestamp, synthesizeLegacyHlc } from './hlc';
 import { ok, err as error, fromThrowable, unwrap } from './result';
 import { incrementalUpdateIndexes } from './indexes';
 import { accumulateRevision } from './revision';
 
+export interface LwwStamp {
+  readonly timestamp: Instant;
+  readonly deviceId: DeviceId;
+  readonly hlcTimestamp?: HlcTimestamp | undefined;
+}
+
 /**
-Returns true if the incoming event should win over the current state.
-Uses timestamp as primary sort key, deviceId as tiebreaker (lexicographic).
+Returns true if the incoming stamp should win over the current stamp.
+Compares effective HLC timestamps (synthesizing from `(timestamp, deviceId)`
+for legacy events) with `deviceId` as tiebreaker.
 */
-export function lwwWins(
-  incomingTimestamp: Instant,
-  incomingDeviceId: DeviceId,
-  currentTimestamp: Instant,
-  currentDeviceId: DeviceId,
-): boolean {
-  // Equal timestamps: use deviceId as tiebreaker
-  return incomingTimestamp === currentTimestamp
-    ? incomingDeviceId >= currentDeviceId
-    : incomingTimestamp > currentTimestamp;
+export function lwwWins(incoming: LwwStamp, current: LwwStamp): boolean {
+  if (incoming.hlcTimestamp === undefined && current.hlcTimestamp === undefined) {
+    return incoming.timestamp === current.timestamp
+      ? incoming.deviceId >= current.deviceId
+      : incoming.timestamp > current.timestamp;
+  }
+  const incomingHlc =
+    incoming.hlcTimestamp ?? synthesizeLegacyHlc(incoming.timestamp, incoming.deviceId);
+  const currentHlc =
+    current.hlcTimestamp ?? synthesizeLegacyHlc(current.timestamp, current.deviceId);
+  const cmp = compareHlcTimestamp(incomingHlc, currentHlc);
+  return cmp === 0 ? incoming.deviceId >= current.deviceId : cmp > 0;
+}
+
+function stampFromEvent(event: GraphEvent): LwwStamp {
+  return {
+    timestamp: event.timestamp,
+    deviceId: event.deviceId,
+    hlcTimestamp: event.hlcTimestamp,
+  };
+}
+
+function stampFromMetadata(metadata: TemporalMetadata): LwwStamp {
+  return {
+    timestamp: metadata.modified,
+    deviceId: metadata.modifiedBy,
+    hlcTimestamp: metadata.hlcTimestamp,
+  };
+}
+
+function advanceMetadata(current: TemporalMetadata, event: GraphEvent): TemporalMetadata {
+  if (!lwwWins(stampFromEvent(event), stampFromMetadata(current))) {
+    return current;
+  }
+  return {
+    ...current,
+    modified: event.timestamp,
+    modifiedBy: event.deviceId,
+    ...(event.hlcTimestamp !== undefined && { hlcTimestamp: event.hlcTimestamp }),
+  };
 }
 
 /**
@@ -50,6 +89,7 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
                 created: event.timestamp,
                 modified: event.timestamp,
                 modifiedBy: event.deviceId,
+                ...(event.hlcTimestamp !== undefined && { hlcTimestamp: event.hlcTimestamp }),
               },
             };
 
@@ -59,17 +99,7 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
               ...graph,
               nodes: newNodes,
               revision: accumulateRevision(graph.revision, event.eventId),
-              metadata: {
-                ...graph.metadata,
-                modified:
-                  event.timestamp > graph.metadata.modified
-                    ? event.timestamp
-                    : graph.metadata.modified,
-                modifiedBy:
-                  event.timestamp > graph.metadata.modified
-                    ? event.deviceId
-                    : graph.metadata.modifiedBy,
-              },
+              metadata: advanceMetadata(graph.metadata, event),
             });
           }
 
@@ -79,12 +109,7 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
               return error(new Error(`Node with ID ${event.id} not found`));
             }
 
-            const isEventWins = lwwWins(
-              event.timestamp,
-              event.deviceId,
-              node.metadata.modified,
-              node.metadata.modifiedBy,
-            );
+            const isEventWins = lwwWins(stampFromEvent(event), stampFromMetadata(node.metadata));
             if (!isEventWins) {
               return ok(graph);
             }
@@ -98,6 +123,7 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
                 ...node.metadata,
                 modified: event.timestamp,
                 modifiedBy: event.deviceId,
+                ...(event.hlcTimestamp !== undefined && { hlcTimestamp: event.hlcTimestamp }),
               },
             };
 
@@ -107,17 +133,7 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
               ...graph,
               nodes: newNodes,
               revision: accumulateRevision(graph.revision, event.eventId),
-              metadata: {
-                ...graph.metadata,
-                modified:
-                  event.timestamp > graph.metadata.modified
-                    ? event.timestamp
-                    : graph.metadata.modified,
-                modifiedBy:
-                  event.timestamp > graph.metadata.modified
-                    ? event.deviceId
-                    : graph.metadata.modifiedBy,
-              },
+              metadata: advanceMetadata(graph.metadata, event),
             });
           }
 
@@ -174,6 +190,7 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
                 created: event.timestamp,
                 modified: event.timestamp,
                 modifiedBy: event.deviceId,
+                ...(event.hlcTimestamp !== undefined && { hlcTimestamp: event.hlcTimestamp }),
               },
             };
 
@@ -183,17 +200,7 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
               ...graph,
               edges: newEdges,
               revision: accumulateRevision(graph.revision, event.eventId),
-              metadata: {
-                ...graph.metadata,
-                modified:
-                  event.timestamp > graph.metadata.modified
-                    ? event.timestamp
-                    : graph.metadata.modified,
-                modifiedBy:
-                  event.timestamp > graph.metadata.modified
-                    ? event.deviceId
-                    : graph.metadata.modifiedBy,
-              },
+              metadata: advanceMetadata(graph.metadata, event),
             });
           }
 
@@ -203,12 +210,7 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
               return error(new Error(`Edge with ID ${event.id} not found`));
             }
 
-            const isEventWins = lwwWins(
-              event.timestamp,
-              event.deviceId,
-              edge.metadata.modified,
-              edge.metadata.modifiedBy,
-            );
+            const isEventWins = lwwWins(stampFromEvent(event), stampFromMetadata(edge.metadata));
             if (!isEventWins) {
               return ok(graph);
             }
@@ -222,6 +224,7 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
                 ...edge.metadata,
                 modified: event.timestamp,
                 modifiedBy: event.deviceId,
+                ...(event.hlcTimestamp !== undefined && { hlcTimestamp: event.hlcTimestamp }),
               },
             };
 
@@ -231,17 +234,7 @@ export function applyEvent(graph: Graph, event: GraphEvent): Result<Graph, Error
               ...graph,
               edges: newEdges,
               revision: accumulateRevision(graph.revision, event.eventId),
-              metadata: {
-                ...graph.metadata,
-                modified:
-                  event.timestamp > graph.metadata.modified
-                    ? event.timestamp
-                    : graph.metadata.modified,
-                modifiedBy:
-                  event.timestamp > graph.metadata.modified
-                    ? event.deviceId
-                    : graph.metadata.modifiedBy,
-              },
+              metadata: advanceMetadata(graph.metadata, event),
             });
           }
 

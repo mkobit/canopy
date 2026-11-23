@@ -1,14 +1,18 @@
 import type { Graph } from './graph';
-import type { EventId } from './identifiers';
+import type { CommitSeq, EventId } from './identifiers';
 import type { Result } from './result';
 import type { Instant } from './temporal';
 import type { EventLogStore } from './event-log';
 import { projectGraph } from './projection';
+import { createMergeState, mergeEvents, resolveEventCommitSeqs } from './incremental-projection';
 import { createGraph } from './create-graph';
-import { asGraphId } from './factories';
+import { asGraphId, ZERO_COMMIT_SEQ } from './factories';
 import { fromAsyncThrowable } from './result';
 
-export type TimeTravelTarget = Readonly<{ timestamp: Instant }> | Readonly<{ eventId: EventId }>;
+export type TimeTravelTarget =
+  | Readonly<{ timestamp: Instant }>
+  | Readonly<{ eventId: EventId }>
+  | Readonly<{ commitSeq: CommitSeq }>;
 
 /**
 Returns the maximum possible UUIDv7 (lexicographically) for a given timestamp (ms precision).
@@ -52,20 +56,49 @@ export function incrementEventId(eventId: EventId): EventId {
   return incrementedChars.join('') as EventId;
 }
 
-/**
-Reconstructs the graph state at a specific point in time (timestamp or eventId).
+export interface GraphSnapshot {
+  readonly graph: Graph;
+  readonly commitSeq: CommitSeq;
+}
 
-@param store The EventLogStore containing the history.
-@param graphId The ID of the graph to reconstruct.
-@param target The target point in time (timestamp or eventId).
-@returns The reconstructed Graph.
+/**
+Reconstructs the graph state and its effective `commitSeq` at a specific point
+in time (`timestamp`, `eventId`, or `commitSeq`).
 */
-export async function getGraphAt(
+export async function getGraphSnapshotAt(
   store: EventLogStore,
   graphId: string,
   target: TimeTravelTarget,
-): Promise<Result<Graph, Error>> {
+): Promise<Result<GraphSnapshot, Error>> {
   return fromAsyncThrowable(async () => {
+    if ('commitSeq' in target) {
+      const initialGraphResult = createGraph(asGraphId(graphId), 'graph');
+      if (!initialGraphResult.ok) {
+        throw initialGraphResult.error;
+      }
+      if (target.commitSeq === 0) {
+        return { graph: initialGraphResult.value, commitSeq: ZERO_COMMIT_SEQ };
+      }
+
+      const eventsResult = await store.getEvents(graphId);
+      if (!eventsResult.ok) {
+        throw eventsResult.error;
+      }
+
+      const resolved = resolveEventCommitSeqs(eventsResult.value, ZERO_COMMIT_SEQ);
+      if (target.commitSeq > resolved.headCommitSeq) {
+        throw new Error(
+          `CommitSeq ${target.commitSeq} exceeds graph headCommitSeq ${resolved.headCommitSeq}`,
+        );
+      }
+
+      const filtered = resolved.entries
+        .filter((entry) => entry.commitSeq <= target.commitSeq)
+        .map((entry) => entry.event);
+      const merged = mergeEvents(createMergeState(), initialGraphResult.value, filtered);
+      return { graph: merged.graph, commitSeq: target.commitSeq };
+    }
+
     const beforeEventId =
       'eventId' in target
         ? incrementEventId(target.eventId)
@@ -96,6 +129,24 @@ export async function getGraphAt(
       throw projectResult.error;
     }
 
-    return projectResult.value;
+    const resolved = resolveEventCommitSeqs(events, ZERO_COMMIT_SEQ);
+    return { graph: projectResult.value, commitSeq: resolved.headCommitSeq };
   });
+}
+
+/**
+Reconstructs the graph state at a specific point in time (timestamp, eventId, or commitSeq).
+
+@param store The EventLogStore containing the history.
+@param graphId The ID of the graph to reconstruct.
+@param target The target point in time (timestamp, eventId, or commitSeq).
+@returns The reconstructed Graph.
+*/
+export async function getGraphAt(
+  store: EventLogStore,
+  graphId: string,
+  target: TimeTravelTarget,
+): Promise<Result<Graph, Error>> {
+  const snapshotResult = await getGraphSnapshotAt(store, graphId, target);
+  return snapshotResult.ok ? { ok: true, value: snapshotResult.value.graph } : snapshotResult;
 }

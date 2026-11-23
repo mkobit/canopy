@@ -1,7 +1,9 @@
 import type {
   BatchId,
   CommitError,
+  CommitSeq,
   Edge,
+  EdgeId,
   EventId,
   EventLogQueryOptions,
   EventLogStore,
@@ -13,18 +15,25 @@ import type {
   PropertyDefinition,
   PropertyValue,
   PropertyValueKind,
+  ReadConsistency,
+  ReadConsistencyError,
   Result,
   ValidationError,
+  WritePrecondition,
 } from '@canopy/graph';
 import {
   SYSTEM_IDS,
   ShapePropertyBindingSchema,
+  asActorId,
   asBatchId,
+  asCommitSeq,
   asDeviceId,
   asEdgeId,
   asEventId,
   asGraphId,
+  asHlcTimestamp,
   asNodeId,
+  asPrincipalId,
   asShapeId,
   canonicalizeUri,
   createBatchId,
@@ -297,10 +306,57 @@ const createGraphSummary = (state: ManagedV0GraphState): CanopyV0GraphSummary =>
   };
 };
 
+const mapReadConsistencyError = (readError: ReadConsistencyError): GraphAccessErrorCategory => {
+  switch (readError.kind) {
+    case 'consistency-timeout': {
+      return 'CONCURRENCY_CONFLICT';
+    }
+    case 'not-found': {
+      return 'NOT_FOUND';
+    }
+    case 'validation': {
+      return 'VALIDATION_ERROR';
+    }
+    case 'resource-exhausted': {
+      return 'RESOURCE_EXHAUSTED';
+    }
+    case 'storage': {
+      return 'INTERNAL_ERROR';
+    }
+  }
+};
+
+const toSessionReadConsistency = (
+  consistency: CanopyV0ReadConsistency | undefined,
+): ReadConsistency => ({
+  ...(consistency?.minCommitSeq !== undefined && {
+    minCommitSeq: asCommitSeq(consistency.minCommitSeq),
+    timeoutMs: 0,
+  }),
+  ...(consistency?.atCommitSeq !== undefined && {
+    atCommitSeq: asCommitSeq(consistency.atCommitSeq),
+  }),
+  ...(consistency?.atTimestamp !== undefined && {
+    atTimestamp: createInstant(Temporal.Instant.from(consistency.atTimestamp)),
+  }),
+  ...(consistency?.linearizable !== undefined && { linearizable: consistency.linearizable }),
+});
+
 const resolveConsistentGraph = async (
   state: ManagedV0GraphState,
   consistency: CanopyV0ReadConsistency | undefined,
 ): Promise<GraphAccessResponse<Readonly<{ graph: Graph; commitSeq: number }>>> => {
+  if (state.session) {
+    const readResult = await state.session.readGraph(toSessionReadConsistency(consistency));
+    return readResult.ok
+      ? ok(readResult.value)
+      : err(
+          createGraphAccessError(
+            mapReadConsistencyError(readResult.error),
+            readResult.error.message,
+          ),
+        );
+  }
   if (consistency?.atCommitSeq !== undefined) {
     if (consistency.atCommitSeq === 0 && state.commitLog.length === 0) {
       return ok({ graph: currentGraphOf(state), commitSeq: 0 });
@@ -333,38 +389,6 @@ const resolveConsistentGraph = async (
         ),
       )
     : ok({ graph: currentGraphOf(state), commitSeq: state.headCommitSeq });
-};
-
-const checkWritePrecondition = (
-  state: ManagedV0GraphState,
-  precondition: CanopyV0WritePrecondition,
-): GraphAccessResponse<undefined> => {
-  if (precondition.mode === 'graph-cas') {
-    return precondition.expectedGraphSeq === state.headCommitSeq
-      ? ok(undefined)
-      : err(
-          createGraphAccessError(
-            'CONCURRENCY_CONFLICT',
-            `Graph CAS mismatch: expected commitSeq ${String(precondition.expectedGraphSeq)}, actual ${state.headCommitSeq}`,
-          ),
-        );
-  }
-  if (precondition.mode === 'entity-cas') {
-    const mismatch = (precondition.expectedEntitySeq ?? []).find((item) => {
-      const actualSeq = state.entitySeqs.get(item.entityId) ?? 0;
-      return actualSeq !== item.expectedSeq;
-    });
-    if (mismatch) {
-      const actualSeq = state.entitySeqs.get(mismatch.entityId) ?? 0;
-      return err(
-        createGraphAccessError(
-          'CONCURRENCY_CONFLICT',
-          `Entity CAS mismatch for ${mismatch.entityId}: expected ${mismatch.expectedSeq}, actual ${actualSeq}`,
-        ),
-      );
-    }
-  }
-  return ok(undefined);
 };
 
 const buildCreateNodeEvent = (
@@ -613,15 +637,6 @@ const compileBatchOperations = (
   return step(operations, { events: [], touchedEntityIds: [], newMigrations: [] });
 };
 
-const updateEntitySequences = (
-  current: ReadonlyMap<string, number>,
-  touchedIds: readonly string[],
-  commitSeq: number,
-): ReadonlyMap<string, number> => {
-  const entries = touchedIds.map((id) => [id, commitSeq] as const);
-  return new Map([...current, ...entries]);
-};
-
 const toValidationIssue = (issue: ValidationError): CanopyV0ValidationIssue => ({
   code: issue.code,
   severity: issue.severity,
@@ -650,10 +665,90 @@ const mapCommitErrorToCategory = (commitError: CommitError): GraphAccessErrorCat
     case 'system-node': {
       return 'FORBIDDEN';
     }
+    case 'concurrency-conflict': {
+      return 'CONCURRENCY_CONFLICT';
+    }
     case 'storage': {
       return 'INTERNAL_ERROR';
     }
   }
+};
+
+const toSessionPrecondition = (precondition: CanopyV0WritePrecondition): WritePrecondition => {
+  if (precondition.mode === 'graph-cas') {
+    return {
+      mode: 'graph-cas',
+      expectedGraphSeq: asCommitSeq(precondition.expectedGraphSeq ?? 0),
+    };
+  }
+  if (precondition.mode === 'entity-cas') {
+    return {
+      mode: 'entity-cas',
+      expectedEntitySeq: new Map<NodeId | EdgeId, CommitSeq>(
+        (precondition.expectedEntitySeq ?? []).map((item) => [
+          item.entityId as NodeId | EdgeId,
+          asCommitSeq(item.expectedSeq),
+        ]),
+      ),
+    };
+  }
+  return { mode: 'unconditional' };
+};
+
+const buildCommittedGraphResult = (
+  state: ManagedV0GraphState,
+  session: GraphSession,
+  commitValue: Readonly<{
+    graph: Graph;
+    batchId: BatchId;
+    commitSeq: CommitSeq;
+    hlcTimestamp: string;
+    events: readonly GraphEvent[];
+    warnings: readonly ValidationError[];
+  }>,
+  responseBatchId: BatchId,
+  touchedEntityIds: readonly string[],
+  newMigrations: readonly CanopyV0ShapeMigrationRecord[],
+): Readonly<{ nextState: ManagedV0GraphState; response: CanopyV0CommitTransactionResponse }> => {
+  const nextCommitSeq = commitValue.commitSeq;
+  const affectedEntitySeqs: readonly CanopyV0EntityCasPrecondition[] = [
+    ...new Set(touchedEntityIds),
+  ].map((entityId) => ({ entityId, expectedSeq: nextCommitSeq }));
+  const eventIds = commitValue.events.map((event) => event.eventId);
+  const nextState: ManagedV0GraphState = {
+    ...state,
+    updatedAt: createInstant(),
+    headCommitSeq: nextCommitSeq,
+    graph: commitValue.graph,
+    session,
+    entitySeqs: session.entitySeqs(),
+    commitLog: [
+      ...state.commitLog,
+      {
+        commitSeq: nextCommitSeq,
+        batchId: responseBatchId,
+        hlcTimestamp: commitValue.hlcTimestamp,
+        eventIds,
+        events: commitValue.events,
+        snapshotGraph: commitValue.graph,
+      },
+    ],
+    migrations: [...state.migrations, ...newMigrations],
+  };
+
+  return {
+    nextState,
+    response: {
+      graphId: state.graphId,
+      batchId: responseBatchId,
+      commitSeq: nextCommitSeq,
+      hlcTimestamp: commitValue.hlcTimestamp,
+      revision: commitValue.graph.revision,
+      committedEventIds: eventIds,
+      affectedEntitySeqs,
+      warnings: commitValue.warnings.map(toValidationIssue),
+    },
+  };
 };
 
 const commitOperationsToGraphState = async (
@@ -671,16 +766,17 @@ const commitOperationsToGraphState = async (
     return err(createGraphAccessError('VALIDATION_ERROR', 'batchId must not be empty'));
   }
 
-  const preconditionCheck = checkWritePrecondition(state, precondition);
-  if (!preconditionCheck.ok) return preconditionCheck;
+  const parsedHlc = asHlcTimestamp(provenance.hlcTimestamp);
+  if (!parsedHlc.ok) {
+    return err(createGraphAccessError('VALIDATION_ERROR', parsedHlc.error.message));
+  }
 
   const batchId = batchIdInput === undefined ? createBatchId() : asBatchId(batchIdInput);
-  const nextCommitSeq = state.headCommitSeq + 1;
   const compiled = compileBatchOperations(
     operations,
     provenance,
     batchId,
-    nextCommitSeq,
+    state.headCommitSeq + 1,
     currentGraphOf(state),
   );
   if (!compiled.ok) return compiled;
@@ -692,7 +788,16 @@ const commitOperationsToGraphState = async (
       asGraphId(state.graphId),
       asDeviceId(provenance.deviceId),
     );
-  const commitResult = await session.commit(compiled.value.events);
+  const commitResult = await session.commit(compiled.value.events, {
+    provenance: {
+      principalId: asPrincipalId(provenance.principalId),
+      actorId: asActorId(provenance.actorId),
+      actorKind: provenance.actorKind,
+      deviceId: asDeviceId(provenance.deviceId),
+      hlcTimestamp: parsedHlc.value,
+    },
+    precondition: toSessionPrecondition(precondition),
+  });
   if (!commitResult.ok) {
     return err(
       createGraphAccessError(
@@ -703,52 +808,16 @@ const commitOperationsToGraphState = async (
     );
   }
 
-  const nextGraph = commitResult.value.graph;
-  const committedEvents = commitResult.value.events;
-  const responseBatchId = operations.length === 0 ? batchId : commitResult.value.batchId;
-  const nextEntitySeqs = updateEntitySequences(
-    state.entitySeqs,
-    compiled.value.touchedEntityIds,
-    nextCommitSeq,
+  return ok(
+    buildCommittedGraphResult(
+      state,
+      session,
+      commitResult.value,
+      operations.length === 0 ? batchId : commitResult.value.batchId,
+      compiled.value.touchedEntityIds,
+      compiled.value.newMigrations,
+    ),
   );
-  const affectedEntitySeqs: readonly CanopyV0EntityCasPrecondition[] = [
-    ...new Set(compiled.value.touchedEntityIds),
-  ].map((entityId) => ({ entityId, expectedSeq: nextCommitSeq }));
-  const eventIds = committedEvents.map((event) => event.eventId);
-  const nextState: ManagedV0GraphState = {
-    ...state,
-    updatedAt: createInstant(),
-    headCommitSeq: nextCommitSeq,
-    graph: nextGraph,
-    session,
-    entitySeqs: nextEntitySeqs,
-    commitLog: [
-      ...state.commitLog,
-      {
-        commitSeq: nextCommitSeq,
-        batchId: responseBatchId,
-        hlcTimestamp: provenance.hlcTimestamp,
-        eventIds,
-        events: committedEvents,
-        snapshotGraph: nextGraph,
-      },
-    ],
-    migrations: [...state.migrations, ...compiled.value.newMigrations],
-  };
-
-  return ok({
-    nextState,
-    response: {
-      graphId: state.graphId,
-      batchId: responseBatchId,
-      commitSeq: nextCommitSeq,
-      hlcTimestamp: provenance.hlcTimestamp,
-      revision: nextGraph.revision,
-      committedEventIds: eventIds,
-      affectedEntitySeqs,
-      warnings: commitResult.value.warnings.map(toValidationIssue),
-    },
-  });
 };
 
 const parseViewBindingKind = (

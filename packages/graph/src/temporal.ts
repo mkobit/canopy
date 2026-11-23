@@ -1,4 +1,5 @@
 import type { DeviceId } from './identifiers';
+import type { HlcTimestamp } from './hlc';
 
 export declare const instantBrand: unique symbol;
 export declare const plainDateBrand: unique symbol;
@@ -24,4 +25,5 @@ export interface TemporalMetadata {
   readonly created: Instant;
   readonly modified: Instant;
   readonly modifiedBy: DeviceId;
+  readonly hlcTimestamp?: HlcTimestamp | undefined;
 }
