@@ -50,8 +50,8 @@ All other packages depend on it.
 ### @canopy/graph
 
 The kernel.
-Owns identifiers, primitives, Zod schemas, `Node`, `Edge`, `Graph`, events, projection, ops, type-aware validation, bootstrap, namespace resolution, the event bus, the workflow engine, and history (point-in-time reconstruction).
-Also owns `GraphSession` (`createGraphSession`) — the single write path shared by every consumer: `load` (read the event log, project), `commit` (validate → append → merge → notify), `graph()`, `subscribe`.
+Owns identifiers, primitives, Zod schemas, `Node`, `Edge`, `Graph`, events, read-side upcasting (`event-upcast.ts`), projection, ops, shape-aware validation (`validation.ts`, `batch-validation.ts`), bootstrap, namespace resolution, the event bus, the workflow engine, and history (point-in-time reconstruction).
+Also owns `GraphSession` (`createGraphSession`) — the single write path shared by every consumer: `load` (read the event log, project), serialized `commit` (`validateBatch` → append → merge → notify, returning `CommitSuccess` with `batchId` and `warnings`), `graph()`, `subscribe`.
 Defines the `EventLogStore` port that storage adapters implement.
 No I/O, no Yjs, no React.
 

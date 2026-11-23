@@ -16,8 +16,8 @@ This directory provides browser helper functions for CSS class merging, persiste
 ## Invariants
 
 - `[device-id.ts:getOrCreateDeviceId]` Returns existing `localStorage` value wrapped with `asDeviceId(existing)`, or generates one via `createDeviceId()` when absent.
-- `[node-types.ts:parseProperties]` Returns `[]` when `raw` is not a string, `JSON.parse` fails, or `PropertyDefinitionsSchema.safeParse` fails.
-- `[node-types.ts:listAllowedNodeTypes]` Filters `graph.nodes` to `node.shape === SYSTEM_IDS.NODE_TYPE` and `isInstantiable`: allows `LEGACY_ALLOWED_TYPE_DEF_IDS`, excludes `EXCLUDED_TYPE_DEF_IDS` (`USER_SETTING_DEF`), and otherwise requires a namespace kind not in `RESTRICTED_NAMESPACE_KINDS`.
+- `[node-types.ts:parseProperties]` Returns `[]` when `raw` is not a string, `JSON.parse` fails, or `ShapeBindingsSchema.safeParse` fails.
+- `[node-types.ts:listAllowedNodeTypes]` Filters `graph.nodes` to `node.shape === SYSTEM_IDS.SHAPE && node.properties.get('entityKind') === 'node'` and `isInstantiable`: allows `LEGACY_ALLOWED_TYPE_DEF_IDS`, excludes `EXCLUDED_TYPE_DEF_IDS` (`USER_SETTING_DEF`), and otherwise requires a namespace kind not in `RESTRICTED_NAMESPACE_KINDS`.
 - `[schema.ts:listNamespaces]`, `[schema.ts:listAllNodeTypes]`, `[schema.ts:listEdgeTypesIn]`, `[schema.ts:listAllPropertyTypes]` Drop malformed type nodes missing required string fields or valid `PropertyValueKindSchema` `valueKind`; `[schema.ts:listCreatableNamespaceKinds]` deduplicates kinds, excludes `RESTRICTED_NAMESPACE_KINDS`, and sorts with `localeCompare`.
 
 ## Side Effects

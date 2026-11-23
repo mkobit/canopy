@@ -12,8 +12,8 @@ This directory implements five React components for schema creation forms (names
 - `[namespace-create-form.tsx:NamespaceCreateForm]` `React.FC<NamespaceCreateFormProperties>` form component for creating `Namespace` definitions.
 - `[node-type-create-form.tsx:NodeTypeCreateFormProperties]` Interface with `readonly` `namespace`, `propertyTypeOptions`, and `onSubmit` returning `Promise<Result<NodeId, Error>>`.
 - `[node-type-create-form.tsx:NodeTypeCreateForm]` `React.FC<NodeTypeCreateFormProperties>` form component for creating `NodeType` definitions.
-- `[property-list-editor.tsx:PropertyListEditorProperties]` Interface with `readonly` `value` (`readonly TypePropertyInput[]`), `onChange`, and `propertyTypeOptions`.
-- `[property-list-editor.tsx:PropertyListEditor]` `React.FC<PropertyListEditorProperties>` controlled editor for inline and reference `TypePropertyInput` items.
+- `[property-list-editor.tsx:PropertyListEditorProperties]` Interface with `readonly` `value` (`readonly ShapePropertyInput[]`), `onChange`, and `propertyTypeOptions`.
+- `[property-list-editor.tsx:PropertyListEditor]` `React.FC<PropertyListEditorProperties>` controlled editor for inline and reference `ShapePropertyInput` items.
 - `[property-type-create-form.tsx:PropertyTypeCreateFormProperties]` Interface with `readonly` `namespace` and `onSubmit` returning `Promise<Result<NodeId, Error>>`.
 - `[property-type-create-form.tsx:PropertyTypeCreateForm]` `React.FC<PropertyTypeCreateFormProperties>` form component for creating `PropertyType` definitions.
 

@@ -10,9 +10,9 @@ This directory implements a file-backed `EventLogStore` (`FileEventLog`) that pe
 
 ## Invariants
 
-- `[file-event-log.ts:createFileEventLog]` Requires `init()` before `appendEvents`, `getEvents`, or `reconcile` (`init()` is idempotent); enforces a single `graphId` per store (`'Graph ID mismatch: ...'` otherwise).
+- `[file-event-log.ts:createFileEventLog]` Serializes `appendEvents` and `reconcile` through `enqueueWrite` (passing `appendEventsInternal` to `reconcileRemoteManifests` to avoid self-deadlock), requires `init()` before `appendEvents`, `getEvents`, or `reconcile` (`init()` is idempotent), and enforces a single `graphId` per store (`'Graph ID mismatch: ...'` otherwise).
 - `[file-event-log.ts:createStorageConfig]` Defaults segment rotation limits to `maxEventsPerSegment = 1000` and `maxBytesPerSegment = 1048576` (1 MiB); consecutive events sharing a `batchId` are never split across segments.
-- `[file-event-log.ts:executeAppendEvents]` and `[file-event-log.ts:readAllEventsFromDisk]` Deduplicate by `eventId`, sort ascending by `eventId.localeCompare`, and validate `canopy.json`, `manifest.json`, and `GraphEvent` records with Zod schemas.
+- `[file-event-log.ts:appendEventsToDisk]` and `[file-event-log.ts:deserializeEvent]` Deduplicate by `eventId`, sort ascending by `eventId.localeCompare`, validate `canopy.json` and `manifest.json` with Zod schemas, decode `GraphEvent` records via `decodeStoredEvent` (filtering out `null` retired meta-shape events), and seal any active segment containing legacy (`nodeType`/`edgeType`) or retired meta-shape events into `manifest.sealed` without rewriting it before starting a fresh active segment.
 - `[file-event-log.ts:scanRemoteManifests]` Excludes `localDeviceId`, returns an empty `Map` on `ENOENT`, and skips unreadable/invalid remote `manifest.json` files.
 
 ## Side Effects

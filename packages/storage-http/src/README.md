@@ -14,8 +14,8 @@ This directory implements an HTTP client adapter (`HTTPEventLog`) for `@canopy/g
 ## Invariants
 
 - `[http-event-log.ts:createHTTPEventLog]` Strips a single trailing `'/'` from `baseUrl` and wraps network, non-ok HTTP status, and parsing errors into `Result<T, Error>` via `fromAsyncThrowable`.
-- `[http-event-log.ts:serializeEvent]` and `[http-event-log.ts:deserializeEvent]` Convert `Map` fields (`properties`, `changes`) to/from plain objects and validate the 8 known `GraphEvent` variants.
-- `[http-event-log.ts:createHTTPEventLog]` In `getEvents`, extracts events from `response.events` or top-level array (otherwise `[]`) and returns the first `deserializeEvent` error if any element fails.
+- `[http-event-log.ts:serializeEvent]` and `[http-event-log.ts:deserializeEvent]` Convert `Map` fields (`properties`, `changes`) to/from plain objects; `deserializeEvent` delegates to `decodeStoredEvent` (read-side upcasting legacy fields and returning `null` for retired meta-shape events).
+- `[http-event-log.ts:createHTTPEventLog]` In `getEvents`, extracts events from `response.events` or top-level array (otherwise `[]`), returns the first `deserializeEvent` error if any element fails, and filters out `null` retired meta-shape events.
 
 ## Side Effects
 
