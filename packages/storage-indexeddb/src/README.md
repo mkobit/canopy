@@ -15,7 +15,7 @@ This directory provides IndexedDB-backed implementations for the event log (`Eve
 
 - `[graph-registry.ts:createGraphRegistry]` and `[indexeddb-event-log.ts:createIndexedDBEventLog]` Return `err(new Error('Database not initialized'))` when `database` is `null`; `init()` is idempotent when already initialized; all async operations wrap IndexedDB calls with `fromAsyncThrowable`.
 - `[graph-registry.ts:createGraphRegistry]` Creates `'graphs'` object store (`keyPath: 'id'`) at DB version 1; `[indexeddb-event-log.ts:createIndexedDBEventLog]` creates `'events'` object store (`keyPath: ['graphId', 'eventId']`) at DB version 1.
-- `[indexeddb-event-log.ts:MAX_EVENT_ID]` Uses `String.fromCodePoint(0xff_ff)` as upper bound for `IDBKeyRange.bound`; `[indexeddb-event-log.ts:applyQueryOptions]` filters `after`, `before`, `toReversed()`, and `slice(0, limit)` without mutating input.
+- `[indexeddb-event-log.ts:MAX_EVENT_ID]` Uses `String.fromCodePoint(0xff_ff)` as upper bound for `IDBKeyRange.bound` (short-circuiting inverted or empty bounds to `ok([])`); `[indexeddb-event-log.ts:decodeIndexedDBRecords]` and `[indexeddb-event-log.ts:decodeChunk]` reverse when `options.reverse` is set, decode via `decodeStoredEvent` (returning the first error and filtering out `null` retired meta-shape events), and decode in chunks when `limit >= 0` so `limit` is satisfied after `null` filtering.
 
 ## Side Effects
 

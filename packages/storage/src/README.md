@@ -13,7 +13,7 @@ This directory provides an in-memory implementation of the `EventLogStore` port 
 ## Invariants
 
 - `[in-memory-event-store.ts:appendEvents]` Deduplicates incoming events against existing events for the same `graphId` and within the input batch by `eventId`, and stores events per `graphId` sorted ascending by `eventId` via `localeCompare`.
-- `[in-memory-event-store.ts:getEvents]` Filters stored events by `eventId > after`, `eventId < before`, reverses if `reverse` is truthy, and slices to `[0, limit)` when `limit !== undefined && limit >= 0`; both `appendEvents` and `getEvents` always resolve with `ok(...)`.
+- `[in-memory-event-store.ts:getEvents]` Decodes stored events via `decodeStoredEvent` (returning `err(...)` on the first decode failure and filtering out `null` retired meta-shape events), then filters by `eventId > after`, `eventId < before`, reverses if `reverse` is truthy, and slices to `[0, limit)` when `limit !== undefined && limit >= 0`; `appendEvents` always resolves with `ok(...)`.
 
 ## Side Effects
 

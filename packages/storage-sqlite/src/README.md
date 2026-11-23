@@ -16,7 +16,7 @@ This directory implements `EventLogStore` over an in-memory `sql.js` SQLite data
 - `[sqlite-event-log.ts:initSchema]` `events` table enforces `PRIMARY KEY (graph_id, event_id)` and `NOT NULL` on `graph_id`, `event_id`, `timestamp`, `type`, and `payload`.
 - `[sqlite-event-log.ts:createSQLiteEventLog]` `init()` is idempotent; `appendEvents` and `getEvents` return `err(new Error('Database not initialized'))` when `database` is `null`.
 - `[sqlite-event-log.ts:executeAppendEvents]` Uses `INSERT OR IGNORE INTO events` inside `BEGIN TRANSACTION` / `COMMIT`, rolling back on failure.
-- `[sqlite-event-log.ts:serializeEvent]` and `[sqlite-event-log.ts:deserializeEvent]` Convert `properties`/`changes` `Map`s to/from JSON objects; `[sqlite-event-log.ts:buildSelectQuery]` filters by `graph_id`, optional `after`/`before`, orders by `event_id` ASC/DESC, and applies optional `LIMIT`.
+- `[sqlite-event-log.ts:serializeEvent]` and `[sqlite-event-log.ts:deserializeEvent]` Convert `properties`/`changes` `Map`s to/from JSON objects (`deserializeEvent` delegates to `decodeStoredEvent` for read-side upcasting and `null` retired meta-shape filtering); `[sqlite-event-log.ts:buildSelectQuery]` filters by `graph_id`, optional `after`/`before`, orders by `event_id` ASC/DESC, and applies optional `LIMIT`; `[sqlite-event-log.ts:executeGetEvents]` returns the first decode error or filters out `null` events.
 
 ## Side Effects
 
