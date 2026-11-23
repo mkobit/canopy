@@ -16,7 +16,7 @@
     "build-storybook": "STORYBOOK_DISABLE_TELEMETRY=1 storybook build -o .storybook-static"
   },
   "dependencies": {
-    "@bytecodealliance/preview2-shim": "0.19.0",
+    "@bytecodealliance/preview2-shim": "0.31.0",
     "@canopy/graph": "workspace:*",
     "@canopy/graph-access": "workspace:*",
     "@canopy/plugin-host": "workspace:*",
@@ -24,7 +24,7 @@
     "@canopy/settings": "workspace:*",
     "@canopy/storage": "workspace:*",
     "@canopy/storage-indexeddb": "workspace:*",
-    "dompurify": "^3.0.0",
+    "dompurify": "^3.4.17",
     "@fontsource/inter": "^5.2.8",
     "@fontsource/jetbrains-mono": "^5.2.8",
     "@fontsource/space-grotesk": "^5.2.10",
@@ -40,11 +40,11 @@
     "zod": "^4.4.1"
   },
   "devDependencies": {
-    "@bytecodealliance/jco": "^1.24.6",
+    "@bytecodealliance/jco": "^1.41.0",
     "@happy-dom/global-registrator": "^21.0.4",
-    "@playwright/test": "^1.62.0",
-    "@storybook/react": "^10.5.4",
-    "@storybook/react-vite": "^10.5.4",
+    "@playwright/test": "^1.64.1",
+    "@storybook/react": "^10.6.5",
+    "@storybook/react-vite": "^10.6.5",
     "@tailwindcss/postcss": "^4.3.3",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/react": "^16.3.3",
@@ -55,7 +55,7 @@
     "fake-indexeddb": "^6.2.7",
     "happy-dom": "^21.0.3",
     "postcss": "^8.5.32",
-    "storybook": "^10.5.4",
+    "storybook": "^10.6.5",
     "tailwindcss": "^4.2.2",
     "typescript": "6.0.3",
     "vite": "^8.3.5"
